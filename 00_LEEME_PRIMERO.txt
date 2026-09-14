@@ -1,0 +1,4 @@
+1) Extrae todo el ZIP.
+2) Dentro de la carpeta extraida, haz doble clic en SUBIR_A_GITHUB.bat.
+3) Si GitHub abre el navegador, inicia sesion con mxjava y autoriza.
+4) Cuando termine, vuelve a ChatGPT y escribe: REVISA EL REPO.

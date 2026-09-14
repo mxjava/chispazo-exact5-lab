@@ -1,0 +1,22 @@
+ASUNTO: Solicitud de información pública — metadatos operativos de sorteos Chispazo
+
+Solicito, de preferencia en formato abierto CSV o XLSX, la información correspondiente a cada sorteo de CHISPAZO (modalidad de las Tres y Clásico) celebrado desde el 10 de marzo de 2022 y hasta la fecha de respuesta.
+
+Para cada número de concurso solicito, en la medida en que obre en los registros de la institución:
+
+1. Número de concurso, fecha, hora y modalidad del sorteo.
+2. Número/identificador del estuche de esferas utilizado, conforme al formato “Números Ganadores de los Sorteos CS-11”.
+3. Identificador de la máquina/equipo de sorteos utilizado y su modelo, si dicho dato se registra.
+4. Tipo de esfera utilizado (por ejemplo, Smartballs o Ping Pong), si se registra.
+5. Peso individual registrado para cada esfera numerada del 1 al 28 en la “Tira de Pesaje”, así como peso mínimo, máximo y diferencia/rango del estuche.
+6. Indicación de si el primer estuche seleccionado fue sustituido por incumplimiento de parámetros de pesaje y, en su caso, el estuche sustituto.
+7. Incidencias o sucesos asentados en el acta que se relacionen con máquina, estuche, esferas, pesaje, sustitución de equipo o repetición de alguna etapa del sorteo.
+8. Identificación o resultado de la verificación RFID del estuche/esferas/máquina, únicamente si ese dato se conserva en los registros del sorteo.
+9. Método utilizado para seleccionar/asignar el estuche y la máquina para cada sorteo, y el momento en que dicha selección queda determinada respecto del cierre de ventas.
+10. Indicar si el número de estuche y/o máquina se hace público antes del cierre de ventas y, de ser así, señalar el medio y hora de publicación.
+
+Si no existe una base consolidada con esos campos, solicito copia digital o versión pública de los documentos que permitan reconstruirlos: formato CS-11, tira de pesaje y acta de sorteo, vinculados por número de concurso. No requiero datos personales de servidores públicos; pueden testarse firmas, nombres u otros datos personales cuando legalmente corresponda.
+
+Solicito que, si alguno de los datos anteriores no se genera o no se conserva, se indique expresamente qué campo/documento no existe o cuál es su plazo de conservación.
+
+Finalidad técnica de la solicitud: análisis estadístico reproducible de la aleatoriedad de los sorteos y de posibles efectos asociados a equipos/estuches, sin requerir información de apuestas individuales ni datos personales de participantes.
