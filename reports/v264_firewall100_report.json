@@ -1,0 +1,113 @@
+{
+  "engine": "V264_EVIDENCE_FIREWALL",
+  "state": "RESEARCH_ONLY_NO_EDGE",
+  "parent_live_exact5": [
+    "score_ltr_ndcg_exact5",
+    "score_ltr_adv_exact5",
+    "score_ltr_exact5_balanced",
+    "score_ltr_exact5_hard",
+    "score_ltr_exact5_ultra"
+  ],
+  "parent_health": {
+    "score_ltr_ndcg_exact5": {
+      "live": true,
+      "unique": 98188,
+      "std": 0.99978890384515,
+      "nonzero_fraction": 1.0,
+      "reason": "ok"
+    },
+    "score_ltr_adv_exact5": {
+      "live": true,
+      "unique": 98188,
+      "std": 0.99978890384515,
+      "nonzero_fraction": 1.0,
+      "reason": "ok"
+    },
+    "score_ltr_exact5_balanced": {
+      "live": true,
+      "unique": 98188,
+      "std": 0.9997889038451498,
+      "nonzero_fraction": 1.0,
+      "reason": "ok"
+    },
+    "score_ltr_exact5_hard": {
+      "live": true,
+      "unique": 98188,
+      "std": 0.99978890384515,
+      "nonzero_fraction": 1.0,
+      "reason": "ok"
+    },
+    "score_ltr_exact5_ultra": {
+      "live": true,
+      "unique": 98188,
+      "std": 0.99978890384515,
+      "nonzero_fraction": 1.0,
+      "reason": "ok"
+    }
+  },
+  "oos_approved_tests": [],
+  "exactset_anytime": {
+    "history_min": 1363,
+    "history_max": 12249,
+    "target": 12250,
+    "warmup": 800,
+    "evaluated": 10087,
+    "cumulative_log_e": -3.332204510175698,
+    "e_value": 0.03571428571426807,
+    "mean_log_lift": -0.0003303464370155347,
+    "positive_log_lift_rate": 0.030137801130167542,
+    "posterior_uniform": 1.0,
+    "top_posterior_experts": [
+      [
+        "uniform",
+        1.0
+      ],
+      [
+        "transition_b0.15",
+        3.110293798708446e-188
+      ],
+      [
+        "ewma16_b0.15",
+        2.7154744625788297e-202
+      ],
+      [
+        "freq800_b0.15",
+        1.6484031591009142e-202
+      ],
+      [
+        "freq50_b0.15",
+        1.7681399755791523e-204
+      ],
+      [
+        "hotgap_b0.15",
+        9.169964599233362e-205
+      ],
+      [
+        "ewma32_b0.15",
+        1.5272039467737644e-206
+      ],
+      [
+        "ewma64_b0.15",
+        1.265890781352312e-209
+      ],
+      [
+        "freq200_b0.15",
+        4.292649815540348e-216
+      ],
+      [
+        "duegap_b0.15",
+        3.946806019739947e-216
+      ]
+    ],
+    "top30_total_mass": 0.00030525030525030514,
+    "uniform_top30_mass": 0.00030525030525030525,
+    "top30_mass_lift": 0.9999999999999997
+  },
+  "policy": {
+    "requires_live_exact5": 2,
+    "requires_oos_holm_p_lt": 0.05,
+    "requires_oos_n": 100,
+    "requires_anytime_evalue": 20.0,
+    "production_concentration_allowed": false
+  }
+}

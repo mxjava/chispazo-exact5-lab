@@ -1,0 +1,39 @@
+{
+  "evidence_class": "historical_exploratory",
+  "warning": "P-values históricos no son confirmatorios debido a iteración de modelos y researcher degrees of freedom. La confirmación requiere forward test pre-registrado.",
+  "prospective_power_exact5": [
+    {
+      "lift": 2.0,
+      "p0": 0.00030525030525030525,
+      "p1": 0.0006105006105006105,
+      "required_trials_80pct_power": 31502,
+      "critical_hits": 16,
+      "achieved_power": 0.8000078065765848
+    },
+    {
+      "lift": 3.0,
+      "p0": 0.00030525030525030525,
+      "p1": 0.0009157509157509158,
+      "required_trials_80pct_power": 9909,
+      "critical_hits": 7,
+      "achieved_power": 0.8000176743987737
+    },
+    {
+      "lift": 5.0,
+      "p0": 0.00030525030525030525,
+      "p1": 0.0015262515262515263,
+      "required_trials_80pct_power": 3613,
+      "critical_hits": 4,
+      "achieved_power": 0.8001374735420366
+    },
+    {
+      "lift": 10.0,
+      "p0": 0.00030525030525030525,
+      "p1": 0.0030525030525030525,
+      "required_trials_80pct_power": 980,
+      "critical_hits": 2,
+      "achieved_power": 0.800028529843773
+    }
+  ],
+  "multiple_strategy_tests": []
+}

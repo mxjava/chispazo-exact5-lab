@@ -1,0 +1,40 @@
+[paths]
+history = "D:\\melate\\Chispazo.csv"
+v249_engine_path = "D:\\melate\\melate_new\\CHISPAZO_V249_COVERAGE_ANTISAT_EXACT5.py"
+v259_engine_path = "D:\\melate\\melate_new\\CHISPAZO_V259_CALIBRATED_ANTICOLLAPSE.py"
+v260_engine_path = "D:\\melate\\melate_new\\CHISPAZO_V260_ASSEMBLY_RESCUE.py"
+v261_engine_path = "D:\\melate\\melate_new\\CHISPAZO_V261_LEXICOGRAPHIC_REGRET.py"
+v261_config_path = "D:\\melate\\melate_new\\chispazo_v261.toml"
+v261_state_dir = "D:\\melate\\state_v261"
+v262_state_dir = "D:\\melate\\state_v262"
+out_dir = "D:\\melate\\resultados_v262_{target}"
+prospective_registry_dir = "D:\\melate\\preregistros_v262"
+
+[run]
+lines = 30
+quiet = false
+rank_bucket_edges = "1,3,5,10,20,30,50,100,200,500,1000,2500,5000,10000,25000,50000,98280"
+evidence_lookback = 1200
+same_parity_min_oos = 40
+prior_strengths = "150,300,600"
+half_lives = "90,180,360"
+edge_min_prequential = 30
+edge_mature_prequential = 120
+edge_alpha = 0.10
+candidate_pool_rank = 500
+candidate_pool_max_rank = 5000
+candidate_pool_growth = 2.0
+strict_max_number_exposure = 9
+strict_max_pair_exposure = 4
+strict_max_triple_exposure = 2
+stage2_probability_regret_budget = 0.0025
+second_number_coverage_discount = 0.40
+number_coverage_mass = 0.28
+pair_coverage_mass = 0.42
+triple_coverage_mass = 0.30
+stage2_top_pairs = 190
+stage2_top_triples = 300
+milp_time_limit_seconds = 45.0
+milp_mip_rel_gap = 0.0
+top_ranking_rows = 5000
+prospective_register = true

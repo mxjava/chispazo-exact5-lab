@@ -1,0 +1,315 @@
+{
+  "target": 12250,
+  "universe": 98280,
+  "uniform_single_combo_probability": 1.0175010175010176e-05,
+  "uniform_top30_probability": 0.00030525030525030525,
+  "state": "BLOCKED",
+  "checks": [
+    {
+      "name": "history_exists",
+      "status": "PASS",
+      "detail": "data/history/Chispazo_through_12249.csv",
+      "critical": true
+    },
+    {
+      "name": "history_readable",
+      "status": "PASS",
+      "detail": "rows=10887",
+      "critical": true
+    },
+    {
+      "name": "contest_numeric",
+      "status": "PASS",
+      "detail": "invalid=0",
+      "critical": true
+    },
+    {
+      "name": "contest_unique",
+      "status": "PASS",
+      "detail": "duplicates=0",
+      "critical": true
+    },
+    {
+      "name": "contest_contiguous",
+      "status": "PASS",
+      "detail": "min=1363; max=12249; rows=10887; expected=10887",
+      "critical": true
+    },
+    {
+      "name": "no_future_leakage",
+      "status": "PASS",
+      "detail": "rows_with_contest>=target=0",
+      "critical": true
+    },
+    {
+      "name": "history_ends_at_target_minus_1",
+      "status": "PASS",
+      "detail": "history_max=12249; expected=12249",
+      "critical": true
+    },
+    {
+      "name": "numbers_numeric",
+      "status": "PASS",
+      "detail": "invalid_cells=0",
+      "critical": true
+    },
+    {
+      "name": "numbers_range_1_28",
+      "status": "PASS",
+      "detail": "out_of_range=0",
+      "critical": true
+    },
+    {
+      "name": "five_unique_numbers",
+      "status": "PASS",
+      "detail": "bad_rows=0",
+      "critical": true
+    },
+    {
+      "name": "dates_parseable",
+      "status": "PASS",
+      "detail": "invalid_dates=0",
+      "critical": false
+    },
+    {
+      "name": "ranking_present",
+      "status": "PASS",
+      "detail": "/mnt/data/v264_parent_repair/v249_full_ranking_98280.csv",
+      "critical": true
+    },
+    {
+      "name": "ranking_readable",
+      "status": "PASS",
+      "detail": "rows=98280",
+      "critical": true
+    },
+    {
+      "name": "ranking_full_universe",
+      "status": "PASS",
+      "detail": "rows=98280; expected=98280",
+      "critical": true
+    },
+    {
+      "name": "ranking_combo_valid",
+      "status": "PASS",
+      "detail": "invalid=0",
+      "critical": true
+    },
+    {
+      "name": "ranking_combo_unique",
+      "status": "PASS",
+      "detail": "unique=98280; rows=98280",
+      "critical": true
+    },
+    {
+      "name": "exact5_score_columns",
+      "status": "PASS",
+      "detail": "found=['score_ltr_ndcg_exact5', 'score_ltr_adv_exact5', 'score_ltr_exact5_balanced', 'score_ltr_exact5_hard', 'score_ltr_exact5_ultra']",
+      "critical": true
+    },
+    {
+      "name": "exact5_min_two_live",
+      "status": "PASS",
+      "detail": "live=5; score_ltr_ndcg_exact5=LIVE(unique=98188,std=0.999794); score_ltr_adv_exact5=LIVE(unique=98188,std=0.999794); score_ltr_exact5_balanced=LIVE(unique=98188,std=0.999794); score_ltr_exact5_hard=LIVE(unique=98188,std=0.999794); score_ltr_exact5_ultra=LIVE(unique=98188,std=0.999794)",
+      "critical": true
+    },
+    {
+      "name": "v264_oos_evidence",
+      "status": "FAIL",
+      "detail": "state=RESEARCH_ONLY_NO_EDGE; approved_tests=0",
+      "critical": true
+    },
+    {
+      "name": "exactset_anytime_evalue",
+      "status": "FAIL",
+      "detail": "e_value=0.03571428571426807; threshold=20",
+      "critical": true
+    }
+  ],
+  "inputs": {
+    "history": {
+      "path": "data/history/Chispazo_through_12249.csv",
+      "sha256": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+      "rows": 10887,
+      "contest_min": 1363,
+      "contest_max": 12249
+    },
+    "ranking": {
+      "rows": 98280,
+      "sha256": "94c20caf8fcb35eca9f8b83680d09d9d77ff439cdb9282f52d9333631e87ef22",
+      "live_exact5": 5
+    },
+    "evidence": {
+      "firewall": {
+        "engine": "V264_EVIDENCE_FIREWALL",
+        "state": "RESEARCH_ONLY_NO_EDGE",
+        "parent_live_exact5": [
+          "score_ltr_ndcg_exact5",
+          "score_ltr_adv_exact5",
+          "score_ltr_exact5_balanced",
+          "score_ltr_exact5_hard",
+          "score_ltr_exact5_ultra"
+        ],
+        "parent_health": {
+          "score_ltr_ndcg_exact5": {
+            "live": true,
+            "unique": 98188,
+            "std": 0.99978890384515,
+            "nonzero_fraction": 1.0,
+            "reason": "ok"
+          },
+          "score_ltr_adv_exact5": {
+            "live": true,
+            "unique": 98188,
+            "std": 0.99978890384515,
+            "nonzero_fraction": 1.0,
+            "reason": "ok"
+          },
+          "score_ltr_exact5_balanced": {
+            "live": true,
+            "unique": 98188,
+            "std": 0.9997889038451498,
+            "nonzero_fraction": 1.0,
+            "reason": "ok"
+          },
+          "score_ltr_exact5_hard": {
+            "live": true,
+            "unique": 98188,
+            "std": 0.99978890384515,
+            "nonzero_fraction": 1.0,
+            "reason": "ok"
+          },
+          "score_ltr_exact5_ultra": {
+            "live": true,
+            "unique": 98188,
+            "std": 0.99978890384515,
+            "nonzero_fraction": 1.0,
+            "reason": "ok"
+          }
+        },
+        "oos_approved_tests": [],
+        "exactset_anytime": {
+          "history_min": 1363,
+          "history_max": 12249,
+          "target": 12250,
+          "warmup": 800,
+          "evaluated": 10087,
+          "cumulative_log_e": -3.332204510175698,
+          "e_value": 0.03571428571426807,
+          "mean_log_lift": -0.0003303464370155347,
+          "positive_log_lift_rate": 0.030137801130167542,
+          "posterior_uniform": 1.0,
+          "top_posterior_experts": [
+            [
+              "uniform",
+              1.0
+            ],
+            [
+              "transition_b0.15",
+              3.110293798708446e-188
+            ],
+            [
+              "ewma16_b0.15",
+              2.7154744625788297e-202
+            ],
+            [
+              "freq800_b0.15",
+              1.6484031591009142e-202
+            ],
+            [
+              "freq50_b0.15",
+              1.7681399755791523e-204
+            ],
+            [
+              "hotgap_b0.15",
+              9.169964599233362e-205
+            ],
+            [
+              "ewma32_b0.15",
+              1.5272039467737644e-206
+            ],
+            [
+              "ewma64_b0.15",
+              1.265890781352312e-209
+            ],
+            [
+              "freq200_b0.15",
+              4.292649815540348e-216
+            ],
+            [
+              "duegap_b0.15",
+              3.946806019739947e-216
+            ]
+          ],
+          "top30_total_mass": 0.00030525030525030514,
+          "uniform_top30_mass": 0.00030525030525030525,
+          "top30_mass_lift": 0.9999999999999997
+        },
+        "policy": {
+          "requires_live_exact5": 2,
+          "requires_oos_holm_p_lt": 0.05,
+          "requires_oos_n": 100,
+          "requires_anytime_evalue": 20.0,
+          "production_concentration_allowed": false
+        }
+      },
+      "exactset": {
+        "history_min": 1363,
+        "history_max": 12249,
+        "target": 12250,
+        "warmup": 800,
+        "evaluated": 10087,
+        "cumulative_log_e": -3.332204510175698,
+        "e_value": 0.03571428571426807,
+        "mean_log_lift": -0.0003303464370155347,
+        "positive_log_lift_rate": 0.030137801130167542,
+        "posterior_uniform": 1.0,
+        "top_posterior_experts": [
+          [
+            "uniform",
+            1.0
+          ],
+          [
+            "transition_b0.15",
+            3.110293798708446e-188
+          ],
+          [
+            "ewma16_b0.15",
+            2.7154744625788297e-202
+          ],
+          [
+            "freq800_b0.15",
+            1.6484031591009142e-202
+          ],
+          [
+            "freq50_b0.15",
+            1.7681399755791523e-204
+          ],
+          [
+            "hotgap_b0.15",
+            9.169964599233362e-205
+          ],
+          [
+            "ewma32_b0.15",
+            1.5272039467737644e-206
+          ],
+          [
+            "ewma64_b0.15",
+            1.265890781352312e-209
+          ],
+          [
+            "freq200_b0.15",
+            4.292649815540348e-216
+          ],
+          [
+            "duegap_b0.15",
+            3.946806019739947e-216
+          ]
+        ],
+        "top30_total_mass": 0.00030525030525030514,
+        "uniform_top30_mass": 0.00030525030525030525,
+        "top30_mass_lift": 0.9999999999999997
+      }
+    }
+  }
+}

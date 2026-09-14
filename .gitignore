@@ -1,10 +1,15 @@
 __pycache__/
+.pytest_cache/
 *.pyc
-.venv/
-venv/
-.env
-*.pt
+*.pyo
 *.joblib
 *.pkl
-predictions/tmp/
-reports/tmp/
+.venv/
+venv/
+models/*
+!models/README.md
+runs/*
+!runs/README.md
+# Full rankings are regenerated and can exceed tens of MB
+*v249_full_ranking_98280.csv
+*_full_ranking_98280.csv

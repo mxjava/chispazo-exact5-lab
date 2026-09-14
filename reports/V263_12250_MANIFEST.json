@@ -1,0 +1,152 @@
+{
+  "schema": 263,
+  "engine": "CHISPAZO_V263_INTEGRITY_ISLAND_DRO",
+  "target": 12250,
+  "state": "HEALTHY_PARENT_ISLAND_RESCUE_READY",
+  "health": {
+    "schema": 263,
+    "engine": "CHISPAZO_V263_INTEGRITY_ISLAND_DRO",
+    "state": "PASS",
+    "production_allowed": true,
+    "universe": {
+      "status": "PASS",
+      "rows": 98280,
+      "duplicate_combos": 0,
+      "invalid_combos": 0,
+      "errors": []
+    },
+    "live_exact5_count": 5,
+    "required_live_exact5": 2,
+    "live_exact5": [
+      "score_ltr_ndcg_exact5",
+      "score_ltr_adv_exact5",
+      "score_ltr_exact5_balanced",
+      "score_ltr_exact5_hard",
+      "score_ltr_exact5_ultra"
+    ],
+    "live_support": [
+      "score_markov_exact5_residual",
+      "score_number_markov",
+      "score_number_knn",
+      "score_number_transition",
+      "score_heuristic"
+    ],
+    "exact5": {
+      "score_ltr_ndcg_exact5": {
+        "live": true,
+        "reason": "ok",
+        "finite_fraction": 1.0,
+        "unique": 98188,
+        "std": 0.9997889038451498,
+        "nonzero_fraction": 1.0,
+        "min": -1.0055935399582692,
+        "max": 6.0
+      },
+      "score_ltr_adv_exact5": {
+        "live": true,
+        "reason": "ok",
+        "finite_fraction": 1.0,
+        "unique": 98188,
+        "std": 0.99978890384515,
+        "nonzero_fraction": 1.0,
+        "min": -1.0055935399582694,
+        "max": 6.0
+      },
+      "score_ltr_exact5_balanced": {
+        "live": true,
+        "reason": "ok",
+        "finite_fraction": 1.0,
+        "unique": 98188,
+        "std": 0.99978890384515,
+        "nonzero_fraction": 1.0,
+        "min": -1.0055935399582694,
+        "max": 6.0
+      },
+      "score_ltr_exact5_hard": {
+        "live": true,
+        "reason": "ok",
+        "finite_fraction": 1.0,
+        "unique": 98188,
+        "std": 0.99978890384515,
+        "nonzero_fraction": 1.0,
+        "min": -1.0055935399582694,
+        "max": 6.0
+      },
+      "score_ltr_exact5_ultra": {
+        "live": true,
+        "reason": "ok",
+        "finite_fraction": 1.0,
+        "unique": 98188,
+        "std": 0.99978890384515,
+        "nonzero_fraction": 1.0,
+        "min": -1.0055935399582694,
+        "max": 6.0
+      }
+    },
+    "support": {
+      "score_markov_exact5_residual": {
+        "live": true,
+        "reason": "ok",
+        "finite_fraction": 1.0,
+        "unique": 98262,
+        "std": 0.9999921872040204,
+        "nonzero_fraction": 1.0,
+        "min": -1.4513621051496557,
+        "max": 6.0
+      },
+      "score_number_markov": {
+        "live": true,
+        "reason": "ok",
+        "finite_fraction": 1.0,
+        "unique": 98031,
+        "std": 1.0,
+        "nonzero_fraction": 1.0,
+        "min": -3.936941789264996,
+        "max": 2.8779366741216976
+      },
+      "score_number_knn": {
+        "live": true,
+        "reason": "ok",
+        "finite_fraction": 1.0,
+        "unique": 98085,
+        "std": 1.0,
+        "nonzero_fraction": 1.0,
+        "min": -3.433654813521729,
+        "max": 3.384030407573188
+      },
+      "score_number_transition": {
+        "live": true,
+        "reason": "ok",
+        "finite_fraction": 1.0,
+        "unique": 98280,
+        "std": 1.0,
+        "nonzero_fraction": 1.0,
+        "min": -3.464003389112771,
+        "max": 3.5657524221057333
+      },
+      "score_heuristic": {
+        "live": true,
+        "reason": "ok",
+        "finite_fraction": 1.0,
+        "unique": 98205,
+        "std": 1.0,
+        "nonzero_fraction": 1.0,
+        "min": -3.8500411258633673,
+        "max": 3.550905525455764
+      }
+    },
+    "ranking_path": "/mnt/data/v264_parent_repair/v249_full_ranking_98280.csv",
+    "ranking_sha256": "94c20caf8fcb35eca9f8b83680d09d9d77ff439cdb9282f52d9333631e87ef22",
+    "target": 12250
+  },
+  "island_meta": {
+    "pool_size": 12150,
+    "parent_head_rank": 500,
+    "exact5_island_rank": 2500,
+    "support_island_rank": 1250,
+    "disagreement_quantile": 0.02,
+    "outside_parent_head": 11650,
+    "max_parent_rank_in_pool": 98198
+  },
+  "statement": "Feed this expanded eligibility pool to V262/DRO. Islands do not change calibrated probabilities; they prevent head-only truncation from excluding specialist-supported alternatives."
+}

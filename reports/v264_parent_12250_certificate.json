@@ -1,0 +1,444 @@
+{
+  "engine": "V249 Coverage-Constrained Anti-Saturation Exact5 + Statistical/Prospective Evidence",
+  "target": 12250,
+  "history_last": 12249,
+  "production_strategy": "v249_coverage_constrained_portfolio",
+  "production_weights": {
+    "heuristic": 1.0
+  },
+  "production_allocation": {
+    "v241_fusion": 30
+  },
+  "production_gate": {},
+  "gate_config": {
+    "min_history": 60,
+    "prob_floor": 0.64,
+    "delta_floor": 1.0,
+    "secondary_prob_floor": 0.7,
+    "restricted_prob_floor": 0.84
+  },
+  "walkforward": null,
+  "frozen_selected_strategy": null,
+  "realized_diagnostic": null,
+  "decision": "NO_DECISION",
+  "confidence": 5,
+  "reason": "No hubo validación.",
+  "statistical_evidence": {
+    "evidence_class": "historical_exploratory",
+    "warning": "P-values históricos no son confirmatorios debido a iteración de modelos y researcher degrees of freedom. La confirmación requiere forward test pre-registrado.",
+    "prospective_power_exact5": [
+      {
+        "lift": 2.0,
+        "p0": 0.00030525030525030525,
+        "p1": 0.0006105006105006105,
+        "required_trials_80pct_power": 31502,
+        "critical_hits": 16,
+        "achieved_power": 0.8000078065765848
+      },
+      {
+        "lift": 3.0,
+        "p0": 0.00030525030525030525,
+        "p1": 0.0009157509157509158,
+        "required_trials_80pct_power": 9909,
+        "critical_hits": 7,
+        "achieved_power": 0.8000176743987737
+      },
+      {
+        "lift": 5.0,
+        "p0": 0.00030525030525030525,
+        "p1": 0.0015262515262515263,
+        "required_trials_80pct_power": 3613,
+        "critical_hits": 4,
+        "achieved_power": 0.8001374735420366
+      },
+      {
+        "lift": 10.0,
+        "p0": 0.00030525030525030525,
+        "p1": 0.0030525030525030525,
+        "required_trials_80pct_power": 980,
+        "critical_hits": 2,
+        "achieved_power": 0.800028529843773
+      }
+    ],
+    "multiple_strategy_tests": []
+  },
+  "prospective_registration": null,
+  "multiple_testing": {
+    "method": "holm",
+    "alpha": 0.05,
+    "lookback": 300
+  },
+  "v248_adversarial": {
+    "sources": [
+      "ltr_adv_exact5",
+      "ltr_ndcg_exact5",
+      "v241_fusion",
+      "binary",
+      "heuristic"
+    ],
+    "per_source": 32,
+    "max_per_target": 160,
+    "memory": 300,
+    "production_adv_rows": 0,
+    "production_query_rows": 0
+  },
+  "v248_sampler": {
+    "arms": {
+      "balanced": [
+        0.45,
+        0.35,
+        0.2
+      ],
+      "hard": [
+        0.65,
+        0.25,
+        0.1
+      ],
+      "ultra": [
+        0.85,
+        0.15,
+        0.0
+      ]
+    },
+    "negatives": 135,
+    "arm_seeds": 2,
+    "sampler_bank_targets": 300,
+    "production_meta": {
+      "balanced": {
+        "rows": 18300,
+        "adv_rows": 0,
+        "models": 1,
+        "mix": [
+          0.45,
+          0.35,
+          0.2
+        ]
+      },
+      "hard": {
+        "rows": 18300,
+        "adv_rows": 0,
+        "models": 1,
+        "mix": [
+          0.65,
+          0.25,
+          0.1
+        ]
+      },
+      "ultra": {
+        "rows": 18300,
+        "adv_rows": 0,
+        "models": 1,
+        "mix": [
+          0.85,
+          0.15,
+          0.0
+        ]
+      }
+    }
+  },
+  "v249": {
+    "state_dir": "/mnt/data/v264_parent_repair/models/state_v249",
+    "snapshot": "/mnt/data/v264_parent_repair/models/state_v249/snapshots/target_12250.joblib",
+    "residual_strategy": "markov_exact5_residual",
+    "coverage_config": {
+      "candidate_depth": 1000,
+      "max_candidate_depth": 5000,
+      "lock_top": 3,
+      "reference_quantile": 0.9995,
+      "quality_weight": 0.78,
+      "diversity_weight": 0.22,
+      "redundancy_penalty": 0.1,
+      "milp_time_limit": 5.0,
+      "milp_rel_gap": 0.002
+    },
+    "coverage_detail": {
+      "reference_limits": {
+        "reference": "uniform_without_replacement_hypergeometric_familywise",
+        "quantile": 0.9995,
+        "lines": 30,
+        "max_number_count": 15,
+        "max_pair_count": 7,
+        "max_triple_count": 4,
+        "max_overlap_ge4": 2,
+        "max_overlap_ge3": 5,
+        "expected_number_count": 5.357142857142857,
+        "expected_pair_count": 0.7936507936507936,
+        "expected_triple_count": 0.09157509157509157,
+        "number_family_size": 28,
+        "pair_family_size": 378,
+        "triple_family_size": 3276,
+        "expected_overlap_last_mean": 0.8928571428571429,
+        "p_overlap_ge4_single": 0.0011803011803011804,
+        "p_overlap_ge3_single": 0.026923076923076925
+      },
+      "effective_limits": {
+        "reference": "uniform_without_replacement_hypergeometric_familywise",
+        "quantile": 0.9995,
+        "lines": 30,
+        "max_number_count": 15,
+        "max_pair_count": 7,
+        "max_triple_count": 4,
+        "max_overlap_ge4": 2,
+        "max_overlap_ge3": 5,
+        "expected_number_count": 5.357142857142857,
+        "expected_pair_count": 0.7936507936507936,
+        "expected_triple_count": 0.09157509157509157,
+        "number_family_size": 28,
+        "pair_family_size": 378,
+        "triple_family_size": 3276,
+        "expected_overlap_last_mean": 0.8928571428571429,
+        "p_overlap_ge4_single": 0.0011803011803011804,
+        "p_overlap_ge3_single": 0.026923076923076925
+      },
+      "source_caps": {
+        "v241_fusion": 30
+      },
+      "source_counts": {
+        "v241_fusion": 30
+      },
+      "raw_top30_audit": {
+        "lines": 30,
+        "unique_lines": 30,
+        "unique_numbers": 13,
+        "number_counts": {
+          "1": 1,
+          "2": 0,
+          "3": 6,
+          "4": 18,
+          "5": 16,
+          "6": 14,
+          "7": 10,
+          "8": 0,
+          "9": 0,
+          "10": 20,
+          "11": 0,
+          "12": 0,
+          "13": 2,
+          "14": 22,
+          "15": 8,
+          "16": 0,
+          "17": 0,
+          "18": 0,
+          "19": 1,
+          "20": 0,
+          "21": 0,
+          "22": 2,
+          "23": 30,
+          "24": 0,
+          "25": 0,
+          "26": 0,
+          "27": 0,
+          "28": 0
+        },
+        "max_number_count": 30,
+        "max_number_share": 1.0,
+        "number_entropy_normalized": 0.6704717544250652,
+        "overlap_last_mean": 1.1,
+        "overlap_last_distribution": {
+          "0": 4,
+          "1": 19,
+          "2": 7,
+          "3": 0,
+          "4": 0,
+          "5": 0
+        },
+        "overlap_ge3": 0,
+        "overlap_ge4": 0,
+        "exact_repeat_last": 0,
+        "max_pair_count": 22,
+        "max_triple_count": 12,
+        "max_quad_count": 7,
+        "unique_pairs": 54,
+        "unique_triples": 102,
+        "unique_quads": 90,
+        "limits": {
+          "reference": "uniform_without_replacement_hypergeometric_familywise",
+          "quantile": 0.9995,
+          "lines": 30,
+          "max_number_count": 15,
+          "max_pair_count": 7,
+          "max_triple_count": 4,
+          "max_overlap_ge4": 2,
+          "max_overlap_ge3": 5,
+          "expected_number_count": 5.357142857142857,
+          "expected_pair_count": 0.7936507936507936,
+          "expected_triple_count": 0.09157509157509157,
+          "number_family_size": 28,
+          "pair_family_size": 378,
+          "triple_family_size": 3276,
+          "expected_overlap_last_mean": 0.8928571428571429,
+          "p_overlap_ge4_single": 0.0011803011803011804,
+          "p_overlap_ge3_single": 0.026923076923076925
+        },
+        "passes_number_limit": false,
+        "passes_pair_limit": false,
+        "passes_triple_limit": false,
+        "passes_overlap_ge3_limit": true,
+        "passes_overlap_ge4_limit": true,
+        "passes_all_hard_limits": false
+      },
+      "v249_portfolio_audit": {
+        "lines": 30,
+        "unique_lines": 30,
+        "unique_numbers": 18,
+        "number_counts": {
+          "1": 3,
+          "2": 0,
+          "3": 8,
+          "4": 14,
+          "5": 15,
+          "6": 14,
+          "7": 15,
+          "8": 2,
+          "9": 0,
+          "10": 15,
+          "11": 0,
+          "12": 0,
+          "13": 5,
+          "14": 15,
+          "15": 10,
+          "16": 1,
+          "17": 1,
+          "18": 0,
+          "19": 3,
+          "20": 0,
+          "21": 0,
+          "22": 9,
+          "23": 15,
+          "24": 2,
+          "25": 0,
+          "26": 0,
+          "27": 3,
+          "28": 0
+        },
+        "max_number_count": 15,
+        "max_number_share": 0.5,
+        "number_entropy_normalized": 0.7891757128675894,
+        "overlap_last_mean": 1.0666666666666667,
+        "overlap_last_distribution": {
+          "0": 1,
+          "1": 26,
+          "2": 3,
+          "3": 0,
+          "4": 0,
+          "5": 0
+        },
+        "overlap_ge3": 0,
+        "overlap_ge4": 0,
+        "exact_repeat_last": 0,
+        "max_pair_count": 7,
+        "max_triple_count": 4,
+        "max_quad_count": 3,
+        "unique_pairs": 86,
+        "unique_triples": 161,
+        "unique_quads": 120,
+        "limits": {
+          "reference": "uniform_without_replacement_hypergeometric_familywise",
+          "quantile": 0.9995,
+          "lines": 30,
+          "max_number_count": 15,
+          "max_pair_count": 7,
+          "max_triple_count": 4,
+          "max_overlap_ge4": 2,
+          "max_overlap_ge3": 5,
+          "expected_number_count": 5.357142857142857,
+          "expected_pair_count": 0.7936507936507936,
+          "expected_triple_count": 0.09157509157509157,
+          "number_family_size": 28,
+          "pair_family_size": 378,
+          "triple_family_size": 3276,
+          "expected_overlap_last_mean": 0.8928571428571429,
+          "p_overlap_ge4_single": 0.0011803011803011804,
+          "p_overlap_ge3_single": 0.026923076923076925
+        },
+        "passes_number_limit": true,
+        "passes_pair_limit": true,
+        "passes_triple_limit": true,
+        "passes_overlap_ge3_limit": true,
+        "passes_overlap_ge4_limit": true,
+        "passes_all_hard_limits": true
+      },
+      "saturation_audit": {
+        "primary_max_score": 10.499697475022773,
+        "primary_max_plateau_size": 1,
+        "unique_primary_scores_candidate_depth": 1000,
+        "anti_saturation_epsilon": 2.544747983113105e-06
+      },
+      "candidate_depth_requested": 1000,
+      "candidate_depth_used": 1000,
+      "max_candidate_depth": 5000,
+      "lock_top_requested": 3,
+      "lock_top_used": 3,
+      "hard_limits_relaxed": false,
+      "solver": {
+        "solver": "scipy.optimize.milp/HiGHS",
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "success": true,
+        "depth": 1000,
+        "variables": 1000,
+        "constraints": 3689,
+        "lock_top_requested": 3,
+        "locked_candidates": [
+          46008,
+          56403,
+          65048
+        ],
+        "elapsed_sec": 0.03652811050415039,
+        "objective_value": 13.356788118520612
+      },
+      "solver_attempts": [
+        {
+          "solver": "scipy.optimize.milp/HiGHS",
+          "status": 0,
+          "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+          "success": true,
+          "depth": 1000,
+          "variables": 1000,
+          "constraints": 3689,
+          "lock_top_requested": 3,
+          "locked_candidates": [
+            46008,
+            56403,
+            65048
+          ],
+          "elapsed_sec": 0.03652811050415039,
+          "objective_value": 13.356788118520612
+        }
+      ],
+      "coverage_config": {
+        "candidate_depth": 1000,
+        "max_candidate_depth": 5000,
+        "lock_top": 3,
+        "reference_quantile": 0.9995,
+        "quality_weight": 0.78,
+        "diversity_weight": 0.22,
+        "redundancy_penalty": 0.1,
+        "milp_time_limit": 5.0,
+        "milp_rel_gap": 0.002
+      }
+    },
+    "incremental": true
+  },
+  "persistence": {
+    "model_dir": "/mnt/data/v264_parent_repair/models",
+    "reused": false,
+    "status": "V249 model-core entrenado y guardado"
+  },
+  "audit": {
+    "status": "PASS",
+    "rows": 10887,
+    "min_concurso": 1363,
+    "max_concurso": 12249,
+    "target": 12250,
+    "expected_last": 12249,
+    "duplicates": 0,
+    "invalid_numbers": 0,
+    "repeated_inside_draw": 0,
+    "missing_count": 0,
+    "missing_sample": [],
+    "sha256": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "messages": []
+  },
+  "elapsed_sec": 103.24
+}
