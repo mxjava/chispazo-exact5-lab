@@ -5,6 +5,14 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 
+def sha256_file(path: Path | str) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def verify_registration_payload(reg: dict) -> bool:
     """Reject altered or structurally invalid prospective registrations before scoring."""
     if not isinstance(reg, dict):
@@ -62,15 +70,58 @@ def verify_registration_payload(reg: dict) -> bool:
     return hmac.compare_digest(claimed, hashlib.sha256(canonical).hexdigest())
 
 
+def verify_artifact_bindings(
+    reg: dict,
+    history_path: Path | str,
+    ranking_path: Path | str,
+    trusted_registration_sha256: str,
+) -> tuple[bool, str]:
+    """Bind supplied source artifacts to a registration pinned outside its JSON file."""
+    if not verify_registration_payload(reg):
+        return False, "registration schema or checksum verification failed"
+
+    if (not isinstance(trusted_registration_sha256, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", trusted_registration_sha256)):
+        return False, "trusted registration SHA-256 must be 64 lowercase hexadecimal characters"
+    if not hmac.compare_digest(reg["registration_sha256"], trusted_registration_sha256):
+        return False, "registration SHA-256 does not match the externally trusted value"
+
+    for name, path, key in (
+        ("history", history_path, "history_sha256"),
+        ("ranking", ranking_path, "ranking_sha256"),
+    ):
+        try:
+            actual = sha256_file(path)
+        except (OSError, TypeError, ValueError) as exc:
+            return False, f"{name} artifact cannot be read: {exc}"
+        if not hmac.compare_digest(actual, reg[key]):
+            return False, f"{name} artifact SHA-256 does not match the frozen registration"
+    return True, "registration and source artifact hashes verified"
+
+
 def main() -> int:
     ap=argparse.ArgumentParser()
     ap.add_argument("--registration",required=True)
+    ap.add_argument("--history",required=True, help="history file whose bytes were hashed at preflight")
+    ap.add_argument("--ranking",required=True, help="ranking file whose bytes were hashed at preflight")
+    ap.add_argument(
+        "--trusted-registration-sha256", required=True,
+        help="registration SHA-256 retained independently from the mutable registration file",
+    )
     ap.add_argument("--result",required=True,nargs=5,type=int)
     ap.add_argument("--out")
     a=ap.parse_args()
-    reg=json.loads(Path(a.registration).read_text(encoding="utf-8"))
+    try:
+        reg=json.loads(Path(a.registration).read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"invalid or unreadable prospective registration: {exc}") from exc
     if not verify_registration_payload(reg):
         raise SystemExit("invalid or tampered prospective registration: schema/checksum verification failed")
+    artifacts_ok, detail = verify_artifact_bindings(
+        reg, a.history, a.ranking, a.trusted_registration_sha256
+    )
+    if not artifacts_ok:
+        raise SystemExit(f"invalid prospective artifact integrity: {detail}")
     result=set(a.result)
     if len(result)!=5 or any(n<1 or n>28 for n in result):
         raise SystemExit("invalid result")
@@ -79,7 +130,16 @@ def main() -> int:
         s=set(int(x) for x in line.split("-"))
         scores.append({"combo":line,"hits":len(s & result)})
     scores.sort(key=lambda x:(-x["hits"],x["combo"]))
-    report={"target":reg["target"],"result":"-".join(f"{x:02d}" for x in sorted(result)),"best_hits":scores[0]["hits"],"exact5":sum(x["hits"]==5 for x in scores),"lines":scores}
+    report = {
+        "target": reg["target"],
+        "registration_sha256": reg["registration_sha256"],
+        "history_sha256": reg["history_sha256"],
+        "ranking_sha256": reg["ranking_sha256"],
+        "result": "-".join(f"{x:02d}" for x in sorted(result)),
+        "best_hits": scores[0]["hits"],
+        "exact5": sum(x["hits"] == 5 for x in scores),
+        "lines": scores,
+    }
     text=json.dumps(report,indent=2,ensure_ascii=False)
     print(text)
     if a.out: Path(a.out).write_text(text,encoding="utf-8")
