@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import math
+from decimal import Decimal, InvalidOperation
 import pandas as pd
 
 NUM_MIN = 1
@@ -58,6 +59,29 @@ def _contest_column(df: pd.DataFrame) -> str | None:
     return None
 
 
+def _decimal_value(value: Any) -> Decimal | None:
+    """Parse a CSV value without losing fractional digits to float rounding."""
+    if pd.isna(value):
+        return None
+    try:
+        return Decimal(str(value).strip())
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+
+
+def _is_finite(value: Decimal | None) -> bool:
+    return value is not None and value.is_finite()
+
+
+def _is_integer(value: Decimal | None) -> bool:
+    if not _is_finite(value):
+        return False
+    try:
+        return value == value.to_integral_value()
+    except (InvalidOperation, OverflowError, ValueError):
+        return False
+
+
 def validate_history(path: Path, target: int | None) -> tuple[list[Check], dict[str, Any]]:
     checks: list[Check] = []
     meta: dict[str, Any] = {"path": str(path)}
@@ -65,7 +89,9 @@ def validate_history(path: Path, target: int | None) -> tuple[list[Check], dict[
         return [Check("history_exists", "FAIL", str(path))], meta
     checks.append(Check("history_exists", "PASS", str(path)))
     try:
-        df = pd.read_csv(path)
+        # Keep numeric fields as text so values such as 1.00000000000000001
+        # cannot be rounded to 1.0 before the strict integer checks below.
+        df = pd.read_csv(path, dtype=str)
     except Exception as exc:
         checks.append(Check("history_readable", "FAIL", repr(exc)))
         return checks, meta
@@ -78,12 +104,28 @@ def validate_history(path: Path, target: int | None) -> tuple[list[Check], dict[
         checks.append(Check("contest_column", "FAIL", "missing concurso/contest/sorteo"))
         return checks, meta
 
-    contests = pd.to_numeric(df[cc], errors="coerce")
-    bad = int(contests.isna().sum())
-    checks.append(Check("contest_numeric", "PASS" if bad == 0 else "FAIL", f"invalid={bad}"))
-    if bad:
+    contest_values = df[cc].map(_decimal_value)
+    numeric_bad = int(contest_values.isna().sum())
+    finite = contest_values.map(_is_finite)
+    finite_bad = int((~finite).sum())
+    integer = contest_values.map(_is_integer)
+    integer_bad = int((~integer).sum())
+    positive = integer & contest_values.map(lambda value: value > 0 if value is not None and value.is_finite() else False)
+    positive_bad = int((~positive).sum())
+    checks.append(Check("contest_numeric", "PASS" if numeric_bad == 0 else "FAIL", f"invalid={numeric_bad}"))
+    checks.append(Check("contest_finite", "PASS" if finite_bad == 0 else "FAIL", f"invalid={finite_bad}"))
+    checks.append(Check("contest_integer", "PASS" if integer_bad == 0 else "FAIL", f"invalid={integer_bad}"))
+    checks.append(Check("contest_positive", "PASS" if positive_bad == 0 else "FAIL", f"invalid={positive_bad}"))
+    if numeric_bad or finite_bad or integer_bad or positive_bad:
         return checks, meta
-    contests = contests.astype(int)
+
+    try:
+        contests = pd.Series(
+            [int(value) for value in contest_values], index=df.index, dtype=object
+        )
+    except (OverflowError, ValueError, TypeError, MemoryError) as exc:
+        checks.append(Check("contest_integer", "FAIL", f"conversion_error={exc!r}"))
+        return checks, meta
     dup = int(contests.duplicated().sum())
     checks.append(Check("contest_unique", "PASS" if dup == 0 else "FAIL", f"duplicates={dup}"))
     cmin, cmax = int(contests.min()), int(contests.max())
@@ -102,11 +144,24 @@ def validate_history(path: Path, target: int | None) -> tuple[list[Check], dict[
     if len(ncols) != DRAW_SIZE:
         checks.append(Check("number_columns", "FAIL", f"detected={ncols}"))
         return checks, meta
-    vals = df[ncols].apply(pd.to_numeric, errors="coerce")
-    nulls = int(vals.isna().sum().sum())
-    out = int(((vals < NUM_MIN) | (vals > NUM_MAX)).sum().sum())
-    repeated_inside = int(sum(len(set(row.dropna().astype(int))) != DRAW_SIZE for _, row in vals.iterrows()))
-    checks.append(Check("numbers_numeric", "PASS" if nulls == 0 else "FAIL", f"invalid_cells={nulls}"))
+    vals = df[ncols].apply(lambda column: column.map(_decimal_value))
+    numeric_bad = int(vals.isna().sum().sum())
+    finite = vals.apply(lambda column: column.map(_is_finite))
+    finite_bad = int((~finite).sum().sum())
+    integer = vals.apply(lambda column: column.map(_is_integer))
+    integer_bad = int((~integer).sum().sum())
+    out = int(vals.apply(lambda column: column.map(
+        lambda value: value.is_finite() and not NUM_MIN <= value <= NUM_MAX
+        if value is not None else False
+    )).sum().sum())
+    repeated_inside = int(sum(
+        len([value for value in row if value is not None and value.is_finite()]) != DRAW_SIZE
+        or len(set(value for value in row if value is not None and value.is_finite())) != DRAW_SIZE
+        for _, row in vals.iterrows()
+    ))
+    checks.append(Check("numbers_numeric", "PASS" if numeric_bad == 0 else "FAIL", f"invalid_cells={numeric_bad}"))
+    checks.append(Check("numbers_finite", "PASS" if finite_bad == 0 else "FAIL", f"invalid_cells={finite_bad}"))
+    checks.append(Check("numbers_integer", "PASS" if integer_bad == 0 else "FAIL", f"invalid_cells={integer_bad}"))
     checks.append(Check("numbers_range_1_28", "PASS" if out == 0 else "FAIL", f"out_of_range={out}"))
     checks.append(Check("five_unique_numbers", "PASS" if repeated_inside == 0 else "FAIL", f"bad_rows={repeated_inside}"))
 
