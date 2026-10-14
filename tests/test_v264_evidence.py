@@ -34,6 +34,7 @@ def test_v264_oos_no_holm_approved_depth():
     ('not-a-rank', 'finite numeric integers'),
     ('inf', 'finite numeric integers'),
     ('-inf', 'finite numeric integers'),
+    ('NaN', 'finite numeric integers'),
     ('30.9', 'must be integers'),
     ('30.00000000000000001', 'must be integers'),
     ('0', 'between 1 and 98280'),
