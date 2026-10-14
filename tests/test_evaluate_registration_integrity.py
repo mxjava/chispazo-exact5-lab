@@ -36,7 +36,7 @@ def test_wrong_target_history_binding_fails_with_recomputed_checksum():
 
 @pytest.mark.parametrize(("target", "history_max"), [
     (2, True), (1, False), (2, "1"), (2, 1.5), (2, 1.0),
-    (2, -1), (2, 0), (2, 2), (2, 3),
+    (2, -1), (2, 0), (2, 2), (2, 3), (1, 0),
 ])
 def test_invalid_history_max_types_and_values_fail_with_recomputed_checksum(target, history_max):
     p=fixture(); p["target"]=target; p["history_max"]=history_max
