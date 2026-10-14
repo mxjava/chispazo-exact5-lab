@@ -1,6 +1,7 @@
 from pathlib import Path
 import pandas as pd
 import pytest
+from src.validation import preflight_v2
 from src.validation.preflight_v2 import validate_history, validate_ranking, EXACT5_UNIVERSE
 
 
@@ -75,9 +76,41 @@ def test_history_requires_target_minus_one(tmp_path: Path):
     checks,_=validate_history(p,103)
     m={c.name:c.status for c in checks}
     assert m['history_ends_at_target_minus_1']=='PASS'
+    assert m['contest_contiguous']=='PASS'
+    assert m['no_future_leakage']=='PASS'
     checks,_=validate_history(p,104)
     m={c.name:c.status for c in checks}
     assert m['history_ends_at_target_minus_1']=='FAIL'
+
+
+def test_history_rejects_gaps_while_preserving_target_boundary_checks(tmp_path: Path):
+    p=tmp_path/'gapped_history.csv'
+    pd.DataFrame({
+        'CONCURSO':[1,3,4],
+        'R1':[1,1,1], 'R2':[2,2,2], 'R3':[3,3,3], 'R4':[4,4,4], 'R5':[5,5,5],
+    }).to_csv(p,index=False)
+
+    checks,_=validate_history(p,5)
+    statuses={check.name:check.status for check in checks}
+
+    assert statuses['contest_contiguous']=='FAIL'
+    assert statuses['no_future_leakage']=='PASS'
+    assert statuses['history_ends_at_target_minus_1']=='PASS'
+
+
+def test_v266_invalid_contest_id_blocks_preflight_even_when_other_gates_pass(tmp_path: Path, monkeypatch):
+    p=tmp_path/'invalid_contest.csv'
+    _write_history(p,contest='-1')
+    passing_check=[preflight_v2.Check('test_gate','PASS','valid control')]
+    monkeypatch.setattr(preflight_v2,'validate_ranking',lambda path:(passing_check,{}))
+    monkeypatch.setattr(preflight_v2,'validate_evidence',lambda firewall,exactset:(passing_check,{}))
+
+    report=preflight_v2.run(p,2)
+    statuses={check['name']:check['status'] for check in report['checks']}
+
+    assert statuses['contest_positive']=='FAIL'
+    assert all(check['status']=='PASS' for check in report['checks'] if check['name']!='contest_positive')
+    assert report['state']=='BLOCKED'
 
 
 def test_ranking_rejects_partial_universe(tmp_path: Path):
