@@ -14,8 +14,9 @@ def publish_immutable_registration(dest: Path, serialized: str) -> None:
     """Atomically publish a complete registration without replacing an existing target.
 
     The staged file is fsynced first. A same-directory hard link is an atomic
-    no-replace publication on supported local filesystems, closing the race
-    between an earlier ``dest.exists()`` check and the actual write.
+    no-replace publication on supported local filesystems. On Windows, where
+    hard links can be unavailable to the process, same-directory ``os.rename``
+    provides atomic no-replace publication as well.
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
     fd, temp_name = tempfile.mkstemp(
@@ -30,6 +31,15 @@ def publish_immutable_registration(dest: Path, serialized: str) -> None:
             os.link(temp_name, dest)
         except FileExistsError as exc:
             raise SystemExit(f"Immutable registration already exists: {dest}") from exc
+        except OSError:
+            if os.name != "nt":
+                raise
+            try:
+                # Windows rename fails atomically if dest already exists. The
+                # source is staged beside dest, so this cannot cross volumes.
+                os.rename(temp_name, dest)
+            except FileExistsError as exc:
+                raise SystemExit(f"Immutable registration already exists: {dest}") from exc
         # Persist the directory entry where directory fsync is supported.
         if os.name == "posix":
             dir_fd = os.open(dest.parent, os.O_RDONLY)

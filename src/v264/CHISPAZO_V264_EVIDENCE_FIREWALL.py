@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 import argparse, json, math
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import numpy as np, pandas as pd
 from scipy.stats import binomtest
@@ -28,9 +29,27 @@ def health(ranking):
     return d,out,live
 
 def evidence(meta):
-    d=pd.read_csv(meta); tests=[]; summaries=[]
+    d=pd.read_csv(meta,dtype=str); tests=[]; summaries=[]
+    required={'strategy','exact_rank'}
+    missing=required.difference(d.columns)
+    if missing:
+        raise ValueError(f"metadata missing required columns: {sorted(missing)}")
+    ranks=[]
+    for raw in d['exact_rank']:
+        try:
+            rank=Decimal(str(raw).strip()) if not pd.isna(raw) else None
+        except (InvalidOperation, TypeError, ValueError):
+            rank=None
+        if rank is None or not rank.is_finite():
+            raise ValueError("exact_rank must contain finite numeric integers")
+        if rank != rank.to_integral_value():
+            raise ValueError("exact_rank values must be integers")
+        if rank<1 or rank>U:
+            raise ValueError(f"exact_rank values must be between 1 and {U}")
+        ranks.append(int(rank))
+    d=d.copy(); d['exact_rank']=np.asarray(ranks,dtype=np.int64)
     for st,g in d.groupby('strategy'):
-        r=g.exact_rank.to_numpy(int); n=len(r)
+        r=g.exact_rank.to_numpy(dtype=np.int64); n=len(r)
         sm={'strategy':st,'n':n,'mean_rank':float(r.mean()),'median_rank':float(np.median(r))}
         for dep in DEPTHS:
             k=int(np.sum(r<=dep)); p0=dep/U
