@@ -15,7 +15,9 @@ def verify_registration_payload(reg: dict) -> bool:
     target = reg.get("target")
     if isinstance(target, bool) or not isinstance(target, int) or target <= 0:
         return False
-    if reg.get("history_max") != target - 1 or reg.get("preflight_state") != "PASS":
+    history_max = reg.get("history_max")
+    if (isinstance(history_max, bool) or not isinstance(history_max, int)
+            or history_max != target - 1 or reg.get("preflight_state") != "PASS"):
         return False
     if not isinstance(reg.get("model_version"), str) or not reg["model_version"].strip():
         return False
