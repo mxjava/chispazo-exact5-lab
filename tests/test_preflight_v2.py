@@ -37,6 +37,7 @@ def test_history_rejects_invalid_contest_ids_from_csv(tmp_path: Path, contest, f
 @pytest.mark.parametrize(('numbers', 'failed_check'), [
     ((None, '2', '3', '4', '5'), 'numbers_numeric'),
     (('not-a-number', '2', '3', '4', '5'), 'numbers_numeric'),
+    (('NaN', '2', '3', '4', '5'), 'numbers_numeric'),
     (('Infinity', '2', '3', '4', '5'), 'numbers_finite'),
     (('-Infinity', '2', '3', '4', '5'), 'numbers_finite'),
     (('1.5', '2', '3', '4', '5'), 'numbers_integer'),
@@ -110,6 +111,21 @@ def test_v266_invalid_contest_id_blocks_preflight_even_when_other_gates_pass(tmp
 
     assert statuses['contest_positive']=='FAIL'
     assert all(check['status']=='PASS' for check in report['checks'] if check['name']!='contest_positive')
+    assert report['state']=='BLOCKED'
+
+
+def test_v266_invalid_draw_number_blocks_preflight_even_when_other_gates_pass(tmp_path: Path, monkeypatch):
+    p=tmp_path/'invalid_draw.csv'
+    _write_history(p,contest='1',numbers=('1.5','2','3','4','5'))
+    passing_check=[preflight_v2.Check('test_gate','PASS','valid control')]
+    monkeypatch.setattr(preflight_v2,'validate_ranking',lambda path:(passing_check,{}))
+    monkeypatch.setattr(preflight_v2,'validate_evidence',lambda firewall,exactset:(passing_check,{}))
+
+    report=preflight_v2.run(p,2)
+    critical=[check for check in report['checks'] if check['critical']]
+
+    assert next(check['status'] for check in critical if check['name']=='numbers_integer')=='FAIL'
+    assert not all(check['status']=='PASS' for check in critical)
     assert report['state']=='BLOCKED'
 
 
