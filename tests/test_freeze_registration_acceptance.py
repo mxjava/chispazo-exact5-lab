@@ -71,6 +71,12 @@ def test_stale_history_is_rejected(tmp_path):
     assert result.returncode != 0 and "target-1" in result.stderr
 
 
+def test_registration_without_a_positive_historical_prefix_is_rejected(tmp_path):
+    result = _run(tmp_path, target=1, pre_target=1, history_max=0)
+    assert result.returncode != 0, "target 1 with history_max 0 must not be frozen"
+    assert not (tmp_path / "ledger" / "target_1.json").exists()
+
+
 def test_short_commit_sha_is_rejected(tmp_path):
     result = _run(tmp_path, sha="deadbeef")
     assert result.returncode != 0 and "40-character" in result.stderr

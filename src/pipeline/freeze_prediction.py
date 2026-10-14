@@ -92,7 +92,8 @@ def verify_registration_payload(payload: dict) -> bool:
     if isinstance(target, bool) or not isinstance(target, int) or target <= 0:
         return False
     history_max = payload.get("history_max")
-    if isinstance(history_max, bool) or not isinstance(history_max, int) or history_max != target - 1:
+    if (isinstance(history_max, bool) or not isinstance(history_max, int)
+            or history_max <= 0 or history_max != target - 1):
         return False
     commit_sha = payload.get("commit_sha")
     if not isinstance(commit_sha, str) or not re.fullmatch(r"[0-9a-f]{40}", commit_sha):
@@ -185,7 +186,9 @@ def main() -> int:
     if pre.get("target") != a.target:
         raise SystemExit(f"Refusing freeze: preflight target={pre.get('target')} does not match requested target={a.target}")
     history_meta=pre.get("inputs",{}).get("history",{})
-    if history_meta.get("contest_max") != a.target - 1:
+    history_max = history_meta.get("contest_max")
+    if (isinstance(history_max, bool) or not isinstance(history_max, int)
+            or history_max <= 0 or history_max != a.target - 1):
         raise SystemExit(f"Refusing freeze: history_max={history_meta.get('contest_max')} must equal target-1={a.target-1}")
     lines=normalize_lines(pd.read_csv(a.portfolio))
     ledger=Path(a.ledger_dir); ledger.mkdir(parents=True,exist_ok=True)
@@ -206,7 +209,7 @@ def main() -> int:
       "registered_at_mexico_city":registered_at_mexico_city.isoformat(),
       "commit_sha":verified_head,
       "model_version":a.model_version,
-      "history_max":history_meta.get("contest_max"),
+      "history_max":history_max,
       "history_sha256":history_meta.get("sha256"),
       "ranking_sha256":pre.get("inputs",{}).get("ranking",{}).get("sha256"),
       "preflight_state":"PASS",
