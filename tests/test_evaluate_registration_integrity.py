@@ -1,6 +1,10 @@
-import hashlib, json
+import hashlib, json, subprocess, sys
+from pathlib import Path
 import pytest
 from src.pipeline.evaluate_registration import verify_registration_payload
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "src" / "pipeline" / "evaluate_registration.py"
 
 
 def fixture():
@@ -62,3 +66,45 @@ def test_registration_verifier_rejects_mismatched_timestamp_instants():
         json.dumps(p, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     ).hexdigest()
     assert not verify_registration_payload(p)
+
+
+def test_evaluator_rejects_duplicate_json_keys_even_with_valid_payload_checksum(tmp_path):
+    p = fixture()
+    raw = json.dumps(p, separators=(",", ":"))
+    raw = raw.replace('"target":12250', '"target":999,"target":12250', 1)
+    registration = tmp_path / "ambiguous-registration.json"
+    registration.write_text(raw, encoding="utf-8")
+
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--registration", str(registration),
+         "--result", "1", "2", "3", "4", "5"],
+        capture_output=True, text=True,
+    )
+
+    assert result.returncode != 0
+    assert "duplicate" in result.stderr.lower()
+
+
+def test_evaluator_reads_a_valid_registration_file(tmp_path):
+    registration = tmp_path / "registration.json"
+    registration.write_text(json.dumps(fixture()), encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--registration", str(registration),
+         "--result", "1", "2", "3", "4", "5"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)["target"] == 12250
+
+
+def test_evaluator_rejects_truncated_registration_without_traceback(tmp_path):
+    registration = tmp_path / "truncated-registration.json"
+    registration.write_text('{"target":', encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--registration", str(registration),
+         "--result", "1", "2", "3", "4", "5"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode != 0
+    assert "invalid JSON" in result.stderr
+    assert "Traceback" not in result.stderr

@@ -4,6 +4,11 @@ import argparse, hashlib, hmac, json, re
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
+if __package__:
+    from .strict_json import load_json_object
+else:
+    from strict_json import load_json_object
+
 
 def verify_registration_payload(reg: dict) -> bool:
     """Reject altered or structurally invalid prospective registrations before scoring."""
@@ -67,7 +72,10 @@ def main() -> int:
     ap.add_argument("--result",required=True,nargs=5,type=int)
     ap.add_argument("--out")
     a=ap.parse_args()
-    reg=json.loads(Path(a.registration).read_text(encoding="utf-8"))
+    try:
+        reg = load_json_object(a.registration)
+    except ValueError as exc:
+        raise SystemExit(f"invalid or tampered prospective registration: {exc}") from exc
     if not verify_registration_payload(reg):
         raise SystemExit("invalid or tampered prospective registration: schema/checksum verification failed")
     result=set(a.result)

@@ -5,6 +5,11 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import pandas as pd
 
+if __package__:
+    from .strict_json import load_json_object
+else:
+    from strict_json import load_json_object
+
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -179,7 +184,10 @@ def main() -> int:
         verified_head = verify_commit_binding(a.commit_sha, a.repo_root)
     except ValueError as exc:
         raise SystemExit(f"Refusing freeze: {exc}") from exc
-    pre=json.loads(Path(a.preflight).read_text(encoding="utf-8"))
+    try:
+        pre = load_json_object(a.preflight)
+    except ValueError as exc:
+        raise SystemExit(f"Refusing freeze: invalid preflight JSON: {exc}") from exc
     if pre.get("state")!="PASS":
         raise SystemExit("Refusing freeze: preflight state is not PASS")
     if pre.get("target") != a.target:

@@ -38,8 +38,14 @@ def _repo(tmp_path):
     return repo, sha
 
 
-def _run(tmp_path, *, target=12311, pre_target=12311, history_max=12310, state="PASS", sha=None):
+def _run(tmp_path, *, target=12311, pre_target=12311, history_max=12310, state="PASS", sha=None,
+         duplicate_preflight_state=False, malformed_preflight=False):
     portfolio, preflight = _inputs(tmp_path, target=pre_target, history_max=history_max, state=state)
+    if malformed_preflight:
+        preflight.write_text('{"state":', encoding="utf-8")
+    elif duplicate_preflight_state:
+        raw = preflight.read_text(encoding="utf-8")
+        preflight.write_text(raw.replace('"state": "PASS"', '"state": "BLOCKED", "state": "PASS"', 1), encoding="utf-8")
     repo, head_sha = _repo(tmp_path)
     return subprocess.run([
         sys.executable, str(SCRIPT), "--target", str(target), "--portfolio", str(portfolio),
@@ -69,6 +75,21 @@ def test_wrong_target_is_rejected(tmp_path):
 def test_stale_history_is_rejected(tmp_path):
     result = _run(tmp_path, history_max=12309)
     assert result.returncode != 0 and "target-1" in result.stderr
+
+
+def test_freezer_rejects_duplicate_preflight_keys(tmp_path):
+    result = _run(tmp_path, duplicate_preflight_state=True)
+    assert result.returncode != 0
+    assert "duplicate" in result.stderr.lower()
+    assert not (tmp_path / "ledger" / "target_12311.json").exists()
+
+
+def test_freezer_rejects_truncated_preflight_without_traceback(tmp_path):
+    result = _run(tmp_path, malformed_preflight=True)
+    assert result.returncode != 0
+    assert "invalid preflight JSON" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not (tmp_path / "ledger" / "target_12311.json").exists()
 
 
 def test_short_commit_sha_is_rejected(tmp_path):
