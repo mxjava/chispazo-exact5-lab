@@ -1,5 +1,6 @@
 import json, sys
 from pathlib import Path
+import pytest
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"src"/"pipeline"))
 from freeze_prediction import sha256_bytes, verify_registration_payload
@@ -51,6 +52,14 @@ def test_noncanonical_or_out_of_range_line_rejected():
 
 def test_wrong_history_max_rejected_even_with_valid_checksum():
     p=valid_payload(); p["history_max"]-=1; rehash(p)
+    assert not verify_registration_payload(p)
+
+@pytest.mark.parametrize(("target", "history_max"), [
+    (2, True), (1, False), (2, "1"), (2, 1.5), (2, 1.0),
+    (2, -1), (2, 0), (2, 2), (2, 3),
+])
+def test_invalid_history_max_types_and_values_rejected_with_valid_checksum(target, history_max):
+    p=valid_payload(); p["target"]=target; p["history_max"]=history_max; rehash(p)
     assert not verify_registration_payload(p)
 
 def test_missing_hash_metadata_rejected():

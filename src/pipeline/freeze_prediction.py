@@ -91,7 +91,8 @@ def verify_registration_payload(payload: dict) -> bool:
     target = payload.get("target")
     if isinstance(target, bool) or not isinstance(target, int) or target <= 0:
         return False
-    if payload.get("history_max") != target - 1:
+    history_max = payload.get("history_max")
+    if isinstance(history_max, bool) or not isinstance(history_max, int) or history_max != target - 1:
         return False
     commit_sha = payload.get("commit_sha")
     if not isinstance(commit_sha, str) or not re.fullmatch(r"[0-9a-f]{40}", commit_sha):

@@ -1,4 +1,5 @@
 import hashlib, json
+import pytest
 from src.pipeline.evaluate_registration import verify_registration_payload
 
 
@@ -32,6 +33,16 @@ def test_wrong_target_history_binding_fails_with_recomputed_checksum():
     p["registration_sha256"]=hashlib.sha256(json.dumps(p,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()).hexdigest()
     assert not verify_registration_payload(p)
 
+
+@pytest.mark.parametrize(("target", "history_max"), [
+    (2, True), (1, False), (2, "1"), (2, 1.5), (2, 1.0),
+    (2, -1), (2, 0), (2, 2), (2, 3),
+])
+def test_invalid_history_max_types_and_values_fail_with_recomputed_checksum(target, history_max):
+    p=fixture(); p["target"]=target; p["history_max"]=history_max
+    p.pop("registration_sha256")
+    p["registration_sha256"]=hashlib.sha256(json.dumps(p,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()).hexdigest()
+    assert not verify_registration_payload(p)
 
 def test_missing_checksum_fails():
     p=fixture(); p.pop("registration_sha256")
