@@ -60,22 +60,46 @@ def _invalidate_output(path: Path | str | None, inputs: tuple[Path | str, ...]) 
 
 def _write_report_atomically(path: Path, text: str) -> None:
     """Publish a complete report at the requested output path."""
-    fd, temp_name = tempfile.mkstemp(
-        prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
-    )
+    fd: int | None = None
+    temp_name: str | None = None
+    write_error: OSError | None = None
+    cleanup_errors: list[OSError] = []
     try:
-        with os.fdopen(fd, "w", encoding="utf-8", newline="") as stream:
+        fd, temp_name = tempfile.mkstemp(
+            prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
+        )
+        stream = os.fdopen(fd, "w", encoding="utf-8", newline="")
+        fd = None  # The stream owns it from this point on.
+        with stream:
             stream.write(text)
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temp_name, path)
     except OSError as exc:
-        raise SystemExit(f"cannot write evaluation output: {exc}") from exc
+        write_error = exc
     finally:
-        try:
-            os.unlink(temp_name)
-        except FileNotFoundError:
-            pass
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError as exc:
+                cleanup_errors.append(exc)
+        if temp_name is not None:
+            try:
+                os.unlink(temp_name)
+            except FileNotFoundError:
+                pass
+            except OSError as exc:
+                cleanup_errors.append(exc)
+
+    if write_error is not None:
+        message = f"cannot write evaluation output: {write_error}"
+        if cleanup_errors:
+            details = "; ".join(str(error) for error in cleanup_errors)
+            message += f"; temporary cleanup failed: {details}"
+        raise SystemExit(message) from write_error
+    if cleanup_errors:
+        details = "; ".join(str(error) for error in cleanup_errors)
+        raise SystemExit(f"temporary cleanup failed: {details}") from cleanup_errors[0]
 
 
 def verify_registration_payload(reg: dict) -> bool:

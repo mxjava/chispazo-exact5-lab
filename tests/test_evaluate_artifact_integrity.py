@@ -141,6 +141,65 @@ def test_valid_evaluation_replaces_existing_output_atomically(tmp_path):
     assert not list(tmp_path.glob(".evaluation.json.*.tmp"))
 
 
+def test_output_creation_error_is_controlled_and_does_not_print_result(tmp_path):
+    registration, history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
+    report_path = tmp_path / "missing-output-directory" / "evaluation.json"
+
+    evaluation = _evaluate(
+        registration, history, ranking, trusted_sha256, out=report_path
+    )
+
+    assert evaluation.returncode != 0
+    assert "cannot write evaluation output" in evaluation.stderr
+    assert "Traceback" not in evaluation.stderr
+    assert not evaluation.stdout.strip()
+    assert not report_path.exists()
+    assert not report_path.parent.exists()
+
+
+def test_output_replace_error_is_controlled_and_temporary_is_removed(tmp_path, monkeypatch):
+    report_path = tmp_path / "evaluation.json"
+
+    def fail_replace(_source, _destination):
+        raise PermissionError("synthetic replace denial")
+
+    monkeypatch.setattr(evaluate_registration.os, "replace", fail_replace)
+
+    with pytest.raises(SystemExit, match="cannot write evaluation output: synthetic replace denial"):
+        evaluate_registration._write_report_atomically(report_path, "complete report")
+
+    assert not report_path.exists()
+    assert not list(tmp_path.glob(".evaluation.json.*.tmp"))
+
+
+def test_output_cleanup_error_is_controlled_and_does_not_mask_write_error(
+    tmp_path, monkeypatch
+):
+    report_path = tmp_path / "evaluation.json"
+    real_unlink = evaluate_registration.os.unlink
+
+    def fail_replace(_source, _destination):
+        raise PermissionError("synthetic replace denial")
+
+    def fail_temp_cleanup(path):
+        if Path(path).name.startswith(".evaluation.json.") and str(path).endswith(".tmp"):
+            raise PermissionError("synthetic cleanup denial")
+        real_unlink(path)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(evaluate_registration.os, "replace", fail_replace)
+        patch.setattr(evaluate_registration.os, "unlink", fail_temp_cleanup)
+        with pytest.raises(SystemExit) as exc_info:
+            evaluate_registration._write_report_atomically(report_path, "complete report")
+
+    assert "cannot write evaluation output: synthetic replace denial" in str(exc_info.value)
+    assert "temporary cleanup failed: synthetic cleanup denial" in str(exc_info.value)
+    leftovers = list(tmp_path.glob(".evaluation.json.*.tmp"))
+    assert len(leftovers) == 1
+    assert not report_path.exists()
+    real_unlink(leftovers[0])
+
+
 def test_evaluator_rejects_history_changed_after_freeze(tmp_path):
     registration, history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
     history.write_bytes(history.read_bytes().replace(b"1,2,3,4,5", b"1,2,3,4,6"))
