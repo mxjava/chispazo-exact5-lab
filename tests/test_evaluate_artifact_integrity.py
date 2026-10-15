@@ -1,9 +1,12 @@
 import hashlib
 import itertools
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 from src.pipeline import evaluate_registration
 
@@ -73,13 +76,40 @@ def _freeze_fixture(tmp_path: Path) -> tuple[Path, Path, Path, str]:
     return registration, history, ranking, trusted_registration_sha256
 
 
-def _evaluate(registration, history, ranking, trusted_sha256):
-    return subprocess.run([
+def _evaluate(registration, history, ranking, trusted_sha256, *, out=None):
+    command = [
         sys.executable, str(EVALUATE_SCRIPT), "--registration", str(registration),
         "--history", str(history), "--ranking", str(ranking),
         "--trusted-registration-sha256", trusted_sha256,
         "--result", "1", "2", "3", "4", "5",
-    ], check=False, capture_output=True, text=True)
+    ]
+    if out is not None:
+        command.extend(["--out", str(out)])
+    return subprocess.run(command, check=False, capture_output=True, text=True)
+
+
+def _inject_duplicate_and_recompute_checksum(registration, marker, replacement, trusted_sha256):
+    raw = registration.read_text(encoding="utf-8")
+    assert marker in raw
+    ambiguous = raw.replace(marker, replacement, 1)
+
+    # Recompute over the value json.loads() exposes (last duplicate key wins).
+    # The differing shadowed value must not change the trusted semantic payload.
+    parsed = json.loads(ambiguous)
+    unsigned = {key: value for key, value in parsed.items() if key != "registration_sha256"}
+    recomputed = hashlib.sha256(
+        json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    ).hexdigest()
+    assert recomputed == trusted_sha256
+    ambiguous, count = re.subn(
+        r'("registration_sha256"\s*:\s*")[0-9a-f]{64}("$)',
+        lambda match: f"{match.group(1)}{recomputed}{match.group(2)}",
+        ambiguous,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    assert count == 1
+    registration.write_text(ambiguous, encoding="utf-8")
 
 
 def test_original_frozen_artifacts_are_accepted(tmp_path):
@@ -142,6 +172,27 @@ def test_registration_sha_must_match_external_trust_anchor(tmp_path):
     assert "externally trusted" in detail
 
 
+def test_portfolio_replacement_cannot_change_scored_lines(tmp_path):
+    registration, history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
+    payload = json.loads(registration.read_text(encoding="utf-8"))
+    payload["lines"][0] = "02-03-04-05-06"
+    unsigned = {key: value for key, value in payload.items() if key != "registration_sha256"}
+    payload["registration_sha256"] = hashlib.sha256(
+        json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    ).hexdigest()
+    registration.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    report_path = tmp_path / "tampered-evaluation.json"
+
+    evaluation = _evaluate(
+        registration, history, ranking, trusted_sha256, out=report_path
+    )
+
+    assert evaluation.returncode != 0
+    assert "externally trusted" in evaluation.stderr
+    assert not evaluation.stdout.strip()
+    assert not report_path.exists()
+
+
 def test_missing_artifact_is_rejected_without_uncaught_error(tmp_path):
     registration, _history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
 
@@ -149,6 +200,39 @@ def test_missing_artifact_is_rejected_without_uncaught_error(tmp_path):
 
     assert evaluation.returncode != 0
     assert "history artifact cannot be read" in evaluation.stderr
+
+
+@pytest.mark.parametrize("invalid_json", ["{", '{"target":'], ids=["malformed", "truncated"])
+def test_invalid_or_truncated_registration_has_no_evaluation_output(tmp_path, invalid_json):
+    registration, history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
+    registration.write_text(invalid_json, encoding="utf-8")
+    report_path = tmp_path / "invalid-registration-evaluation.json"
+
+    evaluation = _evaluate(
+        registration, history, ranking, trusted_sha256, out=report_path
+    )
+
+    assert evaluation.returncode != 0
+    assert "invalid or unreadable prospective registration" in evaluation.stderr
+    assert "Traceback" not in evaluation.stderr
+    assert not evaluation.stdout.strip()
+    assert not report_path.exists()
+
+
+def test_missing_registration_has_no_evaluation_output(tmp_path):
+    registration, history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
+    registration.unlink()
+    report_path = tmp_path / "missing-registration-evaluation.json"
+
+    evaluation = _evaluate(
+        registration, history, ranking, trusted_sha256, out=report_path
+    )
+
+    assert evaluation.returncode != 0
+    assert "invalid or unreadable prospective registration" in evaluation.stderr
+    assert "Traceback" not in evaluation.stderr
+    assert not evaluation.stdout.strip()
+    assert not report_path.exists()
 
 
 def test_artifact_read_error_is_reported_as_integrity_failure(tmp_path, monkeypatch):
@@ -183,3 +267,29 @@ def test_untrusted_registration_path_fields_are_not_used(tmp_path):
 
     assert not accepted
     assert "externally trusted" in detail
+
+
+@pytest.mark.parametrize(
+    ("marker", "replacement"),
+    [
+        ('"target": 2,', '"target": 99,\n  "target": 2,'),
+        ('"state": "PASS",', '"state": "BLOCKED",\n    "state": "PASS",'),
+    ],
+    ids=["top-level", "nested"],
+)
+def test_evaluator_rejects_duplicate_registration_keys_before_reporting(
+    tmp_path, marker, replacement
+):
+    registration, history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
+    _inject_duplicate_and_recompute_checksum(
+        registration, marker, replacement, trusted_sha256
+    )
+    report_path = tmp_path / "evaluation.json"
+
+    evaluation = _evaluate(
+        registration, history, ranking, trusted_sha256, out=report_path
+    )
+
+    assert evaluation.returncode != 0, evaluation.stdout
+    assert not evaluation.stdout.strip()
+    assert not report_path.exists()

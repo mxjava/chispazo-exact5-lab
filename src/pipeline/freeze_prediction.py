@@ -5,6 +5,20 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import pandas as pd
 
+if __package__:
+    from .strict_json import load_json_object
+else:
+    import importlib.util
+
+    _strict_json_spec = importlib.util.spec_from_file_location(
+        "_exact5_strict_json", Path(__file__).with_name("strict_json.py")
+    )
+    if _strict_json_spec is None or _strict_json_spec.loader is None:
+        raise ImportError("could not load pipeline strict_json module")
+    _strict_json = importlib.util.module_from_spec(_strict_json_spec)
+    _strict_json_spec.loader.exec_module(_strict_json)
+    load_json_object = _strict_json.load_json_object
+
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -180,7 +194,10 @@ def main() -> int:
         verified_head = verify_commit_binding(a.commit_sha, a.repo_root)
     except ValueError as exc:
         raise SystemExit(f"Refusing freeze: {exc}") from exc
-    pre=json.loads(Path(a.preflight).read_text(encoding="utf-8"))
+    try:
+        pre = load_json_object(a.preflight)
+    except ValueError as exc:
+        raise SystemExit(f"Refusing freeze: invalid preflight JSON: {exc}") from exc
     if pre.get("state")!="PASS":
         raise SystemExit("Refusing freeze: preflight state is not PASS")
     if pre.get("target") != a.target:
@@ -190,7 +207,11 @@ def main() -> int:
     if (isinstance(history_max, bool) or not isinstance(history_max, int)
             or history_max <= 0 or history_max != a.target - 1):
         raise SystemExit(f"Refusing freeze: history_max={history_meta.get('contest_max')} must equal target-1={a.target-1}")
-    lines=normalize_lines(pd.read_csv(a.portfolio))
+    try:
+        lines = normalize_lines(pd.read_csv(a.portfolio))
+    except (OSError, UnicodeError, ValueError, TypeError,
+            pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
+        raise SystemExit(f"Refusing freeze: invalid portfolio: {exc}") from exc
     ledger=Path(a.ledger_dir); ledger.mkdir(parents=True,exist_ok=True)
     dest=ledger/f"target_{a.target}.json"
     if dest.exists():

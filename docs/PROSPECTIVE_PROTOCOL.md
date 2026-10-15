@@ -26,6 +26,8 @@ the frozen hashes before scoring. Artifact paths are supplied by the evaluator c
 the registration does not direct file reads through stored paths. Evaluation rejects
 missing, unreadable, substituted, truncated, or modified artifacts. A valid artifact
 must be available at evaluation time, even if its path differs from the preflight host.
+Scoring uses the 30 normalized portfolio lines embedded in the registration; the ranking
+file is verified as provenance and is not re-read to rebuild or reorder that portfolio.
 
 ## Current scientific state
 

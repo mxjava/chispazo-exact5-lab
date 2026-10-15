@@ -4,6 +4,20 @@ import argparse, hashlib, hmac, json, re
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
+if __package__:
+    from .strict_json import load_json_object
+else:
+    import importlib.util
+
+    _strict_json_spec = importlib.util.spec_from_file_location(
+        "_exact5_strict_json", Path(__file__).with_name("strict_json.py")
+    )
+    if _strict_json_spec is None or _strict_json_spec.loader is None:
+        raise ImportError("could not load pipeline strict_json module")
+    _strict_json = importlib.util.module_from_spec(_strict_json_spec)
+    _strict_json_spec.loader.exec_module(_strict_json)
+    load_json_object = _strict_json.load_json_object
+
 
 def sha256_file(path: Path | str) -> str:
     digest = hashlib.sha256()
@@ -112,8 +126,8 @@ def main() -> int:
     ap.add_argument("--out")
     a=ap.parse_args()
     try:
-        reg=json.loads(Path(a.registration).read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        reg = load_json_object(a.registration)
+    except ValueError as exc:
         raise SystemExit(f"invalid or unreadable prospective registration: {exc}") from exc
     if not verify_registration_payload(reg):
         raise SystemExit("invalid or tampered prospective registration: schema/checksum verification failed")
