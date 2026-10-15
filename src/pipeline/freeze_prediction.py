@@ -8,7 +8,16 @@ import pandas as pd
 if __package__:
     from .strict_json import load_json_object
 else:
-    from strict_json import load_json_object
+    import importlib.util
+
+    _strict_json_spec = importlib.util.spec_from_file_location(
+        "_exact5_strict_json", Path(__file__).with_name("strict_json.py")
+    )
+    if _strict_json_spec is None or _strict_json_spec.loader is None:
+        raise ImportError("could not load pipeline strict_json module")
+    _strict_json = importlib.util.module_from_spec(_strict_json_spec)
+    _strict_json_spec.loader.exec_module(_strict_json)
+    load_json_object = _strict_json.load_json_object
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -97,7 +106,8 @@ def verify_registration_payload(payload: dict) -> bool:
     if isinstance(target, bool) or not isinstance(target, int) or target <= 0:
         return False
     history_max = payload.get("history_max")
-    if isinstance(history_max, bool) or not isinstance(history_max, int) or history_max != target - 1:
+    if (isinstance(history_max, bool) or not isinstance(history_max, int)
+            or history_max <= 0 or history_max != target - 1):
         return False
     commit_sha = payload.get("commit_sha")
     if not isinstance(commit_sha, str) or not re.fullmatch(r"[0-9a-f]{40}", commit_sha):
@@ -193,9 +203,15 @@ def main() -> int:
     if pre.get("target") != a.target:
         raise SystemExit(f"Refusing freeze: preflight target={pre.get('target')} does not match requested target={a.target}")
     history_meta=pre.get("inputs",{}).get("history",{})
-    if history_meta.get("contest_max") != a.target - 1:
+    history_max = history_meta.get("contest_max")
+    if (isinstance(history_max, bool) or not isinstance(history_max, int)
+            or history_max <= 0 or history_max != a.target - 1):
         raise SystemExit(f"Refusing freeze: history_max={history_meta.get('contest_max')} must equal target-1={a.target-1}")
-    lines=normalize_lines(pd.read_csv(a.portfolio))
+    try:
+        lines = normalize_lines(pd.read_csv(a.portfolio))
+    except (OSError, UnicodeError, ValueError, TypeError,
+            pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
+        raise SystemExit(f"Refusing freeze: invalid portfolio: {exc}") from exc
     ledger=Path(a.ledger_dir); ledger.mkdir(parents=True,exist_ok=True)
     dest=ledger/f"target_{a.target}.json"
     if dest.exists():
@@ -214,7 +230,7 @@ def main() -> int:
       "registered_at_mexico_city":registered_at_mexico_city.isoformat(),
       "commit_sha":verified_head,
       "model_version":a.model_version,
-      "history_max":history_meta.get("contest_max"),
+      "history_max":history_max,
       "history_sha256":history_meta.get("sha256"),
       "ranking_sha256":pre.get("inputs",{}).get("ranking",{}).get("sha256"),
       "preflight_state":"PASS",

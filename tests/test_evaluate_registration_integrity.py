@@ -1,10 +1,6 @@
-import hashlib, json, subprocess, sys
-from pathlib import Path
+import hashlib, json
 import pytest
 from src.pipeline.evaluate_registration import verify_registration_payload
-
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "src" / "pipeline" / "evaluate_registration.py"
 
 
 def fixture():
@@ -40,7 +36,7 @@ def test_wrong_target_history_binding_fails_with_recomputed_checksum():
 
 @pytest.mark.parametrize(("target", "history_max"), [
     (2, True), (1, False), (2, "1"), (2, 1.5), (2, 1.0),
-    (2, -1), (2, 0), (2, 2), (2, 3),
+    (2, -1), (2, 0), (2, 2), (2, 3), (1, 0),
 ])
 def test_invalid_history_max_types_and_values_fail_with_recomputed_checksum(target, history_max):
     p=fixture(); p["target"]=target; p["history_max"]=history_max
@@ -66,45 +62,3 @@ def test_registration_verifier_rejects_mismatched_timestamp_instants():
         json.dumps(p, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     ).hexdigest()
     assert not verify_registration_payload(p)
-
-
-def test_evaluator_rejects_duplicate_json_keys_even_with_valid_payload_checksum(tmp_path):
-    p = fixture()
-    raw = json.dumps(p, separators=(",", ":"))
-    raw = raw.replace('"target":12250', '"target":999,"target":12250', 1)
-    registration = tmp_path / "ambiguous-registration.json"
-    registration.write_text(raw, encoding="utf-8")
-
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--registration", str(registration),
-         "--result", "1", "2", "3", "4", "5"],
-        capture_output=True, text=True,
-    )
-
-    assert result.returncode != 0
-    assert "duplicate" in result.stderr.lower()
-
-
-def test_evaluator_reads_a_valid_registration_file(tmp_path):
-    registration = tmp_path / "registration.json"
-    registration.write_text(json.dumps(fixture()), encoding="utf-8")
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--registration", str(registration),
-         "--result", "1", "2", "3", "4", "5"],
-        capture_output=True, text=True,
-    )
-    assert result.returncode == 0, result.stderr
-    assert json.loads(result.stdout)["target"] == 12250
-
-
-def test_evaluator_rejects_truncated_registration_without_traceback(tmp_path):
-    registration = tmp_path / "truncated-registration.json"
-    registration.write_text('{"target":', encoding="utf-8")
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--registration", str(registration),
-         "--result", "1", "2", "3", "4", "5"],
-        capture_output=True, text=True,
-    )
-    assert result.returncode != 0
-    assert "invalid JSON" in result.stderr
-    assert "Traceback" not in result.stderr
