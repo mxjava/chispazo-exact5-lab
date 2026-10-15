@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-import argparse, hashlib, hmac, json, re
+import argparse, hashlib, hmac, json, os, re, stat, tempfile
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
@@ -25,6 +25,57 @@ def sha256_file(path: Path | str) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _invalidate_output(path: Path | str | None, inputs: tuple[Path | str, ...]) -> Path | None:
+    """Remove any prior report so a failed run cannot leave stale output behind."""
+    if path is None:
+        return None
+    output = Path(path)
+    for source in inputs:
+        source_path = Path(source)
+        try:
+            same_path = output.resolve() == source_path.resolve()
+            if not same_path and output.exists() and source_path.exists():
+                same_path = os.path.samefile(output, source_path)
+        except (OSError, RuntimeError):
+            same_path = False
+        if same_path:
+            raise SystemExit("evaluation output path must not overlap an input artifact")
+
+    try:
+        mode = output.lstat().st_mode
+    except FileNotFoundError:
+        return output
+    except OSError as exc:
+        raise SystemExit(f"cannot inspect evaluation output path: {exc}") from exc
+    if not (stat.S_ISREG(mode) or stat.S_ISLNK(mode)):
+        raise SystemExit("evaluation output path must be a regular file or symlink")
+    try:
+        output.unlink()
+    except OSError as exc:
+        raise SystemExit(f"cannot invalidate previous evaluation output: {exc}") from exc
+    return output
+
+
+def _write_report_atomically(path: Path, text: str) -> None:
+    """Publish a complete report at the requested output path."""
+    fd, temp_name = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as stream:
+            stream.write(text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp_name, path)
+    except OSError as exc:
+        raise SystemExit(f"cannot write evaluation output: {exc}") from exc
+    finally:
+        try:
+            os.unlink(temp_name)
+        except FileNotFoundError:
+            pass
 
 
 def verify_registration_payload(reg: dict) -> bool:
@@ -125,6 +176,9 @@ def main() -> int:
     ap.add_argument("--result",required=True,nargs=5,type=int)
     ap.add_argument("--out")
     a=ap.parse_args()
+    output_path = _invalidate_output(
+        a.out, (a.registration, a.history, a.ranking)
+    )
     try:
         reg = load_json_object(a.registration)
     except ValueError as exc:
@@ -155,8 +209,9 @@ def main() -> int:
         "lines": scores,
     }
     text=json.dumps(report,indent=2,ensure_ascii=False)
+    if output_path is not None:
+        _write_report_atomically(output_path, text)
     print(text)
-    if a.out: Path(a.out).write_text(text,encoding="utf-8")
     return 0
 
 if __name__=="__main__": raise SystemExit(main())

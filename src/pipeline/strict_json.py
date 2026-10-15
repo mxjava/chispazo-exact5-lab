@@ -26,6 +26,8 @@ def load_json_object(path: Path | str) -> dict[str, Any]:
         value = json.loads(raw, object_pairs_hook=_object_without_duplicate_keys)
     except json.JSONDecodeError as exc:
         raise ValueError(f"invalid JSON in {source}: {exc.msg}") from exc
+    except RecursionError as exc:
+        raise ValueError(f"JSON nesting is too deep in {source}") from exc
     if not isinstance(value, dict):
         raise ValueError(f"expected a JSON object in {source}")
     return value

@@ -122,6 +122,23 @@ def test_original_frozen_artifacts_are_accepted(tmp_path):
     assert report["registration_sha256"] == trusted_sha256
     assert report["history_sha256"] == _sha256(history)
     assert report["ranking_sha256"] == _sha256(ranking)
+    assert len(report["lines"]) == 30
+
+
+def test_valid_evaluation_replaces_existing_output_atomically(tmp_path):
+    registration, history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
+    report_path = tmp_path / "evaluation.json"
+    report_path.write_text('{"stale": true}\n', encoding="utf-8")
+
+    evaluation = _evaluate(
+        registration, history, ranking, trusted_sha256, out=report_path
+    )
+
+    assert evaluation.returncode == 0, evaluation.stderr
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report == json.loads(evaluation.stdout)
+    assert "stale" not in report
+    assert not list(tmp_path.glob(".evaluation.json.*.tmp"))
 
 
 def test_evaluator_rejects_history_changed_after_freeze(tmp_path):
@@ -132,6 +149,36 @@ def test_evaluator_rejects_history_changed_after_freeze(tmp_path):
 
     assert evaluation.returncode != 0, evaluation.stdout
     assert "history artifact SHA-256" in evaluation.stderr
+
+
+def test_integrity_failure_does_not_leave_stale_output_file(tmp_path):
+    registration, history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
+    history.write_bytes(history.read_bytes().replace(b"1,2,3,4,5", b"1,2,3,4,6"))
+    report_path = tmp_path / "evaluation.json"
+    report_path.write_text('{"stale": true}\n', encoding="utf-8")
+
+    evaluation = _evaluate(
+        registration, history, ranking, trusted_sha256, out=report_path
+    )
+
+    assert evaluation.returncode != 0
+    assert "history artifact SHA-256" in evaluation.stderr
+    assert not evaluation.stdout.strip()
+    assert not report_path.exists()
+
+
+def test_evaluation_output_cannot_alias_an_input_artifact(tmp_path):
+    registration, history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
+    original_history = history.read_bytes()
+
+    evaluation = _evaluate(
+        registration, history, ranking, trusted_sha256, out=history
+    )
+
+    assert evaluation.returncode != 0
+    assert "output path must not overlap an input artifact" in evaluation.stderr
+    assert not evaluation.stdout.strip()
+    assert history.read_bytes() == original_history
 
 
 def test_evaluator_rejects_truncated_ranking_artifact(tmp_path):
@@ -202,7 +249,15 @@ def test_missing_artifact_is_rejected_without_uncaught_error(tmp_path):
     assert "history artifact cannot be read" in evaluation.stderr
 
 
-@pytest.mark.parametrize("invalid_json", ["{", '{"target":'], ids=["malformed", "truncated"])
+@pytest.mark.parametrize(
+    "invalid_json",
+    [
+        "{",
+        '{"target":',
+        '{"nested":' + "[" * 10000 + "0" + "]" * 10000 + "}",
+    ],
+    ids=["malformed", "truncated", "excessive-nesting"],
+)
 def test_invalid_or_truncated_registration_has_no_evaluation_output(tmp_path, invalid_json):
     registration, history, ranking, trusted_sha256 = _freeze_fixture(tmp_path)
     registration.write_text(invalid_json, encoding="utf-8")
