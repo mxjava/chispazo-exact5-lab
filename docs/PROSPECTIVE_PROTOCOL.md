@@ -218,6 +218,8 @@ Para evitar evaluación selectiva, el censo de targets programados debe incluir 
 
 ## Plan científico que debe fijarse antes de iniciar la cohorte
 
+El diseño completo, sus supuestos y las decisiones aún no aprobadas se detallan en el [protocolo estadístico confirmatorio](CONFIRMATORY_PROTOCOL.md). Ambos documentos deben aprobarse antes del primer target; este runbook no autoriza iniciar una cohorte.
+
 El espacio de combinaciones de cinco números distintos de 1 a 28 tiene `C(28,5) = 98,280` resultados posibles. Bajo el nulo uniforme, una línea fija tiene probabilidad `1/98,280` de Exact5 y un portfolio de 30 líneas distintas tiene probabilidad `30/98,280` por sorteo de contener el resultado ganador. La página oficial describe el juego de selección 5-de-28; la igualdad de probabilidad y la independencia entre sorteos son supuestos estadísticos que deben contrastarse con el reglamento/mecanismo oficial, no inferirse de que el pipeline pase sus pruebas.
 
 Antes de abrir la cohorte, un protocolo estadístico versionado y fechado debe predefinir:
