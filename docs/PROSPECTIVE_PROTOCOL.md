@@ -115,14 +115,22 @@ Finalmente, ejecute el preflight y exija tanto exit code 0 como estado JSON `PAS
 
 ```powershell
 $preflight = "$run/reports/preflight.json"
-python -m src.validation.preflight_v2 `
+$preflightLog = "$run/reports/preflight.log"
+$preflightOutput = & python -m src.validation.preflight_v2 `
   --history $history `
   --target $target `
   --ranking $ranking `
   --firewall-report $firewall `
   --exactset-summary $exactset `
-  --out $preflight
-if ($LASTEXITCODE -ne 0) { throw 'Preflight bloqueado; conservar reporte y registrar no-registro' }
+  --out $preflight 2>&1
+$preflightExit = $LASTEXITCODE
+$preflightOutput | Set-Content $preflightLog -Encoding utf8
+if ($preflightExit -ne 0) {
+  if (Test-Path $preflight) {
+    throw 'Preflight bloqueado; conservar reporte y registrar no-registro'
+  }
+  throw 'Preflight abortó antes de escribir reporte; conservar preflight.log/traceback y registrar no-registro'
+}
 if ((Get-Content $preflight -Raw | ConvertFrom-Json).state -ne 'PASS') {
   throw 'Preflight no está en PASS; no congelar'
 }
