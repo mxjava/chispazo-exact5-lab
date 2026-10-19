@@ -9,6 +9,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "src/pipeline/freeze_prediction.py"
+IMPORT_FREEZE = f"import sys; sys.path.insert(0, r'{SCRIPT.parent}'); import importlib.util; "
 
 
 def git(repo: Path, *args: str) -> str:
@@ -31,7 +32,7 @@ def make_repo(tmp_path: Path) -> tuple[Path, str]:
 def test_binding_accepts_matching_clean_head(tmp_path):
     repo, sha = make_repo(tmp_path)
     proc = subprocess.run([sys.executable, "-c",
-        f"import importlib.util; s=importlib.util.spec_from_file_location('f', r'{SCRIPT}'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); print(m.verify_commit_binding('{sha}', r'{repo}'))"], capture_output=True, text=True)
+        f"{IMPORT_FREEZE}s=importlib.util.spec_from_file_location('f', r'{SCRIPT}'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); print(m.verify_commit_binding('{sha}', r'{repo}'))"], capture_output=True, text=True)
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip() == sha
 
@@ -40,7 +41,7 @@ def test_binding_rejects_valid_but_unrelated_sha(tmp_path):
     repo, sha = make_repo(tmp_path)
     unrelated = "0" * 40 if sha != "0" * 40 else "1" * 40
     proc = subprocess.run([sys.executable, "-c",
-        f"import importlib.util; s=importlib.util.spec_from_file_location('f', r'{SCRIPT}'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.verify_commit_binding('{unrelated}', r'{repo}')"], capture_output=True, text=True)
+        f"{IMPORT_FREEZE}s=importlib.util.spec_from_file_location('f', r'{SCRIPT}'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.verify_commit_binding('{unrelated}', r'{repo}')"], capture_output=True, text=True)
     assert proc.returncode != 0
     assert "does not match checked-out HEAD" in proc.stderr
 
@@ -49,14 +50,14 @@ def test_binding_rejects_tracked_worktree_changes(tmp_path):
     repo, sha = make_repo(tmp_path)
     (repo / "tracked.txt").write_text("changed after commit\n", encoding="utf-8")
     proc = subprocess.run([sys.executable, "-c",
-        f"import importlib.util; s=importlib.util.spec_from_file_location('f', r'{SCRIPT}'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.verify_commit_binding('{sha}', r'{repo}')"], capture_output=True, text=True)
+        f"{IMPORT_FREEZE}s=importlib.util.spec_from_file_location('f', r'{SCRIPT}'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.verify_commit_binding('{sha}', r'{repo}')"], capture_output=True, text=True)
     assert proc.returncode != 0
     assert "tracked changes" in proc.stderr
 
 
 def test_binding_rejects_missing_git_checkout(tmp_path):
     proc = subprocess.run([sys.executable, "-c",
-        f"import importlib.util; s=importlib.util.spec_from_file_location('f', r'{SCRIPT}'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.verify_commit_binding('{ 'a' * 40 }', r'{tmp_path}')"], capture_output=True, text=True)
+        f"{IMPORT_FREEZE}s=importlib.util.spec_from_file_location('f', r'{SCRIPT}'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.verify_commit_binding('{ 'a' * 40 }', r'{tmp_path}')"], capture_output=True, text=True)
     assert proc.returncode != 0
     assert "Git checkout is required" in proc.stderr
 
@@ -64,7 +65,7 @@ def test_binding_rejects_missing_git_checkout(tmp_path):
 def test_binding_rejects_malformed_sha(tmp_path):
     repo, _ = make_repo(tmp_path)
     proc = subprocess.run([sys.executable, "-c",
-        f"import importlib.util; s=importlib.util.spec_from_file_location('f', r'{SCRIPT}'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.verify_commit_binding('not-a-sha', r'{repo}')"], capture_output=True, text=True)
+        f"{IMPORT_FREEZE}s=importlib.util.spec_from_file_location('f', r'{SCRIPT}'); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); m.verify_commit_binding('not-a-sha', r'{repo}')"], capture_output=True, text=True)
     assert proc.returncode != 0
     assert "full 40-character Git SHA" in proc.stderr
 
