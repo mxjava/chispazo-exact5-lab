@@ -9,6 +9,7 @@ import json
 import math
 from decimal import Decimal, InvalidOperation
 import pandas as pd
+from src.pipeline.strict_json import load_json_object
 
 NUM_MIN = 1
 NUM_MAX = 28
@@ -227,33 +228,118 @@ def validate_ranking(path: Path | None) -> tuple[list[Check], dict[str, Any]]:
     return checks, meta
 
 
+
 def validate_evidence(firewall_report: Path | None, exactset_summary: Path | None) -> tuple[list[Check], dict[str, Any]]:
     checks: list[Check] = []
     meta: dict[str, Any] = {}
+    allowed_depths = {30, 100, 500, 2500, 5000, 10000}
+
+    def finite_number(value: Any) -> float | None:
+        if isinstance(value, bool):
+            return None
+        try:
+            number = float(value)
+        except (TypeError, ValueError, OverflowError):
+            return None
+        return number if math.isfinite(number) else None
+
+    def integer_value(value: Any) -> int | None:
+        parsed = _decimal_value(value)
+        if not _is_integer(parsed):
+            return None
+        try:
+            return int(parsed)
+        except (ValueError, OverflowError, TypeError):
+            return None
+
+    def valid_approved_row(row: Any) -> bool:
+        if not isinstance(row, dict):
+            return False
+
+        strategy = row.get("strategy")
+        depth = integer_value(row.get("depth"))
+        n = integer_value(row.get("n"))
+        hits = integer_value(row.get("hits"))
+        rate = finite_number(row.get("rate"))
+        null_rate = finite_number(row.get("null_rate"))
+        lift = finite_number(row.get("lift"))
+        p_raw = finite_number(row.get("p_raw"))
+        p_holm = finite_number(row.get("p_holm"))
+
+        if not isinstance(strategy, str) or not strategy.strip():
+            return False
+        if depth not in allowed_depths or n is None or n < 100:
+            return False
+        if hits is None or not 0 <= hits <= n:
+            return False
+        if None in (rate, null_rate, lift, p_raw, p_holm):
+            return False
+        if not (0 <= p_raw <= p_holm < 0.05 and lift > 1):
+            return False
+
+        expected_rate = hits / n
+        expected_null = depth / EXACT5_UNIVERSE
+        expected_lift = expected_rate / expected_null
+
+        return (
+            math.isclose(rate, expected_rate, rel_tol=1e-9, abs_tol=1e-12)
+            and math.isclose(null_rate, expected_null, rel_tol=1e-9, abs_tol=1e-12)
+            and math.isclose(lift, expected_lift, rel_tol=1e-6, abs_tol=1e-9)
+        )
+
     if firewall_report is None or not firewall_report.exists():
         checks.append(Check("firewall_report_present", "FAIL", "missing V264 firewall report"))
     else:
-        data = json.loads(firewall_report.read_text(encoding="utf-8"))
+        try:
+            data = load_json_object(firewall_report)
+            if not isinstance(data, dict):
+                raise ValueError("firewall report must be a JSON object")
+        except (OSError, ValueError, TypeError) as exc:
+            data = {}
+            checks.append(Check("firewall_report_valid", "FAIL", f"invalid report: {exc}"))
+        else:
+            checks.append(Check("firewall_report_valid", "PASS", "JSON object"))
+
         meta["firewall"] = data
-        state = str(data.get("state", data.get("production_state", "UNKNOWN")))
-        approved = data.get("oos_approved_tests", [])
-        ok = state not in {"RESEARCH_ONLY_NO_EDGE", "BLOCKED", "UNKNOWN"} and bool(approved)
-        checks.append(Check("v264_oos_evidence", "PASS" if ok else "FAIL", f"state={state}; approved_tests={len(approved) if isinstance(approved,list) else approved}"))
+        state = data.get("state")
+        approved = data.get("oos_approved_tests")
+        rows_valid = (
+            isinstance(approved, list)
+            and len(approved) > 0
+            and all(valid_approved_row(row) for row in approved)
+        )
+        ok = state == "PROMOTE_EXACT5" and rows_valid
+        checks.append(Check(
+            "v264_oos_evidence",
+            "PASS" if ok else "FAIL",
+            f"state={state}; approved_tests="
+            f"{len(approved) if isinstance(approved, list) else 'invalid'}; "
+            f"valid_rows={sum(valid_approved_row(row) for row in approved) if isinstance(approved, list) else 0}"
+        ))
 
     if exactset_summary is None or not exactset_summary.exists():
         checks.append(Check("exactset_summary_present", "FAIL", "missing exact-set anytime summary"))
     else:
-        data = json.loads(exactset_summary.read_text(encoding="utf-8"))
-        meta["exactset"] = data
-        e = data.get("e_value", data.get("evalue", data.get("final_e_value")))
         try:
-            e = float(e)
-        except Exception:
-            e = float("nan")
-        ok = math.isfinite(e) and e >= 20.0
-        checks.append(Check("exactset_anytime_evalue", "PASS" if ok else "FAIL", f"e_value={e}; threshold=20"))
-    return checks, meta
+            data = load_json_object(exactset_summary)
+            if not isinstance(data, dict):
+                raise ValueError("exact-set summary must be a JSON object")
+        except (OSError, ValueError, TypeError) as exc:
+            checks.append(Check("exactset_summary_valid", "FAIL", f"invalid summary: {exc}"))
+        else:
+            meta["exactset"] = data
+            e = data.get("e_value", data.get("evalue", data.get("final_e_value")))
+            if e is not None:
+                number = finite_number(e)
+                ok = number is not None and number >= 20.0
+                detail = f"e_value={number}; threshold=20"
+            else:
+                log_e = finite_number(data.get("cumulative_log_e"))
+                ok = log_e is not None and log_e >= math.log(20.0)
+                detail = f"cumulative_log_e={log_e}; threshold={math.log(20.0):.12g}"
+            checks.append(Check("exactset_anytime_evalue", "PASS" if ok else "FAIL", detail))
 
+    return checks, meta
 
 def run(history: Path, target: int, ranking: Path | None = None, firewall_report: Path | None = None, exactset_summary: Path | None = None) -> dict[str, Any]:
     checks: list[Check] = []
