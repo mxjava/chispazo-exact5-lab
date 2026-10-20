@@ -2293,7 +2293,7 @@ def walkforward_validate_v248(df, master_cache, lines, backtest, train_examples,
     prod_info = {'strategy': 'v248_clean_core_exact5_top30_portfolio', 'fusion_state': prod_fstate, 'fusion_weights': prod_weights, 'allocation': prod_alloc, 'allocation_detail': prod_alloc_detail, 'objective': 'causal OOS capture of exact winning combination with adversarial full-universe false-positive mining', 'v245_adversarial_bank_targets': int(len(adversarial_bank)), 'v245_adversarial_rows_last_bundle': int(prod_bundle.get('v245_adversarial_rows', 0)) if prod_bundle else 0}
     return (summary, pdec, fdec, abl, md, prod_bundle, prod_weights, prod_alloc, prod_info)
 
-def frozen_ablation_v239(df, master_cache, lines, holdout, train_examples, seed, binary_estimators=250, ranker_estimators=250):
+def frozen_ablation_v239(df, master_cache, lines, holdout, train_examples, seed, binary_estimators=250, ranker_estimators=250, runtime=None):
     """Frozen real: entrena y congela señales/ranking en cutoff; el holdout no actualiza features ni modelos."""
     if holdout <= 0 or holdout >= len(df) - 250:
         raise ValueError('Holdout inválido')

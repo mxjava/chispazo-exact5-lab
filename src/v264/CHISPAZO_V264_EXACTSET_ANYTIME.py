@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd, numpy as np, math, json
 from pathlib import Path
 from itertools import combinations
@@ -118,5 +119,33 @@ def main(hist_path,outdir,warmup=800):
     (outdir/'v264_summary.json').write_text(json.dumps(summary,indent=2),encoding='utf-8')
     print(json.dumps(summary,indent=2))
 
-if __name__=='__main__':
-    main('/mnt/data/model_inputs/Chispazo_12249.csv','/mnt/data/v264_anytime',800)
+def build_parser():
+    parser = argparse.ArgumentParser(
+        description="V264 prequential Exact5 evidence and next-contest ranking"
+    )
+    parser.add_argument(
+        "--history", required=True,
+        help="CSV history ending at target - 1"
+    )
+    parser.add_argument(
+        "--out-dir", required=True,
+        help="Directory for summary and ranking outputs"
+    )
+    parser.add_argument(
+        "--warmup", type=int, default=800,
+        help="Initial draws excluded from prequential scoring"
+    )
+    return parser
+
+
+def cli(argv=None):
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.warmup < 2:
+        parser.error("--warmup must be >= 2")
+    main(args.history, args.out_dir, args.warmup)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(cli())
