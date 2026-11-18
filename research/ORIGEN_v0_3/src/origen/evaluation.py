@@ -1,4 +1,7 @@
-"""Chronological, paired prequential log-score evaluation."""
+"""Chronological, paired prequential log-score evaluation.
+This module reports statistical candidates only. It cannot certify provenance,
+custody, preregistration authenticity, or predictive edge.
+"""
 from __future__ import annotations
 from math import log, isfinite
 from typing import Iterable
@@ -12,7 +15,6 @@ def chronological_split(n: int, warmup: int, evaluation_size: int | None = None)
             "unused_future_indices":list(range(end,n)),"chronology_preserved":True}
 
 def rolling_origin_folds(n: int, initial_train: int, horizon: int, step: int | None = None) -> list[dict]:
-    """Return expanding-window folds; no randomization or future-to-past flow."""
     if n<1 or initial_train<1 or horizon<1 or initial_train>=n: raise ValueError("invalid_rolling_origin_dimensions")
     step=horizon if step is None else step
     if step<1: raise ValueError("step_must_be_positive")
@@ -25,14 +27,13 @@ def rolling_origin_folds(n: int, initial_train: int, horizon: int, step: int | N
     return folds
 
 def _binomial_upper_tail(n: int, k: int) -> float:
-    """Exact one-sided sign-test tail P[X >= k], X~Binomial(n, .5)."""
     if n==0: return 1.0
     return sum(__import__("math").comb(n,i) for i in range(k,n+1))/(2**n)
 
 def evaluate_log_scores(observations: Iterable[dict], *, protocol_status: str,
                         family_p_values: dict[str,float], primary_test_id: str,
                         gates: dict, min_observations: int=100, alpha: float=0.05) -> dict:
-    """Evaluate probabilities assigned to the same realized outcome; not a lottery predictor by itself."""
+    """Evaluate log scores; never self-certify EDGE_SUPPORTED."""
     rows=list(observations)
     if not rows: raise ValueError("no_observations")
     if min_observations<1: raise ValueError("min_observations_must_be_positive")
@@ -52,11 +53,17 @@ def evaluate_log_scores(observations: Iterable[dict], *, protocol_status: str,
     adjusted=holm_bonferroni(complete_family,alpha); primary=adjusted["results"][primary_test_id]; sign_adjusted=adjusted["results"]["__origen_sign_test__"]
     required={"preregistered","untouched_prospective","independent_custody","data_integrity_pass","two_prospective_outputs"}
     missing_gates=sorted(required-set(gates)); failed_gates=sorted(k for k in required if gates.get(k) is not True)
-    if not gates.get("independent_custody",False) or not gates.get("data_integrity_pass",False): state="BLOCKED_PROVENANCE"
-    elif n>=min_observations and mean_lift>0 and primary["reject"] and sign_adjusted["reject"] and not missing_gates and not failed_gates and protocol_status=="PREREGISTERED": state="EDGE_SUPPORTED"
-    else: state="NO_EDGE_EVIDENCE"
-    return {"state":state,"n":n,"min_observations":min_observations,"mean_log_lift":mean_lift,"median_log_lift":median_lift,
+    statistical_candidate=(n>=min_observations and mean_lift>0 and primary["reject"] and sign_adjusted["reject"]
+                           and not missing_gates and not failed_gates and protocol_status=="PREREGISTERED")
+    if not gates.get("independent_custody",False) or not gates.get("data_integrity_pass",False):
+        state="BLOCKED_PROVENANCE"
+    elif statistical_candidate:
+        state="STATISTICAL_SIGNAL_REQUIRES_EXTERNAL_AUDIT"
+    else:
+        state="NO_EDGE_EVIDENCE"
+    return {"state":state,"edge_certified":False,"promotion_authorized":False,"n":n,
+            "min_observations":min_observations,"mean_log_lift":mean_lift,"median_log_lift":median_lift,
             "positive_log_lift_rate":positive/n,"positive_count":positive,"negative_count":negative,"ties":n-nonzero,
             "sign_test_one_sided_p":sign_p,"primary_holm":primary,"sign_test_holm":sign_adjusted,"multiplicity":adjusted,
             "gates_missing":missing_gates,"gates_failed":failed_gates,"protocol_status":protocol_status,
-            "interpretation":"EDGE_SUPPORTED requires every evidence gate; this report does not certify provenance or custody on its own."}
+            "interpretation":"This evaluator can identify a statistical candidate only. EDGE_SUPPORTED requires a separate independent audit of raw prospective outputs, protocol chronology, custody, and source provenance; caller-supplied booleans are not proof."}
