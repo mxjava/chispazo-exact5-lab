@@ -160,6 +160,76 @@ def prequential_marginal_diagnostic(labelled: list[dict], warmup_classic: int = 
     }
 
 
+
+def _zscore(values: list[float]) -> list[float]:
+    mean = sum(values) / len(values)
+    variance = sum((x - mean) ** 2 for x in values) / len(values)
+    sd = math.sqrt(variance)
+    if sd < 1e-12:
+        sd = 1.0
+    return [(x - mean) / sd for x in values]
+
+
+def _v264_transition_signal(draws: list[dict], t: int, window: int = 800) -> list[float]:
+    """V264 transition expert with the prior leakage correction: range(start, t-1)."""
+    if t < 2:
+        return [0.0] * UNIVERSE
+    previous = set(draws[t - 1]["numbers"])
+    start = max(1, t - window)
+    counts = [0.0] * UNIVERSE
+    denominator = 0
+    # Exclude j=t-1: that row is the context draw itself, not a historical target.
+    for j in range(start, t - 1):
+        if previous.intersection(draws[j - 1]["numbers"]):
+            for number in draws[j]["numbers"]:
+                counts[number - 1] += 1.0
+            denominator += 1
+    return [x / max(1, denominator) for x in counts]
+
+
+def _v264_transition_logp(draws: list[dict], t: int, beta: float = 0.15) -> float:
+    signal = _v264_transition_signal(draws, t, 800)
+    z = _zscore(signal)
+    weights = [math.exp(beta * x) for x in z]
+    elementary = [1.0] + [0.0] * PICK
+    for weight in weights:
+        for j in range(PICK, 0, -1):
+            elementary[j] += weight * elementary[j - 1]
+    chosen = draws[t]["numbers"]
+    return sum(math.log(weights[n - 1]) for n in chosen) - math.log(elementary[PICK])
+
+
+def v264_transition_classic_diagnostic(labelled: list[dict], warmup_classic: int = 800, beta: float = 0.15) -> dict:
+    """Compare the same fixed V264 transition expert on Classic-only vs pooled streams."""
+    classic = [r for r in labelled if r["draw_type"] == "CLASSIC"]
+    if len(classic) <= warmup_classic:
+        raise ValueError("insufficient_classic_draws_for_transition_warmup")
+    pooled = labelled
+    uniform_logp = UNIFORM_LOGP
+    classic_lifts = []
+    pooled_lifts = []
+    pooled_index = 0
+    for i in range(warmup_classic, len(classic)):
+        target = classic[i]
+        classic_lifts.append(_v264_transition_logp(classic, i, beta) - uniform_logp)
+        while pooled_index < len(pooled) and pooled[pooled_index]["contest"] < target["contest"]:
+            pooled_index += 1
+        pooled_lifts.append(_v264_transition_logp(pooled, pooled_index, beta) - uniform_logp)
+    def summary(values):
+        return {"n": len(values), "mean_log_lift": sum(values) / len(values),
+                "cumulative_log_lift": sum(values),
+                "positive_fraction": sum(x > 0 for x in values) / len(values)}
+    return {
+        "expert": "V264 transition beta=0.15; corrected historical loop excludes current context row",
+        "warmup_classic_draws": warmup_classic, "beta_fixed": beta,
+        "classic_only": summary(classic_lifts),
+        "pooled_stream_scored_on_same_classic_targets": summary(pooled_lifts),
+        "paired_mean_difference_classic_minus_pooled": sum(a - b for a, b in zip(classic_lifts, pooled_lifts)) / len(classic_lifts),
+        "classification": "EXPLORATORY_RETROSPECTIVE_NOT_EDGE_EVIDENCE",
+        "warning": "Single fixed expert comparison; no multiplicity correction, anytime-valid e-value, or prospective confirmation."
+    }
+
+
 def build(history: str | Path, output: str | Path, expected_sha256: str | None = CANONICAL_SHA256) -> dict:
     rows, digest = read_history(history)
     if expected_sha256 and digest != expected_sha256:
@@ -184,6 +254,7 @@ def build(history: str | Path, output: str | Path, expected_sha256: str | None =
         ],
         "classic_draws": len(classic), "de_las_tres_draws": len(tres),
         "exploratory_prequential_diagnostic": diagnostics,
+        "v264_transition_classic_diagnostic": v264_transition_classic_diagnostic(labelled),
         "limitations": [
             "Pre-transition rows are classified as Classic because the institutional report says the second daily draw was only introduced on 2017-09-25; still require independent row-level source audit.",
             "Post-transition odd/even parity is structurally consistent with official examples, but the full historical series is not yet independently cross-checked row by row.",
