@@ -1,0 +1,9 @@
+{
+  "alpha": 0.05,
+  "p_values": {
+    "primary_registered_test": 0.05,
+    "frequency_family": 0.2,
+    "transition_family": 0.3,
+    "all_other_attempts": 0.4
+  }
+}
