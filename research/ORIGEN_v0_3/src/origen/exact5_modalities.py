@@ -305,14 +305,12 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
                 for beta in betas:
                     weights = np.exp(beta * standardized)
                     denominator = e5(weights)
-                    probabilities[k] = math.exp(float(np.log(weights[draws[t]].sum()) - math.log(denominator)))
+                    probabilities[k] = math.exp(float(np.log(weights[draws[t]]).sum() - math.log(denominator)))
                     k += 1
             maximum = float(logpost.max())
             posterior = np.exp(logpost - maximum)
             posterior /= posterior.sum()
             mixture_probability = float(np.dot(posterior, probabilities))
-            log_lift = math.log(mixture_probability) - log_uniform * -1.0
-            # log_uniform is negative; log(p_mix) - log(1/U) = log(p_mix)+log(U)
             log_lift = math.log(mixture_probability) + math.log(math.comb(UNIVERSE, PICK))
             if target["draw_type"] == "CLASSIC" and target["contest"] >= first_target_contest:
                 values.append(log_lift)
