@@ -37,11 +37,12 @@ class TestORIGENV03(unittest.TestCase):
         g={"preregistered":True,"untouched_prospective":True,"independent_custody":False,"data_integrity_pass":True,"two_prospective_outputs":True}
         r=evaluate_log_scores(rows,protocol_status="PREREGISTERED",family_p_values={"p":.001},primary_test_id="p",gates=g)
         self.assertEqual(r["state"],"BLOCKED_PROVENANCE")
-    def test_all_gates_required(self):
+    def test_all_gates_only_yield_candidate(self):
         rows=[{"p_alt":.3,"p_null":.2} for _ in range(120)]
         g={k:True for k in ("preregistered","untouched_prospective","independent_custody","data_integrity_pass","two_prospective_outputs")}
         r=evaluate_log_scores(rows,protocol_status="PREREGISTERED",family_p_values={"p":.001},primary_test_id="p",gates=g)
-        self.assertEqual(r["state"],"EDGE_SUPPORTED")
+        self.assertEqual(r["state"],"STATISTICAL_SIGNAL_REQUIRES_EXTERNAL_AUDIT")
+        self.assertFalse(r["edge_certified"]); self.assertFalse(r["promotion_authorized"])
     def test_bad_probability(self):
         with self.assertRaises(ValueError): evaluate_log_scores([{"p_alt":0,"p_null":.2}],protocol_status="DRAFT",family_p_values={"p":.5},primary_test_id="p",gates={})
     def test_primary_family_required(self):
