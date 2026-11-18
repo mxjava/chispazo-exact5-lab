@@ -53,5 +53,26 @@
     "The canonical file ends at 12249 on 2026-09-13; it does not include later draws.",
     "The pooled comparison trains on prior draws of both modalities but scores only the same Classic targets; it is a comparator, not a candidate for promotion."
   ],
-  "next": "Re-run the V264 temporal transition model on Classic-only rows with lag defined as previous Classic contest (not previous contest ID), preserving all original frozen parameters, and compare to the pooled implementation on identical target dates. Preregister before execution and keep untouched prospective draws sealed."
+  "next": "The modality split did not rescue the marginal-frequency diagnostic or the fixed V264 transition expert. Next: evaluate the exact V264 Bayesian mixture on Classic-only and pooled streams with same Classic targets, same warm-up, corrected no-leakage transition signal, and frozen hyperparameters; do not retune. Independently validate the full contest-to-modality mapping and keep prospective outcomes sealed.",
+  "v264_transition_fixed_expert": {
+    "expert": "V264 transition beta=0.15; corrected historical loop excludes current context row",
+    "warmup_classic_draws": 800,
+    "beta_fixed": 0.15,
+    "classic_only": {
+      "n": 6923,
+      "mean_log_lift": -0.04903261865576059,
+      "cumulative_log_lift": -339.45281895383056,
+      "positive_fraction": 0.44648273869709665
+    },
+    "pooled_stream_scored_on_same_classic_targets": {
+      "n": 6923,
+      "mean_log_lift": -0.04384259566043624,
+      "cumulative_log_lift": -303.5222897572001,
+      "positive_fraction": 0.4446049400548895
+    },
+    "paired_mean_difference_classic_minus_pooled": -0.005190022995324344,
+    "interpretation": "The fixed corrected V264 transition expert is strongly negative on both streams. Classic-only training is worse than pooled training on identical Classic targets. This does not establish the behavior of the full V264 Bayesian mixture or other temporal families.",
+    "classification": "EXPLORATORY_RETROSPECTIVE_NOT_EDGE_EVIDENCE",
+    "warning": "Single fixed expert, retrospective; no multiplicity correction, no anytime-valid e-value, no prospective confirmation."
+  }
 }
