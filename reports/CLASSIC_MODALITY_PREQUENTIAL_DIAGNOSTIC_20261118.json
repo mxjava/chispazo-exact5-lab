@@ -1,0 +1,57 @@
+{
+  "schema": "EXACT5_CLASSIC_MODALITY_PREQUENTIAL_DIAGNOSTIC_V1",
+  "source": {
+    "path": "data/history/Chispazo_through_12249.csv",
+    "git_blob_sha": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "sha256": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "contests": "1363-12249",
+    "rows": 10887,
+    "contiguous": true,
+    "canonical_source_modified": false
+  },
+  "modality_reconstruction": {
+    "rule": "Before contest 5923, one daily Chispazo draw classified as Classic. From contest 5923 (2017-09-25), odd contests are De las Tres and even contests are Classic.",
+    "classic_draws": 7723,
+    "de_las_tres_draws": 3164,
+    "pre_transition_classic_draws": 4560,
+    "post_transition_classic_draws": 3163,
+    "complete_two_draw_dates": 3163,
+    "pre_transition_single_draw_dates": 4560,
+    "post_transition_date_anomalies": 0,
+    "latest_partial_date": "2026-09-13",
+    "latest_partial_contest": 12249,
+    "evidence": [
+      "Pronósticos institutional accountability report (2012-2018) states second daily Chispazo draw was introduced 2017-09-25",
+      "Official results PDF 2017-11-02 identifies 5999 as De las Tres and 6000 as Clásico"
+    ]
+  },
+  "experiment": {
+    "name": "Expanding-window smoothed marginal-frequency diagnostic",
+    "warmup_classic_draws": 800,
+    "fixed_alpha": 200,
+    "targets": "Same 6,923 Classic target draws for both models",
+    "baseline": "Uniform exact 5-of-28 log probability",
+    "classic_only": {
+      "n": 6923,
+      "mean_log_lift": -0.004167200524835422,
+      "cumulative_log_lift": -28.84952923343563,
+      "positive_fraction": 0.4782608695652174
+    },
+    "pooled_stream_trained_on_all_prior_contests": {
+      "n": 6923,
+      "mean_log_lift": -0.003833945855458857,
+      "cumulative_log_lift": -26.542407157341668,
+      "positive_fraction": 0.4720496894409938
+    },
+    "paired_mean_log_lift_difference_classic_minus_pooled": -0.00033325466937655365,
+    "interpretation": "Classic-only filtering did not rescue this fixed marginal-frequency model. Both variants had negative mean log-lift against uniform; pooled was marginally less negative. This does not test every temporal model family."
+  },
+  "state": "EXPLORATORY_NO_EDGE_EVIDENCE",
+  "caveats": [
+    "This is a retrospective exploratory score, not an anytime-valid e-value, p-value, multiplicity-adjusted result, or untouched prospective test.",
+    "The parity mapping is structurally supported by official records but not yet independently verified row-by-row for every historical contest.",
+    "The canonical file ends at 12249 on 2026-09-13; it does not include later draws.",
+    "The pooled comparison trains on prior draws of both modalities but scores only the same Classic targets; it is a comparator, not a candidate for promotion."
+  ],
+  "next": "Re-run the V264 temporal transition model on Classic-only rows with lag defined as previous Classic contest (not previous contest ID), preserving all original frozen parameters, and compare to the pooled implementation on identical target dates. Preregister before execution and keep untouched prospective draws sealed."
+}
