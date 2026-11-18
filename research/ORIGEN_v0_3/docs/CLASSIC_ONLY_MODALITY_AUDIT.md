@@ -60,3 +60,36 @@ This does **not** prove the pooled V264 null result would become positive after 
 - `research/ORIGEN_v0_3/src/origen/exact5_adapter.py`
 
 The ORIGEN adapter must not silently infer draw type from parity. It should accept only a verified, versioned mapping artifact with provenance and explicit ambiguous-row handling.
+
+## Verified reconstruction and first diagnostic (2026-11-18)
+
+The canonical file was parsed without modification: 10,887 unique contiguous contests (1363–12249), zero invalid draws, and the canonical Git blob remained `2f5ff5bfbd779fe505736398e417b7211955958e`.
+
+The date structure is exact under the transition rule:
+- 4,560 single-draw dates before the transition, contests 1363–5922.
+- Transition begins at contest 5923 on 2017-09-25.
+- 3,163 complete post-transition dates, each containing an odd/even consecutive pair.
+- The final source date is partial: contest 12249 only, because the canonical file ends there.
+- No date-structure anomalies under this mapping.
+- Derived counts: 7,723 Classic rows and 3,164 De las Tres rows.
+
+This mapping is supported by the institutional accountability report stating that the second daily Chispazo draw was introduced on 2017-09-25, and an official 2017-11-02 result sheet explicitly labels 5999 De las Tres and 6000 Clásico. It is still marked as structurally derived rather than independently verified row-by-row against primary records for every contest.
+
+### First controlled comparison: fixed marginal-frequency model
+
+A fixed expanding-window smoothed marginal-frequency diagnostic was scored on the same 6,923 Classic targets after an 800-Classic-draw warm-up, with alpha=200 and uniform 5-of-28 log probability as baseline.
+
+| Training stream | Mean log-lift | Cumulative log-lift | Positive target fraction |
+|---|---:|---:|---:|
+| Classic-only prior draws | -0.00416720 | -28.84953 | 47.83% |
+| Pooled prior draws, scored on same Classic targets | -0.00383395 | -26.54241 | 47.20% |
+
+The paired mean difference (Classic-only minus pooled) was -0.00033325 nats per target. **This does not show a benefit from filtering for this fixed marginal model; both versions underperformed uniform.** It is exploratory retrospective scoring, not an e-value, p-value, multiplicity-adjusted finding, or prospective validation.
+
+Reproducible implementation: `research/ORIGEN_v0_3/src/origen/exact5_modalities.py`.
+Recorded result: `reports/CLASSIC_MODALITY_PREQUENTIAL_DIAGNOSTIC_20261118.json`.
+Tests: `research/ORIGEN_v0_3/tests/test_exact5_modalities.py`.
+
+### Next experiment
+
+Re-run the V264 temporal transition family on the Classic-only series with the lag defined as the previous Classic contest, and compare it against the pooled-stream version on identical Classic target dates. Keep all original model parameters fixed; no retuning after seeing the Classic-only result. The untouched prospective sequence remains sealed.
