@@ -1,0 +1,14 @@
+ORIGEN v0.3 test report
+Python: 3.13 (container runtime)
+Command: PYTHONPATH=src python -m unittest discover -s tests -v
+Result: 28 tests passed, 0 failed.
+
+Coverage groups:
+- v0.1 deterministic frame generation, registry idempotency/audit, no auto-promotion
+- v0.2 protocol sealing/validation, duplicate protocol IDs, ledger hashes and null controls
+- v0.3 Holm-Bonferroni, chronological and rolling-origin splits, paired log-score gates,
+  adversarial null benchmarking, research-frame diversity, artifact manifest tamper detection,
+  and MetaObserver search-path audit.
+
+This report validates software behavior on unit tests. It does not validate a Chispazo model,
+real-world data provenance, independent custody, prospective predictive edge, or user's local setup.
