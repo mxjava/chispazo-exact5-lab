@@ -195,7 +195,7 @@ def main():
     p.add_argument("--history", required=True); p.add_argument("--out", required=True)
     p.add_argument("--skip-canonical-hash", action="store_true")
     a = p.parse_args()
-    print(json.dumps(build(a.history, a.out, None if a.skip_canonical_hash else CANONICAL_BLOB_SHA), ensure_ascii=False, indent=2))
+    print(json.dumps(build(a.history, a.out, None if a.skip_canonical_hash else CANONICAL_SHA256), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
