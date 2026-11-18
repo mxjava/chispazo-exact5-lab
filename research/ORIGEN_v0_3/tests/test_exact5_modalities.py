@@ -1,6 +1,6 @@
 import tempfile, unittest
 from pathlib import Path
-from origen.exact5_modalities import assign_modality, prequential_marginal_diagnostic, _v264_transition_signal
+from origen.exact5_modalities import assign_modality, prequential_marginal_diagnostic, _v264_transition_signal, v264_full_mixture_classic_diagnostic
 
 class ModalityTests(unittest.TestCase):
     def test_pre_transition_single_is_classic(self):
@@ -41,6 +41,17 @@ class ModalityTests(unittest.TestCase):
         signal=_v264_transition_signal(draws,2,window=800)
         # At t=2, range(1, t-1) is empty; no current-context leakage.
         self.assertEqual(sum(signal),0.0)
+
+    def test_full_v264_mixture_scores_identical_classic_targets(self):
+        rows=[]
+        for i in range(4):
+            day=f"2020-01-{i+1:02d}"
+            odd=5923+2*i
+            rows.append({"contest":odd,"date":day,"numbers":[1,2,3,4,5],"draw_type":"DE_LAS_TRES"})
+            rows.append({"contest":odd+1,"date":day,"numbers":[2,3,4,5,6],"draw_type":"CLASSIC"})
+        result=v264_full_mixture_classic_diagnostic(rows,warmup=2)
+        self.assertEqual(result["classic_only"]["n"],2)
+        self.assertEqual(result["pooled_stream_scored_on_same_classic_targets"]["n"],2)
 
     def test_fixed_prequential_output_is_not_evalue(self):
         rows=[]
