@@ -10,7 +10,7 @@ from datetime import date
 from pathlib import Path
 
 TRANSITION_CONTEST = 5923
-CANONICAL_BLOB_SHA = "2f5ff5bfbd779fe505736398e417b7211955958e"
+CANONICAL_SHA256 = "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a"
 NUMBER_COLUMNS = ("R1", "R2", "R3", "R4", "R5")
 UNIVERSE = 28
 PICK = 5
@@ -154,7 +154,7 @@ def prequential_marginal_diagnostic(labelled: list[dict], warmup_classic: int = 
     }
 
 
-def build(history: str | Path, output: str | Path, expected_sha256: str | None = CANONICAL_BLOB_SHA) -> dict:
+def build(history: str | Path, output: str | Path, expected_sha256: str | None = CANONICAL_SHA256) -> dict:
     rows, digest = read_history(history)
     if expected_sha256 and digest != expected_sha256:
         raise ValueError("canonical_history_sha256_mismatch")
