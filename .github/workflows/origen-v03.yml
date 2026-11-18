@@ -1,0 +1,26 @@
+name: ORIGEN v0.3 isolated validation
+on:
+  push:
+    paths:
+      - "research/ORIGEN_v0_3/**"
+      - ".github/workflows/origen-v03.yml"
+  pull_request:
+    paths:
+      - "research/ORIGEN_v0_3/**"
+      - ".github/workflows/origen-v03.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run ORIGEN isolated tests
+        working-directory: research/ORIGEN_v0_3
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
