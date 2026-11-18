@@ -24,3 +24,8 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m unittest discover -s tests -v
+      - name: Run canonical Classic-only modality audit
+        working-directory: .
+        env:
+          PYTHONPATH: research/ORIGEN_v0_3/src
+        run: python -m origen.exact5_modalities --history data/history/Chispazo_through_12249.csv --out /tmp/exact5-modalities
