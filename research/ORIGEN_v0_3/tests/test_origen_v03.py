@@ -102,7 +102,7 @@ class TestORIGENV03(unittest.TestCase):
             for i in range(3):
                 append_event(p,{"event_id":str(i),"timestamp_utc":f"2026-01-01T00:0{i}:00Z","event_type":"search","frame_id":"f","details":{"i":i}})
             lines=p.read_text().splitlines()
-            p.write_text(lines[0]+"\\n"+lines[2]+"\\n")
+            p.write_text(chr(10).join([lines[0], lines[2], ""]))
             from origen.search_ledger import audit_ledger
             self.assertEqual(audit_ledger(p)["state"],"BLOCKED")
             self.assertTrue(any(e["error"]=="chain_link_mismatch" for e in audit_ledger(p)["errors"]))
