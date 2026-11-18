@@ -1,0 +1,8 @@
+{
+  "observed_statistic": 0.0,
+  "direction": "greater",
+  "null_statistics": {
+    "row_order_destroyed": [0.0, 0.0, 0.0],
+    "matched_search_pipeline": [0.0, 0.0, 0.0]
+  }
+}
