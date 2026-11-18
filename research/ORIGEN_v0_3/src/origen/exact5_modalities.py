@@ -114,11 +114,9 @@ def _log_conditional5(probabilities: list[float], chosen: list[int]) -> float:
     return sum(math.log(weights[n - 1]) for n in chosen) - math.log(elementary[PICK])
 
 
-def _smoothed_model_logp(train: list[dict], target: dict, alpha: float = 200.0) -> float:
-    counts = Counter(n for d in train for n in d["numbers"])
-    t = len(train)
+def _smoothed_model_logp_from_counts(counts: Counter, draws_seen: int, target: dict, alpha: float = 200.0) -> float:
     base = PICK / UNIVERSE
-    probs = [(counts[n] + alpha * base) / (t + alpha) for n in range(1, UNIVERSE + 1)]
+    probs = [(counts[n] + alpha * base) / (draws_seen + alpha) for n in range(1, UNIVERSE + 1)]
     return _log_conditional5(probs, target["numbers"])
 
 
@@ -129,16 +127,24 @@ def prequential_marginal_diagnostic(labelled: list[dict], warmup_classic: int = 
     if len(classic) <= warmup_classic:
         raise ValueError("insufficient_classic_draws_for_warmup")
     records = []
-    for i in range(warmup_classic, len(classic)):
-        target = classic[i]
-        classic_lp = _smoothed_model_logp(classic[:i], target, alpha)
-        pooled_train = [r for r in pooled if r["contest"] < target["contest"]]
-        pooled_lp = _smoothed_model_logp(pooled_train, target, alpha)
+    classic_counts = Counter(n for d in classic[:warmup_classic] for n in d["numbers"])
+    classic_seen = warmup_classic
+    pooled_counts = Counter()
+    pooled_index = 0
+    for target in classic[warmup_classic:]:
+        while pooled_index < len(pooled) and pooled[pooled_index]["contest"] < target["contest"]:
+            pooled_counts.update(pooled[pooled_index]["numbers"])
+            pooled_index += 1
+        classic_lp = _smoothed_model_logp_from_counts(classic_counts, classic_seen, target, alpha)
+        pooled_seen = pooled_index
+        pooled_lp = _smoothed_model_logp_from_counts(pooled_counts, pooled_seen, target, alpha)
         records.append({
             "contest": target["contest"],
             "classic_only_log_lift": classic_lp - UNIFORM_LOGP,
             "pooled_stream_log_lift": pooled_lp - UNIFORM_LOGP,
         })
+        classic_counts.update(target["numbers"])
+        classic_seen += 1
     def summarize(key):
         vals = [r[key] for r in records]
         return {"n": len(vals), "mean_log_lift": sum(vals) / len(vals),
