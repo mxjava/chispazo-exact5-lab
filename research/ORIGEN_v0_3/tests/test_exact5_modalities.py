@@ -1,6 +1,6 @@
 import tempfile, unittest
 from pathlib import Path
-from origen.exact5_modalities import assign_modality, prequential_marginal_diagnostic
+from origen.exact5_modalities import assign_modality, prequential_marginal_diagnostic, _v264_transition_signal
 
 class ModalityTests(unittest.TestCase):
     def test_pre_transition_single_is_classic(self):
@@ -31,6 +31,16 @@ class ModalityTests(unittest.TestCase):
             {"contest":5922,"date":"2017-09-24","numbers":[2,3,4,5,6]},
         ]
         with self.assertRaises(ValueError): assign_modality(rows)
+
+    def test_v264_transition_excludes_current_context_row(self):
+        draws=[
+            {"contest":1,"numbers":[1,2,3,4,5]},
+            {"contest":2,"numbers":[1,6,7,8,9]},
+            {"contest":3,"numbers":[1,10,11,12,13]},
+        ]
+        signal=_v264_transition_signal(draws,2,window=800)
+        # At t=2, range(1, t-1) is empty; no current-context leakage.
+        self.assertEqual(sum(signal),0.0)
 
     def test_fixed_prequential_output_is_not_evalue(self):
         rows=[]
