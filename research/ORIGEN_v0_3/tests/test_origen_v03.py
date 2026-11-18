@@ -96,4 +96,22 @@ class TestORIGENV03(unittest.TestCase):
             p.write_text(json.dumps(row)+"\n"+json.dumps(row)+"\n")
             self.assertEqual(audit_registry(p)["state"],"BLOCKED")
 
+    def test_ledger_hash_chain_detects_interior_deletion(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d)/"ledger.jsonl"
+            for i in range(3):
+                append_event(p,{"event_id":str(i),"timestamp_utc":f"2026-01-01T00:0{i}:00Z","event_type":"search","frame_id":"f","details":{"i":i}})
+            lines=p.read_text().splitlines()
+            p.write_text(lines[0]+"\\n"+lines[2]+"\\n")
+            from origen.search_ledger import audit_ledger
+            self.assertEqual(audit_ledger(p)["state"],"BLOCKED")
+            self.assertTrue(any(e["error"]=="chain_link_mismatch" for e in audit_ledger(p)["errors"]))
+
+    def test_ledger_rejects_duplicate_event_id(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d)/"ledger.jsonl"
+            event={"event_id":"same","timestamp_utc":"2026-01-01T00:00:00Z","event_type":"search","frame_id":"f","details":{}}
+            append_event(p,event)
+            with self.assertRaises(ValueError): append_event(p,event)
+
 if __name__=="__main__": unittest.main()
