@@ -230,6 +230,119 @@ def v264_transition_classic_diagnostic(labelled: list[dict], warmup_classic: int
     }
 
 
+
+def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800) -> dict:
+    """Run the V264 28-expert Bayesian mixture on both streams, score identical Classic targets."""
+    import numpy as np
+
+    windows = (50, 200, 800)
+    half_lives = (16, 32, 64)
+    betas = (0.15, 0.30, 0.60)
+    bases = [f"freq{w}" for w in windows] + [f"ewma{h}" for h in half_lives] + ["hotgap", "duegap", "transition"]
+    names = ["uniform"] + [f"{base}_b{beta:.2f}" for base in bases for beta in betas]
+    log_uniform = UNIFORM_LOGP
+
+    def zscore(v):
+        v = np.asarray(v, dtype=float)
+        sd = float(v.std())
+        return (v - v.mean()) / (sd if sd > 1e-12 else 1.0)
+
+    def e5(weights):
+        e = np.zeros(6, dtype=float); e[0] = 1.0
+        for weight in weights:
+            for k in range(5, 0, -1):
+                e[k] += weight * e[k - 1]
+        return float(e[5])
+
+    def signals(draws, t):
+        out = {}
+        for window in windows:
+            sub = draws[max(0, t - window):t]
+            counts = np.bincount(sub.ravel(), minlength=28)
+            out[f"freq{window}"] = counts / max(1, len(sub))
+        for hl in half_lives:
+            start = max(0, t - 6 * hl)
+            sub = draws[start:t]
+            ages = np.arange(len(sub) - 1, -1, -1)
+            weights = 0.5 ** (ages / hl)
+            values = np.zeros(28, dtype=float)
+            for row, weight in zip(sub, weights):
+                values[row] += weight
+            out[f"ewma{hl}"] = values / max(float(weights.sum()), 1e-12)
+        last = np.full(28, t + 1, dtype=float)
+        for age, row in enumerate(draws[max(0, t - 500):t][::-1], start=1):
+            for number in row:
+                if last[number] > t:
+                    last[number] = age
+        last[last > t] = 501
+        out["hotgap"] = -last
+        out["duegap"] = np.minimum(last, 100)
+        transition = np.zeros(28, dtype=float)
+        if t >= 2:
+            previous = set(draws[t - 1].tolist())
+            start = max(1, t - 800)
+            denominator = 0
+            for j in range(start, t - 1):  # corrected: exclude current context row
+                if previous.intersection(draws[j - 1].tolist()):
+                    transition[draws[j]] += 1
+                    denominator += 1
+            transition /= max(1, denominator)
+        out["transition"] = transition
+        return out
+
+    def score_stream(stream, classic_only: bool, first_target_contest: int):
+        draws = np.asarray([r["numbers"] for r in stream], dtype=np.int16) - 1
+        logpost = np.full(len(names), -math.log(len(names)), dtype=float)
+        values = []
+        for t in range(max(warmup, 2), len(stream)):
+            target = stream[t]
+            sig = signals(draws, t)
+            probabilities = np.empty(len(names), dtype=float)
+            probabilities[0] = 1.0 / math.comb(UNIVERSE, PICK)
+            k = 1
+            for base_name in bases:
+                standardized = zscore(sig[base_name])
+                for beta in betas:
+                    weights = np.exp(beta * standardized)
+                    denominator = e5(weights)
+                    probabilities[k] = math.exp(float(np.log(weights[draws[t]].sum()) - math.log(denominator)))
+                    k += 1
+            maximum = float(logpost.max())
+            posterior = np.exp(logpost - maximum)
+            posterior /= posterior.sum()
+            mixture_probability = float(np.dot(posterior, probabilities))
+            log_lift = math.log(mixture_probability) - log_uniform * -1.0
+            # log_uniform is negative; log(p_mix) - log(1/U) = log(p_mix)+log(U)
+            log_lift = math.log(mixture_probability) + math.log(math.comb(UNIVERSE, PICK))
+            if target["draw_type"] == "CLASSIC" and target["contest"] >= first_target_contest:
+                values.append(log_lift)
+            logpost += np.log(np.maximum(probabilities, 1e-300))
+            maximum = float(logpost.max())
+            logpost -= maximum + math.log(float(np.exp(logpost - maximum).sum()))
+        return values
+
+    classic = [r for r in labelled if r["draw_type"] == "CLASSIC"]
+    if len(classic) <= warmup:
+        raise ValueError("insufficient_classic_draws_for_full_mixture")
+    first_target = classic[warmup]["contest"]
+    classic_values = score_stream(classic, True, first_target)
+    pooled_values = score_stream(labelled, False, first_target)
+    def summary(values):
+        return {"n": len(values), "mean_log_lift": sum(values) / len(values),
+                "cumulative_log_lift": sum(values),
+                "positive_fraction": sum(v > 0 for v in values) / len(values)}
+    return {
+        "expert_family": "V264 full 28-expert Bayesian mixture; windows 50/200/800, EWMA half-lives 16/32/64, hotgap/duegap/transition; beta 0.15/0.30/0.60",
+        "transition_fix": "historical transition loop excludes current context row",
+        "warmup_draws": warmup, "classic_targets": len(classic) - warmup,
+        "classic_only": summary(classic_values),
+        "pooled_stream_scored_on_same_classic_targets": summary(pooled_values),
+        "paired_mean_difference_classic_minus_pooled": sum(a - b for a, b in zip(classic_values, pooled_values)) / len(classic_values),
+        "classification": "EXPLORATORY_RETROSPECTIVE_NOT_EDGE_EVIDENCE",
+        "warning": "Retrospective comparison; posterior mixture is not treated as an anytime-valid e-process here; no multiplicity-adjusted or prospective confirmation."
+    }
+
+
 def build(history: str | Path, output: str | Path, expected_sha256: str | None = CANONICAL_SHA256) -> dict:
     rows, digest = read_history(history)
     if expected_sha256 and digest != expected_sha256:
@@ -255,6 +368,7 @@ def build(history: str | Path, output: str | Path, expected_sha256: str | None =
         "classic_draws": len(classic), "de_las_tres_draws": len(tres),
         "exploratory_prequential_diagnostic": diagnostics,
         "v264_transition_classic_diagnostic": v264_transition_classic_diagnostic(labelled),
+        "v264_full_mixture_classic_diagnostic": v264_full_mixture_classic_diagnostic(labelled),
         "limitations": [
             "Pre-transition rows are classified as Classic because the institutional report says the second daily draw was only introduced on 2017-09-25; still require independent row-level source audit.",
             "Post-transition odd/even parity is structurally consistent with official examples, but the full historical series is not yet independently cross-checked row by row.",
