@@ -93,3 +93,16 @@ Tests: `research/ORIGEN_v0_3/tests/test_exact5_modalities.py`.
 ### Next experiment
 
 Re-run the V264 temporal transition family on the Classic-only series with the lag defined as the previous Classic contest, and compare it against the pooled-stream version on identical Classic target dates. Keep all original model parameters fixed; no retuning after seeing the Classic-only result. The untouched prospective sequence remains sealed.
+
+### Second controlled comparison: corrected V264 transition expert
+
+The same 6,923 Classic targets were also scored with the fixed V264 transition expert (`beta=0.15), warm-up 800). The historical loop uses the leakage correction `range(start, t-1)`, excluding the current context draw from historical successor counts.
+
+| Training stream | Mean log-lift | Cumulative log-lift | Positive target fraction |
+|---|---:|---:|---:|
+| Classic-only sequence | -0.04903262 | -339.45282 | 44.65% |
+| Pooled sequence, same Classic targets | -0.04384260 | -303.52229 | 44.46% |
+
+Paired mean difference (Classic-only minus pooled): -0.00519002 nats per target. Both variants are strongly negative; Classic-only is worse. This is a single fixed expert, not the full V264 Bayesian mixture, and it is not multiplicity-adjusted or prospective. It does, however, falsify the simple claim that isolating Classic alone rescues this transition expert.
+
+The canonical audit and all 47 isolated ORIGEN tests passed in GitHub Actions. The canonical audit produced and uploaded a reproducible CSV modality map and JSON report as the `exact5-classic-modality-audit` workflow artifact.
