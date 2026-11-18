@@ -1,0 +1,1 @@
+These are schema templates only. Their placeholder values are not observations, results, or evidence. Replace them only with values produced by a frozen protocol and a verified prospective scoring pipeline.
