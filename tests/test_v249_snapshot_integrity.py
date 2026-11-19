@@ -1,12 +1,16 @@
 import numpy as np
 import pytest
 import joblib
+from types import SimpleNamespace
+
+import src.v264.CHISPAZO_V264_PARENT_REPAIR as v249_module
 
 from src.v264.CHISPAZO_V264_PARENT_REPAIR import (
     _v249_numeric_payload_sha256,
     _v249_snapshot_manifest,
     _v249_snapshot_manifest_sha256,
     _v249_validate_snapshot_integrity,
+    save_current_snapshot_v249,
     tie_safe_anti_saturation_score_v249,
 )
 
@@ -143,6 +147,26 @@ def test_v249_snapshot_integrity_survives_joblib_roundtrip(tmp_path):
 
 
 
+
+
+def test_v249_frozen_snapshot_reuse_revalidates_payload_and_refuses_corruption(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / 'snapshots' / 'target_12361.joblib'
+    monkeypatch.setattr(v249_module, '_v249_snapshot_path', lambda _state_dir, _target: snapshot_path)
+    audit = SimpleNamespace(max_concurso=12360, sha256='c' * 64)
+    prod_gate = {'fusion_state': 'heuristic_only_after_holm', 'allocation_detail': {'state': 'validated'}}
+
+    saved_path = save_current_snapshot_v249(tmp_path, 12361, audit, prod_gate, _payload())
+    assert saved_path == snapshot_path
+    original = joblib.load(saved_path)
+    assert original['schema'] == 2
+    assert original['manifest_sha256'] == _v249_snapshot_manifest_sha256(original)
+
+    corrupted = dict(original)
+    corrupted['anti_saturation_score'] = original['anti_saturation_score'].copy()
+    corrupted['anti_saturation_score'][0] += 1e-5
+    joblib.dump(corrupted, saved_path, compress=3)
+    with pytest.raises(RuntimeError, match='numeric payload SHA256 mismatch'):
+        save_current_snapshot_v249(tmp_path, 12361, audit, prod_gate, _payload())
 
 def test_v249_snapshot_manifest_sha256_preserves_legacy_v1_contract():
     snapshot = {
