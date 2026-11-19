@@ -104,6 +104,32 @@ class ReverseEngineeringOracleTests(unittest.TestCase):
         self.assertAlmostEqual(pair_stat, direct_pair, places=14)
         self.assertTrue(math.isfinite(temporal_stat))
 
+
+    def test_v313_v314_v315_kernels_reject_nonbinary_matrices(self):
+        from origen.v314_triple_motif import _triple_counts
+        from origen.v315_pair_transition import _cell_counts
+        valid = _simulate_draws(np.random.default_rng(999), 8)
+        malformed = []
+        two = valid.astype(np.int16)
+        two[0, 0] = 2
+        malformed.append(two)
+        negative = valid.astype(np.int16)
+        negative[0, 0] = -1
+        negative[0, 1] = 2
+        malformed.append(negative)
+        fractional = valid.astype(float)
+        fractional[0, 0] = 0.5
+        malformed.append(fractional)
+        wrong_cardinality = valid.copy()
+        wrong_cardinality[0, 0] = 0
+        malformed.append(wrong_cardinality)
+        for bad in malformed:
+            for kernel in (_statistics, _triple_counts, _cell_counts):
+                with self.subTest(kernel=kernel.__name__, dtype=bad.dtype), self.assertRaises(ValueError):
+                    kernel(bad)
+        with self.assertRaises(ValueError):
+            _statistics(valid[:, :-1])
+
     def test_v314_optimized_triple_map_matches_reference_exactly(self):
         rng = np.random.default_rng(3142026)
         for n in (2, 7, 31, 100):
