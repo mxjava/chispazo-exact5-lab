@@ -113,3 +113,5 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 - Adds one fixed pre/post contrast at 2022-03-10, inherited from the existing V265 regime boundary (not a verified machine identity). It compares number, pair and all V318 shape-category proportions under a single global Monte Carlo max-statistic.
 - The question is whether the result distribution differs across this historical boundary; any rejection is historical only and cannot be attributed to a machine or sphere set without equipment records.
 - See `PREREGISTRATION_V319_FIXED_ERA_CONTRAST.md`.
+
+- V312 full fixed 27-expert static mixture replay completed successfully: 6,923 Classic targets, mean log-lift -0.0262296890 nats, cumulative -181.5881, positive fraction 36.07%. It underperformed uniform; see `docs/V312_STATIC_MIXTURE_RESULT_20261119.md`.
