@@ -76,7 +76,7 @@ def _simulate_draws(rng: np.random.Generator, n: int) -> np.ndarray:
     return matrix
 
 
-def run_v313(labelled: list[dict], source_sha256: str, simulations: int = 9999, seed: int = 3132026) -> dict:
+def run_v313(labelled: list[dict], source_sha256: str, simulations: int = 1999, seed: int = 3132026) -> dict:
     if simulations < 999:
         raise ValueError("simulations_must_be_at_least_999")
     classic = sorted((r for r in labelled if r.get("draw_type") == "CLASSIC"), key=lambda r: int(r["contest"]))
@@ -125,7 +125,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--history", required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--simulations", type=int, default=9999)
+    parser.add_argument("--simulations", type=int, default=1999)
     parser.add_argument("--seed", type=int, default=3132026)
     args = parser.parse_args()
     rows, digest = read_history(args.history)
