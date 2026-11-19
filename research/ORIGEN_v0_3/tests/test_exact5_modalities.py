@@ -42,16 +42,26 @@ class ModalityTests(unittest.TestCase):
         # At t=2, range(1, t-1) is empty; no current-context leakage.
         self.assertEqual(sum(signal),0.0)
 
-    def test_full_v264_mixture_scores_identical_classic_targets(self):
+    def test_full_v264_mixture_uses_calendar_aligned_warmup_and_divergent_streams(self):
         rows=[]
-        for i in range(4):
+        for i in range(8):
             day=f"2020-01-{i+1:02d}"
             odd=5923+2*i
-            rows.append({"contest":odd,"date":day,"numbers":[1,2,3,4,5],"draw_type":"DE_LAS_TRES"})
-            rows.append({"contest":odd+1,"date":day,"numbers":[2,3,4,5,6],"draw_type":"CLASSIC"})
+            de_tres=[((i*3+j*2) % 28)+1 for j in range(5)]
+            classic=[((i*5+j*3+1) % 28)+1 for j in range(5)]
+            rows.append({"contest":odd,"date":day,"numbers":de_tres,"draw_type":"DE_LAS_TRES"})
+            rows.append({"contest":odd+1,"date":day,"numbers":classic,"draw_type":"CLASSIC"})
         result=v264_full_mixture_classic_diagnostic(rows,warmup=2)
-        self.assertEqual(result["classic_only"]["n"],2)
-        self.assertEqual(result["pooled_stream_scored_on_same_classic_targets"]["n"],2)
+        self.assertEqual(result["classic_only"]["n"],6)
+        self.assertEqual(result["pooled_stream_scored_on_same_classic_targets"]["n"],6)
+        self.assertTrue(result["target_alignment_verified"])
+        self.assertEqual(result["first_target_contest"],5928)
+        self.assertEqual(result["pooled_stream_start_index"],3)
+        self.assertEqual(result["classic_stream_start_index"],2)
+        self.assertNotEqual(
+            result["classic_only"]["cumulative_log_lift"],
+            result["pooled_stream_scored_on_same_classic_targets"]["cumulative_log_lift"],
+        )
 
     def test_fixed_prequential_output_is_not_evalue(self):
         rows=[]
