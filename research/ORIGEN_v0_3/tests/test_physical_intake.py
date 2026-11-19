@@ -17,6 +17,7 @@ def make_rows():
             "draw_date": "2026-11-20",
             "modality": "CLASSIC",
             "draw_close_at": "2026-11-20T19:00:00-06:00",
+            "draw_at": "2026-11-20T21:00:00-06:00",
             "sphere_set_id": "SET-A",
             "set_assigned_at": "2026-11-20T17:00:00-06:00",
             "sphere_type": "Smartballs",
@@ -33,6 +34,7 @@ def make_rows():
             "calibration_valid_to": "2026-12-31T23:59:59-06:00",
             "calibration_certificate_sha256": "a" * 64,
             "mapping_valid_from": "2026-11-20T16:00:00-06:00",
+            "mapping_valid_to": "2026-11-20T21:30:00-06:00",
             "source_document_sha256": "b" * 64,
             "source_document_ref": "ACTA-12300/TIRA-1",
         })
@@ -148,7 +150,32 @@ class PhysicalIntakeTests(unittest.TestCase):
         rows = make_rows()
         rows[0]["mapping_valid_from"] = "2026-11-20T17:05:00-06:00"
         report = validate_physical_rows(rows)
-        self.assertIn("Q_MAPPING", report["quarantined"]["12300"])
+        self.assertIn("Q_REMAP", report["quarantined"]["12300"])
+
+    def test_mapping_must_remain_valid_through_draw(self):
+        rows = make_rows()
+        rows[0]["mapping_valid_to"] = "2026-11-20T20:59:59-06:00"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_REMAP", report["quarantined"]["12300"])
+
+    def test_draw_timestamp_must_follow_sales_close(self):
+        rows = make_rows()
+        for row in rows:
+            row["draw_at"] = "2026-11-20T18:59:00-06:00"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_TIME", report["quarantined"]["12300"])
+
+    def test_cross_contest_mapping_conflict_is_integrated(self):
+        first = make_rows()
+        second = make_rows()
+        for row in second:
+            row["contest_id"] = "12301"
+        second[0]["printed_number"], second[1]["printed_number"] = "2", "1"
+        report = validate_physical_rows(first + second)
+        self.assertIn("Q_REMAP", report["quarantined"]["12300"])
+        self.assertIn("Q_REMAP", report["quarantined"]["12301"])
+        self.assertNotIn(12300, report["usable_contests"])
+        self.assertNotIn(12301, report["usable_contests"])
 
     def test_draw_date_must_be_iso_calendar_date(self):
         rows = make_rows()
