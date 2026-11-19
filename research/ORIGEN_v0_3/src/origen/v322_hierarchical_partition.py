@@ -67,41 +67,65 @@ class _PartitionTree:
         )
         path_counts = Counter(paths)
         self.leaf_sizes = np.asarray(
-            [path_counts[leaf] for leaf in self.leaves],
-            dtype=np.float64,
+            [path_counts[leaf] for leaf in self.leaves], dtype=np.float64
         )
-        self.universe_prefix_counts = []
+        self.prefix_indices = []
         self.training_prefix_counts = []
+        self.leaf_child_ids = []
+        self.leaf_parent_ids = []
+        self.base_conditionals = []
         for depth in range(1, self.depth + 1):
-            self.universe_prefix_counts.append(
-                Counter(path[:depth] for path in paths)
+            prefix_counts = Counter(path[:depth] for path in paths)
+            prefixes = sorted(prefix_counts)
+            prefix_index = {prefix: i for i, prefix in enumerate(prefixes)}
+            self.prefix_indices.append(prefix_index)
+            self.training_prefix_counts.append(
+                np.zeros(len(prefixes), dtype=np.int64)
             )
-            self.training_prefix_counts.append(Counter())
+            child_ids = np.asarray(
+                [prefix_index[leaf[:depth]] for leaf in self.leaves],
+                dtype=np.int32,
+            )
+            self.leaf_child_ids.append(child_ids)
+            if depth > 1:
+                parent_index = self.prefix_indices[depth - 2]
+                self.leaf_parent_ids.append(np.asarray(
+                    [parent_index[leaf[:depth - 1]] for leaf in self.leaves],
+                    dtype=np.int32,
+                ))
+                parent_universe = Counter(path[:depth - 1] for path in paths)
+                base = np.asarray([
+                    prefix_counts[leaf[:depth]] / parent_universe[leaf[:depth - 1]]
+                    for leaf in self.leaves
+                ], dtype=np.float64)
+            else:
+                self.leaf_parent_ids.append(None)
+                base = np.asarray([
+                    prefix_counts[leaf[:depth]] / UNIVERSE_SIZE
+                    for leaf in self.leaves
+                ], dtype=np.float64)
+            self.base_conditionals.append(base)
 
     def update(self, path: tuple) -> None:
         for depth in range(1, self.depth + 1):
-            self.training_prefix_counts[depth - 1][path[:depth]] += 1
+            prefix_id = self.prefix_indices[depth - 1][path[:depth]]
+            self.training_prefix_counts[depth - 1][prefix_id] += 1
 
     def leaf_probabilities(self, draws_seen: int, alpha: float) -> np.ndarray:
         probs = np.ones(len(self.leaves), dtype=np.float64)
-        for leaf_id, leaf in enumerate(self.leaves):
-            for depth in range(1, self.depth + 1):
-                child = leaf[:depth]
-                parent = leaf[: depth - 1]
-                child_train = self.training_prefix_counts[depth - 1].get(child, 0)
-                parent_train = (
-                    draws_seen if depth == 1
-                    else self.training_prefix_counts[depth - 2].get(parent, 0)
-                )
-                child_universe = self.universe_prefix_counts[depth - 1][child]
-                parent_universe = (
-                    UNIVERSE_SIZE if depth == 1
-                    else self.universe_prefix_counts[depth - 2][parent]
-                )
-                base_conditional = child_universe / parent_universe
-                probs[leaf_id] *= (
-                    child_train + alpha * base_conditional
-                ) / (parent_train + alpha)
+        for depth in range(1, self.depth + 1):
+            child_train = self.training_prefix_counts[depth - 1][
+                self.leaf_child_ids[depth - 1]
+            ]
+            if depth == 1:
+                parent_train = draws_seen
+            else:
+                parent_train = self.training_prefix_counts[depth - 2][
+                    self.leaf_parent_ids[depth - 1]
+                ]
+            probs *= (
+                child_train + alpha * self.base_conditionals[depth - 1]
+            ) / (parent_train + alpha)
         return probs
 
 
