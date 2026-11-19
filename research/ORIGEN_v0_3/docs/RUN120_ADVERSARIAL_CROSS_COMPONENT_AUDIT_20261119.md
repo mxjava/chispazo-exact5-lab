@@ -49,7 +49,7 @@ El constructor PMF acepta `timezone_name="UTC"` y una URI `https://example.inval
 - Comparación: rama divergente, 210 commits adelante y 2 detrás; no reconciliada.
 - Blob canónico CSV en main y Run119: `2f5ff5bfbd779fe505736398e417b7211955958e`, idéntico.
 - PR #8 sigue Draft/Open/Unmerged y apunta a `research/origen-v0.3-engine-20261118`, no a Run119.
-- Verificación importante: los paths `research/ORIGEN_v0_3/src/origen/pmf_custody.py` y `target_ledger.py` no existen todavía en la rama GitHub Run119 (Contents API 404). El paquete ZIP es una referencia local descargable de 41 pruebas, aún no integración de código ni CI del repositorio.
+- Verificación importante: los paths `research/ORIGEN_v0_3/src/origen/pmf_custody.py` y `target_ledger.py` no existen todavía en la rama GitHub Run119 (Contents API 404). El paquete ZIP es una referencia local descargable de 41 pruebas, aún no integración de código ni CI del repositorio. Tras la auditoría se añadieron únicamente este informe y el overlay status-only del 19/11 a la rama aislada (commits `05925d766842dea4bfaf5f6c6eeeaef8ffc8a8c6` y `9ef996bd183a51ba716b82c676cbfac195566e0a`). No se escribieron fuentes de código, `main`, PR #8, V294 ni datos canónicos.
 
 ## Próxima compuerta
 
