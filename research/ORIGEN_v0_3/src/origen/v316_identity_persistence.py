@@ -31,6 +31,7 @@ P2 = PICK * (PICK - 1) / (UNIVERSE * (UNIVERSE - 1))
 Q1 = P1 ** 2
 Q2 = P2 ** 2
 OVERLAP_MEAN = PICK * PICK / UNIVERSE
+BIT_COUNTS = np.asarray([value.bit_count() for value in range(256)], dtype=np.uint8)
 OVERLAP_VARIANCE = (
     PICK * P1 * (1.0 - P1) * (UNIVERSE - PICK) / (UNIVERSE - 1)
 )
@@ -45,10 +46,9 @@ def _statistics_by_component(draws: np.ndarray) -> tuple[float, np.ndarray, np.n
     pair_z = np.empty((len(LAGS), len(PAIRS)), dtype=np.float64)
     pair_i = np.fromiter((i for i, _ in PAIRS), dtype=np.intp)
     pair_j = np.fromiter((j for _, j in PAIRS), dtype=np.intp)
-    wide = matrix.astype(np.int64, copy=False)
 
     for lag_index, lag in enumerate(LAGS):
-        common = wide[:-lag] * wide[lag:]
+        common = matrix[:-lag] & matrix[lag:]
         transitions = n - lag
 
         overlap = common.sum(axis=1, dtype=np.int64)
@@ -61,8 +61,9 @@ def _statistics_by_component(draws: np.ndarray) -> tuple[float, np.ndarray, np.n
         number_var = transitions * Q1 * (1.0 - Q1)
         number_z[lag_index] = np.abs(number_counts - number_mean) / math.sqrt(number_var)
 
-        pair_matrix = common.T @ common
-        pair_counts = pair_matrix[pair_i, pair_j]
+        packed = np.packbits(common, axis=0, bitorder="little")
+        pair_bits = packed[:, pair_i] & packed[:, pair_j]
+        pair_counts = BIT_COUNTS[pair_bits].sum(axis=0, dtype=np.int64)
         pair_mean = transitions * Q2
         pair_var = transitions * Q2 * (1.0 - Q2)
         pair_z[lag_index] = np.abs(pair_counts - pair_mean) / math.sqrt(pair_var)
