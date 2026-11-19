@@ -4,7 +4,12 @@ on:
     branches:
       - research/origen-v0.3-engine-20261118
     paths:
-      - "research/ORIGEN_v0_3/**"
+      - "research/ORIGEN_v0_3/src/origen/v314_triple_motif.py"
+      - "research/ORIGEN_v0_3/src/origen/v313_global_null.py"
+      - "research/ORIGEN_v0_3/src/origen/exact5_modalities.py"
+      - "research/ORIGEN_v0_3/tests/test_v314_triple_motif.py"
+      - "research/ORIGEN_v0_3/tests/test_reverse_engineering_oracles.py"
+      - "data/history/Chispazo_through_12249.csv"
       - ".github/workflows/v314-triple-motif.yml"
   workflow_dispatch:
 permissions:
