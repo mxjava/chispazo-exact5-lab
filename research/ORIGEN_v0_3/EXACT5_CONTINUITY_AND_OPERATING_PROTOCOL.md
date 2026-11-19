@@ -71,3 +71,14 @@ Prioritize primary physical traceability records and robust prospective custody 
 - Main remains at the protected baseline SHA above. The canonical history remains governed by the established SHA-256 baseline; this workflow used it read-only. V294 remains frozen.
 - This closes the prior isolated-workflow validation blocker. It does not establish predictive edge: V312 remains retrospective and negative; V313 rejects none of its global-null families; physical primary records and independent prospective custody are still absent.
 - Next high-value work: build a concrete sealed prospective-custody specification and operator checklist (two pre-close outputs, immutable timestamped hashes, independent witness/custodian, draw-close boundary, append-only score ledger, failure/recovery rules), then separately pursue primary weighing strips and sphere-number mapping. No government request is submitted without the user's explicit instruction.
+
+
+## Operational update — custody hardening and V316 (2026-11-19)
+
+- Implemented src/origen/custody.py with exact-schema validation, candidate specification hash binding, distinct generator/custodian identifiers, strict pre-close timestamp ordering, exact portfolio byte binding, exclusive create-only file writes, ordered ledger-chain verification, and optional externally anchored ledger-head verification.
+- Custody tests cover byte tampering, record mutation, role collision, equal/late timestamps, wrong modality, malformed numeric IDs, duplicate portfolio lines, invalid hashes, record overwrite, chain deletion/reordering, and external head-anchor detection. A first CI pass exposed two test expectation mismatches; the assertions were corrected rather than suppressing the failures. The latest complete run is pending.
+- Implemented V316 from the already frozen preregistration: one max-statistic family of 8,140 cells (20 lags; aggregate overlap; 28 number identities; 378 pair identities), Classic-only, exact 5-of-28 null, fixed canonical source digest/count/boundaries, PCG64 seed 3162026 and exactly 1,999 simulations.
+- V316 pair counts use packed-bit intersections with a direct nested-loop reference oracle. Its dedicated workflow is .github/workflows/v316-identity-persistence.yml; latest execution is pending. No V316 result or signal is claimed.
+- V313/V314/V315 remain unchanged and their accepted historical conclusions remain no rejection/no edge. V316 is a new frozen confirmatory retrospective falsification, not a predictor.
+- The custody implementation does not authenticate identity or time and does not create immutable storage. An independent custodian, trusted timestamp evidence, and an externally retained ledger-head anchor remain operational prerequisites.
+- Current branch remains research-only; PR #8 remains draft/unmerged. V294 and the canonical history remain protected; no writes to main.
