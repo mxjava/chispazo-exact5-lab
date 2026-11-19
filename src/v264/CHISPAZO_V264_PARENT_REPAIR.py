@@ -2964,8 +2964,11 @@ def _v249_validate_snapshot_integrity(snapshot: Dict[str, object]) -> None:
         raise RuntimeError('V249 snapshot guardrail failed: anti_order/anti_rank mismatch')
     if scores.dtype != np.dtype('float64') or np.asarray(snapshot['fused']).dtype != np.dtype('float64') or np.asarray(snapshot['tie_signal']).dtype != np.dtype('float64'):
         raise RuntimeError('V249 snapshot guardrail failed: v2 score arrays must be float64')
-    if any(np.asarray(v).dtype != np.dtype('float64') for v in snapshot['specialist_scores'].values()):
+    specialist_arrays = [np.asarray(v) for v in snapshot['specialist_scores'].values()]
+    if any(v.dtype != np.dtype('float64') for v in specialist_arrays):
         raise RuntimeError('V249 snapshot guardrail failed: specialist scores must be float64')
+    if np.asarray(snapshot['fused']).shape != (n,) or np.asarray(snapshot['tie_signal']).shape != (n,) or any(v.shape != (n,) for v in specialist_arrays):
+        raise RuntimeError('V249 snapshot guardrail failed: score vector shapes do not match universe')
     if np.asarray(snapshot['portfolio_idx']).dtype != np.dtype('int32') or order.dtype != np.dtype('int32') or ranks.dtype != np.dtype('int32'):
         raise RuntimeError('V249 snapshot guardrail failed: v2 index arrays must be int32')
     if not np.all(np.isfinite(scores)) or not np.all(np.isfinite(snapshot['fused'])) or not np.all(np.isfinite(snapshot['tie_signal'])):
