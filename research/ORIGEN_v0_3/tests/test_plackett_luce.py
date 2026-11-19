@@ -7,7 +7,7 @@ import unittest
 from origen.plackett_luce import (
     DRAW_SIZE, N_SPHERES, enumerate_set_log_probabilities,
     log_likelihood_ratio, log_plackett_luce_set_probability,
-    log_uniform_set_probability, mass_log_weights,
+    log_uniform_set_probability, mass_log_weights, prequential_e_process,
 )
 
 
@@ -72,6 +72,21 @@ class PlackettLuceTests(unittest.TestCase):
             mass_log_weights([4.7] * 27 + [float("nan")], 1.0)
         with self.assertRaisesRegex(ValueError, "beta_per_sd"):
             mass_log_weights([4.7 + i / 100 for i in range(28)], float("inf"))
+
+    def test_prequential_e_process_crosses_threshold_at_twenty(self):
+        result = prequential_e_process([math.log(4), math.log(5)])
+        self.assertTrue(result["threshold_20_crossed"])
+        self.assertAlmostEqual(result["anytime_p_value"], 0.05, places=14)
+        self.assertEqual(result["n_observations"], 2)
+
+    def test_prequential_e_process_does_not_claim_evidence_for_nonpositive_path(self):
+        result = prequential_e_process([-0.2, -0.1, 0.05])
+        self.assertFalse(result["threshold_20_crossed"])
+        self.assertEqual(result["anytime_p_value"], 1.0)
+
+    def test_prequential_e_process_rejects_nonfinite_increment(self):
+        with self.assertRaisesRegex(ValueError, "must be finite"):
+            prequential_e_process([0.0, float("nan")])
 
     def test_invalid_draw_rejected(self):
         with self.assertRaisesRegex(ValueError, "distinct"):
