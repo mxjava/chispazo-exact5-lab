@@ -19,6 +19,8 @@ No method can guarantee a 5/5 result in a fair random draw. The research target 
 4. Keep Classic and De las Tres separate. Never infer missing results.
 5. Freeze input SHA-256, row count, min/max contest, date range and exclusions in a manifest.
 6. Do not edit or replace the canonical CSV. Any official extension is a separately sourced supplement with URL, retrieval date, raw-file hash and row-level provenance.
+7. Parse dates as calendar dates in Mexico City local time (America/Mexico_City), not UTC-shifted timestamps. Independently recompute weekday from the ISO date and reject impossible/mismatched date-weekday pairs.
+8. Resolve each record's modality and scheduled slot from official metadata. Chispazo has two daily editions: De las Tres at 15:00 and Clásico at 21:00, every day. Never infer modality from contest-number parity or row order alone. Keep the two same-date editions as distinct events; Classic analysis uses only the 21:00 edition.
 
 ## B. Exact combinatorial location for every draw
 
@@ -48,8 +50,11 @@ Produce one row per Classic draw with contest, date, numbers, feature vector, ce
 - observed vs exact-universe expected feature-cell frequencies;
 - number/pair/triple occurrence counts;
 - temporal gaps and recurrence intervals;
-- day-of-week and within-day position only if timestamp/ordering provenance is reliable;
-- transition summaries using strictly prior draws.
+- day-of-week as an explicit categorical feature (Monday through Sunday and ISO weekday 1–7), including per-weekday counts, exact-universe expected cell frequencies, effect sizes and uncertainty;
+- Classic-only weekday × feature-cell cross-tabs, with the full tested family corrected for multiplicity;
+- date-level pairing with De las Tres only in a separately labelled auxiliary analysis, never pooled into Classic inference; test same-date cross-edition overlap only when both official results are verified;
+- contest date, scheduled slot (Classic 21:00), and within-date ordering, with explicit validation that the Classic follows the 15:00 edition;
+- transition summaries using strictly prior draws, with weekday-conditioned transitions compared against an unconditional null.
 
 For every aggregate comparison, use an explicit null, report effect size and uncertainty, and correct the complete declared family for multiplicity (Holm or a preregistered max-statistic simulation). Historical descriptive summaries are not predictive evidence.
 
@@ -60,7 +65,7 @@ For each target draw t, candidate scores may use only information available stri
 A candidate can be called promising only if it:
 1. beats uniform on a genuinely untouched chronological holdout;
 2. survives the complete preregistered multiplicity correction;
-3. remains stable across fixed eras and reasonable perturbations;
+3. remains stable across fixed eras, weekdays and reasonable perturbations; weekday effects must survive adjustment for the full preregistered family and must add prospective log-score over a non-weekday baseline;
 4. has a reproducible, frozen prospective record before outcomes are known;
 5. passes an independent replay from the frozen source and manifest.
 
@@ -70,7 +75,10 @@ No retrospective tuning to the most recent miss or hit. No promotion of V294 or 
 
 - Exhaustive universe count is exactly 98,280 and each combination is unique.
 - Every valid draw maps to exactly one deterministic feature vector and cell.
-- Invalid numbers, duplicate numbers, malformed dates, duplicate/conflicting contests and modality leakage are rejected or quarantined.
+- Invalid numbers, duplicate numbers, malformed dates, impossible weekday labels, duplicate/conflicting contests and modality leakage are rejected or quarantined.
+- Weekday is recomputed from the local calendar date and tested against any source-provided weekday; date-only rows never undergo timezone conversion.
+- Same-date Classic and De las Tres records remain separate; Classic slot is verified as 21:00 and not confused with the 15:00 edition.
+- Weekday labels and ISO codes are deterministic and invariant under row-order permutation.
 - Cell probabilities sum to 1 across the exhaustive universe.
 - Rank and archetype outputs are deterministic under row-order permutation.
 - Chronological features cannot access target or future rows (poison-future test).
