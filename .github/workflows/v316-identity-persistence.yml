@@ -4,7 +4,12 @@ on:
     branches:
       - research/origen-v0.3-engine-20261118
     paths:
-      - "research/ORIGEN_v0_3/**"
+      - "research/ORIGEN_v0_3/src/origen/v316_identity_persistence.py"
+      - "research/ORIGEN_v0_3/src/origen/v313_global_null.py"
+      - "research/ORIGEN_v0_3/src/origen/exact5_modalities.py"
+      - "research/ORIGEN_v0_3/tests/test_v316_identity_persistence.py"
+      - "research/ORIGEN_v0_3/PREREGISTRATION_V316_IDENTITY_TEMPORAL_PERSISTENCE.md"
+      - "data/history/Chispazo_through_12249.csv"
       - ".github/workflows/v316-identity-persistence.yml"
   workflow_dispatch:
 permissions:
