@@ -102,3 +102,12 @@ def test_v249_snapshot_integrity_rejects_non_finite_scores():
     payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
     with pytest.raises(RuntimeError, match='non-finite score payload'):
         _v249_validate_snapshot_integrity(payload)
+
+
+
+def test_v249_snapshot_integrity_rejects_misaligned_specialist_vector():
+    payload = _payload()
+    payload['specialist_scores'] = {'heuristic': np.array([1.0, 2.0], dtype=np.float64)}
+    payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
+    with pytest.raises(RuntimeError, match='score vector shapes do not match universe'):
+        _v249_validate_snapshot_integrity(payload)
