@@ -313,6 +313,8 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
         logpost = np.full(len(names), -math.log(len(names)), dtype=float)
         values = []
         scored_contests = []
+        posterior_trace = []
+        de_las_tres_updates = 0
         for t in range(max(start_index, 2), len(stream)):
             target = stream[t]
             sig = signals(draws, t)
@@ -333,20 +335,24 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
             if target["draw_type"] == "CLASSIC" and target["contest"] >= first_target_contest:
                 values.append(math.log(mixture_probability) - log_uniform)
                 scored_contests.append(target["contest"])
+                posterior_trace.append(posterior.copy())
+            if target["draw_type"] == "DE_LAS_TRES":
+                de_las_tres_updates += 1
             logpost += np.log(np.maximum(probabilities, 1e-300))
             maximum = float(logpost.max())
             logpost -= maximum + math.log(float(np.exp(logpost - maximum).sum()))
-        return values, scored_contests, start_index
+        return values, scored_contests, start_index, de_las_tres_updates, posterior_trace
 
     classic = [r for r in labelled if r["draw_type"] == "CLASSIC"]
     if len(classic) <= warmup:
         raise ValueError("insufficient_classic_draws_for_full_mixture")
     first_target = classic[warmup]["contest"]
-    classic_values, classic_targets, classic_start = score_stream(classic, first_target, False)
-    pooled_values, pooled_targets, pooled_start = score_stream(labelled, first_target, True)
+    classic_values, classic_targets, classic_start, classic_de_tres_updates, classic_trace = score_stream(classic, first_target, False)
+    pooled_values, pooled_targets, pooled_start, pooled_de_tres_updates, pooled_trace = score_stream(labelled, first_target, True)
     if classic_targets != pooled_targets:
         raise ValueError("classic_target_alignment_failure")
 
+    posterior_l1 = [float(np.abs(a - b).sum()) for a, b in zip(classic_trace, pooled_trace)]
     def summary(values):
         return {"n": len(values), "mean_log_lift": sum(values) / len(values),
                 "cumulative_log_lift": sum(values),
@@ -363,6 +369,10 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
         "pooled_stream_scored_on_same_classic_targets": summary(pooled_values),
         "paired_mean_difference_classic_minus_pooled": sum(a - b for a, b in zip(classic_values, pooled_values)) / len(classic_values),
         "target_alignment_verified": True,
+        "classic_stream_de_las_tres_updates": classic_de_tres_updates,
+        "pooled_stream_de_las_tres_updates": pooled_de_tres_updates,
+        "posterior_trace_max_l1_difference_on_classic_targets": max(posterior_l1, default=0.0),
+        "posterior_trace_nonzero_difference_targets": sum(x > 1e-12 for x in posterior_l1),
         "classification": "EXPLORATORY_RETROSPECTIVE_NOT_EDGE_EVIDENCE",
         "warning": "Retrospective plug-in mixture comparison; not an anytime-valid e-process, no multiplicity correction or prospective confirmation."
     }
