@@ -1,0 +1,50 @@
+name: ORIGEN V321 weekday omnibus
+on:
+  push:
+    paths:
+      - "research/ORIGEN_v0_3/src/origen/v320_draw_atlas.py"
+      - "research/ORIGEN_v0_3/src/origen/v321_weekday_omnibus.py"
+      - "research/ORIGEN_v0_3/tests/test_v321_weekday_omnibus.py"
+      - "research/ORIGEN_v0_3/src/origen/exact5_modalities.py"
+      - "data/history/Chispazo_through_12249.csv"
+      - ".github/workflows/origen-v321-weekday-omnibus.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  weekday-omnibus:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run V321 unit tests
+        env:
+          PYTHONPATH: research/ORIGEN_v0_3/src
+        run: python -m unittest research/ORIGEN_v0_3/tests/test_v321_weekday_omnibus.py -v
+      - name: Rebuild V320 atlas from immutable canonical history
+        env:
+          PYTHONPATH: research/ORIGEN_v0_3/src
+        run: >-
+          python -m origen.v320_draw_atlas
+          --history data/history/Chispazo_through_12249.csv
+          --out /tmp/exact5-v321
+          --expected-sha256 5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a
+      - name: Run preregistered weekday omnibus
+        env:
+          PYTHONPATH: research/ORIGEN_v0_3/src
+        run: >-
+          python -m origen.v321_weekday_omnibus
+          --atlas /tmp/exact5-v321/v320_classic_draw_atlas.csv
+          --out /tmp/exact5-v321/v321_weekday_omnibus.json
+          --permutations 1999
+          --seed 3212026
+      - name: Upload reproducible V321 result
+        uses: actions/upload-artifact@v4
+        with:
+          name: exact5-v321-weekday-omnibus
+          path: |
+            /tmp/exact5-v321/v321_weekday_omnibus.json
+            /tmp/exact5-v321/v320_atlas_manifest.json
+          if-no-files-found: error
