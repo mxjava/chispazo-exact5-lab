@@ -65,3 +65,11 @@ def test_grid_reports_all_chronological_quartiles():
         "oldest_quartile", "second_quartile", "third_quartile", "newest_quartile"
     }
     assert sum(v["n"] for v in candidate["chronological_quartiles"].values()) == 40
+
+
+def test_mixture_log_lift_matches_weighted_expert_likelihoods():
+    x = np.array([[0.0, np.log(2.0)], [0.0, np.log(4.0)]])
+    ll, weights = prequential_mixture_log_lift(x, window=5, temperature=1.0)
+    assert np.isclose(ll[0], np.log(1.5))
+    expected_second = np.log(np.dot(weights[1], np.exp(x[1])))
+    assert np.isclose(ll[1], expected_second)
