@@ -96,3 +96,7 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 - Added `origen.physical_intake` and CLI command `origen validate-physical --file <csv>` to enforce mapping, timestamps, calibration interval, source hashes, 28-row completeness and quarantine rules.
 - Legacy wide template is unchanged and is insufficient by itself for physical-sphere identity linkage. Structural validity does not authenticate records or establish bias.
 - See `docs/PHYSICAL_SPHERE_INTAKE_VALIDATOR_V1.md` and `docs/PHYSICAL_EVIDENCE_INTAKE_PROTOCOL_V1.md`.
+
+### V317 physical-mass mechanism (preregistered; blocked)
+- Added exact unordered Plackett–Luce likelihood for sequential weighted sampling without replacement and tests against all 120 orders plus normalization across all 98,280 five-number sets.
+- Added `PREREGISTRATION_V317_PHYSICAL_MASS_PLACKETT_LUCE.md`. The signed beta must come from independent machine-equivalent physical calibration before any Chispazo outcomes are inspected. No Chispazo physical measurements or beta calibration are currently present; V317 is blocked and produces no picks.
