@@ -19,8 +19,8 @@ def rows_with_signal():
 
 
 class V321WeekdayOmnibusTests(unittest.TestCase):
-    def test_eta_squared_perfect_group_separation(self):
-        self.assertAlmostEqual(eta_squared([1, 2, 10, 11], [1, 1, 2, 2]), 0.9878048780487805)
+    def test_eta_squared_group_separation(self):
+        self.assertAlmostEqual(eta_squared([1, 2, 10, 11], [1, 1, 2, 2]), 81 / 82)
 
     def test_detects_strong_synthetic_association_reproducibly(self):
         first = analyze(rows_with_signal(), permutations=199, seed=3212026)
@@ -28,6 +28,7 @@ class V321WeekdayOmnibusTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(first["decision"], "HISTORICAL_ASSOCIATION_DETECTED")
         self.assertEqual(first["n_classic_draws"], 28)
+        self.assertEqual(first["rng"], "numpy.random.Generator(PCG64)")
 
     def test_rejects_zero_permutations(self):
         with self.assertRaises(ValueError):
