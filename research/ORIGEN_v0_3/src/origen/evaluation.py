@@ -26,44 +26,135 @@ def rolling_origin_folds(n: int, initial_train: int, horizon: int, step: int | N
         train_end+=step
     return folds
 
-def _binomial_upper_tail(n: int, k: int) -> float:
-    if n==0: return 1.0
-    return sum(__import__("math").comb(n,i) for i in range(k,n+1))/(2**n)
+UNIFORM_EXACT5_PROBABILITY = 1.0 / 98280.0
+EXACT5_LOG_E_THRESHOLD = log(20.0)
 
-def evaluate_log_scores(observations: Iterable[dict], *, protocol_status: str,
-                        family_p_values: dict[str,float], primary_test_id: str,
-                        gates: dict, min_observations: int=100, alpha: float=0.05) -> dict:
-    """Evaluate log scores; never self-certify EDGE_SUPPORTED."""
-    rows=list(observations)
-    if not rows: raise ValueError("no_observations")
-    if min_observations<1: raise ValueError("min_observations_must_be_positive")
-    if primary_test_id not in family_p_values: raise ValueError("primary_test_missing_from_full_hypothesis_family")
-    lifts=[]
-    for i,row in enumerate(rows):
-        try: pa,pn=float(row["p_alt"]),float(row["p_null"])
-        except (KeyError,TypeError,ValueError) as exc: raise ValueError(f"invalid_probability_at_row_{i}") from exc
-        if not (isfinite(pa) and isfinite(pn) and 0<pa<=1 and 0<pn<=1): raise ValueError(f"probabilities_must_be_finite_and_in_(0,1]_at_row_{i}")
-        lifts.append(log(pa)-log(pn))
-    n=len(lifts); positive=sum(x>0 for x in lifts); negative=sum(x<0 for x in lifts); nonzero=positive+negative
-    sign_p=_binomial_upper_tail(nonzero,positive) if nonzero else 1.0
-    mean_lift=sum(lifts)/n; ordered=sorted(lifts)
-    median_lift=ordered[n//2] if n%2 else (ordered[n//2-1]+ordered[n//2])/2
-    if "__origen_sign_test__" in family_p_values: raise ValueError("reserved_test_id_in_hypothesis_family")
-    complete_family=dict(family_p_values); complete_family["__origen_sign_test__"]=sign_p
-    adjusted=holm_bonferroni(complete_family,alpha); primary=adjusted["results"][primary_test_id]; sign_adjusted=adjusted["results"]["__origen_sign_test__"]
-    required={"preregistered","untouched_prospective","independent_custody","data_integrity_pass","two_prospective_outputs"}
-    missing_gates=sorted(required-set(gates)); failed_gates=sorted(k for k in required if gates.get(k) is not True)
-    statistical_candidate=(n>=min_observations and mean_lift>0 and primary["reject"] and sign_adjusted["reject"]
-                           and not missing_gates and not failed_gates and protocol_status=="PREREGISTERED")
-    if not gates.get("independent_custody",False) or not gates.get("data_integrity_pass",False):
-        state="BLOCKED_PROVENANCE"
+
+def evaluate_log_scores(
+    observations: Iterable[dict],
+    *,
+    protocol_status: str,
+    family_p_values: dict[str, float],
+    primary_test_id: str,
+    gates: dict,
+    exact5_max_log_e_value: float | None = None,
+    min_observations: int = 100,
+    alpha: float = 0.05,
+) -> dict:
+    """Evaluate paired Exact5 log scores without a distribution-free sign test.
+
+    Positive-log-lift frequency is descriptive only: for a normalized,
+    non-uniform alternative, P_uniform(log(q(S)/p0(S)) > 0) need not equal 1/2.
+    This evaluator can return a statistical candidate, never EDGE_SUPPORTED.
+    """
+    rows = list(observations)
+    if not rows:
+        raise ValueError("no_observations")
+    if (not isinstance(min_observations, int) or isinstance(min_observations, bool)
+            or min_observations < 1):
+        raise ValueError("min_observations_must_be_positive_integer")
+    if not isinstance(gates, dict):
+        raise ValueError("gates_must_be_a_mapping")
+    if primary_test_id not in family_p_values:
+        raise ValueError("primary_test_missing_from_full_hypothesis_family")
+
+    lifts = []
+    for index, row in enumerate(rows):
+        try:
+            p_alt = float(row["p_alt"])
+            p_null = float(row["p_null"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"invalid_probability_at_row_{index}") from exc
+        if not (isfinite(p_alt) and 0.0 < p_alt <= 1.0):
+            raise ValueError(f"alternative_probability_must_be_finite_and_in_(0,1]_at_row_{index}")
+        if not (isfinite(p_null) and p_null > 0.0 and p_null <= 1.0):
+            raise ValueError(f"null_probability_must_be_finite_and_in_(0,1]_at_row_{index}")
+        if p_null != UNIFORM_EXACT5_PROBABILITY:
+            raise ValueError(f"null_probability_must_equal_exact_uniform_1_over_98280_at_row_{index}")
+        lifts.append(log(p_alt) - log(UNIFORM_EXACT5_PROBABILITY))
+
+    adjusted = holm_bonferroni(dict(family_p_values), alpha)
+    primary = adjusted["results"][primary_test_id]
+    n = len(lifts)
+    positive = sum(value > 0.0 for value in lifts)
+    negative = sum(value < 0.0 for value in lifts)
+    ties = n - positive - negative
+    mean_lift = sum(lifts) / n
+    ordered = sorted(lifts)
+    median_lift = ordered[n // 2] if n % 2 else (ordered[n // 2 - 1] + ordered[n // 2]) / 2.0
+
+    required = {
+        "preregistered",
+        "untouched_prospective",
+        "independent_custody",
+        "data_integrity_pass",
+        "two_prospective_outputs",
+        "pmf_custody_verified",
+        "complete_target_ledger",
+        "official_modality_verified",
+        "preclose_snapshot_verified",
+    }
+    missing_gates = sorted(required - set(gates))
+    failed_gates = sorted(key for key in required if gates.get(key) is not True)
+
+    e_value_valid = (
+        isinstance(exact5_max_log_e_value, (int, float))
+        and not isinstance(exact5_max_log_e_value, bool)
+        and isfinite(exact5_max_log_e_value)
+        and exact5_max_log_e_value >= EXACT5_LOG_E_THRESHOLD
+    )
+    if not e_value_valid:
+        failed_gates.append("exact5_anytime_e_value_ge_20")
+
+    statistical_candidate = (
+        n >= min_observations
+        and mean_lift > 0.0
+        and primary["reject"]
+        and not missing_gates
+        and not failed_gates
+        and protocol_status == "PREREGISTERED"
+    )
+    provenance_gates = {
+        "independent_custody",
+        "data_integrity_pass",
+        "pmf_custody_verified",
+        "complete_target_ledger",
+        "official_modality_verified",
+        "preclose_snapshot_verified",
+    }
+    provenance_blocked = any(gates.get(key) is not True for key in provenance_gates)
+    if provenance_blocked:
+        state = "BLOCKED_PROVENANCE"
     elif statistical_candidate:
-        state="STATISTICAL_SIGNAL_REQUIRES_EXTERNAL_AUDIT"
+        state = "STATISTICAL_SIGNAL_REQUIRES_EXTERNAL_AUDIT"
     else:
-        state="NO_EDGE_EVIDENCE"
-    return {"state":state,"edge_certified":False,"promotion_authorized":False,"n":n,
-            "min_observations":min_observations,"mean_log_lift":mean_lift,"median_log_lift":median_lift,
-            "positive_log_lift_rate":positive/n,"positive_count":positive,"negative_count":negative,"ties":n-nonzero,
-            "sign_test_one_sided_p":sign_p,"primary_holm":primary,"sign_test_holm":sign_adjusted,"multiplicity":adjusted,
-            "gates_missing":missing_gates,"gates_failed":failed_gates,"protocol_status":protocol_status,
-            "interpretation":"This evaluator can identify a statistical candidate only. EDGE_SUPPORTED requires a separate independent audit of raw prospective outputs, protocol chronology, custody, and source provenance; caller-supplied booleans are not proof."}
+        state = "NO_EDGE_EVIDENCE"
+
+    return {
+        "state": state,
+        "edge_certified": False,
+        "promotion_authorized": False,
+        "n": n,
+        "min_observations": min_observations,
+        "mean_log_lift": mean_lift,
+        "median_log_lift": median_lift,
+        "positive_log_lift_rate": positive / n,
+        "positive_count": positive,
+        "negative_count": negative,
+        "ties": ties,
+        "primary_holm": primary,
+        "multiplicity": adjusted,
+        "exact5_max_log_e_value": exact5_max_log_e_value,
+        "exact5_log_threshold": EXACT5_LOG_E_THRESHOLD,
+        "exact5_threshold_20_crossed": e_value_valid,
+        "gates_missing": missing_gates,
+        "gates_failed": sorted(set(failed_gates)),
+        "protocol_status": protocol_status,
+        "interpretation": (
+            "Positive-log-lift frequency is descriptive, not a sign-test p-value. "
+            "The null is fixed at exactly 1/98280. A statistical candidate still "
+            "requires independent audit of sealed PMFs, the complete target ledger, "
+            "pre-close chronology, modality, custody and raw outputs. This function "
+            "never certifies EDGE_SUPPORTED or authorizes promotion."
+        ),
+    }
