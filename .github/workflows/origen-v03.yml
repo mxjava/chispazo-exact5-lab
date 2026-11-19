@@ -36,7 +36,12 @@ jobs:
         env:
           PYTHONPATH: research/ORIGEN_v0_3/src
         run: python -m origen.v312_static_mixture --history data/history/Chispazo_through_12249.csv --out /tmp/exact5-v312 --warmup 800 --code-commit "$GITHUB_SHA"
-      - name: Run preregistered V313 global null falsification\n        working-directory: .\n        env:\n          PYTHONPATH: research/ORIGEN_v0_3/src\n        run: python -m origen.v313_global_null --history data/history/Chispazo_through_12249.csv --out /tmp/exact5-v313 --simulations 1999 --seed 3132026\n      - name: Upload V313 global null report\n        uses: actions/upload-artifact@v4\n        with:\n          name: exact5-v313-global-null-falsification\n          path: /tmp/exact5-v313/\n          if-no-files-found: error\n      - name: Upload reproducible modality audit outputs
+      - name: Run preregistered V313 global null falsification
+        working-directory: .
+        env:
+          PYTHONPATH: research/ORIGEN_v0_3/src
+        run: python -m origen.v313_global_null --history data/history/Chispazo_through_12249.csv --out /tmp/exact5-v313 --simulations 1999 --seed 3132026
+      - name: Upload V313 global null report\n        uses: actions/upload-artifact@v4\n        with:\n          name: exact5-v313-global-null-falsification\n          path: /tmp/exact5-v313/\n          if-no-files-found: error\n      - name: Upload reproducible modality audit outputs
         uses: actions/upload-artifact@v4
         with:
           name: exact5-classic-modality-audit
