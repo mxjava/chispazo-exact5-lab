@@ -14,7 +14,6 @@ import hashlib
 import json
 import math
 from collections import Counter
-from datetime import date
 from itertools import combinations
 from pathlib import Path
 
@@ -180,6 +179,8 @@ def evaluate_history(history_path: str | Path, output_dir: str | Path,
                      expected_sha256: str | None = None,
                      warmup_classic: int = WARMUP_CLASSIC,
                      alpha: float = ALPHA) -> dict:
+    if not isinstance(warmup_classic, int) or isinstance(warmup_classic, bool) or warmup_classic < 1:
+        raise ValueError("warmup_classic_must_be_positive_integer")
     rows, digest = read_history(history_path)
     if expected_sha256 and digest != expected_sha256:
         raise ValueError("canonical_history_sha256_mismatch")
