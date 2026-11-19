@@ -168,6 +168,21 @@ def test_v249_frozen_snapshot_reuse_revalidates_payload_and_refuses_corruption(t
     with pytest.raises(RuntimeError, match='numeric payload SHA256 mismatch'):
         save_current_snapshot_v249(tmp_path, 12361, audit, prod_gate, _payload())
 
+
+def test_v249_frozen_snapshot_reuse_rejects_interpretation_metadata_tamper(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / 'snapshots' / 'target_12361.joblib'
+    monkeypatch.setattr(v249_module, '_v249_snapshot_path', lambda _state_dir, _target: snapshot_path)
+    audit = SimpleNamespace(max_concurso=12360, sha256='d' * 64)
+    prod_gate = {'fusion_state': 'heuristic_only_after_holm', 'allocation_detail': {'state': 'validated'}}
+
+    saved_path = save_current_snapshot_v249(tmp_path, 12361, audit, prod_gate, _payload())
+    tampered = joblib.load(saved_path)
+    tampered['tie_signal_name'] = 'different_signal_contract'
+    joblib.dump(tampered, saved_path, compress=3)
+
+    with pytest.raises(RuntimeError, match='existing manifest integrity failure'):
+        save_current_snapshot_v249(tmp_path, 12361, audit, prod_gate, _payload())
+
 def test_v249_snapshot_manifest_sha256_preserves_legacy_v1_contract():
     snapshot = {
         'schema': 1, 'target': 12361, 'history_last': 12360,
