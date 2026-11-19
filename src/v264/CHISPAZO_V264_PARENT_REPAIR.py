@@ -2835,10 +2835,6 @@ def consume_previous_snapshot_v248(df: pd.DataFrame, audit: AuditResult, state_d
     manifest = {'schema': int(snap.get('schema', -1)), 'target': int(snap.get('target', -1)), 'history_last': int(snap.get('history_last', -1)), 'history_sha256': str(snap.get('history_sha256', '')), 'fusion_weights': snap.get('fusion_weights', {}), 'allocation': snap.get('allocation', {}), 'portfolio_idx': [int(x) for x in np.asarray(snap.get('portfolio_idx', []), dtype=int).tolist()], 'strategies': sorted(map(str, snap.get('specialist_scores', {}).keys()))}
     manifest_sha = hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
     if str(snap.get('manifest_sha256', '')) != manifest_sha:
-        raise RuntimeError('V249 snapshot guardrail failed: manifest SHA256 mismatch')
-    if snapshot_schema == V249_SNAPSHOT_SCHEMA:
-        _v249_validate_snapshot_universe(snap, UNIVERSE_SIZE)
-    #
         raise RuntimeError('V248 snapshot guardrail failed: manifest SHA256 mismatch')
     rowdf = df[df['CONCURSO'] == prev_target]
     if len(rowdf) != 1:
