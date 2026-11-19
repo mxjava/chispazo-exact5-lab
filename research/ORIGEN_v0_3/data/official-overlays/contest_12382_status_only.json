@@ -13,7 +13,6 @@
     25
   ],
   "result_status": "OFFICIAL_RESULT_OBSERVED",
-  "source_observed_at_utc": "2026-11-19T05:54:08Z",
   "sources": {
     "dedicated_results_page": {
       "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
@@ -68,5 +67,8 @@
     "The PDF explicitly labels contest 12382 as Chispazo Clásico; contest 12381 on the same sheet is Chispazo de las Tres.",
     "The raw PDF bytes could not be captured in this run, so no byte-level source SHA-256 is claimed.",
     "This record is not a prospective output and must never be used to reconstruct a pre-close PMF, rank, or score."
-  ]
+  ],
+  "observation_window_started_at_utc": "2026-11-19T05:54:08Z",
+  "exact_source_retrieval_timestamp_captured": false,
+  "source_retrieval_timestamp_utc": null
 }
