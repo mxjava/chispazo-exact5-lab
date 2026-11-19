@@ -106,3 +106,5 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 - Null calibration enumerates all 98,280 five-sets for exact category probabilities and simulates 1,999 complete independent uniform Classic sequences. This tests shape departures not directly covered as a joint family by V313–V316.
 - This is historical falsification only. It cannot recover sphere masses or establish physical bias; no feature/category may be promoted from a rejection without separate prospective validation.
 - See `PREREGISTRATION_V318_COMBINATORIAL_SHAPE_OMNIBUS.md`.
+
+- V318 completed with 140 tests passing and canonical replay success. Its global max-statistic was 2.7721 versus null 95th percentile 4.4837; Monte Carlo p=0.7855 (1,570/1,999 null replicates at least as extreme). Decision: `NO_REJECTION`. See `docs/V318_COMBINATORIAL_SHAPE_RESULT_20261119.md`.
