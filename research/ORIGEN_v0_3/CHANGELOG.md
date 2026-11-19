@@ -40,3 +40,8 @@
 - Added adversarial tests for set encoding, feature contracts, exact probability normalization, frozen simulation/source guards and sample-size guards.
 - Added isolated GitHub Actions workflow to run unit tests and the 1,999-replicate canonical Classic replay.
 - No physical sphere masses or mapping are inferred from the historical winning-number file; no predictive or causal claim is permitted.
+
+### V318 result (2026-11-19)
+- Full suite: 140 tests passed; frozen canonical replay and artifact upload succeeded (run 44446819621).
+- Global maximum z=2.7721; null q95=4.4837; Monte Carlo p=0.7855 (1,570/1,999 exceedances). `NO_REJECTION`.
+- No shape family or category is promoted; no prediction or physical-bias claim.
