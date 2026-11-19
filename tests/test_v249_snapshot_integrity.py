@@ -67,3 +67,21 @@ def test_v249_snapshot_integrity_rejects_object_arrays():
     payload['specialist_scores'] = {'bad': np.array([object()], dtype=object)}
     with pytest.raises(TypeError, match='unsupported dtype'):
         _v249_numeric_payload_sha256(payload)
+
+
+
+def test_v249_snapshot_integrity_rejects_order_not_matching_saved_scores():
+    payload = _payload()
+    payload['anti_order'] = np.array([0, 1, 2], dtype=np.int32)
+    payload['anti_rank'] = np.array([1, 2, 3], dtype=np.int32)
+    payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
+    with pytest.raises(RuntimeError, match='anti_order does not match anti_saturation_score'):
+        _v249_validate_snapshot_integrity(payload)
+
+
+def test_v249_snapshot_integrity_rejects_duplicate_portfolio_indices():
+    payload = _payload()
+    payload['portfolio_idx'] = np.array([2, 2], dtype=np.int32)
+    payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
+    with pytest.raises(RuntimeError, match='portfolio_idx out of range or duplicated'):
+        _v249_validate_snapshot_integrity(payload)
