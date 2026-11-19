@@ -39,7 +39,7 @@ OVERLAP_VARIANCE = (
 
 def _statistics_by_component(draws: np.ndarray) -> tuple[float, np.ndarray, np.ndarray, np.ndarray]:
     """Return max statistic and materialized aggregate/number/pair z arrays."""
-    matrix = _validate_binary_draw_matrix(draws, min_rows=22)
+    matrix = _validate_binary_draw_matrix(draws, min_rows=22).astype(np.uint8, copy=False)
     n = matrix.shape[0]
     aggregate_z = np.empty(len(LAGS), dtype=np.float64)
     number_z = np.empty((len(LAGS), UNIVERSE), dtype=np.float64)
@@ -82,7 +82,7 @@ def _max_statistic(draws: np.ndarray) -> float:
 
 def _reference_counts(draws: np.ndarray, lag: int) -> tuple[float, np.ndarray, np.ndarray]:
     """Deliberately simple nested-loop oracle for tests only."""
-    matrix = _validate_binary_draw_matrix(draws, min_rows=lag + 1)
+    matrix = _validate_binary_draw_matrix(draws, min_rows=lag + 1).astype(np.uint8, copy=False)
     n = matrix.shape[0]
     overlap_sum = 0
     number_counts = np.zeros(UNIVERSE, dtype=np.int64)
