@@ -7,7 +7,7 @@ from pathlib import Path
 
 from origen.custody import (
     GENESIS, build_seal_record, read_record, sha256_bytes,
-    verify_seal_record, write_record_exclusive,
+    verify_seal_record, verify_record_chain, write_record_exclusive,
 )
 
 
@@ -36,6 +36,7 @@ class CustodyTests(unittest.TestCase):
         data = portfolio if portfolio is not None else portfolio_bytes()
         values = dict(
             candidate_id="CANDIDATE-DRYRUN-1",
+            candidate_spec_sha256="f" * 64,
             target_contest_id=12250,
             history_max_contest_id=12249,
             modality="CLASSIC",
@@ -101,6 +102,95 @@ class CustodyTests(unittest.TestCase):
         ok, reason = verify_seal_record(record, raw, expected_previous="e" * 64)
         self.assertFalse(ok)
         self.assertIn("chain link", reason)
+
+    def test_generator_and_custodian_must_be_distinct(self):
+        with self.assertRaisesRegex(ValueError, "identities must be distinct"):
+            self.make_record(custodian_id="generator-test")
+
+    def test_equal_generation_and_receipt_time_rejected(self):
+        with self.assertRaisesRegex(ValueError, "strictly follow"):
+            self.make_record(received_at_utc="2026-11-20T17:00:00Z")
+
+    def test_verifier_rejects_boolean_target_id_even_with_rehashed_record(self):
+        record, raw = self.make_record()
+        record["target_contest_id"] = True
+        unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
+        import hashlib
+        record["record_sha256"] = hashlib.sha256(
+            json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+        ok, reason = verify_seal_record(record, raw)
+        self.assertFalse(ok)
+        self.assertIn("target_contest_id", reason)
+
+    def test_verifier_rejects_unknown_or_missing_schema_fields(self):
+        record, raw = self.make_record()
+        record.pop("candidate_spec_sha256")
+        ok, reason = verify_seal_record(record, raw)
+        self.assertFalse(ok)
+        self.assertIn("exact v1 schema", reason)
+
+    def test_full_chain_verifies(self):
+        first, raw1 = self.make_record()
+        second, raw2 = self.make_record(
+            target_contest_id=12251,
+            history_max_contest_id=12250,
+            previous_record_sha256=first["record_sha256"],
+            generated_at_utc="2026-11-20T18:01:00Z",
+            received_at_utc="2026-11-20T18:02:00Z",
+            official_draw_close_at_utc="2026-11-20T19:00:00Z",
+        )
+        self.assertEqual(
+            verify_record_chain([first, second], {12250: raw1, 12251: raw2}),
+            (True, "verified 2 ordered custody records"),
+        )
+
+    def test_chain_detects_deleted_middle_record(self):
+        first, raw1 = self.make_record()
+        second, raw2 = self.make_record(
+            target_contest_id=12251, history_max_contest_id=12250,
+            previous_record_sha256=first["record_sha256"],
+            generated_at_utc="2026-11-20T18:01:00Z",
+            received_at_utc="2026-11-20T18:02:00Z",
+            official_draw_close_at_utc="2026-11-20T19:00:00Z",
+        )
+        third, raw3 = self.make_record(
+            target_contest_id=12252, history_max_contest_id=12251,
+            previous_record_sha256=second["record_sha256"],
+            generated_at_utc="2026-11-20T19:01:00Z",
+            received_at_utc="2026-11-20T19:02:00Z",
+            official_draw_close_at_utc="2026-11-20T20:00:00Z",
+        )
+        ok, reason = verify_record_chain([first, third], {12250: raw1, 12252: raw3})
+        self.assertFalse(ok)
+        self.assertIn("chain link", reason)
+
+    def test_chain_rejects_reordered_records(self):
+        first, raw1 = self.make_record()
+        second, raw2 = self.make_record(
+            target_contest_id=12251, history_max_contest_id=12250,
+            previous_record_sha256=first["record_sha256"],
+            generated_at_utc="2026-11-20T18:01:00Z",
+            received_at_utc="2026-11-20T18:02:00Z",
+            official_draw_close_at_utc="2026-11-20T19:00:00Z",
+        )
+        ok, reason = verify_record_chain([second, first], {12250: raw1, 12251: raw2})
+        self.assertFalse(ok)
+        self.assertIn("out of order", reason)
+
+    def test_chain_rejects_duplicate_target(self):
+        first, raw = self.make_record()
+        duplicate = dict(first)
+        ok, reason = verify_record_chain([first, duplicate], {12250: raw})
+        self.assertFalse(ok)
+        self.assertIn("duplicate", reason)
+
+    def test_exclusive_writer_rejects_bad_digest(self):
+        record, _ = self.make_record()
+        record["custodian_id"] = "forged"
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "digest mismatch"):
+                write_record_exclusive(Path(tmp) / "forged.json", record)
 
     def test_record_file_is_exclusive(self):
         record, _ = self.make_record()
