@@ -16,6 +16,8 @@ It is **not** an autonomous truth engine, a lottery predictor, or a model-promot
 - Empirical adversarial-null benchmarking with finite-simulation +1 correction.
 - Search diversity diagnostics based on lenses, representations and observable Jaccard overlap.
 - SHA-256 file manifests and tamper verification.
+- Pre-close custody record verification and ordered hash-chain audit (without pretending to provide signatures or trusted timestamps).
+- V316 identity-resolved persistence omnibus across 8,140 preregistered statistics, with packed-bit pair counting and reference-oracle tests.
 - MetaObserver search-path audit: checks timestamp ordering, protocol-before-outcome access and flags post-outcome adaptation.
 - CLI commands for all core functions.
 
