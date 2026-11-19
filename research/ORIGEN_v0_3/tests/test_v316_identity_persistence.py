@@ -37,9 +37,13 @@ class V316IdentityPersistenceTests(unittest.TestCase):
             self.assertAlmostEqual(mean, float(shared.sum(axis=1).mean()), places=15)
             np.testing.assert_array_equal(number_counts, shared.sum(axis=0, dtype=np.int64))
             # Rebuild pair cell counts independently from explicit combinations.
-            self.assertEqual(int(pair_counts.sum()), sum(
-                len(list(combinations(np.flatnonzero(row).tolist(), 2))) for row in shared
-            ))
+            pair_index = {pair: idx for idx, pair in enumerate(PAIRS)}
+            direct_pairs = np.zeros(len(PAIRS), dtype=np.int64)
+            for row in shared:
+                selected = np.flatnonzero(row).tolist()
+                for pair in combinations(selected, 2):
+                    direct_pairs[pair_index[pair]] += 1
+            np.testing.assert_array_equal(pair_counts, direct_pairs)
             lag_idx = LAGS.index(lag)
             transitions = len(draws) - lag
             expected_numbers = transitions * Q1
