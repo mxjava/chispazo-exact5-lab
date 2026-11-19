@@ -115,3 +115,13 @@ Prioritize primary physical traceability records and robust prospective custody 
 - This includes all 13 physical-intake tests, exact enumeration/normalization of all 98,280 unordered five-number sets, the 120-order Plackett–Luce reference check, and three prequential e-process tests.
 - The prior one-test failure was only the overly strict floating-point assertion documented above; the corrected run is green. No statistical model equation or preregistered decision gate was relaxed.
 - Separate canonical replay integrity workflow [44446179906](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44446179906) and root CI were still running at last inspection; do not conflate the green isolated test suite with those pending workflows.
+
+## V318 historical shape omnibus — completed negative (2026-11-19)
+
+- Preregistered seven fixed result-only shape families before execution: sum, range, odd count, prime count, consecutive adjacent-pair count, low/high split, and three-band occupancy.
+- Used exact category probabilities from all 98,280 possible 5-of-28 sets and a single global max-statistic calibrated on 1,999 complete uniform Classic sequences (PCG64 seed 3182026).
+- Canonical Classic sample: 7,723 draws, contests 1363–12248, source SHA-256 `5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a`.
+- CI/replay: [run 44446819621](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44446819621), success; 140 tests passed; artifact ID 14493333027, ZIP SHA-256 `8f624f6c32769fe022262049a9e7afb7688d29d588630a5dfde2548651e22445`.
+- Global max z=2.7721136; null 95th percentile=4.4836559; 1,570/1,999 null replicates at least as extreme; global add-one p=0.7855. Decision `NO_REJECTION`.
+- Result document: `docs/V318_COMBINATORIAL_SHAPE_RESULT_20261119.md`. This closes only these seven descriptive shape families; it does not establish perfect randomness or a predictive edge.
+- V318 does not recover physical mass or sphere identity from winning-number history. The physical-covariate hypothesis remains blocked until authentic primary records and mapping arrive.
