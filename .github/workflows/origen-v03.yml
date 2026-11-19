@@ -31,9 +31,20 @@ jobs:
         env:
           PYTHONPATH: research/ORIGEN_v0_3/src
         run: python -m origen.exact5_modalities --history data/history/Chispazo_through_12249.csv --out /tmp/exact5-modalities
+      - name: Run frozen V312 retrospective integrity replay
+        working-directory: .
+        env:
+          PYTHONPATH: research/ORIGEN_v0_3/src
+        run: python -m origen.v312_static_mixture --history data/history/Chispazo_through_12249.csv --out /tmp/exact5-v312 --warmup 800 --code-commit "$GITHUB_SHA"
       - name: Upload reproducible modality audit outputs
         uses: actions/upload-artifact@v4
         with:
           name: exact5-classic-modality-audit
           path: /tmp/exact5-modalities/
+          if-no-files-found: error
+      - name: Upload V312 retrospective integrity outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: exact5-v312-retrospective-integrity
+          path: /tmp/exact5-v312/
           if-no-files-found: error
