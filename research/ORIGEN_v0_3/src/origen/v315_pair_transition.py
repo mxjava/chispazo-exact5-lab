@@ -4,7 +4,7 @@ import argparse, json, math
 from pathlib import Path
 import numpy as np
 from origen.exact5_modalities import assign_modality, read_history
-from origen.v313_global_null import PICK, UNIVERSE, _matrix, _simulate_draws
+from origen.v313_global_null import PICK, UNIVERSE, _matrix, _simulate_draws, _validate_binary_draw_matrix
 
 PAIRS = tuple((i, j) for i in range(UNIVERSE) for j in range(i + 1, UNIVERSE))
 PAIR_LOOKUP = np.full((UNIVERSE, UNIVERSE), -1, dtype=np.int16)
@@ -21,8 +21,7 @@ OVERLAP_PROBS = np.asarray([
 
 
 def _cell_counts(draws: np.ndarray) -> np.ndarray:
-    if draws.ndim != 2 or draws.shape[1] != UNIVERSE or draws.shape[0] < 2 or not np.all(draws.sum(axis=1) == PICK):
-        raise ValueError("invalid_v315_matrix")
+    draws = _validate_binary_draw_matrix(draws)
     selected = np.argsort(draws, axis=1)[:, -PICK:]
     selected.sort(axis=1)
     prev_pairs = selected[:-1, PAIR_POSITIONS]
