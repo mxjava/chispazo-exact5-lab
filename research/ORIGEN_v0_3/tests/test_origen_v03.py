@@ -1,4 +1,5 @@
 import json
+import math
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,6 +16,13 @@ from origen.registry import append_frames, audit_registry
 from origen.critics import critique_bundle
 from origen.nulls import shuffled_rows, within_row_permutation, independent_uniform_draws
 
+P0 = 1.0 / 98280.0
+REQUIRED_EDGE_GATES = (
+    "preregistered", "untouched_prospective", "independent_custody",
+    "data_integrity_pass", "two_prospective_outputs", "pmf_custody_verified",
+    "complete_target_ledger", "official_modality_verified", "preclose_snapshot_verified",
+)
+
 class TestORIGENV03(unittest.TestCase):
     def test_holm_monotone(self):
         r=holm_bonferroni({"a":.01,"b":.04,"c":.03}); self.assertEqual(r["family_size"],3)
@@ -29,24 +37,38 @@ class TestORIGENV03(unittest.TestCase):
     def test_invalid_split(self):
         with self.assertRaises(ValueError): chronological_split(5,6)
     def test_gates_block(self):
-        rows=[{"p_alt":.3,"p_null":.2} for _ in range(120)]
+        rows=[{"p_alt":2*P0,"p_null":P0} for _ in range(120)]
         r=evaluate_log_scores(rows,protocol_status="DRAFT",family_p_values={"p":.001},primary_test_id="p",gates={})
         self.assertEqual(r["state"],"BLOCKED_PROVENANCE")
     def test_custody_failure_blocks(self):
-        rows=[{"p_alt":.3,"p_null":.2} for _ in range(120)]
+        rows=[{"p_alt":2*P0,"p_null":P0} for _ in range(120)]
         g={"preregistered":True,"untouched_prospective":True,"independent_custody":False,"data_integrity_pass":True,"two_prospective_outputs":True}
         r=evaluate_log_scores(rows,protocol_status="PREREGISTERED",family_p_values={"p":.001},primary_test_id="p",gates=g)
         self.assertEqual(r["state"],"BLOCKED_PROVENANCE")
     def test_all_gates_only_yield_candidate(self):
-        rows=[{"p_alt":.3,"p_null":.2} for _ in range(120)]
-        g={k:True for k in ("preregistered","untouched_prospective","independent_custody","data_integrity_pass","two_prospective_outputs")}
-        r=evaluate_log_scores(rows,protocol_status="PREREGISTERED",family_p_values={"p":.001},primary_test_id="p",gates=g)
+        rows=[{"p_alt":2*P0,"p_null":P0} for _ in range(120)]
+        g={k:True for k in REQUIRED_EDGE_GATES}
+        r=evaluate_log_scores(rows,protocol_status="PREREGISTERED",family_p_values={"p":.001},primary_test_id="p",gates=g,exact5_max_log_e_value=math.log(20))
         self.assertEqual(r["state"],"STATISTICAL_SIGNAL_REQUIRES_EXTERNAL_AUDIT")
         self.assertFalse(r["edge_certified"]); self.assertFalse(r["promotion_authorized"])
     def test_bad_probability(self):
-        with self.assertRaises(ValueError): evaluate_log_scores([{"p_alt":0,"p_null":.2}],protocol_status="DRAFT",family_p_values={"p":.5},primary_test_id="p",gates={})
+        with self.assertRaises(ValueError): evaluate_log_scores([{"p_alt":0,"p_null":P0}],protocol_status="DRAFT",family_p_values={"p":.5},primary_test_id="p",gates={})
     def test_primary_family_required(self):
-        with self.assertRaises(ValueError): evaluate_log_scores([{"p_alt":.3,"p_null":.2}],protocol_status="DRAFT",family_p_values={"x":.5},primary_test_id="p",gates={})
+        with self.assertRaises(ValueError): evaluate_log_scores([{"p_alt":2*P0,"p_null":P0}],protocol_status="DRAFT",family_p_values={"x":.5},primary_test_id="p",gates={})
+    def test_null_must_be_exact_uniform_five_of_28(self):
+        with self.assertRaisesRegex(ValueError, "1_over_98280"):
+            evaluate_log_scores([{"p_alt":2*P0,"p_null":.2}],protocol_status="DRAFT",family_p_values={"p":.5},primary_test_id="p",gates={})
+    def test_exact5_anytime_evalue_is_mandatory_for_candidate(self):
+        rows=[{"p_alt":2*P0,"p_null":P0} for _ in range(120)]
+        gates={k:True for k in REQUIRED_EDGE_GATES}
+        result=evaluate_log_scores(rows,protocol_status="PREREGISTERED",family_p_values={"p":.001},primary_test_id="p",gates=gates)
+        self.assertEqual(result["state"],"NO_EDGE_EVIDENCE")
+        self.assertIn("exact5_anytime_e_value_ge_20",result["gates_failed"])
+    def test_sign_fraction_is_descriptive_not_inferential(self):
+        rows=[{"p_alt":2*P0,"p_null":P0} for _ in range(120)]
+        result=evaluate_log_scores(rows,protocol_status="DRAFT",family_p_values={"p":.5},primary_test_id="p",gates={})
+        self.assertNotIn("sign_test_one_sided_p",result)
+        self.assertEqual(result["multiplicity"]["family_size"],1)
     def test_null_plus_one(self):
         r=benchmark_nulls(2,{"m":[0,.5,1]}); self.assertAlmostEqual(r["nulls"]["m"]["empirical_p"],.25)
     def test_null_empty_rejected(self):
