@@ -104,7 +104,7 @@ def main():
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     args = parser.parse_args()
     result = analyze(load_atlas(args.atlas), args.permutations, args.seed)
-    Path(args.out).write_text(json.dumps(result, indent=2) + "\\n", encoding="utf-8")
+    Path(args.out).write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
 
 
