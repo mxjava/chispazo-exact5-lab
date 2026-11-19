@@ -2,11 +2,17 @@ name: ORIGEN v0.3 isolated validation
 on:
   push:
     paths:
-      - "research/ORIGEN_v0_3/**"
+      - "research/ORIGEN_v0_3/src/**"
+      - "research/ORIGEN_v0_3/tests/**"
+      - "research/ORIGEN_v0_3/pyproject.toml"
+      - "data/history/Chispazo_through_12249.csv"
       - ".github/workflows/origen-v03.yml"
   pull_request:
     paths:
-      - "research/ORIGEN_v0_3/**"
+      - "research/ORIGEN_v0_3/src/**"
+      - "research/ORIGEN_v0_3/tests/**"
+      - "research/ORIGEN_v0_3/pyproject.toml"
+      - "data/history/Chispazo_through_12249.csv"
       - ".github/workflows/origen-v03.yml"
   workflow_dispatch:
 permissions:
