@@ -4,6 +4,7 @@ import joblib
 
 from src.v264.CHISPAZO_V264_PARENT_REPAIR import (
     _v249_numeric_payload_sha256,
+    _v249_snapshot_manifest,
     _v249_validate_snapshot_integrity,
 )
 
@@ -125,3 +126,31 @@ def test_v249_snapshot_integrity_survives_joblib_roundtrip(tmp_path):
     assert restored['score_payload_sha256'] == payload['score_payload_sha256']
     assert np.array_equal(restored['anti_order'], payload['anti_order'])
     assert np.array_equal(restored['anti_rank'], payload['anti_rank'])
+
+
+
+def test_v249_v2_manifest_binds_interpretation_metadata():
+    payload = _payload()
+    payload.update({
+        'schema': 2,
+        'target': 12361,
+        'history_last': 12360,
+        'history_sha256': 'a' * 64,
+        'tie_signal_name': 'heuristic_unclipped',
+        'anti_saturation_epsilon': 1e-12,
+        'fusion_state': 'heuristic_only_after_holm',
+        'allocation_state': 'validated',
+        'trained_at': 12360,
+        'created_at': '2026-11-19 20:00:00',
+    })
+    payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
+    manifest = _v249_snapshot_manifest(payload)
+    baseline = __import__('hashlib').sha256(
+        __import__('json').dumps(manifest, sort_keys=True, separators=(',', ':')).encode('utf-8')
+    ).hexdigest()
+    payload['tie_signal_name'] = 'tampered_interpretation'
+    changed = _v249_snapshot_manifest(payload)
+    changed_hash = __import__('hashlib').sha256(
+        __import__('json').dumps(changed, sort_keys=True, separators=(',', ':')).encode('utf-8')
+    ).hexdigest()
+    assert baseline != changed_hash
