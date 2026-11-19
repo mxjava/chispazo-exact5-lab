@@ -1,0 +1,43 @@
+name: ORIGEN V318 combinatorial shape omnibus
+on:
+  push:
+    paths:
+      - "research/ORIGEN_v0_3/src/origen/v318_combinatorial_shape.py"
+      - "research/ORIGEN_v0_3/tests/test_v318_combinatorial_shape.py"
+      - "research/ORIGEN_v0_3/PREREGISTRATION_V318_COMBINATORIAL_SHAPE_OMNIBUS.md"
+      - "data/history/Chispazo_through_12249.csv"
+      - ".github/workflows/origen-v318-shape.yml"
+  pull_request:
+    paths:
+      - "research/ORIGEN_v0_3/src/origen/v318_combinatorial_shape.py"
+      - "research/ORIGEN_v0_3/tests/test_v318_combinatorial_shape.py"
+      - "research/ORIGEN_v0_3/PREREGISTRATION_V318_COMBINATORIAL_SHAPE_OMNIBUS.md"
+      - "data/history/Chispazo_through_12249.csv"
+      - ".github/workflows/origen-v318-shape.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v318:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install numerical runtime
+        run: python -m pip install numpy
+      - name: Run ORIGEN unit tests
+        env:
+          PYTHONPATH: research/ORIGEN_v0_3/src
+        run: python -m unittest discover -s research/ORIGEN_v0_3/tests -p "test_*.py" -v
+      - name: Run frozen V318 canonical replay
+        env:
+          PYTHONPATH: research/ORIGEN_v0_3/src
+        run: python -m origen.v318_combinatorial_shape --history data/history/Chispazo_through_12249.csv --out /tmp/exact5-v318
+      - name: Upload V318 report
+        uses: actions/upload-artifact@v4
+        with:
+          name: exact5-v318-combinatorial-shape
+          path: /tmp/exact5-v318/v318_combinatorial_shape_report.json
+          if-no-files-found: error
