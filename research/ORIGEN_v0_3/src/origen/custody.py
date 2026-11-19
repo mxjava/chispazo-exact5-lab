@@ -244,8 +244,9 @@ def verify_seal_record(
 def verify_record_chain(
     records: Sequence[dict[str, Any]],
     portfolios_by_target: Mapping[int, bytes],
+    expected_final_hash: str | None = None,
 ) -> tuple[bool, str]:
-    """Verify a complete ordered ledger; reject duplicate or missing targets."""
+    """Verify ordered ledger; optional external head anchor detects tail truncation."""
     previous = GENESIS
     seen: set[int] = set()
     last_target = 0
@@ -267,6 +268,10 @@ def verify_record_chain(
         last_target = target
     if len(seen) != len(portfolios_by_target):
         return False, "portfolio map contains unregistered targets"
+    if expected_final_hash is not None:
+        _require_sha(expected_final_hash, "expected_final_hash")
+        if previous != expected_final_hash:
+            return False, "externally anchored ledger head mismatch (possible tail truncation or rewrite)"
     return True, f"verified {len(records)} ordered custody records"
 
 
