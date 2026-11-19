@@ -81,14 +81,18 @@ def moving_block_ci(values: np.ndarray, *, block_length: int = 30,
     x = np.asarray(values, dtype=float)
     if x.ndim != 1 or len(x) < block_length or block_length < 1 or resamples < 1:
         raise ValueError("invalid bootstrap dimensions")
-    blocks = np.asarray([x[i:i + block_length] for i in range(len(x) - block_length + 1)])
+    # Circular blocks avoid under-sampling the series endpoints. Truncate each
+    # concatenated replicate to exactly n observations (never pad the mean).
+    blocks = np.asarray([np.roll(x, -i)[:block_length] for i in range(len(x))])
     rng = np.random.default_rng(seed)
     nblocks = int(np.ceil(len(x) / block_length))
     sampled = rng.integers(0, len(blocks), size=(resamples, nblocks))
-    means = blocks[sampled].sum(axis=(1, 2)) / (nblocks * block_length)
+    replicates = blocks[sampled].reshape(resamples, nblocks * block_length)[:, :len(x)]
+    means = replicates.mean(axis=1)
     lo, hi = np.quantile(means, [0.025, 0.975])
     return {"ci95_low": float(lo), "ci95_high": float(hi),
-            "bootstrap_fraction_nonnegative": float(np.mean(means >= 0))}
+            "bootstrap_fraction_nonnegative": float(np.mean(means >= 0)),
+            "bootstrap_method": "circular_moving_block_truncated_to_n"}
 
 
 def evaluate_grid(log_lr: np.ndarray, *, windows=(100, 250, 500),
@@ -107,14 +111,21 @@ def evaluate_grid(log_lr: np.ndarray, *, windows=(100, 250, 500),
         ll, weights = prequential_mixture_log_lift(
             x, window=window, temperature=eta
         )
+        tol = 1e-12
+        positive = ll > tol
+        negative = ll < -tol
+        entropy_weights = weights[-1][weights[-1] > 0]
         summary = {
             "n": int(len(ll)),
             "mean_log_lift": float(ll.mean()),
             "median_log_lift": float(np.median(ll)),
-            "positive_fraction": float(np.mean(ll > 0)),
+            "positive_fraction": float(np.mean(positive)),
+            "negative_fraction": float(np.mean(negative)),
+            "numerical_zero_fraction": float(np.mean(~positive & ~negative)),
+            "sign_tolerance": tol,
             "cumulative_log_lift": float(ll.sum()),
             "final_weight_max": float(weights[-1].max()),
-            "final_weight_entropy": float(-(weights[-1] * np.log(weights[-1])).sum()),
+            "final_weight_entropy": float(-np.sum(entropy_weights * np.log(entropy_weights))),
         }
         if len(ll) >= 30:
             summary.update(moving_block_ci(ll, resamples=resamples, seed=seed + i))
@@ -125,7 +136,9 @@ def evaluate_grid(log_lr: np.ndarray, *, windows=(100, 250, 500),
             quartiles[labels[q]] = {
                 "n": int(len(part)),
                 "mean_log_lift": float(part.mean()),
-                "positive_fraction": float(np.mean(part > 0)),
+                "positive_fraction": float(np.mean(part > 1e-12)),
+                "negative_fraction": float(np.mean(part < -1e-12)),
+                "numerical_zero_fraction": float(np.mean(np.abs(part) <= 1e-12)),
                 "cumulative_log_lift": float(part.sum()),
             }
         summary["chronological_quartiles"] = quartiles
@@ -136,6 +149,13 @@ def evaluate_grid(log_lr: np.ndarray, *, windows=(100, 250, 500),
         "targets": int(len(x)),
         "experts": int(x.shape[1]),
         "grid": {"windows": list(windows), "temperatures": list(temperatures)},
+        "uniform_reference": {
+            "n": int(len(x)), "mean_log_lift": 0.0, "median_log_lift": 0.0,
+            "positive_fraction": 0.0, "negative_fraction": 0.0,
+            "numerical_zero_fraction": 1.0, "cumulative_log_lift": 0.0,
+            "role": "zero-log-lift reference, not an estimated expert"
+        },
+        "sign_tolerance": 1e-12,
         "candidates": results,
         "decision_rule": "No candidate is selected or promoted from this report; require a separate untouched prospective holdout.",
         "limitations": [
