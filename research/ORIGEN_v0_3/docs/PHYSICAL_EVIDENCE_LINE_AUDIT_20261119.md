@@ -72,7 +72,9 @@ Estos límites son criterios de aceptación del equipo, **no mediciones observad
 
 ### 3.4 Video y firma electrónica
 
-SGVO-PRO-05 establece que cámaras de la sala registran los números expresados al capturarse las esferas en los exhibidores y contempla personal de una empresa contratada para la grabación de sorteos. Esto acredita un control de grabación, pero el texto público no garantiza que el archivo conservado cubra íntegramente el pesaje, identificación RFID, carga, sustituciones y extracción, ni publica sus metadatos o plazo de retención.
+SGVO-PRO-05 es más explícito que una simple transmisión: su política 30 ordena contratar la grabación **desde el pesaje de esferas hasta la celebración del sorteo electrónico**; define esas grabaciones como testigos documentales para aclaraciones y dispone que la versión editada (sólo el sorteo), en DVD/CD/USB, forme parte del Acta. Además, la actividad 12.1 señala que las cámaras registran los números expresados al capturarse las esferas en los exhibidores. Por tanto, existe un requisito normativo de grabación que cubre pesaje y sorteo, y esa fuente podría reconstruir sustituciones, carga y secuencia de extracción si el original está completo y sus tiempos son verificables.
+
+Lo que no está publicado es el archivo original de cada concurso, su hash, metadatos/reloj, formato, continuidad, política de retención ni el vínculo de la copia editada con el original. Deben solicitarse ambas versiones: el archivo íntegro desde pesaje hasta sorteo y el segmento editado incorporado al Acta. La grabación empieza en la etapa de pesaje, que el flujo ubica después del cierre; por sí sola no hace que las variables físicas sean pre-cierre.
 
 La “Firma Electrónica” del procedimiento corresponde a archivos de participaciones/cancelaciones y reportes asociados. La firma se graba en dispositivo, se verifica con SEGOB y se deposita en caja de seguridad; el Acta y anexos digitales se resguardan. Es evidencia de integridad de archivos de operación/apuestas, **no una firma de las masas, de la asignación física esfera-número ni de un registro RFID**.
 
