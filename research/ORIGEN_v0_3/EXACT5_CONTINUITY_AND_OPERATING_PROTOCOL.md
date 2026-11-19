@@ -109,3 +109,9 @@ Prioritize primary physical traceability records and robust prospective custody 
 - First full ORIGEN test run after adding the exact Plackett–Luce kernel executed 129 tests and found one overly strict floating-point assertion: the centered log-weight sum differed from zero by 1.40e-12. The likelihood kernel, explicit 120-order oracle and 98,280-set normalization test passed.
 - Corrected only the test tolerance from 13 to 11 decimal places; no model equation, beta definition, likelihood or data gate was changed. Fix commit: `74bc8551be36c2dbcf09839f42ef241bad00f56a`.
 - A new isolated test workflow was queued for that fix at last inspection. Until it completes, V317 code validation is not declared green.
+## V317 implementation validation — corrected and green
+
+- Corrected test run [44446185498](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44446185498), commit `8e017e84f64451bb2ea9765574dfae82ca9bf2b3`, completed successfully: 132 tests passed in 12.744 seconds.
+- This includes all 13 physical-intake tests, exact enumeration/normalization of all 98,280 unordered five-number sets, the 120-order Plackett–Luce reference check, and three prequential e-process tests.
+- The prior one-test failure was only the overly strict floating-point assertion documented above; the corrected run is green. No statistical model equation or preregistered decision gate was relaxed.
+- Separate canonical replay integrity workflow [44446179906](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44446179906) and root CI were still running at last inspection; do not conflate the green isolated test suite with those pending workflows.
