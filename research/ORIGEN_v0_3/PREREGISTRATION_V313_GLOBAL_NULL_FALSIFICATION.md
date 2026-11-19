@@ -56,7 +56,7 @@ D. Higher-order motifs:
 
 - One primary omnibus family: number, pair and temporal tests; control family-wise error at 0.05 using Holm across the three primary p-values.
 - Any follow-up per-number or per-pair claims require a separately declared family and correction.
-- Fix Monte Carlo replicate count and random seed before execution; increase replicates only under a documented precision rule, never because a p-value is inconvenient.
+- Frozen Monte Carlo calibration: 1,999 replicates, NumPy PCG64 generator seed `3132026`, add-one p-value estimator. The replicate count and seed may not change after observing results. The Monte Carlo resolution is 0.0005; report this limitation explicitly.
 - No repeated peeking or stopping when significance appears.
 - Report effect sizes and uncertainty, not p-values alone.
 
