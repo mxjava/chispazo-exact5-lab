@@ -51,14 +51,18 @@ def block_bootstrap_mean_ci(values, *, block_length=30, resamples=3000, seed=202
     x = np.asarray(values, dtype=float)
     if x.ndim != 1 or len(x) < block_length or block_length < 1 or resamples < 1:
         raise ValueError("invalid bootstrap dimensions")
-    blocks = np.asarray([x[i:i + block_length] for i in range(len(x) - block_length + 1)])
+    # Circular moving blocks cover both endpoints; truncate each replicate
+    # to exactly n observations instead of padding to a multiple of block_length.
+    blocks = np.asarray([np.roll(x, -i)[:block_length] for i in range(len(x))])
     rng = np.random.default_rng(seed)
     blocks_per_sample = int(np.ceil(len(x) / block_length))
     indices = rng.integers(0, len(blocks), size=(resamples, blocks_per_sample))
-    means = blocks[indices].sum(axis=(1, 2)) / (blocks_per_sample * block_length)
+    replicates = blocks[indices].reshape(resamples, blocks_per_sample * block_length)[:, :len(x)]
+    means = replicates.mean(axis=1)
     low, high = np.quantile(means, [0.025, 0.975])
     return {"ci95_low": float(low), "ci95_high": float(high),
-            "bootstrap_fraction_nonnegative": float(np.mean(means >= 0))}
+            "bootstrap_fraction_nonnegative": float(np.mean(means >= 0)),
+            "bootstrap_method": "circular_moving_block_truncated_to_n"}
 
 
 def segment_summary(frame: pd.DataFrame, *, block_length=30, resamples=3000, seed=20261119):
@@ -104,7 +108,7 @@ def build_report(scores: pd.DataFrame, history: pd.DataFrame, *, block_length=30
         "contest_min": int(joined["contest"].min()),
         "contest_max": int(joined["contest"].max()),
         "join_validation": "PASS_CONTEST_DATE_AND_WINNING_NUMBERS",
-        "bootstrap": {"method": "chronological moving-block bootstrap",
+        "bootstrap": {"method": "circular moving-block bootstrap truncated to original sample length",
                       "block_length": block_length, "resamples": resamples,
                       "seed": seed, "interval": "percentile 95%"},
         "overall": overall,
