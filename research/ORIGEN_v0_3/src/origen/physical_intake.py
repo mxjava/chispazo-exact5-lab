@@ -16,6 +16,8 @@ from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Iterable, Mapping, Any
 
+from .mapping_history import audit_mapping_history
+
 HEX64 = re.compile(r"[0-9a-f]{64}")
 MASS_LIMITS = {
     "smartballs": (4.25, 5.25, 0.30),
@@ -28,7 +30,7 @@ REQUIRED_COLUMNS = (
     "machine_model", "sphere_id", "printed_number", "mass_value",
     "mass_unit", "measurement_at", "measurement_resolution",
     "scale_id", "calibration_valid_from", "calibration_valid_to",
-    "calibration_certificate_sha256", "mapping_valid_from",
+    "calibration_certificate_sha256", "mapping_valid_from", "mapping_valid_to", "draw_at",
     "source_document_sha256", "source_document_ref",
 )
 QUARANTINE_CODES = {
@@ -113,12 +115,16 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             assigned = _timestamp(str(row["set_assigned_at"]), "set_assigned_at")
             measured = _timestamp(str(row["measurement_at"]), "measurement_at")
             mapped = _timestamp(str(row["mapping_valid_from"]), "mapping_valid_from")
+            mapped_to = _timestamp(str(row["mapping_valid_to"]), "mapping_valid_to")
+            draw_at = _timestamp(str(row["draw_at"]), "draw_at")
             cal_from = _timestamp(str(row["calibration_valid_from"]), "calibration_valid_from")
             cal_to = _timestamp(str(row["calibration_valid_to"]), "calibration_valid_to")
-            if not (assigned < close and measured < close and mapped < close):
+            if not (assigned < close and measured < close and mapped < close and close < draw_at):
                 row_errors[contest].add("Q_TIME")
-            if mapped > assigned:
-                row_errors[contest].add("Q_MAPPING")
+            if not (mapped <= assigned <= mapped_to and mapped <= draw_at <= mapped_to):
+                row_errors[contest].add("Q_REMAP")
+            if draw_at.astimezone(DRAW_TIMEZONE).date().isoformat() != draw_date:
+                row_errors[contest].add("Q_CONTEST_LINK")
             if not (cal_from <= measured <= cal_to):
                 row_errors[contest].add("Q_METROLOGY")
             if not all(str(row[k]).strip() for k in ("sphere_set_id", "sphere_type", "machine_id", "machine_model", "sphere_id", "scale_id")):
@@ -148,7 +154,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         identity_fields = ("modality", "draw_date", "draw_close_at", "sphere_set_id",
                            "set_assigned_at", "sphere_type", "machine_id", "machine_model",
                            "scale_id", "measurement_resolution", "calibration_valid_from",
-                           "calibration_valid_to", "mapping_valid_from",
+                           "calibration_valid_to", "draw_at",
                            "source_document_sha256", "source_document_ref",
                            "calibration_certificate_sha256")
         for row in group:
@@ -186,10 +192,21 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     for key, labels in row_errors.items():
         if key < 0:
             quarantined[f"row:{-key}"] = sorted(labels)
+
+    mapping_report = audit_mapping_history(materialized)
+    for contest_key, codes in mapping_report["quarantined"].items():
+        quarantined[contest_key] = sorted(set(quarantined.get(contest_key, [])) | set(codes))
+        try:
+            invalidated_contest = int(contest_key)
+            usable = [value for value in usable if value != invalidated_contest]
+        except ValueError:
+            pass
     return {
         "status": "VALIDATED_WITH_QUARANTINE" if quarantined else "STRUCTURE_VALID",
         "contest_count": len(grouped),
         "row_count": len(materialized),
+        "mapping_history_status": mapping_report["status"],
+        "mapping_history_conflicts": mapping_report["overlapping_conflicts"],
         "usable_contests": usable,
         "quarantined": quarantined,
         "scope_warning": "Structural validation only; source authenticity, clock trust, signatures and predictive value are not established.",
