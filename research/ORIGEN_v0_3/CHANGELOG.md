@@ -33,3 +33,10 @@
 - Added log-likelihood ratio against exact uniform 5-of-28 and the corresponding prequential e-process design.
 - Added tests against all 120 permutations for a chosen set, normalization over all 98,280 possible sets, uniform beta=0 recovery, and invalid input rejection.
 - Preregistered the physical mass test; beta must be independently calibrated on equivalent equipment and frozen before Chispazo outcome labels are inspected. No primary measurements/beta calibration exist; V317 remains blocked, no predictions.
+
+## V318 combinatorial-shape omnibus (2026-11-19)
+- Preregistered seven fixed result-only shape families before replay.
+- Added exact 98,280-set category probability enumeration and one global Monte Carlo max-statistic test over all categories/families.
+- Added adversarial tests for set encoding, feature contracts, exact probability normalization, frozen simulation/source guards and sample-size guards.
+- Added isolated GitHub Actions workflow to run unit tests and the 1,999-replicate canonical Classic replay.
+- No physical sphere masses or mapping are inferred from the historical winning-number file; no predictive or causal claim is permitted.
