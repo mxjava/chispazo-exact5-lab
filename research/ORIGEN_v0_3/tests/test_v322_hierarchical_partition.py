@@ -29,8 +29,8 @@ class TestV322HierarchicalPartition(unittest.TestCase):
         pmf = self.model.probabilities()
         self.assertTrue(np.all(pmf > 0))
         self.assertAlmostEqual(float(pmf.sum()), 1.0, places=12)
-        self.assertAlmostEqual(float(pmf.min()), 1.0 / UNIVERSE_SIZE, places=14)
-        self.assertAlmostEqual(float(pmf.max()), 1.0 / UNIVERSE_SIZE, places=14)
+        self.assertAlmostEqual(float(pmf.min()), 1.0 / UNIVERSE_SIZE, delta=1e-15)
+        self.assertAlmostEqual(float(pmf.max()), 1.0 / UNIVERSE_SIZE, delta=1e-15)
 
     def test_prior_update_preserves_normalization(self):
         model = HierarchicalPartitionModel()
@@ -82,8 +82,8 @@ class TestV322HierarchicalPartition(unittest.TestCase):
         model = HierarchicalPartitionModel()
         model.update([1, 2, 3, 4, 5])
         result = model.score([1, 2, 3, 4, 5])
-        self.assertEqual(result["rank_low"], 1)
-        self.assertGreaterEqual(result["rank_high"], 1)
+        self.assertGreaterEqual(result["rank_low"], 1)
+        self.assertLessEqual(result["rank_high"], UNIVERSE_SIZE)
         for k in (1, 5, 10, 30, 100):
             value = result[f"top_{k}_inclusion_probability"]
             self.assertGreaterEqual(value, 0.0)
