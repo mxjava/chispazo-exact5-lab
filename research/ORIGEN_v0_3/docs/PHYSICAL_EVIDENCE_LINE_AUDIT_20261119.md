@@ -63,7 +63,7 @@ Estos límites son criterios de aceptación del equipo, **no mediciones observad
 ### 3.3 Acta, CS-11 y otros registros
 
 - **Acta de Sorteo:** documento distinto del CS-11. Debe contener lugar, fecha, horario, roles y firmas de los representantes y del inspector SEGOB, resultados e incidencias. Se le anexan los reportes aplicables.
-- **CS-11:** el nombre oficial es “Números Ganadores de los Sorteos”. No es el Acta. Se capturan los números, se cotejan contra los exhibidores, se leen en voz alta y se firma/recaba firma de Lotería y SEGOB. El original se anexa al Acta.
+- **CS-11:** el nombre oficial es “Números Ganadores de los Sorteos”. No es el Acta. Se capturan los números, se cotejan contra los exhibidores, se leen en voz alta y se firma/recaba firma de Lotería y SEGOB. El Plan de Calidad de SGVO-PRO-05 enumera para CS-11 estos campos: fecha, número de sorteo, número de estuche, comparación “esferas vs. números anotados” y nombres de las personas participantes; el criterio es que coincidan las esferas sorteadas con los números anotados. El original se anexa al Acta. Esto aporta un enlace documental entre el estuche final y los números ganadores, pero no equivale a un ID RFID único por esfera, una masa por esfera, número de serie de máquina ni timestamp de disponibilidad pre-cierre.
 - **Tira de pesaje:** se identifica como anexo del Acta y contiene el registro de pesaje individual según el procedimiento. La especificación pública no expone un diccionario completo de campos, resolución, identificador de báscula ni sello de tiempo por esfera.
 - **Sumario de cierre:** registra el estado cerrado y datos del sorteo/ventas; es posterior al cierre y no es una covariable física.
 - **CS-09:** bitácora de concursos y sorteos. Las incidencias que afecten resultados deben asentarse en el Acta y en CS-09.
@@ -120,7 +120,7 @@ El evaluador exige por concurso `sphere_set_id`, `machine_id`, `available_before
 - cambios de estuche, remapeos, mantenimiento o incidencias;
 - video original o timestamp verificable por una fuente independiente.
 
-Por tanto, V265 es un **proxy histórico de régimen estuche/máquina**, no un evaluador de sesgo físico por masa. El timestamp y el booleano que acepta no autentican por sí solos el origen ni la hora real de disponibilidad.
+Por tanto, V265 es un **proxy histórico de régimen estuche/máquina**, no un evaluador de sesgo físico por masa. Aunque CS-11 publica el campo “número de estuche”, V265 no ingiere ni valida el CS-11 original, sus firmas, el campo “esferas vs. números anotados” ni la hora en que quedó fijado el estuche final. El timestamp y el booleano que acepta no autentican por sí solos el origen ni la hora real de disponibilidad.
 
 Se detecta además una brecha de guardrail: el campo `actionable_for_betting` puede activarse con cobertura, media positiva y p-valor Holm, sin exigir el Exact5 anytime e-value ≥20, dos salidas pre-cierre selladas y custodia independiente. Ese booleano no debe usarse para promoción ni para recomendar números. Hasta que el evaluador se endurezca con todos los gates, su salida se limita a investigación retrospectiva de proxies.
 
