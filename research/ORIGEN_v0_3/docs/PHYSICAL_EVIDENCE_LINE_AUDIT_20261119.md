@@ -181,16 +181,23 @@ El canal verificado **Lotería Nacional · Sorteos Electrónicos** mantiene al m
 Estos enlaces acreditan disponibilidad de transmisiones públicas de sorteos concretos, no la entrega del archivo maestro de cámara ni de la grabación íntegra de la preparación. En esta actualización no se extrajeron fotogramas ni metadatos de esos videos; por tanto no se afirma ningún orden de extracción, tiempo de pesaje o mapeo esfera-número derivado de ellos. Para un análisis reproducible se requiere descargar/recibir el original con metadatos y verificar continuidad, reloj, hash y correspondencia con el Acta/CS-11 del concurso.
 
 
-## 12. Contraste adicional con SIDOF/SEGOB: reglamento Chispazo no alineado con operación vigente
+## 12. Contraste adicional con SIDOF/SEGOB: inconsistencia interna del Reglamento Chispazo
 
-Se consultó también el texto del **Reglamento del Concurso Chispazo** alojado en el Sistema de Información del Diario Oficial de la Federación (SIDOF), Secretaría de Gobernación. El texto base de 2002 describe en su artículo 9 una tómbola con **25 esferas** numeradas del 1 al 25, extracción de cinco esferas y ausencia de efecto del orden de extracción; el artículo 15 exige un Acta con antecedentes, resultados e incidentes y participación del Interventor de SEGOB.
+Se cotejó el texto del **Reglamento del Concurso Chispazo** publicado por Lotería Nacional (última reforma indicada: 7 de marzo de 2012) con los documentos SIDOF/SEGOB. El PDF consolidado oficial de Lotería presenta una inconsistencia interna:
+- Artículo 2: dice que el participante elige dentro de un conjunto de **25 números**.
+- Artículo 5: define la selección entre **1 y 28**.
+- Artículo 9: dispone introducir **28 esferas** numeradas del 1 al 28 y extraer cinco.
+- Artículo 8: establece que el resultado oficial es el asentado en el Acta del artículo 15; los resultados de terminal, teléfono, sitio web y mascarilla son informativos si difieren.
 
-El acuerdo de reforma de 2012 alojado en SIDOF modifica varios artículos del reglamento de Chispazo relacionados con terminales/comercialización, pero no incluye los artículos 9 ni 15 entre los artículos reformados. Por tanto, el texto público consultado conserva una descripción de 25 esferas/tómbola que no coincide con la operación publicada actualmente por Lotería Nacional: cinco números de 1 a 28, Chispazo dentro de Sorteos Electrónicos y uso de máquina, bajo SGVO-PRO-05 revisión 39.
+El texto base de 2002 alojado en SIDOF sí describía originalmente 25 esferas; no debe confundirse con el texto consolidado posterior, cuyo artículo 9 fue reformado en 2006 para 28 esferas. El acuerdo de reforma de 2012 en SIDOF modifica artículos de comercialización y otros artículos, pero no corrige la referencia a 25 números del artículo 2. La inconsistencia 25 vs. 28 permanece en el PDF consolidado consultado.
+
+La terminología del artículo 9 habla de “urna”, mientras que la página actual de Chispazo lo clasifica como Sorteo Electrónico y SGVO-PRO-05 revisión 39 describe la operación mediante máquinas de sorteos electrónicos. Para la mecánica operativa actual prevalece la fuente operativa vigente; el reglamento requiere una aclaración/versión consolidada alineada.
 
 Fuentes oficiales:
+- [Lotería Nacional — Reglamento Chispazo consolidado, última reforma indicada 07-03-2012](https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf)
 - [SIDOF/SEGOB — Reglamento Chispazo, texto base de 2002](https://sidof.segob.gob.mx/notas/docFuente/718656)
 - [SIDOF/SEGOB — acuerdo de reforma de 2012](https://sidof.segob.gob.mx/notas/docFuente/5211955)
 - [Lotería Nacional — descripción vigente de Chispazo](https://loterianacional.gob.mx/Chispazo/Chispazo)
 - [Lotería Nacional — SGVO-PRO-05, revisión 39](https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf)
 
-Esto es una **desalineación normativa/documental** que requiere aclaración oficial; no es evidencia de sesgo ni prueba de incumplimiento. No se usa el mecanismo de 25 esferas de 2002 para inferir pesos, RFID, número de bolas o procedimiento físico de Chispazo actual. La solicitud documental debe pedir copia certificada de la versión vigente del Reglamento Chispazo y de todas sus reformas posteriores, así como el fundamento que vincula ese reglamento con SGVO-PRO-05 revisión 39.
+Esto es una **inconsistencia normativa/documental**, no evidencia de sesgo ni prueba de incumplimiento. No se usa el texto histórico de 25 esferas para inferir el mecanismo físico actual. La solicitud documental debe pedir aclaración del artículo 2, copia certificada de la versión vigente del Reglamento Chispazo y de todas sus reformas posteriores, así como el fundamento que vincula ese reglamento con SGVO-PRO-05 revisión 39.
