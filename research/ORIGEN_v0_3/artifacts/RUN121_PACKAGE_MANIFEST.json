@@ -1,0 +1,20 @@
+{
+  "run": "Exact5 Run121",
+  "base_branch": "research/run119-pmf-custody-20261119",
+  "target_branch": "research/run121-cross-component-verifier-20261119",
+  "scope": "cross-component provenance verifier package and official status-only overlay",
+  "tests": {"pmf_custody": 24, "target_ledger": 17, "run_verifier": 21, "total": 62},
+  "compileall": "PASS",
+  "editable_install": "PASS_WITH_NO_BUILD_ISOLATION_AND_NO_DEPS",
+  "synthetic_fixtures_only": true,
+  "real_pmf_artifacts_verified": 0,
+  "real_oos_targets_scored": 0,
+  "edge_claim": false,
+  "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+  "v294": "FROZEN",
+  "canonical_history_blob": "2f5ff5bfbd779fe505736398e417b7211955958e",
+  "canonical_history_sha256": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+  "code_committed_to_github_branch": false,
+  "report_and_overlay_committed_to_isolated_branch": true,
+  "zip_sha256": "c39df855cfae649fe92998eb248ccfb53dd455aa5c72548907921a4460bc8d53"
+}
