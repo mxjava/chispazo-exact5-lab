@@ -4,19 +4,19 @@
 
 - Base: `b780e75b81e8a50b222b512e2d76b6d7b3b52579`
 - Isolated branch: `research/run119-pmf-custody-20261119`
-- Local package SHA-256: `fd524cee3d4ef0f088e05d4012fa986f5157b2e83c949cde4b305d8979bf2aa1`
-- Local validation: 41/41 synthetic tests passed; compileall passed.
+- Local package SHA-256: `c2dbac999643fb08c7e64e658e6c371ea18f6432a45b5c956ddfac9981e554b1`
+- Local validation: 41/41 synthetic tests passed under Python 3.13.5; pytest 41 passed; compileall passed; ZIP CRC passed.
 - No historical replay, no candidate retuning, no prediction, no official result scoring, no main write, no merge, no promotion.
 
 ## PMF contract
 
 The package defines a canonical full PMF over all 98,280 five-of-28 outcomes, in fixed 1-based lexicographic order. Non-negative integer weights are encoded as canonical decimal strings; the exact integer sum is the normalizer. Canonical JSON bytes are hashed and bound to a manifest containing candidate/specification, target, local date/timezone, history cutoff/hash, source commit, dependency/environment hashes, official schedule source, generator/custodian identities and asserted pre-close timestamps.
 
-Scoring uses the exact ratio (q_t(S_t)/(1/98280)). The running log likelihood-ratio process is calculated with threshold \`log(20)\`. A mathematical threshold crossing never changes the returned state from \`BLOCKED_PROVENANCE\`.
+Scoring uses the exact ratio (q_t(S_t)/(1/98280)). The running log likelihood-ratio process is calculated with threshold `log(20)`. A mathematical threshold crossing never changes the returned state from `BLOCKED_PROVENANCE`.
 
 ## Target completeness
 
-The separate target ledger requires an explicitly official \`CLASSIC\` target manifest and exactly one terminal state per target: \`SEALED\`, \`FAILED\`, \`LATE\` or \`QUARANTINED\`. IDs must increase but need not be consecutive; modality is never inferred from parity. The hash chain detects missing/reordered entries relative to the supplied manifest and detects tail truncation when an external head anchor is supplied.
+The separate target ledger requires an explicitly official `CLASSIC` target manifest and exactly one terminal state per target: `SEALED`, `FAILED`, `LATE` or `QUARANTINED`. IDs must increase but need not be consecutive; modality is never inferred from parity. The hash chain detects missing/reordered entries relative to the supplied manifest and detects tail truncation when an external head anchor is supplied.
 
 ## Security boundary
 
