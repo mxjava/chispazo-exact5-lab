@@ -56,3 +56,18 @@ Prioritize primary physical traceability records and robust prospective custody 
 - PR #8 remains open, draft and unmerged. No changes to `main`, V294, or the canonical history are authorized.
 - Physical-bias request V2 remains a draft and has not been submitted. No primary weighing strips or sphere-to-number mapping have been received; status remains `BLOCKED_PROVENANCE`.
 - Next action: verify the isolated workflow on the corrected branch head, then continue physical-evidence acquisition preparation and prospective custody design. Do not mine additional retrospective motifs absent a materially new hypothesis.
+
+
+## Operational update — integrated ORIGEN validation confirmed (2026-11-19)
+
+- Verified branch head: `148b4ae10b1df0624fa9b7574a08ec9855b881bc` on `research/origen-v0.3-engine-20261118`.
+- The corrected integrated ORIGEN workflow was triggered by PR #8 and completed successfully: run [44441010244](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44441010244), conclusion `success`.
+- Job `unit-tests` succeeded. Independently inspected step summaries: isolated ORIGEN tests, Classic-only modality audit, frozen V312 retrospective replay, preregistered V313 global-null replay, and all three artifact uploads completed successfully.
+- Artifacts produced on this run:
+  - modality audit: ID `14490918644`, SHA-256 digest `f0a754a0d3460caa668bf9d0a000b475c33c582f30f3cdde2a9dd3d9bf2ec71a`;
+  - V313 global-null: ID `14490898632`, digest `9e69b58697f28ea9a45905cf8ed033dbc9c6890c81616422efaf7134c6bfcb7e`;
+  - V312 retrospective integrity: ID `14490404318`, digest `3ab31395eda64cf986e9f8ec6fbfa59b99cd913bdc7f88d7f66c77787d2d3cf8`.
+- PR #8 remains open and draft. Its base is `main` at `58ff8e609fc62e540ab9226ebdb01782b3301fdc`; no merge was performed.
+- Main remains at the protected baseline SHA above. The canonical history remains governed by the established SHA-256 baseline; this workflow used it read-only. V294 remains frozen.
+- This closes the prior isolated-workflow validation blocker. It does not establish predictive edge: V312 remains retrospective and negative; V313 rejects none of its global-null families; physical primary records and independent prospective custody are still absent.
+- Next high-value work: build a concrete sealed prospective-custody specification and operator checklist (two pre-close outputs, immutable timestamped hashes, independent witness/custodian, draw-close boundary, append-only score ledger, failure/recovery rules), then separately pursue primary weighing strips and sphere-number mapping. No government request is submitted without the user's explicit instruction.
