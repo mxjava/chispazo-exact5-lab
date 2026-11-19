@@ -3015,6 +3015,27 @@ def _v249_snapshot_manifest(snapshot: Dict[str, object]) -> Dict[str, object]:
     }
 
 
+def _v249_snapshot_manifest_sha256(snapshot: Dict[str, object]) -> str:
+    """Validate supported snapshot payload and return its canonical manifest digest."""
+    schema = int(snapshot.get('schema', -1))
+    if schema == V249_SNAPSHOT_SCHEMA:
+        _v249_validate_snapshot_integrity(snapshot)
+        manifest = _v249_snapshot_manifest(snapshot)
+    elif schema == V249_STATE_SCHEMA:
+        # Exact legacy V1 manifest contract; do not reinterpret old snapshots as V2.
+        manifest = {
+            'schema': schema, 'target': int(snapshot.get('target', -1)), 'history_last': int(snapshot.get('history_last', -1)),
+            'history_sha256': str(snapshot.get('history_sha256', '')), 'fusion_weights': snapshot.get('fusion_weights', {}),
+            'allocation': snapshot.get('allocation', {}),
+            'portfolio_idx': [int(x) for x in np.asarray(snapshot.get('portfolio_idx', []), dtype=int).tolist()],
+            'coverage_config': snapshot.get('coverage_config', {}),
+            'strategies': sorted(map(str, snapshot.get('specialist_scores', {}).keys())),
+        }
+    else:
+        raise RuntimeError(f'V249 snapshot guardrail failed: unsupported snapshot schema {schema}')
+    return hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
+
+
 V249_UNCLIPPED_HEURISTIC = '_heuristic_unclipped_v249'
 
 @dataclass(frozen=True)
@@ -3680,20 +3701,7 @@ def consume_previous_snapshot_v249(df: pd.DataFrame, audit: AuditResult, state_d
     if int(snap.get('target', -1)) != prev_target or int(snap.get('history_last', -1)) != prev_target - 1:
         raise RuntimeError('V249 snapshot guardrail failed: target/history_last mismatch')
     snapshot_schema = int(snap.get('schema', -1))
-    if snapshot_schema == V249_SNAPSHOT_SCHEMA:
-        _v249_validate_snapshot_integrity(snap)
-        manifest = _v249_snapshot_manifest(snap)
-    elif snapshot_schema == V249_STATE_SCHEMA:
-        # Preserve the exact legacy V1 manifest contract for backward compatibility.
-        manifest = {
-            'schema': snapshot_schema, 'target': int(snap.get('target', -1)), 'history_last': int(snap.get('history_last', -1)),
-            'history_sha256': str(snap.get('history_sha256', '')), 'fusion_weights': snap.get('fusion_weights', {}), 'allocation': snap.get('allocation', {}),
-            'portfolio_idx': [int(x) for x in np.asarray(snap.get('portfolio_idx', []), dtype=int).tolist()],
-            'coverage_config': snap.get('coverage_config', {}), 'strategies': sorted(map(str, snap.get('specialist_scores', {}).keys())),
-        }
-    else:
-        raise RuntimeError(f'V249 snapshot guardrail failed: unsupported snapshot schema {snapshot_schema}')
-    manifest_sha = hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
+    manifest_sha = _v249_snapshot_manifest_sha256(snap)
     if str(snap.get('manifest_sha256', '')) != manifest_sha:
         raise RuntimeError('V249 snapshot guardrail failed: manifest SHA256 mismatch')
     rowdf = df[df['CONCURSO'] == prev_target]
@@ -3775,7 +3783,10 @@ def save_current_snapshot_v249(state_dir: Path, target: int, audit: AuditResult,
             raise RuntimeError('V249 frozen snapshot has unexpected target')
         if str(existing.get('history_sha256', '')) != str(audit.sha256):
             raise RuntimeError('V249 FROZEN SNAPSHOT CONFLICT: same target with different history hash')
-        progress(f'V249 snapshot FROZEN HIT: target {target}; existing manifest preserved')
+        expected_manifest_sha = _v249_snapshot_manifest_sha256(existing)
+        if str(existing.get('manifest_sha256', '')) != expected_manifest_sha:
+            raise RuntimeError('V249 FROZEN SNAPSHOT CONFLICT: existing manifest integrity failure')
+        progress(f'V249 snapshot FROZEN HIT: target {target}; existing manifest validated and preserved')
         return sp
     snap = dict(production_snapshot)
     snap.update({'schema': V249_SNAPSHOT_SCHEMA, 'target': int(target), 'history_last': int(audit.max_concurso), 'history_sha256': str(audit.sha256), 'created_at': time.strftime('%Y-%m-%d %H:%M:%S'), 'fusion_state': prod_gate.get('fusion_state', 'unknown'), 'allocation_state': prod_gate.get('allocation_detail', {}).get('state', 'unknown'), 'trained_at': int(audit.max_concurso)})
