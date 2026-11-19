@@ -170,3 +170,12 @@ La solicitud de transparencia V2 del repositorio sigue siendo un borrador no pre
 8. archivos de participaciones/cancelaciones, firmas electrónicas, verificaciones y relación con el concurso, distinguiéndolos de los registros físicos.
 
 **Decisión:** evidencia pública de que existen controles y registros operativos de pesaje, inspección, RFID, video, incidencias y custodia electrónica. No existe todavía evidencia pública a nivel de concurso que enlace, con tiempo verificable, las 28 masas y los IDs físicos con los números 1–28 y el estuche/máquina finalmente usados. Sin ese enlace, no se puede estimar una propensión física por número. La línea sigue **`BLOCKED_PROVENANCE`**, no `EDGE_SUPPORTED`.
+
+
+## 11. Muestras de transmisiones públicas localizadas
+
+El canal verificado **Lotería Nacional · Sorteos Electrónicos** mantiene al menos grabaciones públicas de emisiones de Chispazo Clásico, por ejemplo:
+- [Chispazo Clásico 12168 — 2026-08-03](https://www.youtube.com/watch?v=-VVW2A3JxZI)
+- [Chispazo Clásico 12196 — 2026-08-17](https://www.youtube.com/watch?v=4N9VS8ayuVs)
+
+Estos enlaces acreditan disponibilidad de transmisiones públicas de sorteos concretos, no la entrega del archivo maestro de cámara ni de la grabación íntegra de la preparación. En esta actualización no se extrajeron fotogramas ni metadatos de esos videos; por tanto no se afirma ningún orden de extracción, tiempo de pesaje o mapeo esfera-número derivado de ellos. Para un análisis reproducible se requiere descargar/recibir el original con metadatos y verificar continuidad, reloj, hash y correspondencia con el Acta/CS-11 del concurso.
