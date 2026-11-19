@@ -17,32 +17,40 @@ Negative log-lift means the model assigned less probability to realized outcomes
 
 ## Weekday segmentation
 
-The file contains 989 targets for each weekday.
+The file contains 989 targets for each weekday. Intervals below were recomputed using the corrected circular moving-block bootstrap (block length 30, 3,000 resamples, fixed seed offsets). The previous non-circular/padded intervals are superseded.
 
-| Weekday | Mean log-lift | 95% moving-block bootstrap CI | Positive fraction |
+| Weekday | Mean log-lift | Corrected 95% CI | Positive fraction |
 |---|---:|---:|---:|
-| Monday | -0.008715 | [-0.015066, -0.002291] | 47.02% |
-| Tuesday | -0.006832 | [-0.011618, -0.001956] | 46.51% |
-| Wednesday | -0.007714 | [-0.012597, -0.003947] | 47.02% |
-| Thursday | -0.002680 | [-0.008370, 0.001568] | 49.34% |
-| Friday | +0.000686 | [-0.006481, 0.005980] | 49.24% |
-| Saturday | -0.005293 | [-0.009536, -0.000113] | 46.92% |
-| Sunday | -0.007447 | [-0.012521, -0.002031] | 46.61% |
+| Monday | -0.008715 | [-0.015207, -0.002514] | 47.02% |
+| Tuesday | -0.006832 | [-0.011703, -0.001866] | 46.51% |
+| Wednesday | -0.007714 | [-0.012310, -0.003136] | 47.02% |
+| Thursday | -0.002680 | [-0.008120, +0.002542] | 49.34% |
+| Friday | +0.000686 | [-0.005652, +0.007096] | 49.24% |
+| Saturday | -0.005293 | [-0.010150, -0.000511] | 46.92% |
+| Sunday | -0.007447 | [-0.012666, -0.002123] | 46.61% |
 
-Bootstrap: chronological moving blocks of length 30, 3,000 resamples per weekday, fixed seed 20261119 plus weekday offset. These are exploratory, unadjusted intervals. The Friday point estimate is slightly positive but its interval crosses zero widely; it is not evidence of a Friday edge. Several weekday estimates are materially negative.
+The Friday point estimate is positive but its interval is wide and crosses zero. Thursday also crosses zero despite a negative point estimate. Neither is evidence of a weekday edge. Five weekday intervals remain negative under the corrected bootstrap.
 
 ## Chronological stability
 
 The 6,923 scored targets were divided into four chronological groups of near-equal size.
 
-| Period | N | Mean log-lift | Positive fraction | Cumulative log-lift |
-|---|---:|---:|---:|---:|
-| Oldest quarter | 1,731 | -0.005258 | 46.74% | -9.1015 |
-| Second quarter | 1,731 | -0.008502 | 46.33% | -14.7164 |
-| Third quarter | 1,731 | -0.003573 | 49.45% | -6.1843 |
-| Newest quarter | 1,730 | -0.004378 | 47.57% | -7.5742 |
+| Period | N | Mean log-lift | Corrected 95% CI | Positive fraction | Cumulative log-lift |
+|---|---:|---:|---:|---:|---:|
+| Oldest quarter | 1,731 | -0.005258 | [-0.009913, -0.000304] | 46.74% | -9.1015 |
+| Second quarter | 1,731 | -0.008502 | [-0.012791, -0.003953] | 46.33% | -14.7164 |
+| Third quarter | 1,731 | -0.003573 | [-0.007685, +0.000533] | 49.45% | -6.1843 |
+| Newest quarter | 1,730 | -0.004378 | [-0.007718, -0.000652] | 47.57% | -7.5742 |
 
-The newest quarter remains negative. The apparent improvement in the third quarter did not persist in the newest quarter.
+All four point estimates are negative. The third quarter interval crosses zero; the newest quarter remains negative. The apparent improvement in the third quarter did not persist in the newest quarter.
+
+## Overall reference
+
+- Targets: 6,923
+- Mean log-lift: -0.00542775
+- Positive log-lift fraction: 47.52%
+- Cumulative log-lift: -37.57633
+- Corrected circular-block 95% CI for mean: [-0.007630, -0.003326]
 
 ## Interpretation and decision
 
