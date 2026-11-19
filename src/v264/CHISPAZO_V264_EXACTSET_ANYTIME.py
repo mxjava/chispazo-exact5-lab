@@ -14,6 +14,14 @@ def z(v):
     v=np.asarray(v,float); s=v.std()
     return (v-v.mean())/(s if s>1e-12 else 1.0)
 
+def stable_descending_order(scores):
+    """Deterministic descending ranking; ties resolve by ascending universe index."""
+    values = np.asarray(scores, dtype=float)
+    if values.ndim != 1 or not np.isfinite(values).all():
+        raise ValueError("scores must be a finite one-dimensional array")
+    return np.lexsort((np.arange(values.size, dtype=np.int64), -values))
+
+
 def e5(weights):
     e=np.zeros(6,float); e[0]=1.0
     for w in weights:
@@ -111,7 +119,7 @@ def main(hist_path,outdir,warmup=800):
             pmf += post[k]*pp
             expert_meta.append((names[k],float(post[k])))
             k+=1
-    order=np.argsort(-pmf)
+    order=stable_descending_order(pmf)
     top=order[:30]
     out=pd.DataFrame({'rank':np.arange(1,31),'combo':['-'.join(f'{x:02d}' for x in combos[i]) for i in top],'p_exact5':pmf[top],'lift_vs_uniform':pmf[top]*U})
     out.to_csv(outdir/f'v264_top30_target_{int(df.CONCURSO.max())+1}.csv',index=False)
