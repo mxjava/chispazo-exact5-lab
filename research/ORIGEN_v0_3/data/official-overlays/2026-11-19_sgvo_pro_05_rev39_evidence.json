@@ -13,13 +13,94 @@
     "pages": 38
   },
   "verified_provisions": [
-    {"reference": "policy_6", "pdf_lines": [204, 209], "claim": "Weighing is performed for each draw; Smartballs 4.25-5.25 g with max spread 0.30 g; Ping Pong 2.30-3.00 g with max spread 0.15 g; nonconforming case is replaced and reweighed."},
-    {"reference": "activity_5_1", "pdf_lines": [550, 559], "claim": "Each sphere is weighed one by one in numerical order in presence of SEGOB inspector and LN representatives."},
-    {"reference": "activities_5_4_5_5", "pdf_lines": [603, 615], "claim": "Weighing strip is signed, reviewed/rubricated by specified representatives, and attached to the corresponding draw act."},
-    {"reference": "policy_11", "pdf_lines": [251, 252], "claim": "Draw act records place, date, time, roles/signatures of LN representatives and SEGOB inspector, results and incidents."},
-    {"reference": "policy_11_record_matrix", "pdf_lines": [280, 288], "claim": "TIRA DE PESAJE is listed as a record for Chispazo."},
-    {"reference": "quality_plan_cs11", "pdf_lines": [1236, 1249], "claim": "CS-11 check includes date, draw number, case number, sphere-versus-number correspondence and participants."},
-    {"reference": "glossary_tira_de_pesaje", "pdf_lines": [1569, 1571], "claim": "Tira records each sphere weight and the responsible/representative/SEGOB signatures."}
+    {
+      "reference": "policy_6",
+      "pdf_lines": [
+        204,
+        209
+      ],
+      "claim": "Weighing is performed for each draw; Smartballs 4.25-5.25 g with max spread 0.30 g; Ping Pong 2.30-3.00 g with max spread 0.15 g; nonconforming case is replaced and reweighed."
+    },
+    {
+      "reference": "activity_5_1",
+      "pdf_lines": [
+        550,
+        559
+      ],
+      "claim": "Each sphere is weighed one by one in numerical order in presence of SEGOB inspector and LN representatives."
+    },
+    {
+      "reference": "activities_5_4_5_5",
+      "pdf_lines": [
+        603,
+        615
+      ],
+      "claim": "Weighing strip is signed, reviewed/rubricated by specified representatives, and attached to the corresponding draw act."
+    },
+    {
+      "reference": "policy_11",
+      "pdf_lines": [
+        251,
+        252
+      ],
+      "claim": "Draw act records place, date, time, roles/signatures of LN representatives and SEGOB inspector, results and incidents."
+    },
+    {
+      "reference": "policy_11_record_matrix",
+      "pdf_lines": [
+        280,
+        288
+      ],
+      "claim": "TIRA DE PESAJE is listed as a record for Chispazo."
+    },
+    {
+      "reference": "quality_plan_cs11",
+      "pdf_lines": [
+        1236,
+        1249
+      ],
+      "claim": "CS-11 check includes date, draw number, case number, sphere-versus-number correspondence and participants."
+    },
+    {
+      "reference": "glossary_tira_de_pesaje",
+      "pdf_lines": [
+        1569,
+        1571
+      ],
+      "claim": "Tira records each sphere weight and the responsible/representative/SEGOB signatures."
+    },
+    {
+      "reference": "policy_8_preclose_participation_file_custody",
+      "pdf_lines": [
+        218,
+        219
+      ],
+      "claim": "Electronic signature of the participation file is recorded on a storage device before the draw, delivered to the SEGOB inspector and deposited in a safe accessible only to the Internal Control Body."
+    },
+    {
+      "reference": "policy_12_weekly_dvd_archive",
+      "pdf_lines": [
+        290,
+        301
+      ],
+      "claim": "Draw reports and electronic signature of winners relation are archived weekly on DVD and attached to the Acts."
+    },
+    {
+      "reference": "policies_15_17_19_delayed_act_risk_and_room_access",
+      "pdf_lines": [
+        315,
+        319
+      ],
+      "claim": "Delayed Act signing up to five business days requires a log entry; CS-18 communicates risks."
+    },
+    {
+      "reference": "policy_19_room_access_and_maintenance_logs",
+      "pdf_lines": [
+        352,
+        353
+      ],
+      "claim": "Room attendance uses CS-12; cleaning/maintenance is recorded in controlled access logs."
+    }
   ],
   "source_capture": {
     "web_pdf_text_opened": true,
@@ -33,6 +114,8 @@
     "sphere_number_mapping_received": false,
     "independent_beta_calibration_received": false,
     "v317_empirical_test": "BLOCKED_PROVENANCE",
-    "predictive_edge": false
+    "predictive_edge": false,
+    "official_pre_draw_participation_file_custody_procedure_documented": true,
+    "actual_participation_file_or_custody_receipt_received": false
   }
 }
