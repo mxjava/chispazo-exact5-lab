@@ -292,30 +292,23 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
         out["transition"] = transition
         return out
 
-    def score_stream(stream, first_target_contest, pooled_stream):
+    def score_stream(stream, first_target_contest):
         draws = np.asarray([r["numbers"] for r in stream], dtype=np.int16) - 1
         contests = [r["contest"] for r in stream]
         first_target_index = bisect.bisect_left(contests, first_target_contest)
         if first_target_index >= len(stream) or contests[first_target_index] != first_target_contest:
             raise ValueError("first_classic_target_missing_from_stream")
-        # The pooled stream must also learn from the De las Tres draw immediately
-        # preceding the first scored Classic draw on that same date. Both streams
-        # therefore begin their adaptive posterior at the same calendar boundary.
-        start_index = first_target_index
-        if pooled_stream and first_target_index > 0:
-            previous = stream[first_target_index - 1]
-            target = stream[first_target_index]
-            if (previous["draw_type"] == "DE_LAS_TRES"
-                    and previous["date"] == target["date"]
-                    and previous["contest"] + 1 == target["contest"]):
-                start_index -= 1
 
+        # Crucial: warm the Bayesian expert posterior on the entire admissible
+        # pre-target stream. The previous implementation initialized logpost
+        # immediately before scoring, so both streams began uniform and the
+        # modality comparison was invalid. Only the scoring window is delayed.
         logpost = np.full(len(names), -math.log(len(names)), dtype=float)
         values = []
         scored_contests = []
         posterior_trace = []
         de_las_tres_updates = 0
-        for t in range(max(start_index, 2), len(stream)):
+        for t in range(2, len(stream)):
             target = stream[t]
             sig = signals(draws, t)
             probabilities = np.empty(len(names), dtype=float)
@@ -331,24 +324,24 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
             maximum = float(logpost.max())
             posterior = np.exp(logpost - maximum)
             posterior /= posterior.sum()
-            mixture_probability = float(np.dot(posterior, probabilities))
             if target["draw_type"] == "CLASSIC" and target["contest"] >= first_target_contest:
+                mixture_probability = float(np.dot(posterior, probabilities))
                 values.append(math.log(mixture_probability) - log_uniform)
                 scored_contests.append(target["contest"])
                 posterior_trace.append(posterior.copy())
-            if target["draw_type"] == "DE_LAS_TRES":
+            if target["draw_type"] == "DE_LAS_TRES" and target["contest"] < first_target_contest:
                 de_las_tres_updates += 1
             logpost += np.log(np.maximum(probabilities, 1e-300))
             maximum = float(logpost.max())
             logpost -= maximum + math.log(float(np.exp(logpost - maximum).sum()))
-        return values, scored_contests, start_index, de_las_tres_updates, posterior_trace
+        return values, scored_contests, de_las_tres_updates, posterior_trace
 
     classic = [r for r in labelled if r["draw_type"] == "CLASSIC"]
     if len(classic) <= warmup:
         raise ValueError("insufficient_classic_draws_for_full_mixture")
     first_target = classic[warmup]["contest"]
-    classic_values, classic_targets, classic_start, classic_de_tres_updates, classic_trace = score_stream(classic, first_target, False)
-    pooled_values, pooled_targets, pooled_start, pooled_de_tres_updates, pooled_trace = score_stream(labelled, first_target, True)
+    classic_values, classic_targets, classic_de_tres_updates, classic_trace = score_stream(classic, first_target)
+    pooled_values, pooled_targets, pooled_de_tres_updates, pooled_trace = score_stream(labelled, first_target)
     if classic_targets != pooled_targets:
         raise ValueError("classic_target_alignment_failure")
 
@@ -362,8 +355,8 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
         "transition_fix": "historical transition loop excludes current context row",
         "warmup_classic_draws": warmup,
         "first_target_contest": first_target,
-        "classic_stream_start_index": classic_start,
-        "pooled_stream_start_index": pooled_start,
+        "classic_stream_prewarm_draws": first_target - classic[0]["contest"],
+        "posterior_prewarmed_on_all_pre_target_observations": True,
         "classic_targets": len(classic_values),
         "classic_only": summary(classic_values),
         "pooled_stream_scored_on_same_classic_targets": summary(pooled_values),
