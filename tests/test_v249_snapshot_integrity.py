@@ -6,20 +6,25 @@ from src.v264.CHISPAZO_V264_PARENT_REPAIR import (
     _v249_numeric_payload_sha256,
     _v249_snapshot_manifest,
     _v249_validate_snapshot_integrity,
+    tie_safe_anti_saturation_score_v249,
 )
 
 
 def _payload():
-    order = np.array([2, 1, 0], dtype=np.int32)
+    fused = np.array([0.11, 0.22, 0.33], dtype=np.float64)
+    tie_signal = np.array([3.0, 2.0, 1.0], dtype=np.float64)
+    anti_score, epsilon = tie_safe_anti_saturation_score_v249(fused, tie_signal)
+    order = np.argsort(-anti_score, kind='stable').astype(np.int32)
     rank = np.empty(3, dtype=np.int32)
     rank[order] = np.arange(1, 4, dtype=np.int32)
     return {
         'anti_order': order,
         'anti_rank': rank,
-        'anti_saturation_score': np.array([0.1, 0.2, 0.3], dtype=np.float64),
-        'fused': np.array([0.11, 0.22, 0.33], dtype=np.float64),
+        'anti_saturation_score': anti_score,
+        'anti_saturation_epsilon': epsilon,
+        'fused': fused,
         'portfolio_idx': np.array([2, 0], dtype=np.int32),
-        'tie_signal': np.array([3.0, 2.0, 1.0], dtype=np.float64),
+        'tie_signal': tie_signal,
         'specialist_scores': {'heuristic': np.array([1.0, 2.0, 3.0], dtype=np.float64)},
     }
 
@@ -70,6 +75,14 @@ def test_v249_snapshot_integrity_rejects_object_arrays():
     with pytest.raises(TypeError, match='unsupported dtype'):
         _v249_numeric_payload_sha256(payload)
 
+
+
+def test_v249_snapshot_integrity_rejects_anti_score_not_derived_from_inputs():
+    payload = _payload()
+    payload['anti_saturation_score'][0] += 1e-6
+    payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
+    with pytest.raises(RuntimeError, match='anti_saturation_score inconsistent with fused/tie_signal'):
+        _v249_validate_snapshot_integrity(payload)
 
 
 def test_v249_snapshot_integrity_rejects_order_not_matching_saved_scores():
