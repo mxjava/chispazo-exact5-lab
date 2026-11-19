@@ -34,6 +34,23 @@ def p_set(signal,beta,actual):
     idx=np.asarray(actual,dtype=int)-1
     return float(np.prod(w[idx])/Z)
 
+
+def subset_pmf(signal, beta, combos):
+    """Exact unordered 5-subset PMF under weighted sampling without replacement."""
+    s = np.asarray(signal, dtype=float)
+    c = np.asarray(combos, dtype=int)
+    if s.shape != (28,) or not np.isfinite(s).all():
+        raise ValueError("signal must be a finite vector of length 28")
+    if c.ndim != 2 or c.shape[1] != 5:
+        raise ValueError("combos must have shape (n, 5)")
+    if np.any(c < 1) or np.any(c > 28) or np.any(np.diff(c, axis=1) <= 0):
+        raise ValueError("each combination must contain 5 strictly increasing values in [1, 28]")
+    w = np.exp(float(beta) * z(s))
+    normalizer = e5(w)
+    if not np.isfinite(normalizer) or normalizer <= 0:
+        raise ValueError("invalid subset normalizer")
+    return np.prod(w[c - 1], axis=1) / normalizer
+
 def signals(draws, t):
     # all t past draws, each 0-based numbers
     out={}
@@ -111,11 +128,8 @@ def main(hist_path,outdir,warmup=800):
     k=1
     expert_meta=[]
     for base in [f'freq{w}' for w in WINDOWS]+[f'ewma{h}' for h in EWM_HL]+['hotgap','duegap','transition']:
-        zz=z(sig[base])
         for b in BETAS:
-            w=np.exp(b*zz); Z=e5(w)
-            lp=np.log(w)[combos-1].sum(axis=1)-math.log(Z)
-            pp=np.exp(lp)
+            pp=subset_pmf(sig[base], b, combos)
             pmf += post[k]*pp
             expert_meta.append((names[k],float(post[k])))
             k+=1
