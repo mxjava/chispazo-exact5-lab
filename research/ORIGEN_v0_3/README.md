@@ -89,3 +89,10 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 - The exact sign test checks direction consistency, not model calibration or stationarity.
 - Adversarial-null quality depends on the null generators and full discovery pipeline supplied by the research team.
 - The framework cannot prove that a random process has no structure; it can report that tested claims failed to establish evidence under specified tests.
+
+
+### Physical evidence intake v1
+- Added a long-form 28-sphere-per-contest template at `data/physical-metadata/PHYSICAL_EVIDENCE_LONG_FORM_TEMPLATE_V1.csv`; it is header-only and contains no observations.
+- Added `origen.physical_intake` and CLI command `origen validate-physical --file <csv>` to enforce mapping, timestamps, calibration interval, source hashes, 28-row completeness and quarantine rules.
+- Legacy wide template is unchanged and is insufficient by itself for physical-sphere identity linkage. Structural validity does not authenticate records or establish bias.
+- See `docs/PHYSICAL_SPHERE_INTAKE_VALIDATOR_V1.md` and `docs/PHYSICAL_EVIDENCE_INTAKE_PROTOCOL_V1.md`.
