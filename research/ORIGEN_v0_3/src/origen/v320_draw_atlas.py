@@ -81,7 +81,8 @@ def build_atlas(history_path, output_dir, expected_sha256=None):
     pair_prior, triple_prior = Counter(), Counter()
     output = []
     weekday_counts = Counter()
-    weekday_feature = defaultdict(Counter)
+    weekday_metrics = defaultdict(lambda: defaultdict(list))
+    weekday_cells = defaultdict(Counter)
     for row in classic:
         f = features(row["numbers"])
         cell = tuple(f[k] for k in SCALARS)
@@ -103,16 +104,31 @@ def build_atlas(history_path, output_dir, expected_sha256=None):
         }
         output.append(item)
         weekday_counts[row["weekday"]] += 1
-        weekday_feature[row["weekday"]][f["sum"]] += 1
+        for metric in SCALARS:
+            weekday_metrics[row["weekday"]][metric].append(f[metric])
+        weekday_cells[row["weekday"]][cell] += 1
         pair_prior.update(pairs)
         triple_prior.update(triples)
     # Independent calendar check: date-only values are never timezone-converted.
     weekday_order = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-    weekday_report = {
-        day: {"iso_weekday": i + 1, "classic_draws": weekday_counts[day],
-              "fraction_of_classic": weekday_counts[day] / len(classic)}
-        for i, day in enumerate(weekday_order)
-    }
+    weekday_report = {}
+    for i, day in enumerate(weekday_order):
+        n_day = weekday_counts[day]
+        metrics = weekday_metrics[day]
+        weekday_report[day] = {
+            "iso_weekday": i + 1, "classic_draws": n_day,
+            "fraction_of_classic": n_day / len(classic),
+            "feature_means": {
+                metric: (sum(metrics[metric]) / n_day if n_day else None)
+                for metric in SCALARS
+            },
+            "most_frequent_exact_shape_cells": [
+                {"cell_id": "|".join(map(str, cell)), "observed": count,
+                 "uniform_expected_within_weekday": n_day * cell_counts[cell] / UNIVERSE_SIZE,
+                 "exact_uniform_cell_probability": cell_counts[cell] / UNIVERSE_SIZE}
+                for cell, count in weekday_cells[day].most_common(5)
+            ],
+        }
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     csv_path = out / "v320_classic_draw_atlas.csv"
