@@ -60,7 +60,7 @@ class CustodyTests(unittest.TestCase):
 
     def test_valid_seal_verifies(self):
         record, raw = self.make_record()
-        self.assertEqual(verify_seal_record(record, raw), (True, "seal verified; independent assertions still require external corroboration"))
+        self.assertEqual(verify_seal_record(record, raw), (True, "seal verified; external identity, timestamp, and custody assertions remain unverified"))
 
     def test_tampered_portfolio_rejected(self):
         record, raw = self.make_record()
@@ -176,7 +176,7 @@ class CustodyTests(unittest.TestCase):
         )
         ok, reason = verify_record_chain([second, first], {12250: raw1, 12251: raw2})
         self.assertFalse(ok)
-        self.assertIn("out of order", reason)
+        self.assertIn("chain link", reason)
 
     def test_chain_rejects_duplicate_target(self):
         first, raw = self.make_record()
