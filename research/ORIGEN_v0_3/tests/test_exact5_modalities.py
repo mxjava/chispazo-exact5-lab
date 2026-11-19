@@ -56,7 +56,7 @@ class ModalityTests(unittest.TestCase):
         self.assertEqual(result["pooled_stream_scored_on_same_classic_targets"]["n"],6)
         self.assertTrue(result["target_alignment_verified"])
         self.assertEqual(result["first_target_contest"],5928)
-        self.assertEqual(result["pooled_stream_start_index"],3)
+        self.assertEqual(result["pooled_stream_start_index"],4)
         self.assertEqual(result["classic_stream_start_index"],2)
         self.assertNotEqual(
             result["classic_only"]["cumulative_log_lift"],
