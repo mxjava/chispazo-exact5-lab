@@ -56,10 +56,10 @@ def run_v315(labelled: list[dict], source_sha256: str, simulations: int = 1999, 
     for b in range(simulations):
         null[b], _ = _max_stat(_simulate_draws(rng, len(classic)))
     p_value = (1 + int(np.count_nonzero(null >= observed))) / (simulations + 1)
-    idx = int(np.argmax(np.abs(counts - (len(classic)-1) * PAIR_PROB * OVERLAP_PROBS.repeat(len(PAIRS)))))
-    # Recompute standardized winner index exactly; the vector order is pair-major/category-minor.
-    expected = (len(classic)-1) * (PAIR_PROB * OVERLAP_PROBS).repeat(len(PAIRS))
-    variance = (len(classic)-1) * (PAIR_PROB * OVERLAP_PROBS * (1-PAIR_PROB*OVERLAP_PROBS)).repeat(len(PAIRS))
+    # Cell vector is pair-major/category-minor: repeat the three overlap
+    # probabilities for each of the 378 prior pairs.
+    expected = (len(classic)-1) * np.tile(PAIR_PROB * OVERLAP_PROBS, len(PAIRS))
+    variance = (len(classic)-1) * np.tile(PAIR_PROB * OVERLAP_PROBS * (1-PAIR_PROB*OVERLAP_PROBS), len(PAIRS))
     z = np.abs(counts - expected) / np.sqrt(variance)
     idx = int(np.argmax(z))
     pair_idx, category = divmod(idx, 3)
