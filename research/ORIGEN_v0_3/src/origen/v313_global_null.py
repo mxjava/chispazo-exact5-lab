@@ -47,9 +47,13 @@ def _statistics(draws: np.ndarray) -> tuple[float, float, float]:
     number_var = n * p * (1.0 - p)
     number_stat = _standardized_max(inclusion, n * p, number_var)
 
+    # Cast before reduction: int8 dot products overflow once a pair
+    # co-occurs more than 127 times. The historical stream has thousands
+    # of rows, so counts must be accumulated in int64.
+    wide = draws.astype(np.int64, copy=False)
     pair_counts = []
     for i, j in PAIRS:
-        pair_counts.append(int(np.dot(draws[:, i], draws[:, j])))
+        pair_counts.append(int(np.dot(wide[:, i], wide[:, j])))
     pair_p = PICK * (PICK - 1) / (UNIVERSE * (UNIVERSE - 1))
     pair_var = n * pair_p * (1.0 - pair_p)
     pair_stat = _standardized_max(np.asarray(pair_counts), n * pair_p, pair_var)
