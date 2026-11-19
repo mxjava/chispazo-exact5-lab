@@ -125,3 +125,11 @@ Prioritize primary physical traceability records and robust prospective custody 
 - Global max z=2.7721136; null 95th percentile=4.4836559; 1,570/1,999 null replicates at least as extreme; global add-one p=0.7855. Decision `NO_REJECTION`.
 - Result document: `docs/V318_COMBINATORIAL_SHAPE_RESULT_20261119.md`. This closes only these seven descriptive shape families; it does not establish perfect randomness or a predictive edge.
 - V318 does not recover physical mass or sphere identity from winning-number history. The physical-covariate hypothesis remains blocked until authentic primary records and mapping arrive.
+
+
+## V312, V318 and V319 historical replays — 2026-11-19
+
+- V312 fixed 27-expert static mixture: run [44446737614](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44446737614) completed successfully. 7,723 Classic draws, 800 warm-up, 6,923 scored; mean log-lift -0.0262296890 nats, cumulative -181.5881, positive fraction 36.07%. The static mixture underperformed uniform. Result: `docs/V312_STATIC_MIXTURE_RESULT_20261119.md`.
+- V318 fixed seven-family result-shape omnibus: run [44446819621](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44446819621) completed successfully; 140 tests passed. Global max z=2.7721; null q95=4.4837; p=0.7855. No shape departure detected. Result: `docs/V318_COMBINATORIAL_SHAPE_RESULT_20261119.md`.
+- V319 fixed-era contrast at 2022-03-10: run [44447156133](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44447156133) completed successfully; 146 tests passed in 17.027s. Era A n=6,075, Era B n=1,648; 590-category global max z=4.3320; null q95=6.8491; 363/1,999 null replicates >= observed; p=0.1820. No era difference detected. Result: `docs/V319_FIXED_ERA_CONTRAST_RESULT_20261119.md`.
+- V318 and V319 both use exact 98,280-set shape-category probabilities and full-sequence Monte Carlo. They are retrospective falsification only; neither establishes a forecast edge or a machine/physical cause.
