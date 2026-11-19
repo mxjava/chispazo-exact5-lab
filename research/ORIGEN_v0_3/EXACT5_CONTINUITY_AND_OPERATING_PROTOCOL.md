@@ -82,3 +82,5 @@ Prioritize primary physical traceability records and robust prospective custody 
 - V313/V314/V315 remain unchanged and their accepted historical conclusions remain no rejection/no edge. V316 is a new frozen confirmatory retrospective falsification, not a predictor.
 - The custody implementation does not authenticate identity or time and does not create immutable storage. An independent custodian, trusted timestamp evidence, and an externally retained ledger-head anchor remain operational prerequisites.
 - Current branch remains research-only; PR #8 remains draft/unmerged. V294 and the canonical history remain protected; no writes to main.
+
+- V316 completed successfully: workflow [44444415214](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44444415214), artifact ID 14492367500, ZIP SHA-256 bbdd2587974c1c71c564bd0b59072c2e37a0a94e83b967fb3a8fa195c7ec8269. N=7,723 Classic; family=8,140; simulations=1,999; seed=3162026; observed max |z|=3.70796; null 95th percentile=5.85308; Monte Carlo p=0.9995. No rejection, no predictive edge. Full report: docs/V316_IDENTITY_PERSISTENCE_RESULT_20261119.md.
