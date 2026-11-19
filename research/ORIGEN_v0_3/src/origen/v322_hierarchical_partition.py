@@ -66,8 +66,9 @@ class _PartitionTree:
         self.candidate_leaf_ids = np.asarray(
             [self.leaf_index[path] for path in paths], dtype=np.int32
         )
+        path_counts = Counter(paths)
         self.leaf_sizes = np.asarray(
-            [sum(path == leaf for path in paths) for leaf in self.leaves],
+            [path_counts[leaf] for leaf in self.leaves],
             dtype=np.float64,
         )
         self.universe_prefix_counts = []
