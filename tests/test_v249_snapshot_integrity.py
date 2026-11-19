@@ -183,6 +183,12 @@ def test_v249_frozen_snapshot_reuse_rejects_interpretation_metadata_tamper(tmp_p
     with pytest.raises(RuntimeError, match='existing manifest integrity failure'):
         save_current_snapshot_v249(tmp_path, 12361, audit, prod_gate, _payload())
 
+def test_v249_snapshot_universe_guardrail_rejects_truncated_rank_vectors():
+    payload = _payload()
+    with pytest.raises(RuntimeError, match='universe size mismatch; expected 4, got 3'):
+        v249_module._v249_validate_snapshot_universe(payload, expected_size=4)
+
+
 def test_v249_snapshot_manifest_sha256_preserves_legacy_v1_contract():
     snapshot = {
         'schema': 1, 'target': 12361, 'history_last': 12360,
