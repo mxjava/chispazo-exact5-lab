@@ -1,0 +1,43 @@
+{
+  "schema_version": "exact5.official_status_overlay.v1",
+  "overlay_id": "chispazo-2026-11-19-055112-mexico-city",
+  "captured_at_local": "2026-11-19T05:51:12-06:00",
+  "captured_at_utc": "2026-11-19T11:51:12Z",
+  "target_draw_date_local": "2026-11-19",
+  "publication_state": "AWAITING_OFFICIAL_RESULT",
+  "latest_confirmed_result": {
+    "contest_id": 12382,
+    "modality": "CLASSIC",
+    "draw_date_local": "2026-11-18",
+    "numbers": [5, 9, 11, 23, 25],
+    "results_page_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "mask_index_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_mask_pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-18.pdf?v=18112026221442",
+    "pdf_visual_confirmation": "PAGE_1_SHOWS_12381_DE_LAS_TRES_AND_12382_CLASICO",
+    "source_pdf_sha256": "NOT_CAPTURED"
+  },
+  "official_schedule": {
+    "de_las_tres_local": "15:00",
+    "classic_local": "21:00",
+    "timezone": "America/Mexico_City",
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  },
+  "endpoint_observations": {
+    "dedicated_results_page": "LATEST_12382_AND_NEXT_DRAW_DATE_2026-11-19",
+    "mask_index_latest_date": "2026-11-18",
+    "home_results_index": "LATEST_CHISPAZO_ENTRIES_ARE_12381_AND_12382_DATED_2026-11-18",
+    "interpretation": "NO_2026-11-19_RESULT_PUBLISHED_IN_CHECKED_DIRECT_ENDPOINTS_AT_CAPTURE_TIME"
+  },
+  "classification": {
+    "overlay_only": true,
+    "official_result_for_2026_11_19": false,
+    "contest_id_for_2026_11_19_classic": null,
+    "result_scored": false,
+    "snapshot_exists": false,
+    "oos_target_counted": false,
+    "score_output_exists": false,
+    "source_bytes_custodied": false,
+    "edge_claim": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
