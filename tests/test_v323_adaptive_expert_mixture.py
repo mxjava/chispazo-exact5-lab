@@ -55,3 +55,13 @@ def test_expert_score_loader_rejects_incomplete_matrix(tmp_path):
     ]).to_csv(path, index=False)
     with pytest.raises(ValueError, match="incomplete"):
         load_expert_scores(path)
+
+
+def test_grid_reports_all_chronological_quartiles():
+    x = np.random.default_rng(9).normal(0, 0.01, size=(40, 3))
+    report = evaluate_grid(x, windows=(10,), temperatures=(0.5,), resamples=100)
+    candidate = report["candidates"]["rolling_w10_eta0.5"]
+    assert set(candidate["chronological_quartiles"]) == {
+        "oldest_quartile", "second_quartile", "third_quartile", "newest_quartile"
+    }
+    assert sum(v["n"] for v in candidate["chronological_quartiles"].values()) == 40
