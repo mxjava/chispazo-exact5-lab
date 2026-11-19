@@ -32,7 +32,7 @@ Continue with a different, independently motivated hypothesis and maintain a str
 ## Reproducibility
 
 - Workflow run: `44541495186` (V321 workflow job succeeded; generated and uploaded result artifact).
-- Artifact ID: `14538892065`.
-- Artifact ZIP SHA-256: `2b1f38e9a289ba67d11499db05c52940fa9116a09049a7c898def9ffce377c46`.
+- Final artifact ID: `14538282376` (JSON parse-validated after output-format correction).
+- Final artifact ZIP SHA-256: `e81f95fa8f52718b476f0e06c03c80dbd40dd1156b74362757eed16193fc244d`.
 - Artifact contains `v321_weekday_omnibus.json` and `v320_atlas_manifest.json`.
-- A subsequent output-format correction ensures the JSON file ends with a valid newline; the final workflow must be green after that correction before this report is treated as the final reproducibility record.
+- The output-format correction was verified by rerunning V321 workflow `44541617609` successfully. The downloaded final artifact JSON parsed successfully and reproduced the same statistics: 7,723 draws, global p = 0.324, max eta-squared = 0.0016345641. Workflow artifact contains the machine-readable result and V320 source manifest.
