@@ -92,3 +92,10 @@ Dry-run success validates custody only; it is not prospective predictive evidenc
 This design is not operational until an independent custodian and separate retention location are designated; trusted clock and official draw-close reference are fixed; candidate package and environment manifest are frozen; two witnessed dry runs pass; primary statistical plan and executable e-process are frozen; and official Classic result source and correction policy are independently verified.
 
 Until then, no prospective target is sealed and no prospective sample count may be claimed.
+
+
+## 11. Implementation hardening addendum
+
+The executable verifier requires an exact v1 field set, including candidate_spec_sha256; rejects identical generator/custodian identifiers; requires receipt strictly after generation and both before close; and verifies the complete ordered hash chain. A separately retained expected final ledger-head hash can detect tail truncation. The head anchor must itself be stored outside the ledger (for example, with an independent custodian or signed timestamp service).
+
+SHA-256 chaining is tamper-evident only relative to a trusted external anchor. It is not a digital signature, trusted timestamp, proof of identity, or immutable storage. The current code verifies supplied assertions; it cannot authenticate the clock source, custodian identity, or official close-time source. No real registration is SEALED until independent external custody and timestamp evidence exist.
