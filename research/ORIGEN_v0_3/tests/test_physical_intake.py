@@ -162,6 +162,21 @@ class PhysicalIntakeTests(unittest.TestCase):
         report = validate_physical_rows(rows)
         self.assertIn("Q_CONTEST_LINK", report["quarantined"]["12300"])
 
+    def test_draw_date_must_match_mexico_city_close_date(self):
+        rows = make_rows()
+        for row in rows:
+            row["draw_date"] = "2026-11-19"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_CONTEST_LINK", report["quarantined"]["12300"])
+        self.assertNotIn(12300, report["usable_contests"])
+
+    def test_utc_close_timestamp_is_compared_in_mexico_city_timezone(self):
+        rows = make_rows()
+        for row in rows:
+            row["draw_close_at"] = "2026-11-21T01:00:00Z"
+        report = validate_physical_rows(rows)
+        self.assertEqual(report["usable_contests"], [12300])
+
     def test_source_hash_must_be_sha256(self):
         rows = make_rows()
         rows[0]["source_document_sha256"] = "not-a-hash"
