@@ -10,19 +10,23 @@ TRIPLES = tuple((i, j, k) for i in range(UNIVERSE) for j in range(i + 1, UNIVERS
 TRIPLE_P = 5 / 1638
 
 
+_TRIPLE_LOOKUP = np.full((UNIVERSE, UNIVERSE, UNIVERSE), -1, dtype=np.int16)
+for _idx, (_i, _j, _k) in enumerate(TRIPLES):
+    _TRIPLE_LOOKUP[_i, _j, _k] = _idx
+_ROW_TRIPLE_POSITIONS = np.asarray([(a, b, c) for a in range(PICK) for b in range(a + 1, PICK) for c in range(b + 1, PICK)], dtype=np.int8)
+
+
 def _triple_counts(draws: np.ndarray) -> np.ndarray:
     if draws.ndim != 2 or draws.shape[1] != UNIVERSE or draws.shape[0] < 2 or not np.all(draws.sum(axis=1) == PICK):
         raise ValueError("invalid_v314_matrix")
-    # For each pair (i,j), count rows containing the pair, then multiply by
-    # every number indicator. Selecting k>j yields each unordered triple once.
-    pairs = [(i, j) for i in range(UNIVERSE) for j in range(i + 1, UNIVERSE)]
-    pair_indicators = np.empty((draws.shape[0], len(pairs)), dtype=np.int32)
-    for col, (i, j) in enumerate(pairs):
-        pair_indicators[:, col] = draws[:, i] * draws[:, j]
-    counts_by_pair_number = pair_indicators.T @ draws.astype(np.int32, copy=False)
-    counts = [int(counts_by_pair_number[col, k]) for col, (i, j) in enumerate(pairs) for k in range(j + 1, UNIVERSE)]
-    return np.asarray(counts, dtype=np.int32)
-
+    # Enumerate the ten triples present in each 5-number draw, map them to
+    # the frozen 3,276-cell universe, and accumulate with bincount. This is
+    # exact and avoids a large dense matrix multiplication per Monte Carlo draw.
+    selected = np.argsort(draws, axis=1)[:, -PICK:]
+    selected.sort(axis=1)
+    triples = selected[:, _ROW_TRIPLE_POSITIONS]
+    indices = _TRIPLE_LOOKUP[triples[:, :, 0], triples[:, :, 1], triples[:, :, 2]]
+    return np.bincount(indices.ravel(), minlength=len(TRIPLES)).astype(np.int32, copy=False)
 
 def _triple_max_z(draws: np.ndarray) -> float:
     n = draws.shape[0]
