@@ -232,7 +232,8 @@ def v264_transition_classic_diagnostic(labelled: list[dict], warmup_classic: int
 
 
 def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800) -> dict:
-    """Run the V264 28-expert Bayesian mixture on both streams, score identical Classic targets."""
+    """Compare the V264 mixture on identical Classic targets with calendar-aligned starts."""
+    import bisect
     import numpy as np
 
     windows = (50, 200, 800)
@@ -248,7 +249,8 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
         return (v - v.mean()) / (sd if sd > 1e-12 else 1.0)
 
     def e5(weights):
-        e = np.zeros(6, dtype=float); e[0] = 1.0
+        e = np.zeros(6, dtype=float)
+        e[0] = 1.0
         for weight in weights:
             for k in range(5, 0, -1):
                 e[k] += weight * e[k - 1]
@@ -264,11 +266,11 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
             start = max(0, t - 6 * hl)
             sub = draws[start:t]
             ages = np.arange(len(sub) - 1, -1, -1)
-            weights = 0.5 ** (ages / hl)
+            decay = 0.5 ** (ages / hl)
             values = np.zeros(28, dtype=float)
-            for row, weight in zip(sub, weights):
+            for row, weight in zip(sub, decay):
                 values[row] += weight
-            out[f"ewma{hl}"] = values / max(float(weights.sum()), 1e-12)
+            out[f"ewma{hl}"] = values / max(float(decay.sum()), 1e-12)
         last = np.full(28, t + 1, dtype=float)
         for age, row in enumerate(draws[max(0, t - 500):t][::-1], start=1):
             for number in row:
@@ -280,9 +282,9 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
         transition = np.zeros(28, dtype=float)
         if t >= 2:
             previous = set(draws[t - 1].tolist())
-            start = max(1, t - 800)
+            transition_start = max(1, t - 800)
             denominator = 0
-            for j in range(start, t - 1):  # corrected: exclude current context row
+            for j in range(transition_start, t - 1):
                 if previous.intersection(draws[j - 1].tolist()):
                     transition[draws[j]] += 1
                     denominator += 1
@@ -290,11 +292,28 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
         out["transition"] = transition
         return out
 
-    def score_stream(stream, classic_only: bool, first_target_contest: int):
+    def score_stream(stream, first_target_contest, pooled_stream):
         draws = np.asarray([r["numbers"] for r in stream], dtype=np.int16) - 1
+        contests = [r["contest"] for r in stream]
+        first_target_index = bisect.bisect_left(contests, first_target_contest)
+        if first_target_index >= len(stream) or contests[first_target_index] != first_target_contest:
+            raise ValueError("first_classic_target_missing_from_stream")
+        # The pooled stream must also learn from the De las Tres draw immediately
+        # preceding the first scored Classic draw on that same date. Both streams
+        # therefore begin their adaptive posterior at the same calendar boundary.
+        start_index = first_target_index
+        if pooled_stream and first_target_index > 0:
+            previous = stream[first_target_index - 1]
+            target = stream[first_target_index]
+            if (previous["draw_type"] == "DE_LAS_TRES"
+                    and previous["date"] == target["date"]
+                    and previous["contest"] + 1 == target["contest"]):
+                start_index -= 1
+
         logpost = np.full(len(names), -math.log(len(names)), dtype=float)
         values = []
-        for t in range(max(warmup, 2), len(stream)):
+        scored_contests = []
+        for t in range(max(start_index, 2), len(stream)):
             target = stream[t]
             sig = signals(draws, t)
             probabilities = np.empty(len(names), dtype=float)
@@ -311,20 +330,23 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
             posterior = np.exp(logpost - maximum)
             posterior /= posterior.sum()
             mixture_probability = float(np.dot(posterior, probabilities))
-            log_lift = math.log(mixture_probability) + math.log(math.comb(UNIVERSE, PICK))
             if target["draw_type"] == "CLASSIC" and target["contest"] >= first_target_contest:
-                values.append(log_lift)
+                values.append(math.log(mixture_probability) - log_uniform)
+                scored_contests.append(target["contest"])
             logpost += np.log(np.maximum(probabilities, 1e-300))
             maximum = float(logpost.max())
             logpost -= maximum + math.log(float(np.exp(logpost - maximum).sum()))
-        return values
+        return values, scored_contests, start_index
 
     classic = [r for r in labelled if r["draw_type"] == "CLASSIC"]
     if len(classic) <= warmup:
         raise ValueError("insufficient_classic_draws_for_full_mixture")
     first_target = classic[warmup]["contest"]
-    classic_values = score_stream(classic, True, first_target)
-    pooled_values = score_stream(labelled, False, first_target)
+    classic_values, classic_targets, classic_start = score_stream(classic, first_target, False)
+    pooled_values, pooled_targets, pooled_start = score_stream(labelled, first_target, True)
+    if classic_targets != pooled_targets:
+        raise ValueError("classic_target_alignment_failure")
+
     def summary(values):
         return {"n": len(values), "mean_log_lift": sum(values) / len(values),
                 "cumulative_log_lift": sum(values),
@@ -332,12 +354,17 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
     return {
         "expert_family": "V264 full 28-expert Bayesian mixture; windows 50/200/800, EWMA half-lives 16/32/64, hotgap/duegap/transition; beta 0.15/0.30/0.60",
         "transition_fix": "historical transition loop excludes current context row",
-        "warmup_draws": warmup, "classic_targets": len(classic) - warmup,
+        "warmup_classic_draws": warmup,
+        "first_target_contest": first_target,
+        "classic_stream_start_index": classic_start,
+        "pooled_stream_start_index": pooled_start,
+        "classic_targets": len(classic_values),
         "classic_only": summary(classic_values),
         "pooled_stream_scored_on_same_classic_targets": summary(pooled_values),
         "paired_mean_difference_classic_minus_pooled": sum(a - b for a, b in zip(classic_values, pooled_values)) / len(classic_values),
+        "target_alignment_verified": True,
         "classification": "EXPLORATORY_RETROSPECTIVE_NOT_EDGE_EVIDENCE",
-        "warning": "Retrospective comparison; posterior mixture is not treated as an anytime-valid e-process here; no multiplicity-adjusted or prospective confirmation."
+        "warning": "Retrospective plug-in mixture comparison; not an anytime-valid e-process, no multiplicity correction or prospective confirmation."
     }
 
 
