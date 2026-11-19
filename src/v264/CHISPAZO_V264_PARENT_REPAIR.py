@@ -2921,7 +2921,49 @@ def save_current_snapshot_v248(state_dir: Path, target: int, audit: AuditResult,
 # V249 — COVERAGE-CONSTRAINED / ANTI-SATURATION PORTFOLIO
 # ============================================================
 V249_STATE_SCHEMA = 1
+V249_SNAPSHOT_SCHEMA = 2
 V249_PORTFOLIO_STRATEGY = 'v249_coverage_constrained_portfolio'
+
+
+def _v249_numeric_payload_sha256(snapshot: Dict[str, object]) -> str:
+    """Hash exact numeric bytes, preserving dtype and shape."""
+    h = hashlib.sha256()
+    fields = ('anti_order', 'anti_rank', 'anti_saturation_score', 'fused', 'portfolio_idx', 'tie_signal')
+    arrays = [(name, snapshot.get(name)) for name in fields]
+    specialists = snapshot.get('specialist_scores')
+    if not isinstance(specialists, dict) or not specialists:
+        raise ValueError('V249 snapshot missing specialist_scores')
+    arrays.extend((f'specialist:{name}', value) for name, value in specialists.items())
+    for name, value in sorted(arrays, key=lambda x: x[0]):
+        if value is None:
+            raise ValueError(f'V249 snapshot missing numeric array: {name}')
+        arr = np.asarray(value)
+        if arr.dtype.hasobject or arr.dtype.kind not in 'fiu':
+            raise TypeError(f'V249 snapshot unsupported dtype: {name}={arr.dtype}')
+        arr = np.ascontiguousarray(arr)
+        h.update(name.encode('utf-8') + b'\\0')
+        h.update(arr.dtype.str.encode('ascii') + b'\\0')
+        h.update(json.dumps(list(arr.shape), separators=(',', ':')).encode('ascii') + b'\\0')
+        h.update(arr.tobytes(order='C'))
+    return h.hexdigest()
+
+
+def _v249_validate_snapshot_integrity(snapshot: Dict[str, object]) -> None:
+    expected = str(snapshot.get('score_payload_sha256', ''))
+    if not expected or expected != _v249_numeric_payload_sha256(snapshot):
+        raise RuntimeError('V249 snapshot guardrail failed: numeric payload SHA256 mismatch')
+    order, ranks, scores = (np.asarray(snapshot[k]) for k in ('anti_order','anti_rank','anti_saturation_score'))
+    if any(x.ndim != 1 for x in (order,ranks,scores)) or not (len(order)==len(ranks)==len(scores)):
+        raise RuntimeError('V249 snapshot guardrail failed: rank dimensions mismatch')
+    n=len(order)
+    if order.dtype.kind not in 'iu' or ranks.dtype.kind not in 'iu' or not np.array_equal(np.sort(order.astype(np.int64)),np.arange(n,dtype=np.int64)):
+        raise RuntimeError('V249 snapshot guardrail failed: anti_order is not an integer permutation')
+    expected_ranks=np.empty(n,dtype=np.int64)
+    expected_ranks[order.astype(np.int64)]=np.arange(1,n+1,dtype=np.int64)
+    if not np.array_equal(ranks.astype(np.int64),expected_ranks):
+        raise RuntimeError('V249 snapshot guardrail failed: anti_order/anti_rank mismatch')
+    if not np.all(np.isfinite(scores)):
+        raise RuntimeError('V249 snapshot guardrail failed: non-finite anti score')
 V249_UNCLIPPED_HEURISTIC = '_heuristic_unclipped_v249'
 
 @dataclass(frozen=True)
@@ -3485,10 +3527,13 @@ def production_portfolio_v249(hist_df: pd.DataFrame, bundle, fusion_weights: Dic
         'overlap_last': np.sum(np.isin(ALL_COMBOS, np.array(ctx.last_combo)), axis=1),
     }).sort_values('rank').reset_index(drop=True)
     snapshot = {
-        'specialist_scores': {k: np.asarray(v, dtype=np.float32) for k, v in specialists.items()},
-        'fused': np.asarray(fused, dtype=np.float32),
-        'anti_saturation_score': np.asarray(anti_score, dtype=np.float32),
-        'tie_signal': np.asarray(tie_signal, dtype=np.float32),
+        # Retain float64: float32 can collapse distinct ranking levels.
+        'specialist_scores': {k: np.asarray(v, dtype=np.float64) for k, v in specialists.items()},
+        'fused': np.asarray(fused, dtype=np.float64),
+        'anti_saturation_score': np.asarray(anti_score, dtype=np.float64),
+        'anti_order': np.asarray(order, dtype=np.int32),
+        'anti_rank': np.asarray(ranks, dtype=np.int32),
+        'tie_signal': np.asarray(tie_signal, dtype=np.float64),
         'tie_signal_name': tie_signal_name,
         'anti_saturation_epsilon': float(eps),
         'portfolio_idx': np.asarray(portfolio_idx, dtype=np.int32),
@@ -3583,12 +3628,18 @@ def consume_previous_snapshot_v249(df: pd.DataFrame, audit: AuditResult, state_d
     snap = joblib.load(sp)
     if int(snap.get('target', -1)) != prev_target or int(snap.get('history_last', -1)) != prev_target - 1:
         raise RuntimeError('V249 snapshot guardrail failed: target/history_last mismatch')
+    snapshot_schema = int(snap.get('schema', -1))
     manifest = {
-        'schema': int(snap.get('schema', -1)), 'target': int(snap.get('target', -1)), 'history_last': int(snap.get('history_last', -1)),
+        'schema': snapshot_schema, 'target': int(snap.get('target', -1)), 'history_last': int(snap.get('history_last', -1)),
         'history_sha256': str(snap.get('history_sha256', '')), 'fusion_weights': snap.get('fusion_weights', {}), 'allocation': snap.get('allocation', {}),
         'portfolio_idx': [int(x) for x in np.asarray(snap.get('portfolio_idx', []), dtype=int).tolist()],
         'coverage_config': snap.get('coverage_config', {}), 'strategies': sorted(map(str, snap.get('specialist_scores', {}).keys())),
     }
+    if snapshot_schema >= V249_SNAPSHOT_SCHEMA:
+        manifest['score_payload_sha256'] = str(snap.get('score_payload_sha256', ''))
+        _v249_validate_snapshot_integrity(snap)
+    elif snapshot_schema != V249_STATE_SCHEMA:
+        raise RuntimeError(f'V249 snapshot guardrail failed: unsupported snapshot schema {snapshot_schema}')
     manifest_sha = hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
     if str(snap.get('manifest_sha256', '')) != manifest_sha:
         raise RuntimeError('V249 snapshot guardrail failed: manifest SHA256 mismatch')
@@ -3611,17 +3662,24 @@ def consume_previous_snapshot_v249(df: pd.DataFrame, audit: AuditResult, state_d
                 continue
             sc = specialists[st]
             ts = tie_rank_stats_v248(sc, ti, lines)
-            top = rank_order_v248(sc, tie_signal)[:lines]
+            specialist_order = rank_order_v248(sc, tie_signal)
+            top = specialist_order[:lines]
+            specialist_rank = int(np.flatnonzero(specialist_order == ti)[0]) + 1
             bh = best_hit([tuple(map(int, ALL_COMBOS[j])) for j in top], actual)
-            new_meta.append({'target': prev_target, 'strategy': st, 'exact_rank': int(ts['rank_worst']), 'best_hit': int(bh), 'rank_best': int(ts['rank_best']), 'rank_mid': float(ts['rank_mid']), 'tie_size': int(ts['tie_size']), 'top30_tie_prob': float(ts['topk_tie_prob']), 'trained_at': int(snap.get('trained_at', -1))})
+            new_meta.append({'target': prev_target, 'strategy': st, 'exact_rank': specialist_rank, 'primary_tie_rank_best': int(ts['rank_best']), 'primary_tie_rank_worst': int(ts['rank_worst']), 'best_hit': int(bh), 'rank_best': int(ts['rank_best']), 'rank_mid': float(ts['rank_mid']), 'tie_size': int(ts['tie_size']), 'top30_tie_prob': float(ts['topk_tie_prob']), 'trained_at': int(snap.get('trained_at', -1))})
         if new_meta:
             meta = pd.concat([meta, pd.DataFrame(new_meta)], ignore_index=True)
             abl = pd.concat([abl, pd.DataFrame(new_meta)], ignore_index=True)
         fdec = state.get('fusion_detail'); fdec = fdec.copy() if isinstance(fdec, pd.DataFrame) else pd.DataFrame()
         fts = tie_rank_stats_v248(fused, ti, lines)
-        ftop = np.argsort(-np.asarray(snap.get('anti_saturation_score', fused), dtype=float), kind='stable')[:lines]
+        if snapshot_schema >= V249_SNAPSHOT_SCHEMA:
+            ftop = np.asarray(snap['anti_order'], dtype=np.int32)[:lines]
+            fusion_exact_rank = int(np.asarray(snap['anti_rank'], dtype=np.int32)[ti])
+        else:
+            ftop = np.argsort(-np.asarray(snap.get('anti_saturation_score', fused), dtype=float), kind='stable')[:lines]
+            fusion_exact_rank = int(fts['rank_worst'])
         fbh = best_hit([tuple(map(int, ALL_COMBOS[j])) for j in ftop], actual)
-        frow = {'target': prev_target, 'strategy': 'v241_fusion', 'fusion_state': snap.get('fusion_state', 'prospective'), 'weights_json': json.dumps(snap.get('fusion_weights', {}), sort_keys=True), 'exact_rank': int(fts['rank_worst']), 'best_hit': int(fbh), 'exact5': int(ti in set(map(int, ftop.tolist()))), 'rank_best': int(fts['rank_best']), 'rank_mid': float(fts['rank_mid']), 'tie_size': int(fts['tie_size']), 'top30_tie_prob': float(fts['topk_tie_prob']), 'trained_at': int(snap.get('trained_at', -1))}
+        frow = {'target': prev_target, 'strategy': 'v241_fusion', 'fusion_state': snap.get('fusion_state', 'prospective'), 'weights_json': json.dumps(snap.get('fusion_weights', {}), sort_keys=True), 'exact_rank': fusion_exact_rank, 'primary_tie_rank_best': int(fts['rank_best']), 'primary_tie_rank_worst': int(fts['rank_worst']), 'best_hit': int(fbh), 'exact5': int(ti in set(map(int, ftop.tolist()))), 'rank_best': int(fts['rank_best']), 'rank_mid': float(fts['rank_mid']), 'tie_size': int(fts['tie_size']), 'top30_tie_prob': float(fts['topk_tie_prob']), 'trained_at': int(snap.get('trained_at', -1))}
         fdec = pd.concat([fdec, pd.DataFrame([frow])], ignore_index=True)
         state.update({'meta_rows': meta, 'wf_ablation': abl, 'fusion_detail': fdec})
         gate_done.add(prev_target)
@@ -3667,8 +3725,9 @@ def save_current_snapshot_v249(state_dir: Path, target: int, audit: AuditResult,
         progress(f'V249 snapshot FROZEN HIT: target {target}; existing manifest preserved')
         return sp
     snap = dict(production_snapshot)
-    snap.update({'schema': V249_STATE_SCHEMA, 'target': int(target), 'history_last': int(audit.max_concurso), 'history_sha256': str(audit.sha256), 'created_at': time.strftime('%Y-%m-%d %H:%M:%S'), 'fusion_state': prod_gate.get('fusion_state', 'unknown'), 'allocation_state': prod_gate.get('allocation_detail', {}).get('state', 'unknown'), 'trained_at': int(audit.max_concurso)})
-    manifest = {'schema': V249_STATE_SCHEMA, 'target': int(target), 'history_last': int(audit.max_concurso), 'history_sha256': str(audit.sha256), 'fusion_weights': snap.get('fusion_weights', {}), 'allocation': snap.get('allocation', {}), 'portfolio_idx': [int(x) for x in np.asarray(snap.get('portfolio_idx', []), dtype=int).tolist()], 'coverage_config': snap.get('coverage_config', {}), 'strategies': sorted(map(str, snap.get('specialist_scores', {}).keys()))}
+    snap.update({'schema': V249_SNAPSHOT_SCHEMA, 'target': int(target), 'history_last': int(audit.max_concurso), 'history_sha256': str(audit.sha256), 'created_at': time.strftime('%Y-%m-%d %H:%M:%S'), 'fusion_state': prod_gate.get('fusion_state', 'unknown'), 'allocation_state': prod_gate.get('allocation_detail', {}).get('state', 'unknown'), 'trained_at': int(audit.max_concurso)})
+    snap['score_payload_sha256'] = _v249_numeric_payload_sha256(snap)
+    manifest = {'schema': V249_SNAPSHOT_SCHEMA, 'target': int(target), 'history_last': int(audit.max_concurso), 'history_sha256': str(audit.sha256), 'fusion_weights': snap.get('fusion_weights', {}), 'allocation': snap.get('allocation', {}), 'portfolio_idx': [int(x) for x in np.asarray(snap.get('portfolio_idx', []), dtype=int).tolist()], 'coverage_config': snap.get('coverage_config', {}), 'strategies': sorted(map(str, snap.get('specialist_scores', {}).keys())), 'score_payload_sha256': snap['score_payload_sha256']}
     snap['manifest_sha256'] = hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
     _atomic_joblib_dump(snap, sp, compress=3)
     return sp
