@@ -45,3 +45,9 @@
 - Full suite: 140 tests passed; frozen canonical replay and artifact upload succeeded (run 44446819621).
 - Global maximum z=2.7721; null q95=4.4837; Monte Carlo p=0.7855 (1,570/1,999 exceedances). `NO_REJECTION`.
 - No shape family or category is promoted; no prediction or physical-bias claim.
+
+## V319 fixed-era contrast (2026-11-19)
+- Preregistered one fixed era split at 2022-03-10, inherited from V265 rather than selected by this replay.
+- Implemented a single max-statistic over 28 number identities, 378 pair identities and 184 V318 shape categories, calibrated using 1,999 pairs of independent uniform era sequences.
+- Added numerical, shape, frozen-seed, source-hash and minimum-sample tests plus an isolated workflow.
+- A result can indicate only a historical era difference, not a causal machine effect or predictive edge.
