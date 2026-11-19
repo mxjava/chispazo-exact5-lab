@@ -3,7 +3,12 @@
   "base_branch": "research/run119-pmf-custody-20261119",
   "target_branch": "research/run121-cross-component-verifier-20261119",
   "scope": "cross-component provenance verifier package, official Chispazo status/procedure overlays, and v3 primary-record request draft",
-  "tests": {"pmf_custody": 24, "target_ledger": 17, "run_verifier": 21, "total": 62},
+  "tests": {
+    "pmf_custody": 24,
+    "target_ledger": 17,
+    "run_verifier": 21,
+    "total": 62
+  },
   "compileall": "PASS",
   "editable_install": "PASS_WITH_NO_BUILD_ISOLATION_AND_NO_DEPS",
   "synthetic_fixtures_only": true,
@@ -17,5 +22,5 @@
   "code_committed_to_github_branch": false,
   "report_and_overlays_committed_to_isolated_branch": true,
   "physical_records_request_submitted": false,
-  "zip_sha256": "516ee9038d3e843348214547e37888c117d4ff40bfc9dca5da2389a85e6ba220"
+  "zip_sha256": "db24189fcbe0d5fe50db3292afd3bda3e9d17f700dc9110c46e97306ae1cfce2"
 }
