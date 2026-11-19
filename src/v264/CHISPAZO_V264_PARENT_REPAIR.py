@@ -2964,6 +2964,14 @@ def _v249_validate_snapshot_integrity(snapshot: Dict[str, object]) -> None:
         raise RuntimeError('V249 snapshot guardrail failed: anti_order/anti_rank mismatch')
     if not np.all(np.isfinite(scores)):
         raise RuntimeError('V249 snapshot guardrail failed: non-finite anti score')
+    expected_order = np.argsort(-scores, kind='stable').astype(np.int64)
+    if not np.array_equal(order.astype(np.int64), expected_order):
+        raise RuntimeError('V249 snapshot guardrail failed: anti_order does not match anti_saturation_score')
+    portfolio_idx = np.asarray(snapshot['portfolio_idx'])
+    if portfolio_idx.ndim != 1 or portfolio_idx.dtype.kind not in 'iu':
+        raise RuntimeError('V249 snapshot guardrail failed: portfolio_idx must be a 1-D integer vector')
+    if len(portfolio_idx) and (np.any(portfolio_idx < 0) or np.any(portfolio_idx >= n) or len(np.unique(portfolio_idx)) != len(portfolio_idx)):
+        raise RuntimeError('V249 snapshot guardrail failed: portfolio_idx out of range or duplicated')
 V249_UNCLIPPED_HEURISTIC = '_heuristic_unclipped_v249'
 
 @dataclass(frozen=True)
