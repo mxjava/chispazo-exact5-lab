@@ -201,3 +201,12 @@ Fuentes oficiales:
 - [Lotería Nacional — SGVO-PRO-05, revisión 39](https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf)
 
 Esto es una **inconsistencia normativa/documental**, no evidencia de sesgo ni prueba de incumplimiento. No se usa el texto histórico de 25 esferas para inferir el mecanismo físico actual. La solicitud documental debe pedir aclaración del artículo 2, copia certificada de la versión vigente del Reglamento Chispazo y de todas sus reformas posteriores, así como el fundamento que vincula ese reglamento con SGVO-PRO-05 revisión 39.
+
+
+## 13. Manual técnico citado, pero sin versión vigente pública localizada
+
+SGVO-PRO-05 remite repetidamente al **SGVO-MAN-02, Manual de Apoyo para la Operación de Sorteos y Equipos Electrónicos**, para la inspección del equipo, el pesaje y la operación de máquinas. Sin embargo, el índice público de Normas Sustantivas Vigentes consultado lista SGVO-PRO-05 y SGVO-MAN-01, pero no SGVO-MAN-02. En la sección de Proyectos Normativos aparece el título del SGVO-MAN-02 con archivo `sgvo_man_02p.pdf` y periodo 23-02-2026 a 04-03-2026, identificado como proyecto, no como norma vigente aprobada.
+
+Esto deja sin especificación pública vigente el detalle técnico al que remite SGVO-PRO-05: checklist completo de CS-02, criterios instrumentales de báscula, campos exactos de tira de pesaje, identificación de máquina/estuche, procedimiento RFID y secuencia de operación. Debe solicitarse la versión aprobada, su control de cambios y los anexos/instructivos vigentes; el borrador no se usa como autoridad normativa.
+
+Fuente: [Normateca — Proyectos Normativos Históricas](https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0), entrada “MANUAL DE APOYO PARA LA OPERACIÓN DE SORTEOS Y EQUIPOS ELECTRÓNICOS”, archivo `sgvo_man_02p.pdf`.
