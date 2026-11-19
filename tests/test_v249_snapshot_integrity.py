@@ -183,6 +183,22 @@ def test_v249_frozen_snapshot_reuse_rejects_interpretation_metadata_tamper(tmp_p
     with pytest.raises(RuntimeError, match='existing manifest integrity failure'):
         save_current_snapshot_v249(tmp_path, 12361, audit, prod_gate, _payload())
 
+def test_v249_oos_consume_rejects_snapshot_smaller_than_full_universe(tmp_path, monkeypatch):
+    snapshot_path = tmp_path / 'snapshots' / 'target_12361.joblib'
+    monkeypatch.setattr(v249_module, '_v249_snapshot_path', lambda _state_dir, _target: snapshot_path)
+    save_audit = SimpleNamespace(max_concurso=12360, sha256='e' * 64)
+    prod_gate = {'fusion_state': 'heuristic_only_after_holm', 'allocation_detail': {'state': 'validated'}}
+    save_current_snapshot_v249(tmp_path, 12361, save_audit, prod_gate, _payload())
+
+    import pandas as pd
+    history = pd.DataFrame({'CONCURSO': [12361]})
+    consume_audit = SimpleNamespace(max_concurso=12361)
+    with pytest.raises(RuntimeError, match='universe size mismatch; expected 98280, got 3'):
+        v249_module.consume_previous_snapshot_v249(
+            history, consume_audit, tmp_path, {'v249_evaluated_targets': []}, lines=30
+        )
+
+
 def test_v249_snapshot_universe_guardrail_rejects_truncated_rank_vectors():
     payload = _payload()
     with pytest.raises(RuntimeError, match='universe size mismatch; expected 4, got 3'):
