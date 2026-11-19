@@ -32,6 +32,20 @@ def _matrix(rows: list[dict]) -> np.ndarray:
     return matrix
 
 
+def _validate_binary_draw_matrix(draws: np.ndarray, *, min_rows: int = 2) -> np.ndarray:
+    """Validate the exact 0/1, five-of-28 matrix contract at kernel boundaries."""
+    matrix = np.asarray(draws)
+    if matrix.ndim != 2 or matrix.shape[1] != UNIVERSE or matrix.shape[0] < min_rows:
+        raise ValueError("invalid_v313_matrix_shape")
+    if not np.issubdtype(matrix.dtype, np.number) or not np.all(np.isfinite(matrix)):
+        raise ValueError("invalid_v313_matrix_values")
+    if not np.all((matrix == 0) | (matrix == 1)):
+        raise ValueError("nonbinary_v313_matrix")
+    if not np.all(np.sum(matrix, axis=1) == PICK):
+        raise ValueError("invalid_v313_draw_cardinality")
+    return matrix
+
+
 def _standardized_max(counts: np.ndarray, expected: float, variance: float) -> float:
     if variance <= 0:
         raise ValueError("nonpositive_null_variance")
@@ -39,9 +53,8 @@ def _standardized_max(counts: np.ndarray, expected: float, variance: float) -> f
 
 
 def _statistics(draws: np.ndarray) -> tuple[float, float, float]:
+    draws = _validate_binary_draw_matrix(draws)
     n = draws.shape[0]
-    if draws.ndim != 2 or draws.shape[1] != UNIVERSE or n < 2 or not np.all(draws.sum(axis=1) == PICK):
-        raise ValueError("invalid_v313_matrix")
     inclusion = draws.sum(axis=0)
     p = PICK / UNIVERSE
     number_var = n * p * (1.0 - p)
