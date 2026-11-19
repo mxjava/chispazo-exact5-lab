@@ -5,8 +5,24 @@
 - Base: `b780e75b81e8a50b222b512e2d76b6d7b3b52579`
 - Isolated branch: `research/run119-pmf-custody-20261119`
 - Local package SHA-256: `c2dbac999643fb08c7e64e658e6c371ea18f6432a45b5c956ddfac9981e554b1`
-- Local validation: 41/41 synthetic tests passed under Python 3.13.5; pytest 41 passed; compileall passed; ZIP CRC passed.
+- Local validation: 41/41 synthetic tests passed under Python 3.13.5; pytest 41 passed; compileall passed; ZIP CRC passed; SHA256SUMS verified after extracting the exact archive.
 - No historical replay, no candidate retuning, no prediction, no official result scoring, no main write, no merge, no promotion.
+
+## Official source checkpoint — 2026-11-19 04:56:56 America/Mexico_City
+
+- Direct results page: contest 12382, dated 2026-11-18, combination `05 09 11 23 25`; it lists 19/11/2026 as the next draw and still shows 12382 as the latest result.
+- Last-15 results include 12382 and 12381 on 18/11.
+- Official mask index's newest entry is `RESULTADOS 2026-11-18`.
+- The 18/11 official PDF identifies 12381 as De las Tres and 12382 as Clásico, with the corresponding combinations.
+- Official schedule page states De las Tres at 15:00 and Clásico at 21:00 daily.
+- At this capture time both 19/11 draws were still in the future. No 19/11 result or Clásico contest ID is asserted.
+- Direct raw PDF byte download failed; source PDF SHA-256 remains `NOT_CAPTURED`. The browser-readable PDF is not forensic byte custody.
+
+Official URLs:
+- https://www.loterianacional.gob.mx/Chispazo/Resultados
+- https://www.loterianacional.gob.mx/Mascarillas/Mascarillas
+- https://www.loterianacional.gob.mx/Chispazo/chispazo
+- https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-18.pdf?v=18112026221442
 
 ## PMF contract
 
@@ -27,6 +43,9 @@ Local hash/format validation does not authenticate the official schedule, extern
 - V294: frozen.
 - Canonical history blob: `2f5ff5bfbd779fe505736398e417b7211955958e`.
 - Canonical history SHA-256: `5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a`.
+- Main remains `424eee9dd906f8235541e97ae61026441083bbfe`.
+- The canonical CSV blob is identical on main and the Run119 branch.
+- The current PR #8 remains open and unmerged; its head was not changed.
 - No change to the canonical CSV, V294, prior closed runs, `main` or the existing draft PR.
 
-**Disposition:** `BLOCKED / RESEARCH_ONLY_NO_EDGE`. No new prospective target counted.
+**Disposition:** `BLOCKED / RESEARCH_ONLY_NO_EDGE`. No new prospective target counted; 12382 is an official result observation only and was not scored.
