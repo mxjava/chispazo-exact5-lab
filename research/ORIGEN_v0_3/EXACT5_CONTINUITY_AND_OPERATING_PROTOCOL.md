@@ -45,3 +45,14 @@ A candidate is not an established edge. The required prospective evidence includ
 ## Next-work selection
 
 Prioritize primary physical traceability records and robust prospective custody design over unconstrained retrospective motif mining. Any further retrospective search must preregister the complete search family and calibrate the maximum statistic for all searched cells. If a candidate emerges, test it only in untouched prospective data; never retrofit V294.
+
+
+## Operational update — 2026-11-19
+
+- Corrected malformed YAML in `.github/workflows/origen-v03.yml`: the two `with` mapping keys for artifact uploads now include their required colon.
+- Fix commit: `46d211d062808a5424773349d6f7654eb68010e0`.
+- Root CI for that commit completed successfully: run `44440351832`; dependency install, compileall and full `pytest -q` all succeeded.
+- The isolated ORIGEN workflow definition was re-read after the fix and its artifact upload steps now have valid `with:` mappings. A successful isolated workflow run on this exact commit is still required; root CI success does not substitute for it.
+- PR #8 remains open, draft and unmerged. No changes to `main`, V294, or the canonical history are authorized.
+- Physical-bias request V2 remains a draft and has not been submitted. No primary weighing strips or sphere-to-number mapping have been received; status remains `BLOCKED_PROVENANCE`.
+- Next action: verify the isolated workflow on the corrected branch head, then continue physical-evidence acquisition preparation and prospective custody design. Do not mine additional retrospective motifs absent a materially new hypothesis.
