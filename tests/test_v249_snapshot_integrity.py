@@ -5,6 +5,7 @@ import joblib
 from src.v264.CHISPAZO_V264_PARENT_REPAIR import (
     _v249_numeric_payload_sha256,
     _v249_snapshot_manifest,
+    _v249_snapshot_manifest_sha256,
     _v249_validate_snapshot_integrity,
     tie_safe_anti_saturation_score_v249,
 )
@@ -140,6 +141,32 @@ def test_v249_snapshot_integrity_survives_joblib_roundtrip(tmp_path):
     assert np.array_equal(restored['anti_order'], payload['anti_order'])
     assert np.array_equal(restored['anti_rank'], payload['anti_rank'])
 
+
+
+
+def test_v249_snapshot_manifest_sha256_preserves_legacy_v1_contract():
+    snapshot = {
+        'schema': 1, 'target': 12361, 'history_last': 12360,
+        'history_sha256': 'b' * 64, 'fusion_weights': {'heuristic': 1.0},
+        'allocation': {'heuristic': 30}, 'portfolio_idx': np.array([1, 3], dtype=np.int32),
+        'coverage_config': {'candidate_depth': 5000},
+        'specialist_scores': {'heuristic': np.array([0.1, 0.2], dtype=np.float32)},
+    }
+    legacy_manifest = {
+        'schema': 1, 'target': 12361, 'history_last': 12360,
+        'history_sha256': 'b' * 64, 'fusion_weights': {'heuristic': 1.0},
+        'allocation': {'heuristic': 30}, 'portfolio_idx': [1, 3],
+        'coverage_config': {'candidate_depth': 5000}, 'strategies': ['heuristic'],
+    }
+    expected = __import__('hashlib').sha256(
+        __import__('json').dumps(legacy_manifest, sort_keys=True, separators=(',', ':')).encode('utf-8')
+    ).hexdigest()
+    assert _v249_snapshot_manifest_sha256(snapshot) == expected
+
+
+def test_v249_snapshot_manifest_sha256_rejects_unsupported_schema():
+    with pytest.raises(RuntimeError, match='unsupported snapshot schema'):
+        _v249_snapshot_manifest_sha256({'schema': 99})
 
 
 def test_v249_v2_manifest_binds_interpretation_metadata():
