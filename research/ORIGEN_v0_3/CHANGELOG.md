@@ -51,3 +51,7 @@
 - Implemented a single max-statistic over 28 number identities, 378 pair identities and 184 V318 shape categories, calibrated using 1,999 pairs of independent uniform era sequences.
 - Added numerical, shape, frozen-seed, source-hash and minimum-sample tests plus an isolated workflow.
 - A result can indicate only a historical era difference, not a causal machine effect or predictive edge.
+
+### V312 full static mixture result (2026-11-19)
+- Canonical Classic-only replay completed successfully (run 44446737614): 7,723 draws, 800 warm-up, 6,923 scored targets.
+- Mean log-lift -0.0262296890 nats; cumulative -181.5881; positive fraction 36.07%. Candidate underperformed uniform; no edge.
