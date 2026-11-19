@@ -53,3 +53,10 @@ def test_block_bootstrap_is_reproducible():
     a = block_bootstrap_mean_ci(x, block_length=10, resamples=100, seed=42)
     b = block_bootstrap_mean_ci(x, block_length=10, resamples=100, seed=42)
     assert a == b
+
+
+def test_block_bootstrap_uses_circular_blocks_and_exact_sample_length():
+    result = block_bootstrap_mean_ci(np.arange(31, dtype=float), block_length=10,
+                                     resamples=100, seed=11)
+    assert result["bootstrap_method"] == "circular_moving_block_truncated_to_n"
+    assert result["ci95_low"] <= result["ci95_high"]
