@@ -37,8 +37,8 @@ def _max_stat(draws: np.ndarray) -> tuple[float, np.ndarray]:
     counts = _cell_counts(draws)
     n = draws.shape[0] - 1
     probabilities = PAIR_PROB * OVERLAP_PROBS
-    expected = n * probabilities
-    variance = n * probabilities * (1.0 - probabilities)
+    expected = n * np.tile(probabilities, len(PAIRS))
+    variance = n * np.tile(probabilities * (1.0 - probabilities), len(PAIRS))
     z = np.abs(counts - expected) / np.sqrt(variance)
     return float(np.max(z)), counts
 
