@@ -5,11 +5,11 @@ Status: COMPLETED — NO REJECTION; RESEARCH ONLY; NO PREDICTIVE EDGE.
 ## Frozen execution
 
 - Preregistration: PREREGISTRATION_V316_IDENTITY_TEMPORAL_PERSISTENCE.md.
-- Executed workflow: https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44444415214
-- Executed commit: 20b087ab77a523dd51758096bef5f39798c5bf28.
+- Executed workflow: https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44444654369
+- Executed commit: 6479a6c5aebac4a603c3e883f2c15aff4a145080.
 - Current V316 implementation blob at the executed commit and current research branch: d3d0ef0c16caff73ac22dd8bef834d5cecae5dbf (identical).
 - Artifact: exact5-v316-identity-temporal-persistence, ID 14492367500.
-- Artifact ZIP SHA-256: bbdd2587974c1c71c564bd0b59072c2e37a0a94e83b967fb3a8fa195c7ec8269.
+- Artifact ZIP SHA-256: f4d293fd765bffe6a218cc1edc6acde8d4063ea79c236b354a2458735338f554.
 - Source SHA-256: 5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a.
 - Classic-only sample: N=7,723, contests 1363–12248.
 - Frozen family: 8,140 statistics (20 aggregate-overlap lag values, 560 number-identity/lag cells, 7,560 pair-identity/lag cells).
@@ -21,7 +21,7 @@ Status: COMPLETED — NO REJECTION; RESEARCH ONLY; NO PREDICTIVE EDGE.
 - Null 95th percentile: 5.853084531895807.
 - Null replicates at least as extreme as observed: 1,998 of 1,999.
 - Add-one Monte Carlo p-value: 0.9995.
-- Runtime: 85.9127 seconds.
+- Runtime: 79.2163 seconds.
 - Strongest cell, descriptive only: pair {13,25} at lag 18, |z|=3.70796.
 
 The observed maximum is below the 95th percentile of the null maximum distribution, and 1,998/1,999 null replicates were at least as extreme. The frozen global family therefore does not reject independent uniform 5-of-28 sampling.
@@ -38,7 +38,7 @@ No forecasting advantage, causality, or betting edge is established. Do not use 
 
 - V316 workflow completed successfully; isolated ORIGEN test step passed; full frozen 1,999-replicate computation passed; report artifact uploaded.
 - The implementation uses packed-bit pair counts and the test suite includes direct nested-loop pair-count reference checks, label-permutation invariance, injected-persistence checks, exact 5-of-28 probability checks, and matrix-contract rejection.
-- A later commit changed custody-only code/tests and workflow path filters; it did not change the V316 implementation or its preregistered statistical family.
+- The final dedicated V316 workflow on commit 6479a6c5 completed successfully after the workflow trigger hardening. Its isolated test suite passed, and the full frozen computation reproduced the same statistics.
 - V294 remains frozen; canonical history remains protected; no write or merge to main. PR #8 remains draft/unmerged.
 
 ## Decision
