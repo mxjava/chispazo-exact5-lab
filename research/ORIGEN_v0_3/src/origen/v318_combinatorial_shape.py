@@ -41,7 +41,7 @@ def _feature_codes(sorted_numbers: np.ndarray) -> dict[str, np.ndarray]:
     if np.any(values < 1) or np.any(values > UNIVERSE):
         raise ValueError("v318_numbers_outside_1_to_28")
     if np.any(np.diff(values, axis=1) <= 0):
-        raise ValueError("v318_each_set_must_be_sorted_and_distinct")
+        raise ValueError("each set must be sorted and distinct")
 
     band1 = np.sum((values >= 1) & (values <= 9), axis=1)
     band2 = np.sum((values >= 10) & (values <= 19), axis=1)
