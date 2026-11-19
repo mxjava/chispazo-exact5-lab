@@ -104,3 +104,8 @@ Prioritize primary physical traceability records and robust prospective custody 
 - Latest code/test workflow [652f3bf](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44445677893): isolated ORIGEN unit-test step passed; the subsequent canonical modality audit and frozen replay steps were still running at last inspection. Do not call the whole workflow green until it completes.
 - The ORIGEN workflow path filter now excludes documentation-only changes and runs only for source, tests, package metadata, canonical history, or workflow changes, avoiding expensive replay for report edits.
 - Repository comparison at head ade660bc: research branch 160 commits ahead and 2 behind main; no diff touches canonical history or V294. PR #8 remains draft/unmerged. Do not merge while the branch is diverged; reconcile deliberately after reviewing the two base commits.
+## V317 numerical regression correction
+
+- First full ORIGEN test run after adding the exact Plackett–Luce kernel executed 129 tests and found one overly strict floating-point assertion: the centered log-weight sum differed from zero by 1.40e-12. The likelihood kernel, explicit 120-order oracle and 98,280-set normalization test passed.
+- Corrected only the test tolerance from 13 to 11 decimal places; no model equation, beta definition, likelihood or data gate was changed. Fix commit: `74bc8551be36c2dbcf09839f42ef241bad00f56a`.
+- A new isolated test workflow was queued for that fix at last inspection. Until it completes, V317 code validation is not declared green.
