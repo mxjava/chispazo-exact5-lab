@@ -38,6 +38,20 @@ def features(nums):
     }
 
 
+def prior_identity_counts(draws, target_index):
+    """Pair/triple frequencies from strictly earlier draws in the supplied stream."""
+    if target_index < 0 or target_index > len(draws):
+        raise ValueError("target_index_out_of_range")
+    pairs, triples = Counter(), Counter()
+    for draw in draws[:target_index]:
+        nums = tuple(sorted(draw))
+        if len(nums) != 5 or len(set(nums)) != 5 or any(n < 1 or n > 28 for n in nums):
+            raise ValueError("invalid_prior_draw")
+        pairs.update(itertools.combinations(nums, 2))
+        triples.update(itertools.combinations(nums, 3))
+    return pairs, triples
+
+
 def universe_reference():
     combos = list(itertools.combinations(range(1, 29), 5))
     if len(combos) != UNIVERSE_SIZE or len(set(combos)) != UNIVERSE_SIZE:
