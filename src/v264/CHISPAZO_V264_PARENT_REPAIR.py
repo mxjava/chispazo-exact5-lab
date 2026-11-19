@@ -3719,6 +3719,8 @@ def consume_previous_snapshot_v249(df: pd.DataFrame, audit: AuditResult, state_d
     manifest_sha = _v249_snapshot_manifest_sha256(snap)
     if str(snap.get('manifest_sha256', '')) != manifest_sha:
         raise RuntimeError('V249 snapshot guardrail failed: manifest SHA256 mismatch')
+    if snapshot_schema == V249_SNAPSHOT_SCHEMA:
+        _v249_validate_snapshot_universe(snap, UNIVERSE_SIZE)
     rowdf = df[df['CONCURSO'] == prev_target]
     if len(rowdf) != 1:
         raise RuntimeError(f'V249 snapshot target {prev_target} not uniquely present in history')
