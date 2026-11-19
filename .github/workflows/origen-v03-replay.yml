@@ -7,13 +7,6 @@ on:
       - "research/ORIGEN_v0_3/tests/test_exact5_modalities.py"
       - "research/ORIGEN_v0_3/tests/test_v312_static_mixture.py"
       - "data/history/Chispazo_through_12249.csv"
-  pull_request:
-    paths:
-      - "research/ORIGEN_v0_3/src/origen/exact5_modalities.py"
-      - "research/ORIGEN_v0_3/src/origen/v312_static_mixture.py"
-      - "research/ORIGEN_v0_3/tests/test_exact5_modalities.py"
-      - "research/ORIGEN_v0_3/tests/test_v312_static_mixture.py"
-      - "data/history/Chispazo_through_12249.csv"
   workflow_dispatch:
 permissions:
   contents: read

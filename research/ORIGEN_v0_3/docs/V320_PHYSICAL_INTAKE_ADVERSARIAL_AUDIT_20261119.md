@@ -33,6 +33,11 @@ The validator still cannot authenticate a source document from a hash string, pr
 
 The official tolerance envelope is a data-quality gate only. It does not imply unequal extraction probabilities.
 
-## Validation status
+## Validation
 
-The isolated ORIGEN workflow must execute the new adversarial tests before this change is considered green. No statistical edge claim is possible from this engineering patch.
+- Isolated ORIGEN workflow [44469124625](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44469124625) on implementation commit `3a291538007c34821ce63c17f1b3f84ef7de5b17`: **success**. All 152 isolated tests passed in 16.886 seconds; all six new physical-intake adversarial tests are present in the log and passed.
+- Root CI [44469124280](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44469124280): **success**. `compileall` passed; root suite reported 351 passed, 2 skipped and 16 subtests passed in 33.48 seconds.
+- The existing canonical replay [44469124306](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44469124306) also completed successfully. It was redundantly triggered by the PR-wide path filter and reran the frozen V312 historical integrity computation (6,923 scored historical targets). This output was not used for the 12382 overlay, candidate selection, or any edge claim. The replay was not needed for this intake-only change.
+- To prevent recurrence, `.github/workflows/origen-v03-replay.yml` now retains its narrow `push.paths` and manual `workflow_dispatch` triggers but no longer runs on every PR synchronization. It will run automatically only when the changed push touches the frozen modality/V312 implementation or canonical history.
+
+No statistical edge claim is possible from this engineering patch.
