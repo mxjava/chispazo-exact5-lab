@@ -27,3 +27,9 @@
 - Quarantine labels are explicit; validator does not repair data or estimate bias.
 - Added CLI: `origen validate-physical --file <csv>`.
 - Added 13 adversarial intake tests. Awaiting final GitHub Actions result on the latest branch head.
+
+## V317 physical-mass Plackett–Luce preregistration (2026-11-19)
+- Added exact unordered five-set likelihood for sequential weighted sampling without replacement; no arbitrary draw order is assumed.
+- Added log-likelihood ratio against exact uniform 5-of-28 and the corresponding prequential e-process design.
+- Added tests against all 120 permutations for a chosen set, normalization over all 98,280 possible sets, uniform beta=0 recovery, and invalid input rejection.
+- Preregistered the physical mass test; beta must be independently calibrated on equivalent equipment and frozen before Chispazo outcome labels are inspected. No primary measurements/beta calibration exist; V317 remains blocked, no predictions.
