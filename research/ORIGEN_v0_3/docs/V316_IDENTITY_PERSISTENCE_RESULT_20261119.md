@@ -36,7 +36,7 @@ No forecasting advantage, causality, or betting edge is established. Do not use 
 
 ## Validation
 
-- V316 workflow completed successfully; isolated ORIGEN test step passed; full frozen 1,999-replicate computation passed; report artifact uploaded.
+- V316 workflow completed successfully; all 107 isolated ORIGEN unit tests passed (including custody tail-anchor and V316 direct-reference tests); full frozen 1,999-replicate computation passed; report artifact uploaded.
 - The implementation uses packed-bit pair counts and the test suite includes direct nested-loop pair-count reference checks, label-permutation invariance, injected-persistence checks, exact 5-of-28 probability checks, and matrix-contract rejection.
 - The final dedicated V316 workflow on commit 6479a6c5 completed successfully after the workflow trigger hardening. Its isolated test suite passed, and the full frozen computation reproduced the same statistics.
 - V294 remains frozen; canonical history remains protected; no write or merge to main. PR #8 remains draft/unmerged.
