@@ -16,6 +16,10 @@ from pathlib import Path
 from typing import Iterable, Mapping, Any
 
 HEX64 = re.compile(r"[0-9a-f]{64}")
+MASS_LIMITS = {
+    "smartballs": (4.25, 5.25, 0.30),
+    "ping-pong": (2.30, 3.00, 0.15),
+}
 REQUIRED_COLUMNS = (
     "contest_id", "draw_date", "modality", "draw_close_at",
     "sphere_set_id", "set_assigned_at", "sphere_type", "machine_id",
@@ -75,6 +79,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
 
     grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
     row_errors: dict[int, set[str]] = defaultdict(set)
+    masses_by_contest: dict[int, list[float]] = defaultdict(list)
     for index, raw in enumerate(materialized, start=2):
         try:
             contest = _positive_int(str(raw.get("contest_id", "")), "contest_id")
@@ -88,6 +93,10 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
                 raise ValueError("unknown modality")
             if not str(row["draw_date"]).strip() or not str(row["source_document_ref"]).strip():
                 row_errors[contest].add("Q_CONTEST_LINK")
+            try:
+                datetime.strptime(str(row["draw_date"]), "%Y-%m-%d")
+            except ValueError:
+                row_errors[contest].add("Q_CONTEST_LINK")
             for field in ("source_document_sha256", "calibration_certificate_sha256"):
                 if not HEX64.fullmatch(str(row[field])):
                     row_errors[contest].add("Q_SOURCE_UNVERIFIED" if field == "source_document_sha256" else "Q_METROLOGY")
@@ -99,13 +108,19 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             cal_to = _timestamp(str(row["calibration_valid_to"]), "calibration_valid_to")
             if not (assigned < close and measured < close and mapped < close):
                 row_errors[contest].add("Q_TIME")
+            if mapped > assigned:
+                row_errors[contest].add("Q_MAPPING")
             if not (cal_from <= measured <= cal_to):
                 row_errors[contest].add("Q_METROLOGY")
             if not all(str(row[k]).strip() for k in ("sphere_set_id", "sphere_type", "machine_id", "machine_model", "sphere_id", "scale_id")):
                 row_errors[contest].add("Q_SOURCE_UNVERIFIED")
             if str(row["mass_unit"]).lower() != "g":
                 row_errors[contest].add("Q_METROLOGY")
-            _positive_float(str(row["mass_value"]), "mass_value")
+            sphere_type = str(row["sphere_type"]).strip().casefold()
+            if sphere_type not in MASS_LIMITS:
+                row_errors[contest].add("Q_METROLOGY")
+            mass = _positive_float(str(row["mass_value"]), "mass_value")
+            masses_by_contest[contest].append(mass)
             _positive_float(str(row["measurement_resolution"]), "measurement_resolution")
             number = _positive_int(str(row["printed_number"]), "printed_number")
             if number > 28:
@@ -122,8 +137,11 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         numbers: list[int] = []
         sphere_ids: list[str] = []
         identity_fields = ("modality", "draw_date", "draw_close_at", "sphere_set_id",
-                           "sphere_type", "machine_id", "machine_model",
-                           "source_document_sha256", "calibration_certificate_sha256")
+                           "set_assigned_at", "sphere_type", "machine_id", "machine_model",
+                           "scale_id", "measurement_resolution", "calibration_valid_from",
+                           "calibration_valid_to", "mapping_valid_from",
+                           "source_document_sha256", "source_document_ref",
+                           "calibration_certificate_sha256")
         for row in group:
             try:
                 numbers.append(int(row["printed_number"]))
@@ -138,6 +156,19 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             values = {str(row.get(field, "")) for row in group}
             if len(values) != 1:
                 labels.add("Q_CONFLICT")
+        sphere_types = {str(row.get("sphere_type", "")).strip().casefold() for row in group}
+        if len(sphere_types) == 1:
+            sphere_type = next(iter(sphere_types))
+            limits = MASS_LIMITS.get(sphere_type)
+            masses = masses_by_contest[contest]
+            if limits is None:
+                labels.add("Q_METROLOGY")
+            elif len(masses) == 28:
+                lower, upper, max_spread = limits
+                if any(mass < lower or mass > upper for mass in masses):
+                    labels.add("Q_METROLOGY")
+                if max(masses) - min(masses) > max_spread:
+                    labels.add("Q_METROLOGY")
         if labels:
             quarantined[str(contest)] = sorted(labels)
         else:

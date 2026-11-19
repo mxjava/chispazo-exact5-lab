@@ -96,6 +96,66 @@ class PhysicalIntakeTests(unittest.TestCase):
         report = validate_physical_rows(rows)
         self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
 
+    def test_smartballs_mass_envelope_and_spread_are_enforced(self):
+        rows = make_rows()
+        rows[0]["mass_value"] = "5.251"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
+
+        rows = make_rows()
+        rows[0]["mass_value"] = "4.700"
+        rows[-1]["mass_value"] = "5.001"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
+
+    def test_pingpong_mass_envelope_and_spread_are_enforced(self):
+        rows = make_rows()
+        for row in rows:
+            row["sphere_type"] = "ping-pong"
+            row["mass_value"] = "2.500"
+        rows[0]["mass_value"] = "2.299"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
+
+        rows = make_rows()
+        for row in rows:
+            row["sphere_type"] = "ping-pong"
+            row["mass_value"] = "2.500"
+        rows[0]["mass_value"] = "2.300"
+        rows[-1]["mass_value"] = "2.451"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
+
+    def test_unknown_sphere_type_is_quarantined(self):
+        rows = make_rows()
+        for row in rows:
+            row["sphere_type"] = "unknown-sphere"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
+
+    def test_contest_metrology_identity_must_be_consistent(self):
+        rows = make_rows()
+        rows[-1]["scale_id"] = "SCALE-2"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_CONFLICT", report["quarantined"]["12300"])
+
+        rows = make_rows()
+        rows[-1]["calibration_valid_to"] = "2027-01-01T00:00:00-06:00"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_CONFLICT", report["quarantined"]["12300"])
+
+    def test_mapping_must_be_effective_before_set_assignment(self):
+        rows = make_rows()
+        rows[0]["mapping_valid_from"] = "2026-11-20T17:05:00-06:00"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_MAPPING", report["quarantined"]["12300"])
+
+    def test_draw_date_must_be_iso_calendar_date(self):
+        rows = make_rows()
+        rows[0]["draw_date"] = "20/11/2026"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_CONTEST_LINK", report["quarantined"]["12300"])
+
     def test_source_hash_must_be_sha256(self):
         rows = make_rows()
         rows[0]["source_document_sha256"] = "not-a-hash"
