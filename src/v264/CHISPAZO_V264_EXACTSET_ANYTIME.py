@@ -97,6 +97,7 @@ def main(hist_path,outdir,warmup=800):
         for b in BETAS: names.append(f'{base}_b{b:.2f}')
     logpost=np.full(len(names), -math.log(len(names)),float)
     rows=[]
+    expert_rows=[]
     cum_mix=0.0; cum_best_fixed=None
     expert_cum=np.zeros(len(names),float)
     for t in range(max(warmup,2),len(df)):
@@ -119,6 +120,7 @@ def main(hist_path,outdir,warmup=800):
         logpost += np.log(np.maximum(ps,1e-300))
         mm=np.max(logpost); logpost-=mm+math.log(np.exp(logpost-mm).sum())
     rd=pd.DataFrame(rows); rd.to_csv(outdir/'v264_prequential.csv',index=False)
+    pd.DataFrame(expert_rows).to_csv(outdir/'v264_expert_log_likelihoods.csv', index=False)
     # final prospective PMF for next target
     t=len(df); sig=signals(draws,t)
     m=np.max(logpost); post=np.exp(logpost-m); post/=post.sum()
