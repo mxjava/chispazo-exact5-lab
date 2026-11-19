@@ -156,6 +156,12 @@ class PhysicalIntakeTests(unittest.TestCase):
         report = validate_physical_rows(rows)
         self.assertIn("Q_CONTEST_LINK", report["quarantined"]["12300"])
 
+    def test_draw_date_requires_zero_padded_iso_calendar_date(self):
+        rows = make_rows()
+        rows[0]["draw_date"] = "2026-1-2"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_CONTEST_LINK", report["quarantined"]["12300"])
+
     def test_source_hash_must_be_sha256(self):
         rows = make_rows()
         rows[0]["source_document_sha256"] = "not-a-hash"

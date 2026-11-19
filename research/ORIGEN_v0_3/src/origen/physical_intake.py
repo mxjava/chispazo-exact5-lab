@@ -93,10 +93,14 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
                 raise ValueError("unknown modality")
             if not str(row["draw_date"]).strip() or not str(row["source_document_ref"]).strip():
                 row_errors[contest].add("Q_CONTEST_LINK")
-            try:
-                datetime.strptime(str(row["draw_date"]), "%Y-%m-%d")
-            except ValueError:
+            draw_date = str(row["draw_date"])
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", draw_date):
                 row_errors[contest].add("Q_CONTEST_LINK")
+            else:
+                try:
+                    datetime.strptime(draw_date, "%Y-%m-%d")
+                except ValueError:
+                    row_errors[contest].add("Q_CONTEST_LINK")
             for field in ("source_document_sha256", "calibration_certificate_sha256"):
                 if not HEX64.fullmatch(str(row[field])):
                     row_errors[contest].add("Q_SOURCE_UNVERIFIED" if field == "source_document_sha256" else "Q_METROLOGY")
