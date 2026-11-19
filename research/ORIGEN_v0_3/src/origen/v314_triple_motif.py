@@ -4,7 +4,7 @@ import argparse, hashlib, json, math
 from pathlib import Path
 import numpy as np
 from origen.exact5_modalities import assign_modality, read_history
-from origen.v313_global_null import PICK, UNIVERSE, _matrix, _simulate_draws
+from origen.v313_global_null import PICK, UNIVERSE, _matrix, _simulate_draws, _validate_binary_draw_matrix
 
 TRIPLES = tuple((i, j, k) for i in range(UNIVERSE) for j in range(i + 1, UNIVERSE) for k in range(j + 1, UNIVERSE))
 TRIPLE_P = 5 / 1638
@@ -17,8 +17,7 @@ _ROW_TRIPLE_POSITIONS = np.asarray([(a, b, c) for a in range(PICK) for b in rang
 
 
 def _triple_counts(draws: np.ndarray) -> np.ndarray:
-    if draws.ndim != 2 or draws.shape[1] != UNIVERSE or draws.shape[0] < 2 or not np.all(draws.sum(axis=1) == PICK):
-        raise ValueError("invalid_v314_matrix")
+    draws = _validate_binary_draw_matrix(draws)
     # Enumerate the ten triples present in each 5-number draw, map them to
     # the frozen 3,276-cell universe, and accumulate with bincount. This is
     # exact and avoids a large dense matrix multiplication per Monte Carlo draw.
