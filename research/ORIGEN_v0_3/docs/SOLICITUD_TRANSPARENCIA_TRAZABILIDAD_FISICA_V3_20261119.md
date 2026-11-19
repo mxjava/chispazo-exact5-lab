@@ -18,7 +18,10 @@ La revisión 39 de SGVO-PRO-05 establece:
 4. **Política 11:** el Acta registra lugar, fecha, horario, roles y firmas de los servidores públicos y del Inspector de SEGOB, además de resultados e incidencias.
 5. **Tabla de registros de la política 11:** la TIRA DE PESAJE aparece como anexo para CHISPAZO.
 6. **Control de calidad / CS-11:** se verifican fecha, número de sorteo, número de estuche y correspondencia esfera-versus-número.
-7. **Glosario:** la tira de pesaje registra el peso de cada esfera y contempla las firmas del responsable del pesaje, representante de Operación, representante de Dirección General e Inspector de SEGOB.
+7. **Política 8:** la firma electrónica del archivo de participaciones se graba en un dispositivo antes del sorteo, se entrega al Inspector de SEGOB y se deposita en caja de seguridad con acceso reservado al Órgano Interno de Control.
+8. **Política 12:** los reportes y la firma electrónica de la relación de ganadores se respaldan semanalmente en DVD y se anexan a las Actas para resguardo.
+9. **Políticas 15, 17 y 19:** si el Acta no puede imprimirse, puede firmarse hasta cinco días hábiles después con constancia en Bitácora; existe formato CS-18 para comunicar riesgos; el acceso a la sala y el mantenimiento se registran mediante CS-12 y bitácoras de acceso.
+10. **Glosario:** la tira de pesaje registra el peso de cada esfera y contempla las firmas del responsable del pesaje, representante de Operación, representante de Dirección General e Inspector de SEGOB.
 
 Documento oficial: https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf  
 Normateca de normas sustantivas: https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2
@@ -41,7 +44,15 @@ Si el volumen impide la entrega integral, solicitar primero los 100 Clásicos m�
 - Roles institucionales, oficios de comisión del Inspector de SEGOB, evidencia de revisión y firmas/rúbricas, así como incidencias o retrasos.
 - Si el Acta se firmó posteriormente, bitácora y justificación del diferimiento.
 
-### B. Tira de pesaje completa
+### B. Archivo de participaciones y custodia previa al sorteo
+
+- Identificador, nombre técnico, versión, tamaño y SHA-256 del archivo de participaciones generado para el concurso.
+- Firma electrónica del archivo, algoritmo, certificado/cadena de confianza, fecha/hora de generación y de firma, zona horaria y mecanismo de validación.
+- Registro del dispositivo de almacenamiento, entrega al Inspector de SEGOB, folio de recepción, depósito en caja de seguridad, identificador de sello y bitácora de accesos/retiros a cargo del Órgano Interno de Control.
+- Confirmación de que el archivo y su firma quedaron fijados antes de la celebración del sorteo; si no puede divulgarse el contenido por datos personales, entregar versión pública y conservar hash, firma, metadatos y constancia de cotejo.
+- Índice del DVD semanal de resguardo previsto en la política 12, con lista de reportes y Actas asociados a cada concurso.
+
+### C. Tira de pesaje completa
 
 - Registro individual de las 28 masas, conservando orden numérico, valor original, unidad, resolución, precisión y redondeos.
 - Tipo de esfera (Smartballs/Ping Pong), número de estuche, fecha/hora y responsable del pesaje.
@@ -49,7 +60,7 @@ Si el volumen impide la entrega integral, solicitar primero los 100 Clásicos m�
 - Tiras de estuches rechazados, mediciones repetidas, selección de estuche sustituto y motivo.
 - Evidencia de firma del responsable y de revisión/rúbrica por los representantes previstos en SGVO-PRO-05.
 
-### C. Formato CS-11 y correspondencia física-numérica
+### D. Formato CS-11 y correspondencia física-numérica
 
 - Copia legible del formato CS-11 asociado al Acta.
 - Fecha, número de concurso, número de estuche y correspondencia registrada entre cada esfera y el número impreso 1–28.
@@ -57,21 +68,27 @@ Si el volumen impide la entrega integral, solicitar primero los 100 Clásicos m�
 - Identificador físico individual de cada esfera, si existe; si no existe, confirmación expresa y descripción del método usado para mantener la correspondencia.
 - Cambios de orden, sustituciones, re-mapeos y cualquier diferencia entre pesaje, CS-11, carga y resultado.
 
-### D. Metrología y equipo
+### E. Metrología y equipo
 
 - Marca, modelo, identificador de báscula, resolución, precisión e incertidumbre declarada.
 - Certificado de calibración vigente para la fecha del sorteo, tolerancia y trazabilidad metrológica.
 - Registros de inspección diaria de báscula/equipo (incluido CS-02 cuando aplique), mantenimiento y sustituciones.
 - Identificador de máquina, modelo/serie, alimentador y estuche, cuando esos campos obren en el expediente.
 
-### E. Incidencias y continuidad
+### F. Incidencias y continuidad
 
 - Rechazo de estuche, nuevo pesaje, sustitución de esfera/estuche/máquina, mantenimiento, limpieza, almacenamiento, transporte o manipulación.
 - Fecha/hora, responsable por rol, motivo y correspondencia antes/después de cada cambio.
 - Registros de incidentes, remapeos, discrepancias o comunicaciones de riesgo que afecten el sorteo.
 - Video u otra evidencia de identificación, carga y extracción, únicamente si existe y se conserva.
 
-### F. Integridad y disponibilidad
+### G. Acceso, riesgos e incidencias de sala
+
+- Formatos CS-12 de registro de asistencia a la sala de sorteos y bitácoras de acceso para limpieza/mantenimiento, con fecha, hora, rol y motivo.
+- Formatos CS-18 de Comunicación de Riesgo relacionados con pesaje, estuche, máquina, almacenamiento, correspondencia física-numérica o publicación de resultados.
+- Incidencias asentadas en el Acta y constancias de firma diferida conforme a la política 15, incluyendo la Bitácora que justifica el retraso.
+
+### H. Integridad y disponibilidad
 
 - Copias digitales legibles de Acta, tira de pesaje, CS-11, CS-02, certificados y anexos, vinculadas por concurso.
 - CSV/XLSX para tablas y PDF nativo o escaneo para documentos firmados.
@@ -97,12 +114,13 @@ No se solicitan domicilios, teléfonos, firmas autógrafas para difusión, ni da
 ## Plan de análisis al recibir datos
 
 1. Hashear originales y mantenerlos inmutables; documentar recepción, custodio y fecha.
-2. Verificar vínculo concurso-modalidad-Acta-tira-CS-11, firmas/roles, timestamps y continuidad.
-3. Validar báscula/calibración, unidades, resolución y límites normativos; cuarentenar incumplimientos sin corregirlos.
-4. Congelar el mapa esfera-número antes del cierre; cuarentenar cualquier mapping no verificable o posterior al cierre.
-5. Separar características pre-cierre de campos posteriores; ningún dato del resultado puede entrar a las features.
-6. Evaluar el mecanismo secuencial sin reemplazo, con beta obtenido de calibración física independiente y sin usar resultados de Chispazo para ajustarlo.
-7. Mantener evaluación prospectiva cronológica, multiplicidad preregistrada y e-process Exact5 independiente.
+2. Verificar firma electrónica y custodia pre-sorteo del archivo de participaciones, sin confundirla con el PMF del modelo.
+3. Verificar vínculo concurso-modalidad-Acta-tira-CS-11, firmas/roles, timestamps y continuidad.
+4. Validar báscula/calibración, unidades, resolución y límites normativos; cuarentenar incumplimientos sin corregirlos.
+5. Congelar el mapa esfera-número antes del cierre; cuarentenar cualquier mapping no verificable o posterior al cierre.
+6. Separar características pre-cierre de campos posteriores; ningún dato del resultado puede entrar a las features.
+7. Evaluar el mecanismo secuencial sin reemplazo, con beta obtenido de calibración física independiente y sin usar resultados de Chispazo para ajustarlo.
+8. Mantener evaluación prospectiva cronológica, multiplicidad preregistrada y e-process Exact5 independiente.
 
 ## Límites y clasificación
 
