@@ -5,8 +5,9 @@ import argparse
 import csv
 import json
 import math
-import random
 from pathlib import Path
+
+import numpy as np
 
 FEATURES = ("sum", "range", "odd_count", "prime_count", "consecutive_pairs",
             "low_1_9", "mid_10_18", "high_19_28", "low_1_14", "max_gap")
@@ -20,8 +21,7 @@ def load_atlas(path):
         rows = list(csv.DictReader(handle))
     if not rows:
         raise ValueError("empty_atlas")
-    parsed = []
-    seen = set()
+    parsed, seen = [], set()
     for row in rows:
         contest = int(row["contest"])
         weekday = int(row["weekday_iso"])
@@ -41,45 +41,39 @@ def load_atlas(path):
 
 
 def eta_squared(values, labels):
-    if len(values) != len(labels) or len(values) < 2:
+    values = np.asarray(values, dtype=np.float64)
+    labels = np.asarray(labels, dtype=np.int8)
+    if values.ndim != 1 or labels.ndim != 1 or len(values) != len(labels) or len(values) < 2:
         raise ValueError("invalid_sample")
-    grand = sum(values) / len(values)
-    total = sum((value - grand) ** 2 for value in values)
-    if total == 0:
+    grand = float(values.mean())
+    total = float(np.square(values - grand).sum())
+    if total == 0.0:
         return 0.0
-    groups = {}
-    for value, label in zip(values, labels):
-        groups.setdefault(label, []).append(value)
-    between = sum(len(group) * (sum(group) / len(group) - grand) ** 2
-                  for group in groups.values())
+    between = 0.0
+    for label in np.unique(labels):
+        group = values[labels == label]
+        between += len(group) * float(group.mean() - grand) ** 2
     return between / total
 
 
 def analyze(rows, permutations=DEFAULT_PERMUTATIONS, seed=DEFAULT_SEED):
     if permutations < 1:
         raise ValueError("permutations_must_be_positive")
-    labels = [row[1] for row in rows]
-    observed = {
-        feature: eta_squared([row[2][feature] for row in rows], labels)
-        for feature in FEATURES
-    }
+    labels = np.asarray([row[1] for row in rows], dtype=np.int8)
+    values = {feature: np.asarray([row[2][feature] for row in rows], dtype=np.float64)
+              for feature in FEATURES}
+    observed = {feature: eta_squared(values[feature], labels) for feature in FEATURES}
     observed_max = max(observed.values())
-    rng = random.Random(seed)
-    null_maxima = []
-    null_by_feature = {feature: [] for feature in FEATURES}
-    shuffled = labels[:]
-    for _ in range(permutations):
-        rng.shuffle(shuffled)
-        stats = {
-            feature: eta_squared([row[2][feature] for row in rows], shuffled)
-            for feature in FEATURES
-        }
-        null_maxima.append(max(stats.values()))
-        for feature, value in stats.items():
-            null_by_feature[feature].append(value)
-    global_exceed = sum(value >= observed_max for value in null_maxima)
+    rng = np.random.Generator(np.random.PCG64(seed))
+    null_maxima = np.empty(permutations, dtype=np.float64)
+    for index in range(permutations):
+        permuted_labels = rng.permutation(labels)
+        null_maxima[index] = max(eta_squared(values[feature], permuted_labels)
+                                 for feature in FEATURES)
+    exceedances = int(np.count_nonzero(null_maxima >= observed_max))
+    global_p = (exceedances + 1) / (permutations + 1)
     adjusted = {
-        feature: (sum(maximum >= observed[feature] for maximum in null_maxima) + 1)
+        feature: (int(np.count_nonzero(null_maxima >= observed[feature])) + 1)
                  / (permutations + 1)
         for feature in FEATURES
     }
@@ -87,16 +81,17 @@ def analyze(rows, permutations=DEFAULT_PERMUTATIONS, seed=DEFAULT_SEED):
         "candidate": "V321_WEEKDAY_OMNIBUS",
         "classification": "HISTORICAL_ASSOCIATION_ONLY_NOT_PREDICTIVE",
         "n_classic_draws": len(rows),
-        "weekday_counts": {str(day): labels.count(day) for day in WEEKDAYS},
+        "weekday_counts": {str(day): int(np.count_nonzero(labels == day)) for day in WEEKDAYS},
         "features": list(FEATURES),
         "observed_eta_squared": observed,
         "familywise_adjusted_p": adjusted,
         "global_max_eta_squared": observed_max,
-        "global_p_value": (global_exceed + 1) / (permutations + 1),
-        "global_exceedances": global_exceed,
+        "global_p_value": global_p,
+        "global_exceedances": exceedances,
         "permutations": permutations,
+        "rng": "numpy.random.Generator(PCG64)",
         "seed": seed,
-        "decision": "HISTORICAL_ASSOCIATION_DETECTED" if (global_exceed + 1) / (permutations + 1) <= 0.05 else "NO_HISTORICAL_ASSOCIATION_DETECTED",
+        "decision": "HISTORICAL_ASSOCIATION_DETECTED" if global_p <= 0.05 else "NO_HISTORICAL_ASSOCIATION_DETECTED",
         "warning": "Historical weekday association, if detected, is not predictive evidence and does not establish a physical mechanism."
     }
 
@@ -109,7 +104,7 @@ def main():
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     args = parser.parse_args()
     result = analyze(load_atlas(args.atlas), args.permutations, args.seed)
-    Path(args.out).write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    Path(args.out).write_text(json.dumps(result, indent=2) + "\\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
 
 
