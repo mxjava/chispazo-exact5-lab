@@ -121,7 +121,8 @@ class ReverseEngineeringOracleTests(unittest.TestCase):
         fractional[0, 0] = 0.5
         malformed.append(fractional)
         wrong_cardinality = valid.copy()
-        wrong_cardinality[0, 0] = 0
+        first_present = int(np.flatnonzero(wrong_cardinality[0])[0])
+        wrong_cardinality[0, first_present] = 0
         malformed.append(wrong_cardinality)
         for bad in malformed:
             for kernel in (_statistics, _triple_counts, _cell_counts):
