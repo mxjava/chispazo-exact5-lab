@@ -11,6 +11,7 @@ from .null_benchmark import benchmark_nulls
 from .diversity import frame_diversity
 from .manifest import create_manifest, verify_manifest
 from .meta_audit import audit_search_path
+from .physical_intake import validate_physical_csv
 
 def _load(path):
     with open(path, encoding="utf-8") as f: return json.load(f)
@@ -31,6 +32,7 @@ def main():
     v=sub.add_parser("validate-protocol"); v.add_argument("--file",required=True)
     l=sub.add_parser("audit-ledger"); l.add_argument("--ledger",required=True)
     ml=sub.add_parser("audit-search-path"); ml.add_argument("--ledger",required=True)
+    pi=sub.add_parser("validate-physical",help="validate provenance and structure of long-form physical sphere CSV"); pi.add_argument("--file",required=True)
     h=sub.add_parser("holm"); h.add_argument("--file",required=True)
     s=sub.add_parser("split"); s.add_argument("--n",type=int,required=True); s.add_argument("--warmup",type=int,required=True); s.add_argument("--evaluation-size",type=int); s.add_argument("--rolling",action="store_true"); s.add_argument("--horizon",type=int,default=100)
     e=sub.add_parser("evaluate"); e.add_argument("--file",required=True)
@@ -46,6 +48,7 @@ def main():
         errors=validate_protocol(_load(args.file)); result={"state":"PASS" if not errors else "BLOCKED","errors":errors}
     elif args.command=="audit-ledger": result=audit_ledger(args.ledger)
     elif args.command=="audit-search-path": result=audit_search_path(args.ledger)
+    elif args.command=="validate-physical": result=validate_physical_csv(args.file)
     elif args.command=="holm":
         obj=_load(args.file); result=holm_bonferroni(obj["p_values"],obj.get("alpha",0.05))
     elif args.command=="split":
