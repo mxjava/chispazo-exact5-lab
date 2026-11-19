@@ -12,6 +12,7 @@ import math
 import re
 from collections import defaultdict
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Iterable, Mapping, Any
 
@@ -20,6 +21,7 @@ MASS_LIMITS = {
     "smartballs": (4.25, 5.25, 0.30),
     "ping-pong": (2.30, 3.00, 0.15),
 }
+DRAW_TIMEZONE = ZoneInfo("America/Mexico_City")
 REQUIRED_COLUMNS = (
     "contest_id", "draw_date", "modality", "draw_close_at",
     "sphere_set_id", "set_assigned_at", "sphere_type", "machine_id",
@@ -105,6 +107,9 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
                 if not HEX64.fullmatch(str(row[field])):
                     row_errors[contest].add("Q_SOURCE_UNVERIFIED" if field == "source_document_sha256" else "Q_METROLOGY")
             close = _timestamp(str(row["draw_close_at"]), "draw_close_at")
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", draw_date):
+                if close.astimezone(DRAW_TIMEZONE).date().isoformat() != draw_date:
+                    row_errors[contest].add("Q_CONTEST_LINK")
             assigned = _timestamp(str(row["set_assigned_at"]), "set_assigned_at")
             measured = _timestamp(str(row["measurement_at"]), "measurement_at")
             mapped = _timestamp(str(row["mapping_valid_from"]), "mapping_valid_from")
