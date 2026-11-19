@@ -23,6 +23,16 @@ class V313Tests(unittest.TestCase):
         self.assertEqual(len(stats), 3)
         self.assertTrue(all(np.isfinite(x) and x >= 0 for x in stats))
 
+    def test_pair_counts_do_not_overflow_int8(self):
+        # Every pair among these five numbers co-occurs 2,000 times.
+        draws = np.tile(_matrix([{"numbers": [1, 2, 3, 4, 5]}]), (2000, 1))
+        _, pair_stat, _ = _statistics(draws)
+        pair_p = 5 * 4 / (28 * 27)
+        expected = 2000 * pair_p
+        variance = 2000 * pair_p * (1 - pair_p)
+        expected_max = max(abs(2000 - expected), abs(0 - expected)) / np.sqrt(variance)
+        self.assertAlmostEqual(pair_stat, expected_max, places=10)
+
     def test_run_is_classic_only_and_reproducible(self):
         rows = []
         rng = np.random.default_rng(9)
