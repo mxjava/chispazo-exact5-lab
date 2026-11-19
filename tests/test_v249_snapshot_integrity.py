@@ -85,3 +85,20 @@ def test_v249_snapshot_integrity_rejects_duplicate_portfolio_indices():
     payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
     with pytest.raises(RuntimeError, match='portfolio_idx out of range or duplicated'):
         _v249_validate_snapshot_integrity(payload)
+
+
+
+def test_v249_snapshot_integrity_rejects_float32_v2_scores():
+    payload = _payload()
+    payload['anti_saturation_score'] = payload['anti_saturation_score'].astype(np.float32)
+    payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
+    with pytest.raises(RuntimeError, match='v2 score arrays must be float64'):
+        _v249_validate_snapshot_integrity(payload)
+
+
+def test_v249_snapshot_integrity_rejects_non_finite_scores():
+    payload = _payload()
+    payload['fused'][1] = np.nan
+    payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
+    with pytest.raises(RuntimeError, match='non-finite score payload'):
+        _v249_validate_snapshot_integrity(payload)
