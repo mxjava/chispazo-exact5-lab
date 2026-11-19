@@ -113,6 +113,7 @@ def main(hist_path,outdir,warmup=800):
         llr=math.log(pmix)+LOGU
         cum_mix+=llr
         expert_llr=np.log(ps)+LOGU
+        expert_rows.extend({'CONCURSO': int(df.loc[t,'CONCURSO']), 'expert': names[i], 'log_lift': float(expert_llr[i])} for i in range(len(names)))
         expert_cum+=expert_llr
         topidx=np.argsort(post)[-5:][::-1]
         rows.append({'CONCURSO':int(df.loc[t,'CONCURSO']),'mix_p':pmix,'log_lift':llr,'cum_log_e':cum_mix,'e_value_cap':float(math.exp(min(50,cum_mix))), 'top_expert':names[topidx[0]],'top_weight':float(post[topidx[0]]),'best_expert_so_far':names[int(np.argmax(expert_cum))],'best_expert_cum_loge':float(expert_cum.max())})
