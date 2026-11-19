@@ -100,8 +100,11 @@ def build_seal_record(
     """Build a verifiable record; caller must retain receipt independently."""
     if not isinstance(target_contest_id, int) or isinstance(target_contest_id, bool) or target_contest_id <= 0:
         raise ValueError("target_contest_id must be a positive integer")
-    if history_max_contest_id != target_contest_id - 1:
-        raise ValueError("history cutoff must be exactly target_contest_id - 1")
+    if (not isinstance(history_max_contest_id, int) or isinstance(history_max_contest_id, bool)
+            or history_max_contest_id != target_contest_id - 1):
+        raise ValueError("history cutoff must be an integer exactly target_contest_id - 1")
+    if not isinstance(expected_lines, int) or isinstance(expected_lines, bool) or expected_lines <= 0:
+        raise ValueError("expected_lines must be a positive integer")
     if modality != "CLASSIC":
         raise ValueError("only CLASSIC modality is eligible")
     for field, value in (
