@@ -307,7 +307,10 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
         values = []
         scored_contests = []
         posterior_trace = []
-        de_las_tres_updates = 0
+        de_las_tres_updates_total = 0
+        de_las_tres_updates_before_first_target = 0
+        posterior_effective_experts = []
+        posterior_uniform_weight = []
         for t in range(2, len(stream)):
             target = stream[t]
             sig = signals(draws, t)
@@ -329,19 +332,23 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
                 values.append(math.log(mixture_probability) - log_uniform)
                 scored_contests.append(target["contest"])
                 posterior_trace.append(posterior.copy())
-            if target["draw_type"] == "DE_LAS_TRES" and target["contest"] < first_target_contest:
-                de_las_tres_updates += 1
+                posterior_effective_experts.append(float(1.0 / np.square(posterior).sum()))
+                posterior_uniform_weight.append(float(posterior[0]))
+            if target["draw_type"] == "DE_LAS_TRES":
+                de_las_tres_updates_total += 1
+                if target["contest"] < first_target_contest:
+                    de_las_tres_updates_before_first_target += 1
             logpost += np.log(np.maximum(probabilities, 1e-300))
             maximum = float(logpost.max())
             logpost -= maximum + math.log(float(np.exp(logpost - maximum).sum()))
-        return values, scored_contests, de_las_tres_updates, posterior_trace
+        return values, scored_contests, de_las_tres_updates_total, de_las_tres_updates_before_first_target, posterior_trace, posterior_effective_experts, posterior_uniform_weight
 
     classic = [r for r in labelled if r["draw_type"] == "CLASSIC"]
     if len(classic) <= warmup:
         raise ValueError("insufficient_classic_draws_for_full_mixture")
     first_target = classic[warmup]["contest"]
-    classic_values, classic_targets, classic_de_tres_updates, classic_trace = score_stream(classic, first_target)
-    pooled_values, pooled_targets, pooled_de_tres_updates, pooled_trace = score_stream(labelled, first_target)
+    classic_values, classic_targets, classic_de_tres_total, classic_de_tres_pre, classic_trace, classic_ess, classic_uniform = score_stream(classic, first_target)
+    pooled_values, pooled_targets, pooled_de_tres_total, pooled_de_tres_pre, pooled_trace, pooled_ess, pooled_uniform = score_stream(labelled, first_target)
     if classic_targets != pooled_targets:
         raise ValueError("classic_target_alignment_failure")
 
@@ -362,8 +369,14 @@ def v264_full_mixture_classic_diagnostic(labelled: list[dict], warmup: int = 800
         "pooled_stream_scored_on_same_classic_targets": summary(pooled_values),
         "paired_mean_difference_classic_minus_pooled": sum(a - b for a, b in zip(classic_values, pooled_values)) / len(classic_values),
         "target_alignment_verified": True,
-        "classic_stream_de_las_tres_updates": classic_de_tres_updates,
-        "pooled_stream_de_las_tres_updates": pooled_de_tres_updates,
+        "classic_stream_de_las_tres_updates_total": classic_de_tres_total,
+        "pooled_stream_de_las_tres_updates_total": pooled_de_tres_total,
+        "classic_stream_de_las_tres_updates_before_first_target": classic_de_tres_pre,
+        "pooled_stream_de_las_tres_updates_before_first_target": pooled_de_tres_pre,
+        "classic_posterior_effective_experts_median": float(np.median(classic_ess)),
+        "pooled_posterior_effective_experts_median": float(np.median(pooled_ess)),
+        "classic_uniform_expert_weight_median": float(np.median(classic_uniform)),
+        "pooled_uniform_expert_weight_median": float(np.median(pooled_uniform)),
         "posterior_trace_max_l1_difference_on_classic_targets": max(posterior_l1, default=0.0),
         "posterior_trace_nonzero_difference_targets": sum(x > 1e-12 for x in posterior_l1),
         "classification": "EXPLORATORY_RETROSPECTIVE_NOT_EDGE_EVIDENCE",
