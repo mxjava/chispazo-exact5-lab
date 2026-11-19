@@ -84,3 +84,12 @@ Prioritize primary physical traceability records and robust prospective custody 
 - Current branch remains research-only; PR #8 remains draft/unmerged. V294 and the canonical history remain protected; no writes to main.
 
 - V316 completed successfully on final dedicated workflow [44444654369](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44444654369), commit 6479a6c5aebac4a603c3e883f2c15aff4a145080; artifact ID 14491733775, ZIP SHA-256 f4d293fd765bffe6a218cc1edc6acde8d4063ea79c236b354a2458735338f554. N=7,723 Classic; family=8,140; simulations=1,999; seed=3162026; observed max |z|=3.70796; null 95th percentile=5.85308; Monte Carlo p=0.9995. No rejection, no predictive edge. Full report: docs/V316_IDENTITY_PERSISTENCE_RESULT_20261119.md.
+
+
+## Repository boundary incident — 2026-11-19
+
+- During V316 result publication, one create-file operation omitted the explicit research-branch argument and therefore wrote the result report to the default branch main. This was an operator error.
+- The exact accidental commit `8e0e6ec4aa9811590333510024e7e39e72c1407c` changed only `research/ORIGEN_v0_3/docs/V316_IDENTITY_PERSISTENCE_RESULT_20261119.md`; it did not touch the canonical history, V294, or any other path.
+- The report was immediately deleted from main in remediation commit `424eee9dd906f8235541e97ae61026441083bbfe`; a read of the default-branch path returned NOT_FOUND afterward. The correct report was then created on the research branch at `986429c1f03fd3182a0289a025245592697e005f` and subsequently updated there only.
+- Current tree comparison confirms the canonical history and V294 paths were not touched. Main's tree no longer contains the report. Main history retains the add/delete pair; the research branch is two commits behind main because it does not include those main commits. Do not merge PR #8 until the branch/base relationship is deliberately reconciled and reviewed.
+- This incident is recorded rather than concealed. Continue to pass `branch: research/origen-v0.3-engine-20261118` explicitly on every GitHub create/update operation; verify target branch and compare protected paths after writes.
