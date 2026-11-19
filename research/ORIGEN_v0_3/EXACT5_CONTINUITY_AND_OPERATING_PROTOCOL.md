@@ -148,3 +148,12 @@ Prioritize primary physical traceability records and robust prospective custody 
 - Current protected canonical blob remains `2f5ff5bfbd779fe505736398e417b7211955958e` in both `main` and the research branch. V294 remains frozen. No writes to `main`, no merge, no promotion, no candidate/challenger change.
 
 Classification remains `BLOCKED_PROVENANCE / RESEARCH_ONLY_NO_EDGE`.
+
+
+## Operational update — V320 second-pass adversarial correction (2026-11-19)
+
+- A second reverse-engineering pass found a strict-format gap: Python `datetime.strptime("%Y-%m-%d")` accepts non-zero-padded dates (for example `2026-1-2`). The intake validator now requires an exact four-two-two digit date with a regex before calendar validation. Added the adversarial regression test.
+- Fix commit: `73e6bf44ece2971bedceb58c110a742e0febee16`.
+- Final isolated ORIGEN: runs `44470243887` (push) and `44470250160` (PR), both success, 153 tests passed.
+- Final root CI: run `44470243842` success, 352 passed, 2 skipped, 16 subtests passed; PR run `44470250079` also success.
+- The earlier 152-test run remains recorded as the first pass; the 153-test result supersedes it for current validation. No physical records or predictive edge were produced.
