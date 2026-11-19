@@ -118,6 +118,17 @@ def evaluate_grid(log_lr: np.ndarray, *, windows=(100, 250, 500),
         }
         if len(ll) >= 30:
             summary.update(moving_block_ci(ll, resamples=resamples, seed=seed + i))
+        quartiles = {}
+        labels = ("oldest_quartile", "second_quartile", "third_quartile", "newest_quartile")
+        for q, idx in enumerate(np.array_split(np.arange(len(ll)), 4)):
+            part = ll[idx]
+            quartiles[labels[q]] = {
+                "n": int(len(part)),
+                "mean_log_lift": float(part.mean()),
+                "positive_fraction": float(np.mean(part > 0)),
+                "cumulative_log_lift": float(part.sum()),
+            }
+        summary["chronological_quartiles"] = quartiles
         results[name] = summary
     return {
         "schema": "EXACT5_V323_ADAPTIVE_MIXTURE_GRID_V1",
