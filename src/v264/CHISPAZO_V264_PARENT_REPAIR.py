@@ -2835,6 +2835,10 @@ def consume_previous_snapshot_v248(df: pd.DataFrame, audit: AuditResult, state_d
     manifest = {'schema': int(snap.get('schema', -1)), 'target': int(snap.get('target', -1)), 'history_last': int(snap.get('history_last', -1)), 'history_sha256': str(snap.get('history_sha256', '')), 'fusion_weights': snap.get('fusion_weights', {}), 'allocation': snap.get('allocation', {}), 'portfolio_idx': [int(x) for x in np.asarray(snap.get('portfolio_idx', []), dtype=int).tolist()], 'strategies': sorted(map(str, snap.get('specialist_scores', {}).keys()))}
     manifest_sha = hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
     if str(snap.get('manifest_sha256', '')) != manifest_sha:
+        raise RuntimeError('V249 snapshot guardrail failed: manifest SHA256 mismatch')
+    if snapshot_schema == V249_SNAPSHOT_SCHEMA:
+        _v249_validate_snapshot_universe(snap, UNIVERSE_SIZE)
+    #
         raise RuntimeError('V248 snapshot guardrail failed: manifest SHA256 mismatch')
     rowdf = df[df['CONCURSO'] == prev_target]
     if len(rowdf) != 1:
@@ -2992,6 +2996,17 @@ def _v249_validate_snapshot_integrity(snapshot: Dict[str, object]) -> None:
         raise RuntimeError('V249 snapshot guardrail failed: portfolio_idx must be a 1-D integer vector')
     if len(portfolio_idx) and (np.any(portfolio_idx < 0) or np.any(portfolio_idx >= n) or len(np.unique(portfolio_idx)) != len(portfolio_idx)):
         raise RuntimeError('V249 snapshot guardrail failed: portfolio_idx out of range or duplicated')
+
+def _v249_validate_snapshot_universe(snapshot: Dict[str, object], expected_size: int = UNIVERSE_SIZE) -> None:
+    """Reject self-consistent snapshots whose rank vectors do not span 5/28."""
+    order = np.asarray(snapshot.get('anti_order'))
+    if order.ndim != 1 or len(order) != int(expected_size):
+        actual = len(order) if order.ndim == 1 else 'non-vector'
+        raise RuntimeError(
+            f'V249 snapshot guardrail failed: universe size mismatch; '
+            f'expected {int(expected_size)}, got {actual}'
+        )
+
 
 def _v249_snapshot_manifest(snapshot: Dict[str, object]) -> Dict[str, object]:
     """Canonical V2 manifest: bind score payload and interpretation metadata."""
