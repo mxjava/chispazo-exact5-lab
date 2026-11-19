@@ -100,3 +100,9 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 ### V317 physical-mass mechanism (preregistered; blocked)
 - Added exact unordered Plackett–Luce likelihood for sequential weighted sampling without replacement and tests against all 120 orders plus normalization across all 98,280 five-number sets.
 - Added `PREREGISTRATION_V317_PHYSICAL_MASS_PLACKETT_LUCE.md`. The signed beta must come from independent machine-equivalent physical calibration before any Chispazo outcomes are inspected. No Chispazo physical measurements or beta calibration are currently present; V317 is blocked and produces no picks.
+
+### V318 combinatorial-shape omnibus (frozen replay)
+- Added a preregistered, single max-statistic test over seven fixed result-only shape families: sum, range, odd count, prime count, consecutive-adjacent-pair count, low/high split, and three-band occupancy.
+- Null calibration enumerates all 98,280 five-sets for exact category probabilities and simulates 1,999 complete independent uniform Classic sequences. This tests shape departures not directly covered as a joint family by V313–V316.
+- This is historical falsification only. It cannot recover sphere masses or establish physical bias; no feature/category may be promoted from a rejection without separate prospective validation.
+- See `PREREGISTRATION_V318_COMBINATORIAL_SHAPE_OMNIBUS.md`.
