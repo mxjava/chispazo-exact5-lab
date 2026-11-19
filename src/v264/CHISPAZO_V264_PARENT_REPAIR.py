@@ -2975,6 +2975,15 @@ def _v249_validate_snapshot_integrity(snapshot: Dict[str, object]) -> None:
         raise RuntimeError('V249 snapshot guardrail failed: non-finite score payload')
     if any(not np.all(np.isfinite(v)) for v in snapshot['specialist_scores'].values()):
         raise RuntimeError('V249 snapshot guardrail failed: non-finite specialist score')
+    expected_anti, expected_epsilon = tie_safe_anti_saturation_score_v249(
+        np.asarray(snapshot['fused'], dtype=np.float64),
+        np.asarray(snapshot['tie_signal'], dtype=np.float64),
+    )
+    saved_epsilon = float(snapshot.get('anti_saturation_epsilon', float('nan')))
+    if not np.isfinite(saved_epsilon) or not np.isclose(saved_epsilon, expected_epsilon, rtol=1e-12, atol=0.0):
+        raise RuntimeError('V249 snapshot guardrail failed: anti_saturation_epsilon inconsistent with score inputs')
+    if not np.array_equal(scores, expected_anti):
+        raise RuntimeError('V249 snapshot guardrail failed: anti_saturation_score inconsistent with fused/tie_signal')
     expected_order = np.argsort(-scores, kind='stable').astype(np.int64)
     if not np.array_equal(order.astype(np.int64), expected_order):
         raise RuntimeError('V249 snapshot guardrail failed: anti_order does not match anti_saturation_score')
