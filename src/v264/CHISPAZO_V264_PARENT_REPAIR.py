@@ -2962,8 +2962,16 @@ def _v249_validate_snapshot_integrity(snapshot: Dict[str, object]) -> None:
     expected_ranks[order.astype(np.int64)]=np.arange(1,n+1,dtype=np.int64)
     if not np.array_equal(ranks.astype(np.int64),expected_ranks):
         raise RuntimeError('V249 snapshot guardrail failed: anti_order/anti_rank mismatch')
-    if not np.all(np.isfinite(scores)):
-        raise RuntimeError('V249 snapshot guardrail failed: non-finite anti score')
+    if scores.dtype != np.dtype('float64') or np.asarray(snapshot['fused']).dtype != np.dtype('float64') or np.asarray(snapshot['tie_signal']).dtype != np.dtype('float64'):
+        raise RuntimeError('V249 snapshot guardrail failed: v2 score arrays must be float64')
+    if any(np.asarray(v).dtype != np.dtype('float64') for v in snapshot['specialist_scores'].values()):
+        raise RuntimeError('V249 snapshot guardrail failed: specialist scores must be float64')
+    if np.asarray(snapshot['portfolio_idx']).dtype != np.dtype('int32') or order.dtype != np.dtype('int32') or ranks.dtype != np.dtype('int32'):
+        raise RuntimeError('V249 snapshot guardrail failed: v2 index arrays must be int32')
+    if not np.all(np.isfinite(scores)) or not np.all(np.isfinite(snapshot['fused'])) or not np.all(np.isfinite(snapshot['tie_signal'])):
+        raise RuntimeError('V249 snapshot guardrail failed: non-finite score payload')
+    if any(not np.all(np.isfinite(v)) for v in snapshot['specialist_scores'].values()):
+        raise RuntimeError('V249 snapshot guardrail failed: non-finite specialist score')
     expected_order = np.argsort(-scores, kind='stable').astype(np.int64)
     if not np.array_equal(order.astype(np.int64), expected_order):
         raise RuntimeError('V249 snapshot guardrail failed: anti_order does not match anti_saturation_score')
@@ -3643,7 +3651,7 @@ def consume_previous_snapshot_v249(df: pd.DataFrame, audit: AuditResult, state_d
         'portfolio_idx': [int(x) for x in np.asarray(snap.get('portfolio_idx', []), dtype=int).tolist()],
         'coverage_config': snap.get('coverage_config', {}), 'strategies': sorted(map(str, snap.get('specialist_scores', {}).keys())),
     }
-    if snapshot_schema >= V249_SNAPSHOT_SCHEMA:
+    if snapshot_schema == V249_SNAPSHOT_SCHEMA:
         manifest['score_payload_sha256'] = str(snap.get('score_payload_sha256', ''))
         _v249_validate_snapshot_integrity(snap)
     elif snapshot_schema != V249_STATE_SCHEMA:
@@ -3680,7 +3688,7 @@ def consume_previous_snapshot_v249(df: pd.DataFrame, audit: AuditResult, state_d
             abl = pd.concat([abl, pd.DataFrame(new_meta)], ignore_index=True)
         fdec = state.get('fusion_detail'); fdec = fdec.copy() if isinstance(fdec, pd.DataFrame) else pd.DataFrame()
         fts = tie_rank_stats_v248(fused, ti, lines)
-        if snapshot_schema >= V249_SNAPSHOT_SCHEMA:
+        if snapshot_schema == V249_SNAPSHOT_SCHEMA:
             ftop = np.asarray(snap['anti_order'], dtype=np.int32)[:lines]
             fusion_exact_rank = int(np.asarray(snap['anti_rank'], dtype=np.int32)[ti])
         else:
