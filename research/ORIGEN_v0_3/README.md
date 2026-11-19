@@ -108,3 +108,8 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 - See `PREREGISTRATION_V318_COMBINATORIAL_SHAPE_OMNIBUS.md`.
 
 - V318 completed with 140 tests passing and canonical replay success. Its global max-statistic was 2.7721 versus null 95th percentile 4.4837; Monte Carlo p=0.7855 (1,570/1,999 null replicates at least as extreme). Decision: `NO_REJECTION`. See `docs/V318_COMBINATORIAL_SHAPE_RESULT_20261119.md`.
+
+### V319 fixed-era contrast (frozen replay)
+- Adds one fixed pre/post contrast at 2022-03-10, inherited from the existing V265 regime boundary (not a verified machine identity). It compares number, pair and all V318 shape-category proportions under a single global Monte Carlo max-statistic.
+- The question is whether the result distribution differs across this historical boundary; any rejection is historical only and cannot be attributed to a machine or sphere set without equipment records.
+- See `PREREGISTRATION_V319_FIXED_ERA_CONTRAST.md`.
