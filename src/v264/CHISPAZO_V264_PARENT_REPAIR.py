@@ -2983,6 +2983,29 @@ def _v249_validate_snapshot_integrity(snapshot: Dict[str, object]) -> None:
         raise RuntimeError('V249 snapshot guardrail failed: portfolio_idx must be a 1-D integer vector')
     if len(portfolio_idx) and (np.any(portfolio_idx < 0) or np.any(portfolio_idx >= n) or len(np.unique(portfolio_idx)) != len(portfolio_idx)):
         raise RuntimeError('V249 snapshot guardrail failed: portfolio_idx out of range or duplicated')
+
+def _v249_snapshot_manifest(snapshot: Dict[str, object]) -> Dict[str, object]:
+    """Canonical V2 manifest: bind score payload and interpretation metadata."""
+    return {
+        'schema': int(snapshot.get('schema', -1)),
+        'target': int(snapshot.get('target', -1)),
+        'history_last': int(snapshot.get('history_last', -1)),
+        'history_sha256': str(snapshot.get('history_sha256', '')),
+        'fusion_weights': snapshot.get('fusion_weights', {}),
+        'allocation': snapshot.get('allocation', {}),
+        'portfolio_idx': [int(x) for x in np.asarray(snapshot.get('portfolio_idx', []), dtype=int).tolist()],
+        'coverage_config': snapshot.get('coverage_config', {}),
+        'strategies': sorted(map(str, snapshot.get('specialist_scores', {}).keys())),
+        'score_payload_sha256': str(snapshot.get('score_payload_sha256', '')),
+        'tie_signal_name': str(snapshot.get('tie_signal_name', '')),
+        'anti_saturation_epsilon': float(snapshot.get('anti_saturation_epsilon', 0.0)),
+        'fusion_state': str(snapshot.get('fusion_state', 'unknown')),
+        'allocation_state': str(snapshot.get('allocation_state', 'unknown')),
+        'trained_at': int(snapshot.get('trained_at', -1)),
+        'created_at': str(snapshot.get('created_at', '')),
+    }
+
+
 V249_UNCLIPPED_HEURISTIC = '_heuristic_unclipped_v249'
 
 @dataclass(frozen=True)
@@ -3648,16 +3671,18 @@ def consume_previous_snapshot_v249(df: pd.DataFrame, audit: AuditResult, state_d
     if int(snap.get('target', -1)) != prev_target or int(snap.get('history_last', -1)) != prev_target - 1:
         raise RuntimeError('V249 snapshot guardrail failed: target/history_last mismatch')
     snapshot_schema = int(snap.get('schema', -1))
-    manifest = {
-        'schema': snapshot_schema, 'target': int(snap.get('target', -1)), 'history_last': int(snap.get('history_last', -1)),
-        'history_sha256': str(snap.get('history_sha256', '')), 'fusion_weights': snap.get('fusion_weights', {}), 'allocation': snap.get('allocation', {}),
-        'portfolio_idx': [int(x) for x in np.asarray(snap.get('portfolio_idx', []), dtype=int).tolist()],
-        'coverage_config': snap.get('coverage_config', {}), 'strategies': sorted(map(str, snap.get('specialist_scores', {}).keys())),
-    }
     if snapshot_schema == V249_SNAPSHOT_SCHEMA:
-        manifest['score_payload_sha256'] = str(snap.get('score_payload_sha256', ''))
         _v249_validate_snapshot_integrity(snap)
-    elif snapshot_schema != V249_STATE_SCHEMA:
+        manifest = _v249_snapshot_manifest(snap)
+    elif snapshot_schema == V249_STATE_SCHEMA:
+        # Preserve the exact legacy V1 manifest contract for backward compatibility.
+        manifest = {
+            'schema': snapshot_schema, 'target': int(snap.get('target', -1)), 'history_last': int(snap.get('history_last', -1)),
+            'history_sha256': str(snap.get('history_sha256', '')), 'fusion_weights': snap.get('fusion_weights', {}), 'allocation': snap.get('allocation', {}),
+            'portfolio_idx': [int(x) for x in np.asarray(snap.get('portfolio_idx', []), dtype=int).tolist()],
+            'coverage_config': snap.get('coverage_config', {}), 'strategies': sorted(map(str, snap.get('specialist_scores', {}).keys())),
+        }
+    else:
         raise RuntimeError(f'V249 snapshot guardrail failed: unsupported snapshot schema {snapshot_schema}')
     manifest_sha = hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
     if str(snap.get('manifest_sha256', '')) != manifest_sha:
@@ -3746,7 +3771,7 @@ def save_current_snapshot_v249(state_dir: Path, target: int, audit: AuditResult,
     snap = dict(production_snapshot)
     snap.update({'schema': V249_SNAPSHOT_SCHEMA, 'target': int(target), 'history_last': int(audit.max_concurso), 'history_sha256': str(audit.sha256), 'created_at': time.strftime('%Y-%m-%d %H:%M:%S'), 'fusion_state': prod_gate.get('fusion_state', 'unknown'), 'allocation_state': prod_gate.get('allocation_detail', {}).get('state', 'unknown'), 'trained_at': int(audit.max_concurso)})
     snap['score_payload_sha256'] = _v249_numeric_payload_sha256(snap)
-    manifest = {'schema': V249_SNAPSHOT_SCHEMA, 'target': int(target), 'history_last': int(audit.max_concurso), 'history_sha256': str(audit.sha256), 'fusion_weights': snap.get('fusion_weights', {}), 'allocation': snap.get('allocation', {}), 'portfolio_idx': [int(x) for x in np.asarray(snap.get('portfolio_idx', []), dtype=int).tolist()], 'coverage_config': snap.get('coverage_config', {}), 'strategies': sorted(map(str, snap.get('specialist_scores', {}).keys())), 'score_payload_sha256': snap['score_payload_sha256']}
+    manifest = _v249_snapshot_manifest(snap)
     snap['manifest_sha256'] = hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
     _atomic_joblib_dump(snap, sp, compress=3)
     return sp
