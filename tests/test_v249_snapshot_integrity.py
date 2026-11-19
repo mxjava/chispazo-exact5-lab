@@ -8,7 +8,7 @@ from src.v264.CHISPAZO_V264_PARENT_REPAIR import (
 
 
 def _payload():
-    order = np.array([2, 0, 1], dtype=np.int32)
+    order = np.array([2, 1, 0], dtype=np.int32)
     rank = np.empty(3, dtype=np.int32)
     rank[order] = np.arange(1, 4, dtype=np.int32)
     return {
