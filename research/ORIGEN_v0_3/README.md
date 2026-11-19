@@ -115,3 +115,5 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 - See `PREREGISTRATION_V319_FIXED_ERA_CONTRAST.md`.
 
 - V312 full fixed 27-expert static mixture replay completed successfully: 6,923 Classic targets, mean log-lift -0.0262296890 nats, cumulative -181.5881, positive fraction 36.07%. It underperformed uniform; see `docs/V312_STATIC_MIXTURE_RESULT_20261119.md`.
+
+- V319 completed: 6,075 Classic draws before 2022-03-10 and 1,648 on/after. Global 590-category max-statistic p=0.1820 (363/1,999 null replicates >= observed); no era difference detected. This does not identify or establish a machine change. See `docs/V319_FIXED_ERA_CONTRAST_RESULT_20261119.md`.
