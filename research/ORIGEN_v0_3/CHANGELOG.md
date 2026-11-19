@@ -55,3 +55,8 @@
 ### V312 full static mixture result (2026-11-19)
 - Canonical Classic-only replay completed successfully (run 44446737614): 7,723 draws, 800 warm-up, 6,923 scored targets.
 - Mean log-lift -0.0262296890 nats; cumulative -181.5881; positive fraction 36.07%. Candidate underperformed uniform; no edge.
+
+### V319 result (2026-11-19)
+- 146 tests passed; full fixed-era replay and artifact upload succeeded (run 44447156133).
+- Era A n=6,075; era B n=1,648; global max z=4.3320; null q95=6.8491; Monte Carlo p=0.1820. `NO_ERA_DIFFERENCE_DETECTED`.
+- No causal equipment attribution or predictive signal.
