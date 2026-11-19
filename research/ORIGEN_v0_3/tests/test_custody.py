@@ -145,6 +145,21 @@ class CustodyTests(unittest.TestCase):
             (True, "verified 2 ordered custody records"),
         )
 
+    def test_external_head_anchor_detects_deleted_tail(self):
+        first, raw1 = self.make_record()
+        second, raw2 = self.make_record(
+            target_contest_id=12251, history_max_contest_id=12250,
+            previous_record_sha256=first["record_sha256"],
+            generated_at_utc="2026-11-20T18:01:00Z",
+            received_at_utc="2026-11-20T18:02:00Z",
+            official_draw_close_at_utc="2026-11-20T19:00:00Z",
+        )
+        ok, reason = verify_record_chain(
+            [first], {12250: raw1}, expected_final_hash=second["record_sha256"]
+        )
+        self.assertFalse(ok)
+        self.assertIn("tail truncation", reason)
+
     def test_chain_detects_deleted_middle_record(self):
         first, raw1 = self.make_record()
         second, raw2 = self.make_record(
