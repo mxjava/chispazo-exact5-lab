@@ -1,0 +1,38 @@
+{
+  "schema_version": "exact5.official_procedure_evidence.v1",
+  "captured_at_local": "2026-11-19T07:52:47-06:00",
+  "source_url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+  "normateca_url": "https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+  "document": {
+    "code": "SGVO-PRO-05",
+    "title": "PROCEDIMIENTO SORTEOS ELECTRÓNICOS",
+    "type": "PUBLICO",
+    "revision": 39,
+    "publication_date": "2026-03-20",
+    "emitting_area": "SUBDIRECCIÓN GENERAL DE VENTAS Y OPERACIONES",
+    "pages": 38
+  },
+  "verified_provisions": [
+    {"reference": "policy_6", "pdf_lines": [204, 209], "claim": "Weighing is performed for each draw; Smartballs 4.25-5.25 g with max spread 0.30 g; Ping Pong 2.30-3.00 g with max spread 0.15 g; nonconforming case is replaced and reweighed."},
+    {"reference": "activity_5_1", "pdf_lines": [550, 559], "claim": "Each sphere is weighed one by one in numerical order in presence of SEGOB inspector and LN representatives."},
+    {"reference": "activities_5_4_5_5", "pdf_lines": [603, 615], "claim": "Weighing strip is signed, reviewed/rubricated by specified representatives, and attached to the corresponding draw act."},
+    {"reference": "policy_11", "pdf_lines": [251, 252], "claim": "Draw act records place, date, time, roles/signatures of LN representatives and SEGOB inspector, results and incidents."},
+    {"reference": "policy_11_record_matrix", "pdf_lines": [280, 288], "claim": "TIRA DE PESAJE is listed as a record for Chispazo."},
+    {"reference": "quality_plan_cs11", "pdf_lines": [1236, 1249], "claim": "CS-11 check includes date, draw number, case number, sphere-versus-number correspondence and participants."},
+    {"reference": "glossary_tira_de_pesaje", "pdf_lines": [1569, 1571], "claim": "Tira records each sphere weight and the responsible/representative/SEGOB signatures."}
+  ],
+  "source_capture": {
+    "web_pdf_text_opened": true,
+    "raw_pdf_bytes_downloaded": false,
+    "raw_pdf_sha256": "NOT_CAPTURED",
+    "forensic_custody": false
+  },
+  "research_implication": {
+    "physical_records_exist_as_required_operational_artifacts": true,
+    "actual_measurements_received": false,
+    "sphere_number_mapping_received": false,
+    "independent_beta_calibration_received": false,
+    "v317_empirical_test": "BLOCKED_PROVENANCE",
+    "predictive_edge": false
+  }
+}
