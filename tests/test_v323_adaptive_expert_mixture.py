@@ -73,3 +73,22 @@ def test_mixture_log_lift_matches_weighted_expert_likelihoods():
     assert np.isclose(ll[0], np.log(1.5))
     expected_second = np.log(np.dot(weights[1], np.exp(x[1])))
     assert np.isclose(ll[1], expected_second)
+
+
+def test_sign_metrics_ignore_floating_point_noise_and_report_uniform_baseline():
+    x = np.zeros((40, 2))
+    x[:, 1] = -1e-14
+    report = evaluate_grid(x, windows=(10,), temperatures=(0.5,), resamples=100)
+    assert report["uniform_reference"]["mean_log_lift"] == 0.0
+    for candidate in report["candidates"].values():
+        assert candidate["positive_fraction"] == 0.0
+        assert candidate["negative_fraction"] == 0.0
+        assert candidate["numerical_zero_fraction"] == 1.0
+
+
+def test_circular_bootstrap_truncates_replicates_to_original_length():
+    from src.v323.adaptive_expert_mixture import moving_block_ci
+    x = np.arange(31, dtype=float)
+    result = moving_block_ci(x, block_length=10, resamples=100, seed=5)
+    assert result["bootstrap_method"] == "circular_moving_block_truncated_to_n"
+    assert result["ci95_low"] <= result["ci95_high"]
