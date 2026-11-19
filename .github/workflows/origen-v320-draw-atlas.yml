@@ -1,0 +1,42 @@
+name: ORIGEN V320 historical draw atlas
+on:
+  push:
+    paths:
+      - "research/ORIGEN_v0_3/src/origen/v320_draw_atlas.py"
+      - "research/ORIGEN_v0_3/tests/test_v320_draw_atlas.py"
+      - "research/ORIGEN_v0_3/src/origen/exact5_modalities.py"
+      - "data/history/Chispazo_through_12249.csv"
+      - ".github/workflows/origen-v320-draw-atlas.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v320:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install numerical runtime
+        run: python -m pip install numpy
+      - name: Run V320 tests
+        env:
+          PYTHONPATH: research/ORIGEN_v0_3/src
+        run: python -m unittest research/ORIGEN_v0_3/tests/test_v320_draw_atlas.py -v
+      - name: Build complete Classic historical atlas
+        env:
+          PYTHONPATH: research/ORIGEN_v0_3/src
+        run: >-
+          python -m origen.v320_draw_atlas
+          --history data/history/Chispazo_through_12249.csv
+          --out /tmp/exact5-v320
+          --expected-sha256 5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a
+      - name: Upload V320 atlas and manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: exact5-v320-historical-draw-atlas
+          path: |
+            /tmp/exact5-v320/v320_classic_draw_atlas.csv
+            /tmp/exact5-v320/v320_atlas_manifest.json
+          if-no-files-found: error
