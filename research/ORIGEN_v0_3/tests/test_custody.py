@@ -92,6 +92,10 @@ class CustodyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exactly target"):
             self.make_record(history_max_contest_id=12250)
 
+    def test_boolean_history_cutoff_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "integer exactly"):
+            self.make_record(history_max_contest_id=True)
+
     def test_wrong_chain_link_rejected(self):
         record, raw = self.make_record()
         ok, reason = verify_seal_record(record, raw, expected_previous="e" * 64)
@@ -120,7 +124,7 @@ class CustodyTests(unittest.TestCase):
             self.make_record(generated_at_utc="2026-11-20T11:00:00-06:00")
 
     def test_invalid_numbers_rejected(self):
-        raw = portfolio_bytes().replace(b"01-", b"29-", 1)
+        raw = portfolio_bytes().replace(b"02-", b"29-", 1)
         with self.assertRaises(ValueError):
             self.make_record(portfolio=raw)
 
