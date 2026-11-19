@@ -122,3 +122,31 @@ def enumerate_set_log_probabilities(
         tuple(index + 1 for index in subset): probability
         for subset, probability in dp.items() if len(subset) == draw_size
     }
+
+
+def prequential_e_process(log_likelihood_ratios: Sequence[float]) -> dict[str, object]:
+    """Accumulate log(q_model/q_uniform) and Ville's anytime-valid p-value.
+
+    Inputs must be generated in chronological order from features frozen before
+    each corresponding draw close. This function does not verify that provenance.
+    """
+    cumulative = 0.0
+    log_e_values: list[float] = []
+    for index, value in enumerate(log_likelihood_ratios, start=1):
+        increment = float(value)
+        if not math.isfinite(increment):
+            raise ValueError(f"log likelihood ratio {index} must be finite")
+        cumulative += increment
+        if not math.isfinite(cumulative):
+            raise ValueError("cumulative log e-value overflowed")
+        log_e_values.append(cumulative)
+    maximum = max([0.0, *log_e_values])
+    anytime_p = math.exp(-maximum) if maximum < 746 else 0.0
+    return {
+        "n_observations": len(log_e_values),
+        "log_e_values": log_e_values,
+        "final_log_e_value": cumulative,
+        "maximum_log_e_value": maximum,
+        "anytime_p_value": min(1.0, anytime_p),
+        "threshold_20_crossed": maximum >= math.log(20.0),
+    }
