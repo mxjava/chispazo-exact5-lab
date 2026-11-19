@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import joblib
 
 from src.v264.CHISPAZO_V264_PARENT_REPAIR import (
     _v249_numeric_payload_sha256,
@@ -111,3 +112,16 @@ def test_v249_snapshot_integrity_rejects_misaligned_specialist_vector():
     payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
     with pytest.raises(RuntimeError, match='score vector shapes do not match universe'):
         _v249_validate_snapshot_integrity(payload)
+
+
+
+def test_v249_snapshot_integrity_survives_joblib_roundtrip(tmp_path):
+    payload = _payload()
+    payload['score_payload_sha256'] = _v249_numeric_payload_sha256(payload)
+    path = tmp_path / 'v249_snapshot.joblib'
+    joblib.dump(payload, path, compress=3)
+    restored = joblib.load(path)
+    _v249_validate_snapshot_integrity(restored)
+    assert restored['score_payload_sha256'] == payload['score_payload_sha256']
+    assert np.array_equal(restored['anti_order'], payload['anti_order'])
+    assert np.array_equal(restored['anti_rank'], payload['anti_rank'])
