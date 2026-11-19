@@ -20,3 +20,10 @@
 - No change to V294, canonical history, or main; PR remains draft and unmerged.
 
 - Completed frozen V316: 7,723 Classic draws, 8,140-cell maximum family, 1,999 simulations, seed 3162026; observed max |z|=3.70796 vs null 95th percentile 5.85308, Monte Carlo p=0.9995. No rejection and no predictive edge. Report: docs/V316_IDENTITY_PERSISTENCE_RESULT_20261119.md.
+
+## Physical intake validator v1 (2026-11-19)
+- Added a long-form physical evidence template with one row per physical sphere and contest; header-only, no fabricated data.
+- Added strict validator for 28-sphere completeness, unique physical IDs, exact 1–28 mapping, pre-close timestamps, calibration coverage, units, positive finite mass/resolution, SHA-256-shaped provenance identifiers and within-contest consistency.
+- Quarantine labels are explicit; validator does not repair data or estimate bias.
+- Added CLI: `origen validate-physical --file <csv>`.
+- Added 13 adversarial intake tests. Awaiting final GitHub Actions result on the latest branch head.
