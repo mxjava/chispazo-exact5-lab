@@ -1,0 +1,162 @@
+{
+  "run_id": "RUN129",
+  "captured_at": "2026-11-20T04:58:13-06:00",
+  "timezone": "America/Mexico_City",
+  "artifact_type": "status_only_official_schedule_provenance_and_v317_contract_audit",
+  "scope": {
+    "read_only_analysis": true,
+    "no_predictive_scoring": true,
+    "no_historical_replay": true,
+    "no_challenger_changes": true,
+    "no_canonical_history_writes": true,
+    "no_main_writes": true,
+    "no_promotion": true
+  },
+  "official_status": {
+    "latest_dedicated_chispazo_result": {
+      "contest": 12384,
+      "date": "2026-11-19",
+      "modality": "Clásico",
+      "numbers": [1, 2, 9, 21, 25],
+      "winners": {"5_of_5": 1, "4_of_5": 216, "3_of_5": 5675, "2_of_5": 44074},
+      "total_winners": 49966,
+      "source_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "source_search_ref": "turn585871search1"
+    },
+    "mask_index": {
+      "latest_listed_date": "2026-11-19",
+      "2026-11-20_mask_listed": false,
+      "source_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "source_search_ref": "turn585871search9"
+    },
+    "next_announced_draw": {
+      "contest": 12385,
+      "date": "2026-11-20",
+      "time_local": "15:00",
+      "modality": "De las Tres",
+      "status": "ANNOUNCED_BY_DIRECT_COMMERCIALIZER_HOME_PAGE",
+      "source_url": "https://comercializadores.loterianacional.gob.mx/",
+      "source_search_ref": "turn585871search3"
+    },
+    "official_daily_schedule": {
+      "de_las_tres": "15:00",
+      "clasico": "21:00",
+      "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "source_search_ref": "turn585871search0"
+    },
+    "classic_2026_11_20": {
+      "scheduled_time_local": "21:00",
+      "contest_id": null,
+      "status": "ID_NOT_YET_IDENTIFIED",
+      "inference_prohibited": "Do not infer the contest ID from parity or sequence."
+    },
+    "endpoint_discrepancy": {
+      "general_results_page": "The general results index still displays 2026-11-19 and shows the 12384 number field as blank in its extraction.",
+      "dedicated_results_page": "The dedicated Chispazo results page explicitly displays 12384 = 01 02 09 21 25.",
+      "resolution": "Use the dedicated result page for the combination and retain the general-index discrepancy as a stale/incomplete endpoint observation.",
+      "general_results_url": "https://www.loterianacional.gob.mx/Home/Resultados/",
+      "general_results_search_ref": "turn585871search5"
+    },
+    "capture_timing": "Captured before the 15:00 draw; absence of a 2026-11-20 result or mask is expected at this capture time."
+  },
+  "v317_contract_audit": {
+    "classification": "MODEL_IMPLEMENTATION_DEFECT",
+    "source_branch": "research/run123-official-timing-audit-20261120",
+    "source_commit": "6e389cc17cdf556612a9753c6a8687b5da44ded5",
+    "files": {
+      "physical_intake_py": {
+        "path": "research/ORIGEN_v0_3/src/origen/physical_intake.py",
+        "blob": "dcfe7bf332f67daab153512104ad33e3d7086422",
+        "relevant_lines": [109, 111, 118],
+        "finding": "The validator checks local calendar date and requires assigned, measured and mapped timestamps to precede the caller-supplied draw_close_at. It does not bind that timestamp to the official modality schedule or an authenticated SICAL close event."
+      },
+      "test_physical_intake_py": {
+        "path": "research/ORIGEN_v0_3/tests/test_physical_intake.py",
+        "blob": "07e3e3e3c4d4668acd9da83b84a9ee6bfc05eb5c",
+        "relevant_lines": [19, 43],
+        "finding": "The positive fixture declares modality CLASSIC with draw_close_at 19:00 and expects the record to be accepted. Official schedule is 21:00."
+      },
+      "v317_preregistration": {
+        "path": "research/ORIGEN_v0_3/PREREGISTRATION_V317_PHYSICAL_MASS_PLACKETT_LUCE.md",
+        "blob": "3e09df57c021fd1a4f6f964d04265efaba325a61",
+        "finding": "V317 requires authenticated masses and mappings strictly before the same contest's sales close, plus independent beta calibration."
+      }
+    },
+    "required_controls_not_implemented": [
+      "Bind TRES to 15:00 and CLASSIC to 21:00 local time, with documented authorized exceptions.",
+      "Require immutable SICAL close-event evidence and verify its contest, modality, date, time, source and hash.",
+      "Reject caller-supplied close timestamps that do not match the authenticated close event.",
+      "Add negative tests for CLASSIC 19:00 and TRES 21:00 and positive tests for the published schedule and documented exceptions."
+    ],
+    "operational_timing_conflict": {
+      "official_procedure": "SGVO-PRO-05 revision 39",
+      "sequence": "The procedure confirms the intended sphere case before sales close, then weighs spheres after the SICAL close. A failed weight check may trigger a case change and another weigh.",
+      "implication": "Same-contest measured masses are not available before the same-contest close under the published sequence. The V317 same-contest pre-close mass feature is operationally blocked unless official records prove a different authorized sequence.",
+      "lagged_measurement_hypothesis": "Prior-contest measurements may be studied only if stable physical sphere IDs, number mapping, case identity, machine/feeder identity, no remapping/replacement and pre-close availability for the target contest are independently established. This is a separate preregistered hypothesis, not a V317 repair."
+    },
+    "execution_status": {
+      "static_source_review": true,
+      "pytest_executed": false,
+      "local_repository_execution": false,
+      "prospective_scoring": false,
+      "real_physical_records_received": false,
+      "independent_beta_calibration_received": false
+    }
+  },
+  "run121_recovery": {
+    "cross_component_branch": {
+      "name": "research/run121-cross-component-verifier-20261119",
+      "head": "62972dd94360b29e07be66193c687bc2f8e13f3a",
+      "workflow_runs": [],
+      "commit_statuses": [],
+      "required_source_files_present": false
+    },
+    "integrated_gate_branch": {
+      "name": "research/run121-integrated-gate-20261119",
+      "head": "62f041a6ff27bc4a9a22f705eb3458b5f09a5191",
+      "workflow_runs": [],
+      "commit_statuses": [],
+      "required_source_files_present": false
+    },
+    "missing_exact_package_components": [
+      "src/origen/pmf_custody.py",
+      "src/origen/target_ledger.py",
+      "src/origen/run_verifier.py",
+      "tests/test_pmf_custody.py",
+      "tests/test_target_ledger.py",
+      "tests/test_run_verifier.py",
+      "the exact ZIP whose declared SHA-256 is db24189fcbe0d5fe50db3292afd3bda3e9d17f700dc9110c46e97306ae1cfce2"
+    ],
+    "manifest_claim": "RUN121_PACKAGE_MANIFEST.json declares code_committed_to_github_branch=false and synthetic_fixtures_only=true.",
+    "conclusion": "The reported 62 tests cannot be independently rerun from the repository branches inspected. Do not reconstruct substitute code or claim those tests were rerun."
+  },
+  "integrity": {
+    "main_head": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "research_branch_head_before_run129": "6e389cc17cdf556612a9753c6a8687b5da44ded5",
+    "canonical_history_path": "data/history/Chispazo_through_12249.csv",
+    "main_blob": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "research_branch_blob": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_recomputed_from_bytes": false,
+    "v294": "FROZEN",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "github_main_write": false,
+    "merge_or_promotion": false,
+    "challenger_change": false,
+    "canonical_history_write": false
+  },
+  "scientific_classification": {
+    "v317_close_time_contract": "MODEL_IMPLEMENTATION_DEFECT",
+    "physical_evidence": "BLOCKED_PROVENANCE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "real_oos_targets_scored": 0,
+    "edge_supported_gates_satisfied": false
+  },
+  "next_valid_actions": [
+    "After 2026-11-20 15:00 America/Mexico_City, refresh dedicated results and official mask index for contest 12385; accept only explicit contest/date/modality/numbers.",
+    "After 2026-11-20 21:00 America/Mexico_City, refresh dedicated results and mask index; do not infer the Classic contest ID.",
+    "Keep V294 and canonical history untouched.",
+    "Do not use V317 same-contest masses until its close-time contract is bound to authenticated SICAL evidence and the official operational timing conflict is resolved.",
+    "Recover the exact Run121 ZIP and source modules before any test rerun or integration."
+  ]
+}
