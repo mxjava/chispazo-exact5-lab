@@ -16,13 +16,13 @@ from typing import Any, Iterable, Mapping
 
 V2_REQUIRED_COLUMNS = (
     "source_contest_id", "target_contest_id", "contest_id", "draw_date",
-    "modality", "draw_close_at", "target_draw_close_at", "sphere_set_id",
+    "modality", "draw_close_at", "target_draw_close_at", "target_draw_at", "sphere_set_id",
     "set_assigned_at", "sphere_type", "machine_id", "machine_model",
     "sphere_id", "printed_number", "mass_value", "mass_unit", "measurement_at",
     "measurement_resolution", "scale_id", "calibration_valid_from",
     "calibration_valid_to", "calibration_certificate_sha256",
     "mapping_valid_from", "mapping_valid_to", "draw_at",
-    "source_document_sha256", "source_document_ref", "source_signed_at",
+    "source_draw_at", "source_document_sha256", "source_document_ref", "source_signed_at",
     "source_signer_id", "source_signature_ref", "evidence_available_at",
     "custody_received_at", "custodian_id", "custodian_role",
     "custody_receipt_ref", "custody_receipt_sha256", "trusted_timestamp_ref",
@@ -102,11 +102,12 @@ def evaluate_temporal_eligibility(
                 received = _parse_time(row["custody_received_at"], "custody_received_at")
                 measurement = _parse_time(row["measurement_at"], "measurement_at")
                 source_close = _parse_time(row["draw_close_at"], "draw_close_at")
-                source_draw = _parse_time(row["draw_at"], "draw_at")
+                source_draw = _parse_time(row["source_draw_at"], "source_draw_at")
+                target_draw = _parse_time(row["target_draw_at"], "target_draw_at")
                 assignment = _parse_time(row["set_assigned_at"], "set_assigned_at")
                 signed = _parse_time(row["source_signed_at"], "source_signed_at")
                 closes.add(close)
-                target_draws.add(_parse_time(row["draw_at"], "draw_at"))
+                target_draws.add(target_draw)
                 assignments.add(assignment)
                 source_closes.add(source_close)
                 sphere_types.add(str(row["sphere_type"]).strip())
@@ -137,7 +138,6 @@ def evaluate_temporal_eligibility(
                 mapping_end = _parse_time(row["mapping_valid_to"], "mapping_valid_to")
                 calibration_start = _parse_time(row["calibration_valid_from"], "calibration_valid_from")
                 calibration_end = _parse_time(row["calibration_valid_to"], "calibration_valid_to")
-                target_draw = _parse_time(row["draw_at"], "draw_at")
                 if mapping_start >= mapping_end or not (mapping_start <= assignment <= target_draw <= mapping_end):
                     reasons.add("MAPPING_NOT_VALID_AT_TARGET_DRAW")
                 if calibration_start >= calibration_end or not (calibration_start <= measurement <= calibration_end):
@@ -146,10 +146,12 @@ def evaluate_temporal_eligibility(
                     reasons.add("EVIDENCE_NOT_AVAILABLE_PRE_CLOSE")
                 if source_draw < source_close:
                     reasons.add("SOURCE_DRAW_PRECEDES_SOURCE_CLOSE")
-                if not (assignment <= source_close <= source_draw <= measurement <= available <= received < close):
+                if measurement < source_close:
+                    reasons.add("MEASUREMENT_PRECEDES_SOURCE_CLOSE")
+                if measurement > source_draw:
+                    reasons.add("MEASUREMENT_AFTER_SOURCE_DRAW")
+                if not (assignment <= source_close <= measurement <= source_draw <= available <= received < close):
                     reasons.add("BROKEN_EVIDENCE_TEMPORAL_ORDER")
-                if measurement < source_draw:
-                    reasons.add("MEASUREMENT_PRECEDES_SOURCE_DRAW")
                 if signed > available:
                     reasons.add("SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE")
                 try:
@@ -177,7 +179,7 @@ def evaluate_temporal_eligibility(
                 reasons.add("INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE")
         if len(closes) != 1:
             reasons.add("TARGET_CLOSE_CONFLICT")
-        if len(target_draws) != 1 or (closes and target_draws and next(iter(target_draws)) >= next(iter(closes))):
+        if len(target_draws) != 1 or (closes and target_draws and next(iter(target_draws)) < next(iter(closes)):
             reasons.add("TARGET_DRAW_TIME_CONFLICT")
         if len(assignments) != 1 or len(source_closes) != 1:
             reasons.add("SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT")
@@ -221,8 +223,8 @@ def evaluate_temporal_eligibility(
             "PHYSICAL_CONTINUITY_NOT_VERIFIED", "SOURCE_CONTEST_CONFLICT",
             "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", "PHYSICAL_SET_OR_MACHINE_CONFLICT",
             "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC",
-            "BROKEN_EVIDENCE_TEMPORAL_ORDER", "MEASUREMENT_PRECEDES_SOURCE_DRAW",
-            "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
+            "BROKEN_EVIDENCE_TEMPORAL_ORDER", "MEASUREMENT_PRECEDES_SOURCE_CLOSE",
+            "MEASUREMENT_AFTER_SOURCE_DRAW", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
             "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
             "EVIDENCE_DOCUMENT_SET_CONFLICT"
         )):

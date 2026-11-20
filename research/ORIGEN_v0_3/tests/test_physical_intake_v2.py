@@ -15,20 +15,21 @@ def rows_for_target(available="2026-11-20T21:15:00-06:00",
             "source_contest_id": "12300", "target_contest_id": "12301",
             "contest_id": "12300", "draw_date": "2026-11-20",
             "modality": "CLASSIC",
-            "draw_close_at": "2026-11-20T19:00:00-06:00",
+            "draw_close_at": "2026-11-20T20:45:00-06:00",
             "target_draw_close_at": "2026-11-21T19:00:00-06:00",
             "sphere_set_id": "SET-A", "set_assigned_at": "2026-11-20T17:00:00-06:00",
             "sphere_type": "Smartballs", "machine_id": "M-01",
             "machine_model": "Model-X", "sphere_id": f"SPH-{number:02d}",
             "printed_number": str(number), "mass_value": "4.700",
-            "mass_unit": "g", "measurement_at": "2026-11-20T21:10:00-06:00",
+            "mass_unit": "g", "measurement_at": "2026-11-20T20:55:00-06:00",
             "measurement_resolution": "0.001", "scale_id": "SCALE-1",
             "calibration_valid_from": "2026-01-01T00:00:00-06:00",
             "calibration_valid_to": "2026-12-31T23:59:59-06:00",
             "calibration_certificate_sha256": "a" * 64,
             "mapping_valid_from": "2026-11-20T16:00:00-06:00",
             "mapping_valid_to": "2026-11-22T21:30:00-06:00",
-            "draw_at": "2026-11-20T21:00:00-06:00",
+            "source_draw_at": "2026-11-20T21:00:00-06:00",
+            "target_draw_at": "2026-11-21T21:00:00-06:00",
             "source_document_sha256": "b" * 64,
             "source_document_ref": "DOC-12300",
             "source_signed_at": "2026-11-20T21:12:00-06:00",
@@ -68,7 +69,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_measurement_after_source_close_can_be_eligible_for_later_target(self):
         rows = rows_for_target()
         for row in rows:
-            row["measurement_at"] = "2026-11-20T21:10:00-06:00"
+            row["measurement_at"] = "2026-11-20T20:55:00-06:00"
             row["evidence_available_at"] = "2026-11-20T21:15:00-06:00"
             row["custody_received_at"] = "2026-11-20T21:16:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
@@ -139,23 +140,53 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_mapping_must_cover_target_draw(self):
         rows = rows_for_target()
         for row in rows:
-            row["mapping_valid_to"] = "2026-11-20T20:59:59-06:00"
+            row["mapping_valid_to"] = "2026-11-21T20:59:59-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertIn("MAPPING_NOT_VALID_AT_TARGET_DRAW", result["targets"]["12301"]["reasons"])
         self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
-    def test_measurement_cannot_precede_source_draw(self):
+    def test_measurement_cannot_follow_source_draw(self):
         rows = rows_for_target()
         for row in rows:
-            row["measurement_at"] = "2026-11-20T20:59:00-06:00"
+            row["measurement_at"] = "2026-11-20T21:01:00-06:00"
             row["evidence_available_at"] = "2026-11-20T21:15:00-06:00"
             row["custody_received_at"] = "2026-11-20T21:16:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         reasons = result["targets"]["12301"]["reasons"]
-        self.assertIn("MEASUREMENT_PRECEDES_SOURCE_DRAW", reasons)
+        self.assertIn("MEASUREMENT_AFTER_SOURCE_DRAW", reasons)
         self.assertEqual(
             result["targets"]["12301"]["predictive_eligibility"],
             "BLOCKED_CONTINUITY",
         )
+
+    def test_measurement_cannot_precede_source_close(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["measurement_at"] = "2026-11-20T20:40:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("MEASUREMENT_PRECEDES_SOURCE_CLOSE", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
+    def test_source_draw_cannot_precede_source_close(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["source_draw_at"] = "2026-11-20T20:40:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
+    def test_source_and_target_draw_timestamps_are_distinct(self):
+        result = evaluate_temporal_eligibility(rows_for_target(), **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertNotIn("TARGET_DRAW_TIME_CONFLICT", reasons)
+        self.assertNotIn("MAPPING_NOT_VALID_AT_TARGET_DRAW", reasons)
 
     def test_measurement_cannot_precede_set_assignment(self):
         rows = rows_for_target()
@@ -187,10 +218,10 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         self.assertIn("INVALID_MASS_OR_RESOLUTION", reasons)
         self.assertIn("INVALID_CALIBRATION_SHA256", reasons)
 
-    def test_target_draw_must_precede_target_close(self):
+    def test_target_draw_cannot_precede_target_close(self):
         rows = rows_for_target()
         for row in rows:
-            row["draw_at"] = "2026-11-21T20:00:00-06:00"
+            row["target_draw_at"] = "2026-11-21T18:59:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertIn("TARGET_DRAW_TIME_CONFLICT", result["targets"]["12301"]["reasons"])
 

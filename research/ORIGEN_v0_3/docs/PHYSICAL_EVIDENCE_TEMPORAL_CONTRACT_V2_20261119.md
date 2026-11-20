@@ -1,6 +1,6 @@
 # ORIGEN — contrato temporal de evidencia física V2
 Fecha: 2026-11-19
-Estado: diseño de investigación; NO implementado ni validado en código.
+Estado: contrato de investigación; separación source/target y orden físico implementados parcialmente en V2. La autenticidad, custodia y continuidad siguen sin validación primaria.
 Rama: `research/origen-v0.3-engine-20261118`
 
 ## Resultado de inspección del código existente
@@ -38,7 +38,9 @@ Campos temporales y de custodia añadidos:
 - `source_signed_at`, `source_signer_id`, `source_signature_ref`: tiempo, identidad y referencia de firma del acta/boleta, cuando exista.
 - `trusted_timestamp_ref`: referencia a sello de tiempo confiable o registro de publicación inmutable.
 - `source_contest_id`: sorteo al que pertenece el evento físico.
+- `source_draw_at`: hora de extracción del sorteo de origen; reemplaza el campo ambiguo `draw_at`.
 - `target_contest_id`: sorteo para el que se pretende usar la evidencia; puede ser posterior al sorteo de origen.
+- `target_draw_at`: hora de extracción del sorteo objetivo; es distinta de `source_draw_at` y debe ser igual o posterior a `target_draw_close_at`.
 
 No sustituir la evidencia oficial original por un CSV transcrito. Conservar documento original, bytes, hash recalculado, recibo de custodia y cadena de transformaciones.
 
@@ -53,6 +55,8 @@ No sustituir la evidencia oficial original por un CSV transcrito. Conservar docu
 ### B. Elegibilidad predictiva (por target)
 Para cada `target_contest_id`:
 - `evidence_available_at < target_draw_close_at` y `custody_received_at < target_draw_close_at`.
+- `target_draw_at >= target_draw_close_at`; validar la vigencia del mapeo hasta `target_draw_at`, no hasta el sorteo de origen.
+- Para el evento de origen, la secuencia del procedimiento SGVO-PRO-05 rev. 39 es: asignación/confirmación del estuche, cierre de ventas, pesaje, colocación en alimentadores y celebración del sorteo. El contrato V2 usa `set_assigned_at <= draw_close_at <= measurement_at <= source_draw_at`.
 - El recibo/custodio/sello debe verificarse de forma independiente; hashes recalculados sobre los bytes exactos.
 - Fuente, firma, certificado y reloj deben pasar verificación independiente.
 - Probar continuidad del `sphere_set_id`, máquina y mapeo esfera↔número durante todo el intervalo hasta el sorteo objetivo. Si hubo sustitución, re-pesaje, remapeo, incidente o hueco documental, excluir la característica afectada o poner el target en cuarentena.
@@ -77,7 +81,8 @@ Nunca usar `STRUCTURE_VALID` como sinónimo de autenticado o elegible.
 7. Rehash de bytes distintos, hash incorrecto, recibo alterado, cadena rota o referencia inexistente produce cuarentena.
 8. Zona horaria ausente, timestamp ambiguo, `available_at >= target_close` y `custody_received_at >= target_close` bloquean elegibilidad.
 9. Cambio de sphere_set, máquina, esfera, mapeo, calibración vencida, sustitución o incidente intermedio bloquea continuidad para el target afectado.
-10. No imponer universalmente `set_assigned_at <= measurement_at`: el orden solo se valida contra el procedimiento primario documentado.
+10. No confundir el sorteo de origen con el objetivo: `source_draw_at` y `target_draw_at` son campos distintos. El mapeo debe cubrir el intervalo desde la asignación hasta el sorteo objetivo.
+11. La secuencia `set_assigned_at <= draw_close_at <= measurement_at <= source_draw_at` se basa en SGVO-PRO-05 rev. 39 (actividades 3.1, 4.1, 5.1, 5.6 y 11.1); si cambia el procedimiento, revisar esta regla contra la fuente primaria antes de modificarla.
 11. Las pruebas deben cubrir ambos sentidos del mapeo y límites cerrados de intervalos.
 12. Ninguna prueba debe escribir en el histórico canónico, V294, main o challengers.
 
