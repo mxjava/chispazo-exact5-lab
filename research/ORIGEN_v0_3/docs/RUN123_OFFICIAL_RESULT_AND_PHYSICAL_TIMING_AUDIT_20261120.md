@@ -50,6 +50,7 @@ Its activity sequence is explicit:
 2. The next section is **Pesaje y Colocación de las Esferas**; activity 5.1 then weighs spheres one by one in numerical order.
 3. Activities 5.4–5.5 sign/review the weighing strip and attach it to the Act; 5.6 places the spheres into the feeders.
 4. Annex 1 says the electronic signature for the participation file is generated immediately after automatic sales closure.
+5. Policy 30 requires recording from sphere weighing through the electronic draw; the edited recording (draw only) is part of the Act. This is a potential primary timing/identity witness, subject to obtaining the original recording and its custody metadata.
 
 The procedure's policy 9 also gives 15:00 for De las Tres and 21:00 for nocturnal sales closure. The published order therefore places the same-contest weighing after sales closure, not before it.
 
@@ -91,7 +92,7 @@ A v4 draft is added alongside this report. It preserves the non-presumption of b
 - explicit confirmation whether any sphere/set assignment or mass record is genuinely available before sales close;
 - the currently authorized SGVO-MAN-02 version/status;
 - clarification of the policy-8/policy-6 cross-reference;
-- the CS-11, Act, weighing strip, calibration, set/machine, mapping, replacement/reweigh, archive, CS-12 and CS-18 record chain.
+- the CS-11, Act, weighing strip, calibration, set/machine, mapping, replacement/reweigh, archive, CS-09/CS-12/CS-18 record chain, and original recording from weighing through draw with its timecode and custody.
 
 Still absent: authentic per-draw 28-sphere masses, physical-sphere-to-number mapping, scale calibration evidence, pre-close assignment evidence, independent beta calibration, raw official PDF bytes and independent custody. No V317 empirical test or real OOS score was run.
 
