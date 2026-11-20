@@ -119,6 +119,12 @@
       "evidentiary_value": "May establish actual measurement/loading/draw chronology and identity continuity if original recording, metadata, timecode and custody are received.",
       "original_recording_received": false,
       "independent_custody": false
+    },
+    "calibration_requirement": {
+      "policy": 25,
+      "claim": "Scale calibration is required at least annually under SGVO-PRO-05.",
+      "annual_calibration_schedule_received": false,
+      "certificates_received": false
     }
   },
   "non_governing_project_manual": {
