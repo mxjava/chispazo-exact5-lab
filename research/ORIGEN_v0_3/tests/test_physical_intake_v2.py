@@ -235,7 +235,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         rows = rows_for_target(available="2026-11-20T18:05:00-06:00",
                                received="2026-11-20T21:16:00-06:00")
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
-        self.assertIn("BROKEN_EVIDENCE_TEMPORAL_ORDER", result["targets"]["12301"]["reasons"])
+        self.assertIn("BROKEN_EVIDENCE_AVAILABILITY_ORDER", result["targets"]["12301"]["reasons"])
 
     def test_source_must_be_signed_before_evidence_is_declared_available(self):
         rows = rows_for_target()
