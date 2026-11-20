@@ -177,7 +177,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         for row in rows:
             row["draw_at"] = "2026-11-21T20:00:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
-        self.assertIn("TARGET_DRAW_TIME_CONFLICT", result["targets"]["12301"]["reasons")
+        self.assertIn("TARGET_DRAW_TIME_CONFLICT", result["targets"]["12301"]["reasons"])
 
     def test_empty_input_is_not_success(self):
         self.assertEqual(evaluate_temporal_eligibility([])["status"], "EMPTY")
