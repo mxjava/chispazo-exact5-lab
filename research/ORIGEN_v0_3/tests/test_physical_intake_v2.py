@@ -119,6 +119,24 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         )
         self.assertIn("TARGET_CLOSE_CONFLICT", result["targets"]["12301"]["reasons"])
 
+    def test_draw_date_must_be_canonical_iso_date(self):
+        rows = rows_for_target()
+        rows[0]["draw_date"] = "2026-11-20T00:00:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "INVALID_SOURCE_DRAW_DATE",
+            result["targets"]["12301"]["reasons"],
+        )
+
+    def test_draw_date_must_match_source_draw_local_date(self):
+        rows = rows_for_target()
+        rows[0]["draw_date"] = "2026-11-19"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "SOURCE_DRAW_DATE_MISMATCH",
+            result["targets"]["12301"]["reasons"],
+        )
+
     def test_template_contract_has_all_required_fields(self):
         self.assertEqual(len(V2_REQUIRED_COLUMNS), len(set(V2_REQUIRED_COLUMNS)))
         rows = rows_for_target()
