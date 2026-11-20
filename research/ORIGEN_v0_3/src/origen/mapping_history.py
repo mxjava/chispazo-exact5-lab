@@ -98,6 +98,9 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "forward_conflicts": forward_conflicts,
         "inverse_conflicts": inverse_conflicts,
         "overlapping_conflicts": forward_conflicts + inverse_conflicts,
+        "interval_conflicts_clear": not bool(quarantined),
+        "continuity_status": "NOT_PROVEN",
+        "coverage_basis": "No expected contest inventory or complete date-range manifest was supplied; absence of overlaps does not prove gap-free coverage.",
         "quarantined": {key: sorted(value) for key, value in sorted(quarantined.items())},
         "scope_warning": (
             "Structural interval audit only; it does not authenticate sphere IDs, "
