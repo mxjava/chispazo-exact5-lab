@@ -23,6 +23,9 @@ MASS_LIMITS = {
     "ping-pong": (2.30, 3.00, 0.15),
 }
 DRAW_TIMEZONE = ZoneInfo("America/Mexico_City")
+# Fixed published Chispazo schedule; callers cannot redefine modality close times.
+OFFICIAL_SCHEDULE_URI = "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+OFFICIAL_CLOSE_TIMES = {"CLASSIC": "21:00", "TRES": "15:00"}
 REQUIRED_COLUMNS = (
     "contest_id", "draw_date", "modality", "draw_close_at",
     "sphere_set_id", "set_assigned_at", "sphere_type", "machine_id",
@@ -51,8 +54,10 @@ def _timestamp(value: str, field: str) -> datetime:
 
 
 def _official_close_for(row: Mapping[str, Any], schedule: Mapping[str, Any] | None) -> datetime | None:
-    """Resolve a dated close from a source-identified official schedule attestation.
-    Shape validation is not source-byte authentication or independent custody.
+    """Resolve close using fixed published modality times plus a dated attestation shape.
+
+    The caller-supplied attestation cannot override official close times. This still
+    does not authenticate source bytes, capture clocks, signatures, or custody.
     """
     if not isinstance(schedule, Mapping):
         return None
@@ -61,7 +66,7 @@ def _official_close_for(row: Mapping[str, Any], schedule: Mapping[str, Any] | No
             return None
         parsed_uri = urlsplit(str(schedule.get("source_uri", "")))
         host = (parsed_uri.hostname or "").lower()
-        if parsed_uri.scheme != "https" or not (host == "loterianacional.gob.mx" or host.endswith(".loterianacional.gob.mx")):
+        if parsed_uri.scheme != "https" or host != "www.loterianacional.gob.mx" or parsed_uri.path != "/Chispazo/Chispazo" or parsed_uri.query or parsed_uri.fragment:
             return None
         if not HEX64.fullmatch(str(schedule.get("source_sha256", ""))):
             return None
@@ -71,10 +76,10 @@ def _official_close_for(row: Mapping[str, Any], schedule: Mapping[str, Any] | No
         if schedule.get("draw_date") != draw_date:
             return None
         close_times = schedule.get("close_times")
-        if not isinstance(close_times, Mapping):
+        if not isinstance(close_times, Mapping) or dict(close_times) != OFFICIAL_CLOSE_TIMES:
             return None
-        close_time = str(close_times.get(modality, ""))
-        if not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", close_time):
+        close_time = OFFICIAL_CLOSE_TIMES.get(modality)
+        if close_time is None:
             return None
         expected = datetime.fromisoformat(draw_date + "T" + close_time + ":00").replace(tzinfo=DRAW_TIMEZONE).astimezone(timezone.utc)
         if captured >= expected:
