@@ -270,6 +270,30 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         self.assertIn("TARGET_DRAW_TIME_CONFLICT", reasons)
         self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
 
+    def test_null_sphere_identity_is_blocked(self):
+        rows = rows_for_target()
+        rows[0]["sphere_id"] = None
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("INVALID_PHYSICAL_IDENTITY", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
+    def test_contest_id_must_match_source_contest_id(self):
+        rows = rows_for_target()
+        rows[0]["contest_id"] = "12399"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_CONTEST_ID_MISMATCH", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
+    def test_draw_date_must_match_source_draw_local_date(self):
+        rows = rows_for_target()
+        rows[0]["draw_date"] = "2026-11-19"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_DRAW_DATE_MISMATCH", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
     def test_target_draw_cannot_precede_target_close(self):
         rows = rows_for_target()
         for row in rows:
