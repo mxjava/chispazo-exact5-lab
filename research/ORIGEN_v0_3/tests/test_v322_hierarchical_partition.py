@@ -76,6 +76,14 @@ class TestV322HierarchicalPartition(unittest.TestCase):
         with self.assertRaises(ValueError):
             HierarchicalPartitionModel(alpha=0)
         with self.assertRaises(ValueError):
+            HierarchicalPartitionModel(alpha=True)
+        with self.assertRaises(ValueError):
+            candidate_features((True, 2, 3, 4, 5))
+        with self.assertRaises(ValueError):
+            self.model.update([True, 2, 3, 4, 5])
+        with self.assertRaises(ValueError):
+            self.model.score([True, 2, 3, 4, 5])
+        with self.assertRaises(ValueError):
             self.model.update([1, 2, 3, 4, 29])
 
     def test_rank_and_top_k_ties_are_probability_aware(self):
