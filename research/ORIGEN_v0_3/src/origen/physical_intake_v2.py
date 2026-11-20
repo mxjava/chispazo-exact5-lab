@@ -10,9 +10,12 @@ import csv
 import math
 from collections import defaultdict
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
+
+DRAW_TIMEZONE = ZoneInfo("America/Mexico_City")
 
 V2_REQUIRED_COLUMNS = (
     "source_contest_id", "target_contest_id", "contest_id", "draw_date",
@@ -105,7 +108,7 @@ def evaluate_temporal_eligibility(
                 measurement = _parse_time(row["measurement_at"], "measurement_at")
                 source_close = _parse_time(row["draw_close_at"], "draw_close_at")
                 source_draw = _parse_time(row["source_draw_at"], "source_draw_at")
-                source_draw_local_date = source_draw.date().isoformat()
+                source_draw_local_date = source_draw.astimezone(DRAW_TIMEZONE).date().isoformat()
                 declared_date_raw = row["draw_date"]
                 if not isinstance(declared_date_raw, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", declared_date_raw.strip()):
                     reasons.add("INVALID_SOURCE_DRAW_DATE")
