@@ -12,6 +12,7 @@ from .diversity import frame_diversity
 from .manifest import create_manifest, verify_manifest
 from .meta_audit import audit_search_path
 from .physical_intake import validate_physical_csv
+from .physical_intake_v2 import evaluate_temporal_csv
 
 def _load(path):
     with open(path, encoding="utf-8") as f: return json.load(f)
@@ -33,6 +34,7 @@ def main():
     l=sub.add_parser("audit-ledger"); l.add_argument("--ledger",required=True)
     ml=sub.add_parser("audit-search-path"); ml.add_argument("--ledger",required=True)
     pi=sub.add_parser("validate-physical",help="validate provenance and structure of long-form physical sphere CSV"); pi.add_argument("--file",required=True)
+    pv=sub.add_parser("validate-physical-v2",help="evaluate V2 pre-close eligibility for source-to-target physical evidence"); pv.add_argument("--file",required=True); pv.add_argument("--verification-file",help="JSON with independently verified custody_refs, timestamp_refs, source_refs and continuity_targets")
     h=sub.add_parser("holm"); h.add_argument("--file",required=True)
     s=sub.add_parser("split"); s.add_argument("--n",type=int,required=True); s.add_argument("--warmup",type=int,required=True); s.add_argument("--evaluation-size",type=int); s.add_argument("--rolling",action="store_true"); s.add_argument("--horizon",type=int,default=100)
     e=sub.add_parser("evaluate"); e.add_argument("--file",required=True)
@@ -49,6 +51,20 @@ def main():
     elif args.command=="audit-ledger": result=audit_ledger(args.ledger)
     elif args.command=="audit-search-path": result=audit_search_path(args.ledger)
     elif args.command=="validate-physical": result=validate_physical_csv(args.file)
+    elif args.command=="validate-physical-v2":
+        verification = _load(args.verification_file) if args.verification_file else {}
+        allowed = {"custody_refs", "timestamp_refs", "source_refs", "continuity_targets"}
+        if set(verification) - allowed:
+            raise ValueError("verification manifest contains unsupported keys")
+        if any(not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value) for value in verification.values()):
+            raise ValueError("verification manifest values must be lists of non-empty strings")
+        result=evaluate_temporal_csv(
+            args.file,
+            verified_custody_refs=set(verification.get("custody_refs", [])),
+            verified_timestamp_refs=set(verification.get("timestamp_refs", [])),
+            verified_source_refs=set(verification.get("source_refs", [])),
+            verified_continuity_targets=set(verification.get("continuity_targets", [])),
+        )
     elif args.command=="holm":
         obj=_load(args.file); result=holm_bonferroni(obj["p_values"],obj.get("alpha",0.05))
     elif args.command=="split":
