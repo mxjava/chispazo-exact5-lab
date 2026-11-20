@@ -1,0 +1,177 @@
+{
+  "schema_version": "exact5.run123.official_status_and_timing_overlay.v1",
+  "run": "Exact5 Run123",
+  "captured_at_local": "2026-11-20T00:57:32-06:00",
+  "timezone": "America/Mexico_City",
+  "scope": {
+    "read_only_official_source_review": true,
+    "isolated_research_branch_documentation_only": true,
+    "canonical_history_write": false,
+    "main_write": false,
+    "merge_or_promotion": false,
+    "candidate_or_challenger_change": false,
+    "v294_change": false,
+    "historical_rebuild": false,
+    "real_oos_scoring": false
+  },
+  "preservation": {
+    "v294": "FROZEN",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "main_head_observed": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "canonical_history_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_git_blob_main": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_run121_branch": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_expected": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_sha256_recomputed_from_bytes_this_run": false
+  },
+  "official_results": [
+    {
+      "contest_id": 12383,
+      "draw_date": "2026-11-19",
+      "modality": "De las Tres",
+      "numbers": [
+        1,
+        3,
+        8,
+        27,
+        28
+      ],
+      "corroboration": [
+        "official_daily_mask_pdf",
+        "official_chispazo_results_history"
+      ]
+    },
+    {
+      "contest_id": 12384,
+      "draw_date": "2026-11-19",
+      "modality": "Clásico",
+      "numbers": [
+        1,
+        2,
+        9,
+        21,
+        25
+      ],
+      "winners": {
+        "tier_5_of_5": 1,
+        "tier_4_of_5": 216,
+        "tier_3_of_5": 5675,
+        "tier_2_of_5": 44074,
+        "total": 49966
+      },
+      "corroboration": [
+        "official_daily_mask_pdf",
+        "official_commercializer_chispazo_results"
+      ]
+    }
+  ],
+  "next_announced_draw": {
+    "contest_id": 12385,
+    "draw_date": "2026-11-20",
+    "local_time": "15:00",
+    "modality": "De las Tres",
+    "status_at_capture": "SCHEDULED_NOT_YET_DRAWN",
+    "classic_contest_id_for_2026_11_20": null,
+    "no_parity_inference": true
+  },
+  "official_source_endpoints": {
+    "chispazo_results_commercializer": "https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados",
+    "daily_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "daily_mask_pdf_2026_11_19": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-19.pdf?v=19112026215833",
+    "official_chispazo_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "commercializer_home_schedule": "https://comercializadores.loterianacional.gob.mx/"
+  },
+  "source_capture": {
+    "official_pdf_text_opened": true,
+    "official_pdf_raw_bytes_downloaded": false,
+    "raw_pdf_sha256": "NOT_CAPTURED",
+    "independent_forensic_custody": false,
+    "discrepancies_preserved": [
+      "The live mask index showed 2026-11-19, while one search-index snippet still showed 2026-11-18.",
+      "The dedicated commercializer results page and 2026-11-19 daily mask showed 12384=01-02-09-21-25; the separate Home/Resultados extraction still had the 12384 number field blank."
+    ]
+  },
+  "physical_procedure": {
+    "code": "SGVO-PRO-05",
+    "title": "Procedimiento Sorteos Electrónicos",
+    "type": "PUBLICO",
+    "revision": 39,
+    "publication_date": "2026-03-20",
+    "official_pdf": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+    "relevant_sequence": [
+      "Activity 4.1 verifies automatic sales closure and closed state.",
+      "The next section is weighing and placement of spheres; activity 5.1 weighs spheres one by one in numerical order.",
+      "Activities 5.4-5.5 sign/review the weighing strip and attach it to the Act.",
+      "Activity 5.6 places the spheres in the machine feeders.",
+      "Annex 1 says the electronic signature of the participation file is generated immediately after automatic sales closure."
+    ],
+    "temporal_implication": "The published sequence places same-contest sphere weighing after sales closure. The procedure does not establish same-contest mass availability before close.",
+    "document_cross_reference_issue": {
+      "activity_5_2_and_quality_plan_reference": "policy 8",
+      "actual_weight_limits_location": "policy 6",
+      "policy_8_subject": "electronic signature and custody of participation file",
+      "classification": "DOCUMENT_CONTROL_CROSS_REFERENCE_INCONSISTENCY",
+      "operational_noncompliance_inferred": false
+    }
+  },
+  "non_governing_project_manual": {
+    "code": "SGVO-MAN-02",
+    "title": "Manual de Apoyo para la Operación de Sorteos y Equipos Electrónicos",
+    "file": "sgvo_man_02p.pdf",
+    "project_listing": "https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0",
+    "pdf": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/PROYECTO/sgvo_man_02p.pdf",
+    "pdf_marking": "TIPO: RESERVADO",
+    "revision": 9,
+    "emission_date": "2011-06",
+    "project_window": [
+      "2026-02-23",
+      "2026-03-04"
+    ],
+    "use_in_this_run": "CORROBORATIVE_PROJECT_DOCUMENT_ONLY_NOT_TREATED_AS_CURRENT_GOVERNING_VERSION"
+  },
+  "v317_temporal_contract": {
+    "preregistration_path": "research/ORIGEN_v0_3/PREREGISTRATION_V317_PHYSICAL_MASS_PLACKETT_LUCE.md",
+    "preregistration_blob": "3e09df57c021fd1a4f6f964d04265efaba325a61",
+    "intake_validator_path": "research/ORIGEN_v0_3/src/origen/physical_intake.py",
+    "intake_validator_blob": "dcfe7bf332f67daab153512104ad33e3d7086422",
+    "current_required_timing": [
+      "set_assigned_at < draw_close_at",
+      "measurement_at < draw_close_at",
+      "mapping_valid_from < draw_close_at"
+    ],
+    "finding": "The current same-draw pre-close feature contract conflicts with the published procedure sequence that places weighing after sales close.",
+    "classification": "MODEL_IMPLEMENTATION_DEFECT",
+    "empirical_test_status": "BLOCKED_PROVENANCE",
+    "code_or_preregistration_changed": false,
+    "postclose_data_admitted": false,
+    "possible_future_question": "A separately preregistered prior-draw feature is possible only if primary records prove stable physical sphere identity, number mapping, case/machine continuity and availability before the next draw's close."
+  },
+  "transparency_request": {
+    "v3_path": "research/ORIGEN_v0_3/docs/SOLICITUD_TRANSPARENCIA_TRAZABILIDAD_FISICA_V3_20261119.md",
+    "v3_blob": "048205947927ed3b1287007ff44692e6e72288dc",
+    "v4_path": "research/ORIGEN_v0_3/docs/SOLICITUD_TRANSPARENCIA_TRAZABILIDAD_FISICA_V4_20261120.md",
+    "status": "DRAFT_ONLY_NOT_SUBMITTED",
+    "v4_additions": [
+      "Exact timestamps for sales close, sphere weighing, strip signing, feeder loading and draw start.",
+      "Explicit confirmation of any genuinely pre-close measurement or set/mapping assignment.",
+      "Current authorized status/version of SGVO-MAN-02.",
+      "Clarification of the policy-8/policy-6 cross-reference.",
+      "Full record chain including Act, weighing strip, CS-11, participation-file signature/custody, calibration, archive and incident records."
+    ]
+  },
+  "missing_primary_evidence": {
+    "per_draw_28_sphere_masses": true,
+    "physical_sphere_id_to_printed_number_mapping": true,
+    "scale_calibration_records": true,
+    "preclose_set_assignment_evidence": true,
+    "independent_outcome_blind_beta_calibration": true,
+    "official_pdf_raw_bytes_and_independent_custody": true,
+    "real_oos_targets_scored": 0
+  },
+  "final_classification": {
+    "v317_temporal_contract": "MODEL_IMPLEMENTATION_DEFECT",
+    "physical_bias_evidence": "BLOCKED_PROVENANCE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
