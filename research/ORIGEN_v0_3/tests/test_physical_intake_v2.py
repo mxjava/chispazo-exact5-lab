@@ -165,7 +165,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             result["targets"]["12301"]["reasons"],
         )
 
-    def test_draw_date_must_match_source_draw_local_date(self):
+    def test_draw_date_mismatch_reason_is_reported(self):
         rows = rows_for_target()
         rows[0]["draw_date"] = "2026-11-19"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
