@@ -275,10 +275,50 @@ def verify_record_chain(
     return True, f"verified {len(records)} ordered custody records"
 
 
-def write_record_exclusive(path: str | Path, record: dict[str, Any]) -> None:
-    """Create a record file without replacement; this is not tamper-proof storage."""
+def _validate_record_semantics(record: dict[str, Any]) -> None:
+    """Validate all record invariants that do not require the portfolio bytes."""
     if not isinstance(record, dict) or set(record) != _RECORD_FIELDS:
         raise ValueError("record does not match exact v1 schema")
+    if record.get("schema_version") != "exact5.custody.v1":
+        raise ValueError("unsupported record schema")
+    target = record.get("target_contest_id")
+    history_max = record.get("history_max_contest_id")
+    count = record.get("portfolio_line_count")
+    if not isinstance(target, int) or isinstance(target, bool) or target <= 0:
+        raise ValueError("target_contest_id must be a positive integer")
+    if (not isinstance(history_max, int) or isinstance(history_max, bool)
+            or history_max != target - 1):
+        raise ValueError("history cutoff must be an integer exactly target_contest_id - 1")
+    if not isinstance(count, int) or isinstance(count, bool) or count != 30:
+        raise ValueError("portfolio_line_count must be exactly 30")
+    if record.get("modality") != "CLASSIC" or record.get("seal_status") != "SEALED":
+        raise ValueError("record is not a sealed Classic registration")
+    for field in ("candidate_spec_sha256", "history_sha256",
+                  "environment_manifest_sha256", "portfolio_sha256",
+                  "custodian_recomputed_sha256", "previous_record_sha256",
+                  "record_sha256"):
+        _require_sha(record.get(field), field)
+    if record["portfolio_sha256"] != record["custodian_recomputed_sha256"]:
+        raise ValueError("portfolio hashes do not agree")
+    if not isinstance(record.get("source_commit"), str) or not _SHA40.fullmatch(record["source_commit"]):
+        raise ValueError("source_commit must be a full 40-character Git SHA")
+    for field in ("candidate_id", "generator_id", "custodian_id",
+                  "generator_clock_source", "custodian_clock_source",
+                  "official_draw_close_source"):
+        if not isinstance(record.get(field), str) or not record[field].strip():
+            raise ValueError(f"{field} must be non-empty")
+    if record["generator_id"] == record["custodian_id"]:
+        raise ValueError("generator and custodian identities are not independent")
+    generated = parse_utc(record["generated_at_utc"], "generated_at_utc")
+    received = parse_utc(record["received_at_utc"], "received_at_utc")
+    closes = parse_utc(record["official_draw_close_at_utc"], "official_draw_close_at_utc")
+    if not (generated < received < closes):
+        raise ValueError("generation/receipt timestamps are not strictly ordered pre-close")
+
+
+def write_record_exclusive(path: str | Path, record: dict[str, Any]) -> None:
+    """Create a semantically valid record without replacement; not tamper-proof storage."""
+    _validate_record_semantics(record)
     if record.get("record_sha256") != _record_digest(record):
         raise ValueError("record digest mismatch; refusing to write")
     destination = Path(path)
@@ -298,11 +338,33 @@ def write_record_exclusive(path: str | Path, record: dict[str, Any]) -> None:
         raise
 
 
+def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    value: dict[str, Any] = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError(f"duplicate JSON key: {key}")
+        value[key] = item
+    return value
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"non-standard JSON constant: {value}")
+
+
 def read_record(path: str | Path) -> dict[str, Any]:
     raw = Path(path).read_bytes()
     if not raw.endswith(b"\n"):
         raise ValueError("record file must end with LF")
-    value = json.loads(raw.decode("utf-8"))
+    value = json.loads(
+        raw.decode("utf-8"),
+        object_pairs_hook=_reject_duplicate_json_keys,
+        parse_constant=_reject_json_constant,
+    )
     if not isinstance(value, dict):
         raise ValueError("record JSON must be an object")
+    if canonical_json_bytes(value) + b"\n" != raw:
+        raise ValueError("record file is not canonical JSON with LF")
+    _validate_record_semantics(value)
+    if value.get("record_sha256") != _record_digest(value):
+        raise ValueError("record digest mismatch")
     return value
