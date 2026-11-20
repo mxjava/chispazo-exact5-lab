@@ -108,6 +108,8 @@ def evaluate_temporal_eligibility(
         signer_ids: set[str] = set()
         timestamp_refs: set[str] = set()
         for row in group:
+            if any(row.get(field) is None for field in V2_REQUIRED_COLUMNS):
+                reasons.add("NULL_REQUIRED_FIELD")
             try:
                 close = _parse_time(row["target_draw_close_at"], "target_draw_close_at")
                 available = _parse_time(row["evidence_available_at"], "evidence_available_at")
@@ -263,7 +265,7 @@ def evaluate_temporal_eligibility(
         if "EVIDENCE_NOT_AVAILABLE_PRE_CLOSE" in reasons:
             classification = "INELIGIBLE_POST_CLOSE"
         elif any(reason in reasons for reason in (
-            "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "INVALID_SOURCE_SHA256",
+            "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "NULL_REQUIRED_FIELD", "INVALID_SOURCE_SHA256",
             "INVALID_CUSTODY_RECEIPT_SHA256", "INVALID_CALIBRATION_SHA256",
             "CUSTODY_NOT_INDEPENDENTLY_VERIFIED", "TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",
             "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "SOURCE_SIGNATURE_NOT_INDEPENDENTLY_VERIFIED", "CALIBRATION_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
