@@ -344,7 +344,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         reasons = result["targets"]["12301"]["reasons"]
         self.assertIn("INVALID_PHYSICAL_IDENTITY", reasons)
-        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_PROVENANCE")
 
     def test_contest_id_must_match_source_contest_id(self):
         rows = rows_for_target()
