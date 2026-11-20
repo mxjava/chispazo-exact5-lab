@@ -5,9 +5,20 @@ import unittest
 from pathlib import Path
 
 from origen.physical_intake import (
-    REQUIRED_COLUMNS, file_sha256, validate_physical_csv, validate_physical_rows,
+    REQUIRED_COLUMNS, file_sha256, validate_physical_csv, validate_physical_rows as _validate_physical_rows,
 )
 
+
+SCHEDULE = {
+    "timezone": "America/Mexico_City",
+    "source_uri": "https://www.loterianacional.gob.mx/",
+    "source_sha256": "c" * 64,
+    "captured_at": "2026-11-20T12:00:00-06:00",
+    "close_times": {"CLASSIC": "21:00", "TRES": "15:00"},
+}
+
+def validate_physical_rows(rows):
+    return _validate_physical_rows(rows, official_schedule=SCHEDULE)
 
 def make_rows():
     rows = []
@@ -16,7 +27,7 @@ def make_rows():
             "contest_id": "12300",
             "draw_date": "2026-11-20",
             "modality": "CLASSIC",
-            "draw_close_at": "2026-11-20T19:00:00-06:00",
+            "draw_close_at": "2026-11-20T21:00:00-06:00",
             "sphere_set_id": "SET-A",
             "set_assigned_at": "2026-11-20T17:00:00-06:00",
             "sphere_type": "Smartballs",
@@ -49,6 +60,25 @@ class PhysicalIntakeTests(unittest.TestCase):
     def test_missing_sphere_row_quarantines_incomplete_set(self):
         report = validate_physical_rows(make_rows()[:-1])
         self.assertIn("Q_INCOMPLETE_SET", report["quarantined"]["12300"])
+
+    def test_classic_19h_caller_supplied_close_is_rejected(self):
+        rows = make_rows()
+        for row in rows:
+            row["draw_close_at"] = "2026-11-20T19:00:00-06:00"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_TIME", report["quarantined"]["12300"])
+        self.assertNotIn(12300, report["usable_contests"])
+
+    def test_missing_official_schedule_fails_closed(self):
+        report = _validate_physical_rows(make_rows())
+        self.assertIn("Q_TIME", report["quarantined"]["12300"])
+        self.assertNotIn(12300, report["usable_contests"])
+
+    def test_untrusted_schedule_host_fails_closed(self):
+        rows = make_rows()
+        schedule = dict(SCHEDULE, source_uri="https://example.com/schedule")
+        report = _validate_physical_rows(rows, official_schedule=schedule)
+        self.assertIn("Q_TIME", report["quarantined"]["12300"])
 
     def test_postclose_measurement_is_quarantined(self):
         rows = make_rows()
@@ -200,7 +230,7 @@ class PhysicalIntakeTests(unittest.TestCase):
                 writer.writeheader()
                 writer.writerows(rows)
             before = file_sha256(path)
-            report = validate_physical_csv(path)
+            report = validate_physical_csv(path, official_schedule=SCHEDULE)
             self.assertEqual(report["usable_contests"], [12300])
             self.assertEqual(file_sha256(path), before)
 
