@@ -100,3 +100,14 @@ La preregistración correctamente exige beta firmado desde calibración física 
 - Beta V317: no calibrada independientemente.
 - Edge: no demostrado.
 - Producción: `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
+
+## Actualización de resultados oficiales — corte de consulta 2026-11-19
+
+La página oficial de resultados de Chispazo continúa mostrando el concurso 12383 del 19/11/2026: 01-03-08-27-28. La página general oficial muestra el 12384 con cinco guiones (sin resultado publicado en ese corte). La página oficial de comercializadores permanece atrasada en el 12382. El índice oficial de mascarillas consultado en esta pasada no devolvió una mascarilla del 19/11; el último PDF indexado encontrado fue del 17/11. Fuentes:
+- https://www.loterianacional.gob.mx/Chispazo/Resultados
+- https://www.loterianacional.gob.mx/Home/Resultados/?view=cG5sUmVzdWxQcm9nb2w%3D
+- https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados
+- https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-17.pdf?v=17112026222603
+
+Decisión de ingestión: 12383 conserva resultado numérico oficial, pero no se asigna modalidad Classic/De las Tres sin mascarilla oficial del concurso/fecha. 12384 sigue sin resultado en la página general consultada. No inferir modalidad por número consecutivo u hora; no incorporar a Classic OOS, no actualizar histórico canónico, no calcular PMF/ranking/score retrospectivos. La discrepancia entre el endpoint principal y comercializadores queda preservada, no resuelta por inferencia.
