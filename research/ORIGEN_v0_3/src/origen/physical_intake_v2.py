@@ -7,6 +7,7 @@ verified against primary records by an independent process.
 from __future__ import annotations
 
 import csv
+import math
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -80,14 +81,28 @@ def evaluate_temporal_eligibility(
         printed_numbers: set[int] = set()
         set_ids: set[str] = set()
         machine_ids: set[str] = set()
+        target_draws: set[datetime] = set()
+        assignments: set[datetime] = set()
+        source_closes: set[datetime] = set()
+        sphere_types: set[str] = set()
+        machine_models: set[str] = set()
+        scales: set[str] = set()
         for row in group:
             try:
                 close = _parse_time(row["target_draw_close_at"], "target_draw_close_at")
                 available = _parse_time(row["evidence_available_at"], "evidence_available_at")
                 received = _parse_time(row["custody_received_at"], "custody_received_at")
-                _parse_time(row["measurement_at"], "measurement_at")
-                _parse_time(row["draw_close_at"], "draw_close_at")
+                measurement = _parse_time(row["measurement_at"], "measurement_at")
+                source_close = _parse_time(row["draw_close_at"], "draw_close_at")
+                assignment = _parse_time(row["set_assigned_at"], "set_assigned_at")
+                signed = _parse_time(row["source_signed_at"], "source_signed_at")
                 closes.add(close)
+                target_draws.add(_parse_time(row["draw_at"], "draw_at"))
+                assignments.add(assignment)
+                source_closes.add(source_close)
+                sphere_types.add(str(row["sphere_type"]).strip())
+                machine_models.add(str(row["machine_model"]).strip())
+                scales.add(str(row["scale_id"]).strip())
                 source_contests.add(str(row["source_contest_id"]).strip())
                 modalities.add(str(row["modality"]).strip().upper())
                 sphere_ids.add(str(row["sphere_id"]).strip())
@@ -101,7 +116,6 @@ def evaluate_temporal_eligibility(
                     reasons.add("INVALID_SOURCE_SHA256")
                 if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["custody_receipt_sha256"]).strip()):
                     reasons.add("INVALID_CUSTODY_RECEIPT_SHA256")
-                measurement = _parse_time(row["measurement_at"], "measurement_at")
                 mapping_start = _parse_time(row["mapping_valid_from"], "mapping_valid_from")
                 mapping_end = _parse_time(row["mapping_valid_to"], "mapping_valid_to")
                 calibration_start = _parse_time(row["calibration_valid_from"], "calibration_valid_from")
@@ -113,6 +127,23 @@ def evaluate_temporal_eligibility(
                     reasons.add("CALIBRATION_NOT_VALID_AT_MEASUREMENT")
                 if available >= close or received >= close:
                     reasons.add("EVIDENCE_NOT_AVAILABLE_PRE_CLOSE")
+                if not (assignment <= measurement <= available <= received < close):
+                    reasons.add("BROKEN_EVIDENCE_TEMPORAL_ORDER")
+                if signed > available:
+                    reasons.add("SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE")
+                try:
+                    mass = float(str(row["mass_value"]).strip())
+                    resolution = float(str(row["measurement_resolution"]).strip())
+                    if not math.isfinite(mass) or mass <= 0 or not math.isfinite(resolution) or resolution <= 0:
+                        reasons.add("INVALID_MASS_OR_RESOLUTION")
+                except (ValueError, TypeError):
+                    reasons.add("INVALID_MASS_OR_RESOLUTION")
+                if str(row["mass_unit"]).strip().lower() != "g":
+                    reasons.add("UNSUPPORTED_MASS_UNIT")
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["calibration_certificate_sha256"]).strip()):
+                    reasons.add("INVALID_CALIBRATION_SHA256")
+                if not str(row["source_signature_ref"]).strip() or not str(row["source_signer_id"]).strip():
+                    reasons.add("SOURCE_SIGNATURE_MISSING")
                 if not str(row["custodian_id"]).strip() or not str(row["custodian_role"]).strip():
                     reasons.add("CUSTODIAN_IDENTITY_MISSING")
                 if not str(row["custody_receipt_ref"]).strip():
@@ -125,6 +156,12 @@ def evaluate_temporal_eligibility(
                 reasons.add("INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE")
         if len(closes) != 1:
             reasons.add("TARGET_CLOSE_CONFLICT")
+        if len(target_draws) != 1 or (closes and target_draws and next(iter(target_draws)) >= next(iter(closes))):
+            reasons.add("TARGET_DRAW_TIME_CONFLICT")
+        if len(assignments) != 1 or len(source_closes) != 1:
+            reasons.add("SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT")
+        if len(sphere_types) != 1 or "" in sphere_types or len(machine_models) != 1 or "" in machine_models or len(scales) != 1 or "" in scales:
+            reasons.add("METROLOGY_CONFIGURATION_CONFLICT")
         if len(source_contests) != 1:
             reasons.add("SOURCE_CONTEST_CONFLICT")
         if len(group) != 28 or len(sphere_ids) != 28 or printed_numbers != set(range(1, 29)):
@@ -147,7 +184,9 @@ def evaluate_temporal_eligibility(
         elif any(reason in reasons for reason in (
             "PHYSICAL_CONTINUITY_NOT_VERIFIED", "SOURCE_CONTEST_CONFLICT",
             "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", "PHYSICAL_SET_OR_MACHINE_CONFLICT",
-            "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC"
+            "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC",
+            "BROKEN_EVIDENCE_TEMPORAL_ORDER", "TARGET_DRAW_TIME_CONFLICT",
+            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT"
         )):
             classification = "BLOCKED_CONTINUITY"
         elif reasons:
