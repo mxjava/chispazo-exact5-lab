@@ -1,0 +1,137 @@
+{
+  "run_id": "RUN128",
+  "captured_at": "2026-11-20T03:58:36-06:00",
+  "timezone": "America/Mexico_City",
+  "scope": "read_only_official_status_and_static_V317_intake_contract_audit",
+  "repository": {
+    "repo": "mxjava/chispazo-exact5-lab",
+    "branch": "research/run123-official-timing-audit-20261120",
+    "main_head_observed": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "branch_head_before_run": "29af09ad28f81cc12a2f8d444009e0f0d4174e34",
+    "branch_compare": {
+      "status": "diverged",
+      "ahead_by": 248,
+      "behind_by": 2
+    },
+    "v317_source_blob": "dcfe7bf332f67daab153512104ad33e3d7086422",
+    "v317_test_blob": "07e3e3e3c4d4668acd9da83b84a9ee6bfc05eb5c",
+    "v317_prereg_blob": "3e09df57c021fd1a4f6f964d04265efaba325a61"
+  },
+  "official_status": {
+    "dedicated_chispazo_results": {
+      "url": "https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados",
+      "observed_latest": {
+        "contest": 12384,
+        "date": "2026-11-19",
+        "modality": "CLASSIC",
+        "numbers": [
+          1,
+          2,
+          9,
+          21,
+          25
+        ]
+      },
+      "next_date_displayed": "2026-11-20",
+      "no_2026_11_20_result_displayed": true
+    },
+    "mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_date_listed": "2026-11-19",
+      "2026_11_20_mask_listed": false
+    },
+    "commercializer_homepage": {
+      "url": "https://comercializadores.loterianacional.gob.mx/",
+      "direct_page_now_displays": {
+        "date": "2026-11-20",
+        "time": "15:00",
+        "contest": 12385
+      },
+      "corroboration": "direct current page lines 122-125",
+      "note": "Resolves earlier Run127 direct-page staleness for the 15:00 De las Tres listing; does not identify the 21:00 Chispazo Clásico ID."
+    },
+    "chispazo_schedule": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "de_las_tres": "15:00",
+      "clasico": "21:00"
+    },
+    "capture_limit": "Capture occurred before the 15:00 draw; no 20-Nov result or daily mask was expected yet."
+  },
+  "v317_static_audit": {
+    "classification": "MODEL_IMPLEMENTATION_DEFECT",
+    "finding": "physical_intake validates that draw_close_at falls on draw_date in America/Mexico_City but does not validate the modality-specific official close time or authenticate an authorized schedule exception.",
+    "source_locations": [
+      {
+        "path": "research/ORIGEN_v0_3/src/origen/physical_intake.py",
+        "blob": "dcfe7bf332f67daab153512104ad33e3d7086422",
+        "lines": [
+          109,
+          111,
+          118
+        ]
+      },
+      {
+        "path": "research/ORIGEN_v0_3/tests/test_physical_intake.py",
+        "blob": "07e3e3e3c4d4668acd9da83b84a9ee6bfc05eb5c",
+        "lines": [
+          19,
+          43
+        ]
+      }
+    ],
+    "concrete_counterexample_in_existing_test": {
+      "modality": "CLASSIC",
+      "draw_close_at": "2026-11-20T19:00:00-06:00",
+      "test": "test_complete_preclose_contest_is_structurally_usable",
+      "expected_by_test": "contest is usable",
+      "official_schedule": "Chispazo Clásico 21:00",
+      "result": "The test fixture's 19:00 close is two hours earlier than the published Classic close. Current validator checks only local calendar date, so this fixture is not rejected on schedule grounds."
+    },
+    "normative_sources": [
+      {
+        "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+        "detail": "SGVO-PRO-05 revision 39, policy 9: automatic sales close at 15:00 for De las Tres and 21:00 for Nocturnos; changes require authorized approval and notification."
+      },
+      {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "detail": "Official Chispazo page: De las Tres at 15:00; Clásico at 21:00."
+      }
+    ],
+    "risk": "A wrong or premature close timestamp can make post-close physical measurements appear pre-close, undermining the V317 eligibility gate and any claimed pre-close snapshot.",
+    "required_future_control_no_code_change_in_this_run": [
+      "Bind each modality to the official local close time: TRES=15:00; CLASSIC=21:00.",
+      "Require authenticated SICAL closure evidence and its source URI/hash or immutable event reference.",
+      "Permit deviations only with the authorized circular/approval and SICAL confirmation required by SGVO-PRO-05 policy 9.",
+      "Add negative tests for CLASSIC at 19:00 and TRES at 21:00, plus positive tests for official times and documented authorized overrides.",
+      "Keep timestamp comparison strict: feature availability must be strictly before the authenticated actual closure event."
+    ],
+    "execution_status": "STATIC_SOURCE_REVIEW_ONLY; no source code edited and no pytest executed."
+  },
+  "run121_recovery": {
+    "manifest_path": "research/ORIGEN_v0_3/artifacts/RUN121_PACKAGE_MANIFEST.json",
+    "manifest_blob": "91ba0c7d0822bd6228bf1327eb25ef262d061cd4",
+    "declared_zip_sha256": "db24189fcbe0d5fe50db3292afd3bda3e9d17f700dc9110c46e97306ae1cfce2",
+    "manifest_says_code_committed": false,
+    "repository_releases_observed": 0,
+    "source_zip_recovered": false,
+    "tests_rerun": false,
+    "note": "The branch contains the manifest and reports but not the executable package files. The exact ZIP remains unrecovered; its declared hash alone is not a retrievable artifact."
+  },
+  "invariants": {
+    "V294": "FROZEN",
+    "canonical_history_blob_expected": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_history_sha256_expected": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_history_bytes_recomputed": false,
+    "main_writes": false,
+    "merges_or_promotions": false,
+    "challenger_changes": false,
+    "canonical_history_writes": false,
+    "prospective_scores_generated": false
+  },
+  "final_status": {
+    "V317_schedule_contract": "MODEL_IMPLEMENTATION_DEFECT",
+    "physical_records": "BLOCKED_PROVENANCE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
