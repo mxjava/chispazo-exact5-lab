@@ -69,7 +69,7 @@ class PhysicalIntakeTests(unittest.TestCase):
         report = validate_physical_rows(make_rows())
         self.assertEqual(report["usable_contests"], [12300])
         self.assertEqual(report["quarantined"], {})
-        self.assertIn("not established", report["scope_warning"])
+        self.assertIn("not authenticated or established", report["scope_warning"])
 
     def test_missing_sphere_row_quarantines_incomplete_set(self):
         report = validate_physical_rows(make_rows()[:-1])
