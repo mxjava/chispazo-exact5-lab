@@ -7,8 +7,8 @@ from origen.physical_intake_v2 import (
 )
 
 
-def rows_for_target(available="2026-11-20T18:00:00-06:00",
-                    received="2026-11-20T18:01:00-06:00"):
+def rows_for_target(available="2026-11-20T21:15:00-06:00",
+                    received="2026-11-20T21:16:00-06:00"):
     rows = []
     for number in range(1, 29):
         rows.append({
@@ -21,7 +21,7 @@ def rows_for_target(available="2026-11-20T18:00:00-06:00",
             "sphere_type": "Smartballs", "machine_id": "M-01",
             "machine_model": "Model-X", "sphere_id": f"SPH-{number:02d}",
             "printed_number": str(number), "mass_value": "4.700",
-            "mass_unit": "g", "measurement_at": "2026-11-20T17:10:00-06:00",
+            "mass_unit": "g", "measurement_at": "2026-11-20T21:10:00-06:00",
             "measurement_resolution": "0.001", "scale_id": "SCALE-1",
             "calibration_valid_from": "2026-01-01T00:00:00-06:00",
             "calibration_valid_to": "2026-12-31T23:59:59-06:00",
@@ -31,7 +31,7 @@ def rows_for_target(available="2026-11-20T18:00:00-06:00",
             "draw_at": "2026-11-20T21:00:00-06:00",
             "source_document_sha256": "b" * 64,
             "source_document_ref": "DOC-12300",
-            "source_signed_at": "2026-11-20T17:30:00-06:00",
+            "source_signed_at": "2026-11-20T21:12:00-06:00",
             "source_signer_id": "SIGNER-1", "source_signature_ref": "SIG-1",
             "evidence_available_at": available, "custody_received_at": received,
             "custodian_id": "CUST-1", "custodian_role": "independent-archive",
@@ -68,9 +68,9 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_measurement_after_source_close_can_be_eligible_for_later_target(self):
         rows = rows_for_target()
         for row in rows:
-            row["measurement_at"] = "2026-11-20T20:00:00-06:00"
-            row["evidence_available_at"] = "2026-11-20T20:05:00-06:00"
-            row["custody_received_at"] = "2026-11-20T20:06:00-06:00"
+            row["measurement_at"] = "2026-11-20T21:10:00-06:00"
+            row["evidence_available_at"] = "2026-11-20T21:15:00-06:00"
+            row["custody_received_at"] = "2026-11-20T21:16:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertEqual(
             result["targets"]["12301"]["predictive_eligibility"],
@@ -143,6 +143,20 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertIn("MAPPING_NOT_VALID_AT_TARGET_DRAW", result["targets"]["12301"]["reasons"])
         self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+    def test_measurement_cannot_precede_source_draw(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["measurement_at"] = "2026-11-20T20:59:00-06:00"
+            row["evidence_available_at"] = "2026-11-20T21:15:00-06:00"
+            row["custody_received_at"] = "2026-11-20T21:16:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("MEASUREMENT_PRECEDES_SOURCE_DRAW", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
     def test_measurement_cannot_precede_set_assignment(self):
         rows = rows_for_target()
         for row in rows:
@@ -152,14 +166,14 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
     def test_custody_cannot_precede_evidence_availability(self):
         rows = rows_for_target(available="2026-11-20T18:05:00-06:00",
-                               received="2026-11-20T18:01:00-06:00")
+                               received="2026-11-20T21:16:00-06:00")
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertIn("BROKEN_EVIDENCE_TEMPORAL_ORDER", result["targets"]["12301"]["reasons"])
 
     def test_source_must_be_signed_before_evidence_is_declared_available(self):
         rows = rows_for_target()
         for row in rows:
-            row["source_signed_at"] = "2026-11-20T18:30:00-06:00"
+            row["source_signed_at"] = "2026-11-20T21:18:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertIn("SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE", result["targets"]["12301"]["reasons"])
 
