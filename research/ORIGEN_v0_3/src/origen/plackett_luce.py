@@ -115,8 +115,13 @@ def enumerate_set_log_probabilities(
     log_weights: Sequence[float], draw_size: int = DRAW_SIZE
 ) -> dict[tuple[int, ...], float]:
     """Enumerate all unordered draw sets; useful for normalization/oracle audits."""
-    logs = tuple(float(value) for value in log_weights)
-    if len(logs) != N_SPHERES or any(not math.isfinite(value) for value in logs):
+    if len(log_weights) != N_SPHERES or any(isinstance(value, bool) for value in log_weights):
+        raise ValueError("log_weights must contain 28 finite real values, not booleans")
+    try:
+        logs = tuple(float(value) for value in log_weights)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("log_weights must contain 28 finite values") from exc
+    if any(not math.isfinite(value) for value in logs):
         raise ValueError("log_weights must contain 28 finite values")
     if not isinstance(draw_size, int) or isinstance(draw_size, bool) or not 1 <= draw_size <= N_SPHERES:
         raise ValueError("draw_size must be an integer from 1 to 28")
