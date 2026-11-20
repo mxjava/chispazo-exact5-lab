@@ -97,6 +97,27 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 - Legacy wide template is unchanged and is insufficient by itself for physical-sphere identity linkage. Structural validity does not authenticate records or establish bias.
 - See `docs/PHYSICAL_SPHERE_INTAKE_VALIDATOR_V1.md` and `docs/PHYSICAL_EVIDENCE_INTAKE_PROTOCOL_V1.md`.
 
+### Physical evidence intake v2 — source-to-target eligibility
+
+The V2 evaluator is available through:
+
+```powershell
+python -m origen.cli validate-physical-v2 --file .\\data\\physical_evidence_v2.csv --verification-file .\\research\\independent_verification.json
+```
+
+The optional verification JSON accepts only four arrays of exact evidence references:
+`custody_refs`, `timestamp_refs`, `source_refs`, and `continuity_targets`.
+Omitting the file leaves every external attestation unverified and fails closed.
+The file is a handoff from an independent verifier; the CLI does not authenticate
+the verifier, signatures, trusted timestamps, custody receipts, or physical records.
+A locally authored JSON list is not independent verification. Preserve the verifier's
+signed report and its hash outside this repository and audit it separately.
+
+V2 checks source contest identity/date, Mexico City local draw date, the 28-sphere
+set, source-to-target chronology, evidence availability before the target close,
+and externally supplied verification references. It is an eligibility gate, not
+a predictor or a physical-bias test.
+
 ### V317 physical-mass mechanism (preregistered; blocked)
 - Added exact unordered Plackett–Luce likelihood for sequential weighted sampling without replacement and tests against all 120 orders plus normalization across all 98,280 five-number sets.
 - Added `PREREGISTRATION_V317_PHYSICAL_MASS_PLACKETT_LUCE.md`. The signed beta must come from independent machine-equivalent physical calibration before any Chispazo outcomes are inspected. No Chispazo physical measurements or beta calibration are currently present; V317 is blocked and produces no picks.
