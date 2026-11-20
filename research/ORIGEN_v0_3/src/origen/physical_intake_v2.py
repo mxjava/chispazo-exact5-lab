@@ -1,0 +1,147 @@
+"""V2 temporal eligibility gate for physical evidence.
+
+This module is deliberately separate from V1. It does not authenticate signatures,
+custodians, trusted clocks, hashes, metrology or physical continuity. Those must be
+verified against primary records by an independent process.
+"""
+from __future__ import annotations
+
+import csv
+from collections import defaultdict
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Iterable, Mapping
+
+V2_REQUIRED_COLUMNS = (
+    "source_contest_id", "target_contest_id", "contest_id", "draw_date",
+    "modality", "draw_close_at", "target_draw_close_at", "sphere_set_id",
+    "set_assigned_at", "sphere_type", "machine_id", "machine_model",
+    "sphere_id", "printed_number", "mass_value", "mass_unit", "measurement_at",
+    "measurement_resolution", "scale_id", "calibration_valid_from",
+    "calibration_valid_to", "calibration_certificate_sha256",
+    "mapping_valid_from", "mapping_valid_to", "draw_at",
+    "source_document_sha256", "source_document_ref", "source_signed_at",
+    "source_signer_id", "source_signature_ref", "evidence_available_at",
+    "custody_received_at", "custodian_id", "custodian_role",
+    "custody_receipt_ref", "custody_receipt_sha256", "trusted_timestamp_ref",
+)
+
+def _parse_time(value: Any, field: str) -> datetime:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field}: missing timestamp")
+    try:
+        result = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(f"{field}: invalid ISO-8601 timestamp") from exc
+    if result.tzinfo is None or result.utcoffset() is None:
+        raise ValueError(f"{field}: timezone offset required")
+    return result.astimezone(timezone.utc)
+
+
+def evaluate_temporal_eligibility(
+    rows: Iterable[Mapping[str, Any]],
+    *,
+    verified_custody_refs: set[str] | None = None,
+    verified_timestamp_refs: set[str] | None = None,
+    verified_source_refs: set[str] | None = None,
+    verified_continuity_targets: set[str] | None = None,
+) -> dict[str, Any]:
+    """Classify each target independently; missing external attestations fail closed.
+
+    The verification sets must be populated by an independent verifier, not from
+    caller-supplied booleans in the CSV. An empty/omitted set means unverified.
+    """
+    materialized = list(rows)
+    if not materialized:
+        return {"status": "EMPTY", "targets": {}, "row_count": 0}
+    missing = sorted(set(V2_REQUIRED_COLUMNS) - set(materialized[0]))
+    if missing:
+        raise ValueError("missing required columns: " + ", ".join(missing))
+
+    custody = verified_custody_refs or set()
+    timestamps = verified_timestamp_refs or set()
+    sources = verified_source_refs or set()
+    continuity = verified_continuity_targets or set()
+    grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for row in materialized:
+        target = str(row.get("target_contest_id", "")).strip()
+        if not target:
+            raise ValueError("target_contest_id: missing")
+        grouped[target].append(row)
+
+    results: dict[str, dict[str, Any]] = {}
+    for target, group in sorted(grouped.items()):
+        reasons: set[str] = set()
+        closes: set[datetime] = set()
+        source_contests: set[str] = set()
+        for row in group:
+            try:
+                close = _parse_time(row["target_draw_close_at"], "target_draw_close_at")
+                available = _parse_time(row["evidence_available_at"], "evidence_available_at")
+                received = _parse_time(row["custody_received_at"], "custody_received_at")
+                _parse_time(row["measurement_at"], "measurement_at")
+                _parse_time(row["draw_close_at"], "draw_close_at")
+                closes.add(close)
+                source_contests.add(str(row["source_contest_id"]).strip())
+                if available >= close or received >= close:
+                    reasons.add("EVIDENCE_NOT_AVAILABLE_PRE_CLOSE")
+                if not str(row["custodian_id"]).strip() or not str(row["custodian_role"]).strip():
+                    reasons.add("CUSTODIAN_IDENTITY_MISSING")
+                if not str(row["custody_receipt_ref"]).strip():
+                    reasons.add("CUSTODY_RECEIPT_MISSING")
+                if not str(row["trusted_timestamp_ref"]).strip():
+                    reasons.add("TRUSTED_TIMESTAMP_MISSING")
+                if not str(row["source_document_ref"]).strip():
+                    reasons.add("PRIMARY_SOURCE_MISSING")
+            except (ValueError, TypeError, KeyError):
+                reasons.add("INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE")
+        if len(closes) != 1:
+            reasons.add("TARGET_CLOSE_CONFLICT")
+        if len(source_contests) != 1:
+            reasons.add("SOURCE_CONTEST_CONFLICT")
+        if not all(str(row.get("custody_receipt_ref", "")) in custody for row in group):
+            reasons.add("CUSTODY_NOT_INDEPENDENTLY_VERIFIED")
+        if not all(str(row.get("trusted_timestamp_ref", "")) in timestamps for row in group):
+            reasons.add("TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED")
+        if not all(str(row.get("source_document_ref", "")) in sources for row in group):
+            reasons.add("SOURCE_NOT_INDEPENDENTLY_VERIFIED")
+        if target not in continuity:
+            reasons.add("PHYSICAL_CONTINUITY_NOT_VERIFIED")
+
+        if "EVIDENCE_NOT_AVAILABLE_PRE_CLOSE" in reasons:
+            classification = "INELIGIBLE_POST_CLOSE"
+        elif any(reason in reasons for reason in (
+            "PHYSICAL_CONTINUITY_NOT_VERIFIED", "SOURCE_CONTEST_CONFLICT"
+        )):
+            classification = "BLOCKED_CONTINUITY"
+        elif reasons:
+            classification = "BLOCKED_PROVENANCE"
+        else:
+            classification = "ELIGIBLE_PRE_CLOSE"
+        results[target] = {
+            "predictive_eligibility": classification,
+            "reasons": sorted(reasons),
+            "source_contests": sorted(source_contests),
+            "row_count": len(group),
+        }
+    return {
+        "status": "ELIGIBILITY_REVIEWED",
+        "targets": results,
+        "row_count": len(materialized),
+        "scope_warning": (
+            "Temporal gate only. ELIGIBLE_PRE_CLOSE means external attestations were "
+            "declared verified by the independent verifier; it is not a physical-bias "
+            "finding or a predictive-edge claim."
+        ),
+    }
+
+
+def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[str, Any]:
+    with Path(path).open("r", encoding="utf-8-sig", newline="") as stream:
+        reader = csv.DictReader(stream)
+        if reader.fieldnames is None:
+            raise ValueError("CSV has no header")
+        missing = sorted(set(V2_REQUIRED_COLUMNS) - set(reader.fieldnames))
+        if missing:
+            raise ValueError("missing required columns: " + ", ".join(missing))
+        return evaluate_temporal_eligibility(reader, **verification)
