@@ -84,6 +84,7 @@ def evaluate_temporal_eligibility(
         target_draws: set[datetime] = set()
         assignments: set[datetime] = set()
         source_closes: set[datetime] = set()
+        source_draws: set[datetime] = set()
         sphere_types: set[str] = set()
         machine_models: set[str] = set()
         scales: set[str] = set()
@@ -110,6 +111,7 @@ def evaluate_temporal_eligibility(
                 target_draws.add(target_draw)
                 assignments.add(assignment)
                 source_closes.add(source_close)
+                source_draws.add(source_draw)
                 sphere_types.add(str(row["sphere_type"]).strip())
                 machine_models.add(str(row["machine_model"]).strip())
                 scales.add(str(row["scale_id"]).strip())
@@ -187,10 +189,12 @@ def evaluate_temporal_eligibility(
                 reasons.add("INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE")
         if len(closes) != 1:
             reasons.add("TARGET_CLOSE_CONFLICT")
-        if len(target_draws) != 1 or (closes and target_draws and next(iter(target_draws)) < next(iter(closes))):
+        if len(target_draws) != 1 or (closes and target_draws and next(iter(target_draws)) <= next(iter(closes))):
             reasons.add("TARGET_DRAW_TIME_CONFLICT")
         if len(assignments) != 1 or len(source_closes) != 1:
             reasons.add("SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT")
+        if len(source_draws) != 1:
+            reasons.add("SOURCE_DRAW_TIME_CONFLICT")
         if len(sphere_types) != 1 or "" in sphere_types or len(machine_models) != 1 or "" in machine_models or len(scales) != 1 or "" in scales:
             reasons.add("METROLOGY_CONFIGURATION_CONFLICT")
         if any(len(values) != 1 or "" in values for values in (
@@ -235,7 +239,7 @@ def evaluate_temporal_eligibility(
             "MEASUREMENT_AFTER_SOURCE_DRAW", "SOURCE_SIGNED_PRECEDES_MEASUREMENT",
             "SOURCE_SIGNED_AFTER_SOURCE_DRAW", "BROKEN_SOURCE_SIGNATURE_TEMPORAL_ORDER",
             "BROKEN_EVIDENCE_AVAILABILITY_ORDER", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
-            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
+            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "SOURCE_DRAW_TIME_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
             "EVIDENCE_DOCUMENT_SET_CONFLICT"
         )):
             classification = "BLOCKED_CONTINUITY"
