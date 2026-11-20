@@ -143,6 +143,42 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertIn("MAPPING_NOT_VALID_AT_TARGET_DRAW", result["targets"]["12301"]["reasons"])
         self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+    def test_measurement_cannot_precede_set_assignment(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["set_assigned_at"] = "2026-11-20T17:20:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn("BROKEN_EVIDENCE_TEMPORAL_ORDER", result["targets"]["12301"]["reasons"])
+
+    def test_custody_cannot_precede_evidence_availability(self):
+        rows = rows_for_target(available="2026-11-20T18:05:00-06:00",
+                               received="2026-11-20T18:01:00-06:00")
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn("BROKEN_EVIDENCE_TEMPORAL_ORDER", result["targets"]["12301"]["reasons"])
+
+    def test_source_must_be_signed_before_evidence_is_declared_available(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["source_signed_at"] = "2026-11-20T18:30:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn("SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE", result["targets"]["12301"]["reasons"])
+
+    def test_invalid_mass_and_calibration_digest_are_blocked(self):
+        rows = rows_for_target()
+        rows[0]["mass_value"] = "nan"
+        rows[1]["calibration_certificate_sha256"] = "not-a-digest"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("INVALID_MASS_OR_RESOLUTION", reasons)
+        self.assertIn("INVALID_CALIBRATION_SHA256", reasons)
+
+    def test_target_draw_must_precede_target_close(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["draw_at"] = "2026-11-21T20:00:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn("TARGET_DRAW_TIME_CONFLICT", result["targets"]["12301"]["reasons")
+
     def test_empty_input_is_not_success(self):
         self.assertEqual(evaluate_temporal_eligibility([])["status"], "EMPTY")
 
