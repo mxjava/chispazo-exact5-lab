@@ -1,0 +1,142 @@
+{
+  "schema_version": "exact5.run138.official_results_mask_refresh_and_canonical_guard.v1",
+  "run_id": "RUN138",
+  "captured_at_local": "2026-11-20T11:55:45-06:00",
+  "timezone": "America/Mexico_City",
+  "scope": {
+    "official_source_refresh": true,
+    "github_branch_overlay_only": true,
+    "main_write": false,
+    "merge_or_promotion": false,
+    "canonical_history_write": false,
+    "v294_change": false,
+    "challenger_change": false,
+    "code_change": false,
+    "tests_executed": false,
+    "oos_scoring": false
+  },
+  "invariants": {
+    "v294": "FROZEN",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "physical_provenance": "BLOCKED_PROVENANCE",
+    "canonical_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_baseline_blob": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_baseline": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "main_blob_at_capture": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "research_branch_blob_at_capture": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "git_blob_matches_baseline": true,
+    "raw_sha256_recomputed_this_run": false,
+    "row_count_baseline": 10887,
+    "contest_range_baseline": [
+      1363,
+      12249
+    ],
+    "daily_pair_count_baseline": 3163,
+    "singleton_12249_excluded": true
+  },
+  "repository_state": {
+    "repository": "mxjava/chispazo-exact5-lab",
+    "research_branch": "research/run123-official-timing-audit-20261120",
+    "main_head": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "branch_ahead_of_main": 291,
+    "branch_behind_main": 2,
+    "merge_base": "58ff8e609fc62e540ab9226ebdb01782b3301fdc",
+    "main_write_performed": false,
+    "merge_performed": false
+  },
+  "official_refresh": {
+    "captured_at_local": "2026-11-20T11:55:45-06:00",
+    "chispazo_results_endpoint": {
+      "latest_contest": 12384,
+      "latest_date": "2026-11-19",
+      "latest_classic_numbers": [
+        1,
+        2,
+        9,
+        21,
+        25
+      ],
+      "previous_contest": 12383,
+      "previous_modality": "De las Tres",
+      "previous_numbers": [
+        1,
+        3,
+        8,
+        27,
+        28
+      ],
+      "today_2026_11_20_result_published": false
+    },
+    "official_mask_index": {
+      "latest_listed_date": "2026-11-19",
+      "2026_11_20_listed": false
+    },
+    "official_mask_pdf": {
+      "date": "2026-11-19",
+      "contest_12383": {
+        "modality": "De las Tres",
+        "numbers": [
+          1,
+          3,
+          8,
+          27,
+          28
+        ]
+      },
+      "contest_12384": {
+        "modality": "Clásico",
+        "numbers": [
+          1,
+          2,
+          9,
+          21,
+          25
+        ]
+      },
+      "pdf_page_count_reported_by_viewer": 1,
+      "raw_bytes_download_attempted": true,
+      "raw_bytes_download_succeeded": false,
+      "raw_pdf_sha256": "NOT_CAPTURED",
+      "forensic_byte_custody": false
+    },
+    "today_schedule": {
+      "contest_12385": {
+        "date": "2026-11-20",
+        "time": "15:00",
+        "modality": "De las Tres",
+        "status": "SCHEDULED"
+      },
+      "classic": {
+        "date": "2026-11-20",
+        "time": "21:00",
+        "contest_id": null,
+        "status": "SCHEDULED_ID_UNCONFIRMED"
+      },
+      "unrelated_homepage_card_4294_excluded": true
+    },
+    "sources": [
+      "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-19.pdf?v=19112026215833",
+      "https://comercializadores.loterianacional.gob.mx/"
+    ]
+  },
+  "scientific_disposition": {
+    "new_oos_scored": 0,
+    "authenticated_preclose_snapshots": 0,
+    "primary_physical_records_received": 0,
+    "edge_gates_satisfied": false,
+    "classification": "NO_EDGE_EVIDENCE",
+    "provenance_classification": "BLOCKED_PROVENANCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "closed_work_not_reopened": [
+    "Run53-56",
+    "Run96-107",
+    "Run99",
+    "Run100.3",
+    "Run132-137",
+    "V312-V320"
+  ]
+}
