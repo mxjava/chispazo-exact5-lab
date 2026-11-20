@@ -1,0 +1,92 @@
+{
+  "run_id": "RUN124",
+  "captured_at_local": "2026-11-20T01:56:22-06:00",
+  "timezone": "America/Mexico_City",
+  "artifact_type": "official_results_freshness_status_only",
+  "scope": {
+    "read_only_sources": true,
+    "canonical_history_modified": false,
+    "v294_modified": false,
+    "challenger_modified": false,
+    "main_written": false,
+    "promotion_or_merge": false,
+    "prospective_scoring": false,
+    "retrospective_rebuild": false
+  },
+  "preservation": {
+    "main_head_observed": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "research_branch": "research/run123-official-timing-audit-20261120",
+    "canonical_history_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_git_blob_expected": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_expected": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_bytes_rehashed_this_run": false,
+    "v294": "FROZEN"
+  },
+  "official_observations": {
+    "dedicated_chispazo_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observed_current_contest": 12384,
+      "date": "2026-11-19",
+      "modality": "CLASSIC",
+      "numbers": [1, 2, 9, 21, 25],
+      "winners_by_tier": [1, 216, 5675, 44074],
+      "total_winners": 49966,
+      "latest_history_rows": [12384, 12383],
+      "observation": "No 20-Nov result published on this page at capture."
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_date": "2026-11-19",
+      "next_date_listed": false,
+      "observation": "No 20-Nov-2026 daily mask listed at capture."
+    },
+    "commercializer_home_schedule": {
+      "url": "https://comercializadores.loterianacional.gob.mx/",
+      "contest": 12385,
+      "date": "2026-11-20",
+      "time_local": "15:00",
+      "modality": "DE_LAS_TRES",
+      "status": "SCHEDULED_NOT_YET_DRAWN_AT_CAPTURE"
+    },
+    "official_chispazo_schedule": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "de_las_tres_time_local": "15:00",
+      "classic_time_local": "21:00",
+      "classic_contest_id_for_2026_11_20": null,
+      "note": "Do not infer the Classic contest ID from parity, sequence, or the De las Tres contest number."
+    },
+    "home_results_endpoint_discrepancy": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados/",
+      "observation": "Extracted home panel still shows 12384 with a blank winning-number field, while the dedicated Chispazo page publishes 01 02 09 21 25. Preserve discrepancy."
+    }
+  },
+  "prior_official_results_context": [
+    {
+      "contest": 12383,
+      "date": "2026-11-19",
+      "modality": "DE_LAS_TRES",
+      "numbers": [1, 3, 8, 27, 28]
+    },
+    {
+      "contest": 12384,
+      "date": "2026-11-19",
+      "modality": "CLASSIC",
+      "numbers": [1, 2, 9, 21, 25]
+    }
+  ],
+  "provenance": {
+    "official_page_text_observed": true,
+    "daily_mask_for_2026_11_20_received": false,
+    "raw_pdf_bytes_for_2026_11_20": false,
+    "raw_pdf_sha256": null,
+    "independent_custody": false,
+    "preclose_snapshot": false,
+    "oos_targets_scored": 0
+  },
+  "classification": {
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "physical_evidence": "BLOCKED_PROVENANCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "next_valid_action": "After the 15:00 De las Tres and 21:00 Classic draw windows, recheck the dedicated results page and daily mask index; accept a contest only when number, date and modality are explicit. Capture original PDF bytes and SHA-256 if accessible; otherwise retain NOT_CAPTURED and no custody claim."
+}
