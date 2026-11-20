@@ -61,11 +61,15 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             continue
         contest = str(int(contest_raw))
         try:
-            set_id = str(raw["sphere_set_id"]).strip()
-            sphere_id = str(raw["sphere_id"]).strip()
-            number_raw = str(raw["printed_number"]).strip()
-            if not set_id or not sphere_id:
+            set_id_raw = raw["sphere_set_id"]
+            sphere_id_raw = raw["sphere_id"]
+            if not isinstance(set_id_raw, str) or not set_id_raw.strip():
+                raise ValueError("missing sphere set identity")
+            if not isinstance(sphere_id_raw, str) or not sphere_id_raw.strip():
                 raise ValueError("missing sphere identity")
+            set_id = set_id_raw.strip()
+            sphere_id = sphere_id_raw.strip()
+            number_raw = str(raw["printed_number"]).strip()
             if not number_raw.isdecimal() or not 1 <= int(number_raw) <= 28:
                 raise ValueError("invalid printed number")
             start = _aware_utc(raw["mapping_valid_from"], "mapping_valid_from")
