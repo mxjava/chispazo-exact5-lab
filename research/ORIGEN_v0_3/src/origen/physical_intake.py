@@ -34,6 +34,9 @@ REQUIRED_COLUMNS = (
     "scale_id", "calibration_performed_at", "calibration_valid_from", "calibration_valid_to",
     "calibration_certificate_sha256", "mapping_valid_from",
     "source_document_sha256", "source_document_ref",
+    "acta_sha256", "acta_signature_evidence_ref",
+    "weighing_strip_sha256", "weighing_strip_signature_evidence_ref",
+    "cs11_sha256", "cs11_signature_evidence_ref",
 )
 QUARANTINE_CODES = {
     "Q_SOURCE_UNVERIFIED", "Q_CONTEST_LINK", "Q_MAPPING", "Q_TIME",
@@ -149,9 +152,14 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
                     datetime.strptime(draw_date, "%Y-%m-%d")
                 except ValueError:
                     row_errors[contest].add("Q_CONTEST_LINK")
-            for field in ("source_document_sha256", "calibration_certificate_sha256"):
+            for field in ("source_document_sha256", "acta_sha256", "weighing_strip_sha256", "cs11_sha256"):
                 if not HEX64.fullmatch(str(row[field])):
-                    row_errors[contest].add("Q_SOURCE_UNVERIFIED" if field == "source_document_sha256" else "Q_METROLOGY")
+                    row_errors[contest].add("Q_SOURCE_UNVERIFIED")
+            if not HEX64.fullmatch(str(row["calibration_certificate_sha256"])):
+                row_errors[contest].add("Q_METROLOGY")
+            for field in ("acta_signature_evidence_ref", "weighing_strip_signature_evidence_ref", "cs11_signature_evidence_ref"):
+                if not str(row[field]).strip():
+                    row_errors[contest].add("Q_SOURCE_UNVERIFIED")
             close = _timestamp(str(row["draw_close_at"]), "draw_close_at")
             official_close = _official_close_for(row, official_schedule)
             if official_close is None or close != official_close:
@@ -202,7 +210,10 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
                            "scale_id", "measurement_resolution", "calibration_performed_at", "calibration_valid_from",
                            "calibration_valid_to", "mapping_valid_from",
                            "source_document_sha256", "source_document_ref",
-                           "calibration_certificate_sha256")
+                           "calibration_certificate_sha256", "acta_sha256",
+                           "acta_signature_evidence_ref", "weighing_strip_sha256",
+                           "weighing_strip_signature_evidence_ref", "cs11_sha256",
+                           "cs11_signature_evidence_ref")
         for row in group:
             try:
                 numbers.append(int(row["printed_number"]))
@@ -244,7 +255,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
         "row_count": len(materialized),
         "usable_contests": usable,
         "quarantined": quarantined,
-        "scope_warning": "Structural validation only; schedule attestation shape is checked but source bytes, clock trust, signatures and predictive value are not established or authenticated.",
+        "scope_warning": "Structural validation only. Acta, TIRA DE PESAJE, CS-11 and calibration artifacts must be referenced and hash-shaped, but source bytes, hashes-to-bytes binding, signer identities, signatures, clock trust, custody and predictive value are not authenticated.",
     }
 
 
