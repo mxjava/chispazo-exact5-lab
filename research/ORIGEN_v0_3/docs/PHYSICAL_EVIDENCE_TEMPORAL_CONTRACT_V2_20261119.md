@@ -9,7 +9,7 @@ Inspección de `physical_intake.py` (blob `68e553d0acacbc8c1b0bc935ad23b67a09592
 
 Defectos/limitaciones confirmados:
 
-1. La plantilla V1 omite cuatro columnas que el validador exige: `mapping_valid_to`, `draw_at` (además de `draw_at` y `mapping_valid_to`; revisar el conjunto exacto en tests), y los campos de disponibilidad/custodia no existen. La inspección del encabezado confirma que también faltan ambos campos temporales obligatorios.
+1. La plantilla V1 omite exactamente dos columnas que el validador exige: `mapping_valid_to` y `draw_at`. Además, no contiene ninguno de los campos nuevos de disponibilidad/custodia definidos aquí.
 2. El validador exige actualmente `set_assigned_at < draw_close_at`, `measurement_at < draw_close_at` y `mapping_valid_from < draw_close_at`. Esto mezcla el momento del evento físico con la elegibilidad predictiva. Un pesaje documentado después del cierre del sorteo de origen puede ser evidencia válida del estado físico de ese sorteo y, si hay continuidad demostrada, potencialmente servir para un sorteo posterior. No debe ser descartado como registro histórico solo por ser posterior al cierre de su sorteo de origen.
 3. El esquema no registra cuándo el archivo/evidencia quedó realmente disponible para el laboratorio o para el proceso que habría generado la predicción. Un `measurement_at` anterior al cierre no prueba que el documento existiera entonces.
 4. `mapping_history.py` comprueba consistencia estructural de intervalos, pero declara expresamente que no autentica identidad física, reloj, firmas ni documentos.
