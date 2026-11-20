@@ -14,6 +14,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
+from urllib.parse import urlsplit
 from typing import Iterable, Mapping, Any
 
 HEX64 = re.compile(r"[0-9a-f]{64}")
@@ -49,6 +50,37 @@ def _timestamp(value: str, field: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def _official_close_for(row: Mapping[str, Any], schedule: Mapping[str, Any] | None) -> datetime | None:
+    """Resolve a dated close from a source-identified official schedule attestation.
+    Shape validation is not source-byte authentication or independent custody.
+    """
+    if not isinstance(schedule, Mapping):
+        return None
+    try:
+        if schedule.get("timezone") != "America/Mexico_City":
+            return None
+        parsed_uri = urlsplit(str(schedule.get("source_uri", "")))
+        host = (parsed_uri.hostname or "").lower()
+        if parsed_uri.scheme != "https" or not (host == "loterianacional.gob.mx" or host.endswith(".loterianacional.gob.mx")):
+            return None
+        if not HEX64.fullmatch(str(schedule.get("source_sha256", ""))):
+            return None
+        captured = _timestamp(str(schedule.get("captured_at", "")), "schedule.captured_at")
+        modality = str(row.get("modality", ""))
+        draw_date = str(row.get("draw_date", ""))
+        close_times = schedule.get("close_times")
+        if not isinstance(close_times, Mapping):
+            return None
+        close_time = str(close_times.get(modality, ""))
+        if not re.fullmatch(r"(?:[01]\\d|2[0-3]):[0-5]\\d", close_time):
+            return None
+        expected = datetime.fromisoformat(draw_date + "T" + close_time + ":00").replace(tzinfo=DRAW_TIMEZONE).astimezone(timezone.utc)
+        if captured >= expected:
+            return None
+        return expected
+    except (ValueError, TypeError, KeyError):
+        return None
+
 def _positive_float(value: str, field: str) -> float:
     try:
         number = float(value)
@@ -68,7 +100,7 @@ def _positive_int(value: str, field: str) -> int:
     return number
 
 
-def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
+def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedule: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Validate long-form rows; return per-contest quarantine labels and metrics."""
     materialized = list(rows)
     if not materialized:
@@ -107,6 +139,9 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
                 if not HEX64.fullmatch(str(row[field])):
                     row_errors[contest].add("Q_SOURCE_UNVERIFIED" if field == "source_document_sha256" else "Q_METROLOGY")
             close = _timestamp(str(row["draw_close_at"]), "draw_close_at")
+            official_close = _official_close_for(row, official_schedule)
+            if official_close is None or close != official_close:
+                row_errors[contest].add("Q_TIME")
             if re.fullmatch(r"\d{4}-\d{2}-\d{2}", draw_date):
                 if close.astimezone(DRAW_TIMEZONE).date().isoformat() != draw_date:
                     row_errors[contest].add("Q_CONTEST_LINK")
@@ -192,11 +227,11 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "row_count": len(materialized),
         "usable_contests": usable,
         "quarantined": quarantined,
-        "scope_warning": "Structural validation only; source authenticity, clock trust, signatures and predictive value are not established.",
+        "scope_warning": "Structural validation only; schedule attestation shape is checked but source bytes, clock trust, signatures and predictive value are not authenticated or established.",
     }
 
 
-def validate_physical_csv(path: str | Path) -> dict[str, Any]:
+def validate_physical_csv(path: str | Path, *, official_schedule: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Read a UTF-8 CSV and validate its rows without modifying the source."""
     with Path(path).open("r", encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
@@ -205,7 +240,7 @@ def validate_physical_csv(path: str | Path) -> dict[str, Any]:
         missing = sorted(set(REQUIRED_COLUMNS) - set(reader.fieldnames))
         if missing:
             raise ValueError("missing required columns: " + ", ".join(missing))
-        return validate_physical_rows(reader)
+        return validate_physical_rows(reader, official_schedule=official_schedule)
 
 
 def file_sha256(path: str | Path) -> str:
