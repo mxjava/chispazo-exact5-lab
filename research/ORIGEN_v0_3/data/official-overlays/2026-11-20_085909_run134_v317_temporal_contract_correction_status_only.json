@@ -1,0 +1,237 @@
+{
+  "schema_version": "exact5.run134.v317_temporal_contract_correction_status_only.v1",
+  "run_id": "RUN134",
+  "captured_at_local": "2026-11-20T08:59:09-06:00",
+  "timezone": "America/Mexico_City",
+  "artifact_type": "official_procedure_temporal_contract_correction_and_result_mask_refresh_status_only",
+  "scope": {
+    "official_source_review": "READ_ONLY",
+    "isolated_status_overlay_only": true,
+    "research_branch_write_only": true,
+    "main_write": false,
+    "merge_or_promotion": false,
+    "canonical_history_write": false,
+    "historical_rebuild": false,
+    "v294_change": false,
+    "challenger_change": false,
+    "v317_code_change": false,
+    "v317_preregistration_change": false,
+    "predictive_scoring": false,
+    "real_oos_scoring": false,
+    "tests_executed_this_run": false
+  },
+  "invariants": {
+    "v294": "FROZEN",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "canonical_history_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_git_blob_expected": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_main_observed": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_research_branch_observed": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_expected": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_sha256_recomputed_from_raw_csv_bytes_this_run": false,
+    "main_head_observed": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "main_merge_base_with_research_branch": "58ff8e609fc62e540ab9226ebdb01782b3301fdc",
+    "research_branch_compare": {
+      "branch": "research/run123-official-timing-audit-20261120",
+      "ahead_of_main": 282,
+      "behind_main": 2,
+      "status": "DIVERGED",
+      "reconciliation_performed": false
+    },
+    "closed_work_not_reopened": [
+      "Run53-56",
+      "Run96-107",
+      "Run99",
+      "Run100.3",
+      "Run132",
+      "Run133"
+    ]
+  },
+  "official_results_refresh": {
+    "capture_time_local": "2026-11-20T08:59:09-06:00",
+    "dedicated_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "latest_contest": 12384,
+      "latest_date": "2026-11-19",
+      "contest_12383": {
+        "modality": "De las Tres",
+        "numbers": [
+          1,
+          3,
+          8,
+          27,
+          28
+        ]
+      },
+      "contest_12384": {
+        "modality": "Classic",
+        "numbers": [
+          1,
+          2,
+          9,
+          21,
+          25
+        ]
+      },
+      "status": "UNCHANGED"
+    },
+    "general_home_results": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados/",
+      "direct_page_opened": true,
+      "latest_chispazo_date": "2026-11-19",
+      "contest_12383_numbers": [
+        1,
+        3,
+        8,
+        27,
+        28
+      ],
+      "contest_12384_numbers": [
+        1,
+        2,
+        9,
+        21,
+        25
+      ],
+      "matches_dedicated_results_page": true
+    },
+    "daily_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_date": "2026-11-19",
+      "mask_for_2026_11_20_listed": false
+    },
+    "daily_mask_pdf_2026_11_19": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-19.pdf?v=19112026215833",
+      "web_text_review": true,
+      "raw_bytes_download_attempted_this_run": true,
+      "raw_bytes_download_succeeded": false,
+      "raw_pdf_sha256": "NOT_CAPTURED",
+      "independent_forensic_custody": false
+    },
+    "next_draws": {
+      "contest_12385": {
+        "date": "2026-11-20",
+        "time_local": "15:00",
+        "modality": "De las Tres",
+        "source_url": "https://comercializadores.loterianacional.gob.mx/",
+        "status_at_capture": "SCHEDULED_NOT_YET_DRAWN"
+      },
+      "classic": {
+        "date": "2026-11-20",
+        "scheduled_time_local": "21:00",
+        "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "contest_id": null,
+        "status_at_capture": "SCHEDULED_ID_NOT_ESTABLISHED"
+      },
+      "result_or_mask_for_2026_11_20_available_at_capture": false
+    }
+  },
+  "official_procedure_temporal_audit": {
+    "document": "SGVO-PRO-05",
+    "revision": 39,
+    "type": "PUBLIC",
+    "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+    "raw_pdf_sha256": "NOT_CAPTURED",
+    "raw_bytes_download_succeeded": false,
+    "web_text_extraction_reviewed": true,
+    "controlling_sequence": [
+      {
+        "reference": "Policy 9",
+        "fact": "Automatic sales close is 15:00 for De las Tres and 21:00 for nocturnal draws; changes require authorized approval and institutional notice.",
+        "source_lines": "166-175"
+      },
+      {
+        "reference": "Activity 3.1",
+        "fact": "Before the Cierre de Venta section, representatives confirm the draw number and sphere case planned for the draw.",
+        "source_lines": "478-480"
+      },
+      {
+        "reference": "Activity 4.1",
+        "fact": "The SICAL automatic sales close is shown as Cerrado and the date, time, draw number and sales are checked.",
+        "source_lines": "488-497"
+      },
+      {
+        "reference": "Activity 5.1",
+        "fact": "After the Cierre de Venta section, the weighing section begins; spheres are weighed one by one in numerical order.",
+        "source_lines": "535-552"
+      },
+      {
+        "reference": "Activities 5.3-5.5",
+        "fact": "A failed weight check can trigger a sphere-case change and a return to activity 4.1; successful weighing strips are signed and attached to the Act.",
+        "source_lines": "570-580"
+      },
+      {
+        "reference": "Policy 30",
+        "fact": "Recording covers the process from sphere weighing through the electronic draw; edited draw recording forms part of the Act.",
+        "source_lines": "412-417"
+      }
+    ],
+    "implication": "Under the published normal sequence, same-draw sphere masses are measured after sales close. The planned case may be confirmed before close, but the final case may change after the weight check.",
+    "exceptions_or_authorized_deviations_received": false
+  },
+  "v317_temporal_contract_review": {
+    "source_path": "research/ORIGEN_v0_3/src/origen/physical_intake.py",
+    "source_blob": "f5029c456c0b6524ed6a00ae88c5a0b86ee21f36",
+    "test_path": "research/ORIGEN_v0_3/tests/test_physical_intake.py",
+    "test_blob": "6343acb67b45e23f1f4c1dc87d54be64dcc6d347",
+    "preregistration_path": "research/ORIGEN_v0_3/PREREGISTRATION_V317_PHYSICAL_MASS_PLACKETT_LUCE.md",
+    "preregistration_blob": "3e09df57c021fd1a4f6f964d04265efaba325a61",
+    "current_code_rules": {
+      "measurement_must_precede_same_draw_close": true,
+      "mapping_must_precede_same_draw_close": true,
+      "set_assignment_must_precede_same_draw_close": true,
+      "close_time_fixed_by_modality": {
+        "CLASSIC": "21:00",
+        "TRES": "15:00"
+      },
+      "source_sha256_bytes_binding_authenticated": false,
+      "caller_capture_clock_authenticated": false,
+      "actual_sical_close_event_required_as_authenticated_input": false
+    },
+    "test_fixture": {
+      "test_name": "test_complete_preclose_contest_is_structurally_usable",
+      "modality": "CLASSIC",
+      "draw_close_at": "2026-11-20T21:00:00-06:00",
+      "set_assigned_at": "2026-11-20T17:00:00-06:00",
+      "measurement_at": "2026-11-20T17:10:00-06:00",
+      "expected_result": "STRUCTURALLY_USABLE",
+      "procedure_compatibility": "NOT_ESTABLISHED; the published sequence places weighing after activity 4.1 sales closure"
+    },
+    "run133_nuance": "The fixed 19:00 CLASSIC override defect is covered by current tests, but that fix does not resolve the deeper same-draw pre-close mass availability conflict.",
+    "corrected_classification": {
+      "v317_same_draw_preclose_temporal_contract": "MODEL_IMPLEMENTATION_DEFECT",
+      "physical_primary_evidence": "BLOCKED_PROVENANCE",
+      "predictive_edge": "NO_EDGE_EVIDENCE",
+      "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+    },
+    "code_change_this_run": false,
+    "preregistration_change_this_run": false,
+    "tests_executed_this_run": false,
+    "scoring_this_run": false
+  },
+  "future_lagged_case_hypothesis": {
+    "status": "BLOCKED_NOT_PREREGISTERED",
+    "scope": "A separate future hypothesis only; not a V317 repair and not a challenger change.",
+    "potential_preclose_input": "Prior authenticated mass vector for the same physical sphere case and stable sphere-ID-to-number mapping, joined to the target's planned case confirmation recorded at activity 3.1 before close.",
+    "mandatory_conditions": [
+      "Prior mass strip and all 28 sphere identities are authenticated and independently custodied.",
+      "Printed-number mapping, machine, sphere case, scale and calibration chain are stable and verified.",
+      "The target's planned sphere case is recorded before sales close with authenticated timestamp and draw ID.",
+      "No feature may use the target's post-close final case or any post-close measurement.",
+      "Any post-close case switch must remain in the prospective ledger and cannot be used for retrospective exclusion or feature repair.",
+      "Independent beta calibration must be completed without Chispazo outcome labels and frozen before evaluation.",
+      "A separate preregistration, candidate hash, two witnessed pre-close outputs and >=100 untouched chronological Classic OOS targets are required."
+    ],
+    "authorization": "NO_MODEL_OR_CHALLENGER_CHANGE"
+  },
+  "scientific_disposition": {
+    "v317_same_draw_contract": "MODEL_IMPLEMENTATION_DEFECT",
+    "physical_mechanism_evidence": "BLOCKED_PROVENANCE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "edge_supported_gates_satisfied": false,
+    "real_oos_targets_scored_this_run": 0,
+    "preclose_snapshots_authenticated_this_run": 0,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
