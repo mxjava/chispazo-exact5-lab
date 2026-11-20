@@ -286,7 +286,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
         "row_count": len(materialized),
         "usable_contests": usable,
         "quarantined": quarantined,
-        "scope_warning": "Structural validation only. Acta, TIRA DE PESAJE, CS-11 and calibration artifacts must be referenced and hash-shaped, but source bytes, hashes-to-bytes binding, signer identities, signatures, clock trust, custody and predictive value are not authenticated.",
+        "scope_warning": "Structural validation only. Acta, TIRA DE PESAJE, CS-11 and calibration artifacts must be referenced and hash-shaped, but source bytes, hashes-to-bytes binding, signer identities, signatures, clock trust, custody and predictive value are not authenticated or established.",
     }
 
 
