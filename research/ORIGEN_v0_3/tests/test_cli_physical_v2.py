@@ -22,6 +22,7 @@ class PhysicalIntakeV2CliTests(unittest.TestCase):
                 "custody_refs": ["RECEIPT-1"],
                 "timestamp_refs": ["TSA-1"],
                 "source_refs": ["DOC-1"],
+                "calibration_refs": ["a" * 64],
                 "continuity_targets": ["12301"],
             }), encoding="utf-8")
             output = io.StringIO()
@@ -36,6 +37,7 @@ class PhysicalIntakeV2CliTests(unittest.TestCase):
             self.assertEqual(kwargs["verified_custody_refs"], {"RECEIPT-1"})
             self.assertEqual(kwargs["verified_timestamp_refs"], {"TSA-1"})
             self.assertEqual(kwargs["verified_source_refs"], {"DOC-1"})
+            self.assertEqual(kwargs["verified_calibration_refs"], {"a" * 64})
             self.assertEqual(kwargs["verified_continuity_targets"], {"12301"})
 
     def test_v2_cli_rejects_unknown_verification_manifest_fields(self):
