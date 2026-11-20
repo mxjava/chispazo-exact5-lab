@@ -1,0 +1,199 @@
+{
+  "schema_version": "exact5.run139.official_refresh_and_custody_static_audit.v1",
+  "run_id": "RUN139",
+  "captured_at_local": "2026-11-20T12:59:07-06:00",
+  "timezone": "America/Mexico_City",
+  "scope": {
+    "official_source_refresh": true,
+    "custody_code_static_review": true,
+    "research_branch_overlay_only": true,
+    "main_write": false,
+    "merge_or_promotion": false,
+    "canonical_history_write": false,
+    "v294_change": false,
+    "challenger_change": false,
+    "source_code_change": false,
+    "tests_executed": false,
+    "oos_scoring": false,
+    "prediction_output_generated": false
+  },
+  "invariants": {
+    "v294": "FROZEN",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "physical_provenance": "BLOCKED_PROVENANCE",
+    "canonical_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_baseline_blob": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_baseline": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_reverified_this_run": false
+  },
+  "repository_state": {
+    "repository": "mxjava/chispazo-exact5-lab",
+    "research_branch": "research/run123-official-timing-audit-20261120",
+    "research_branch_head_verified_against_run138_commit": "1416ff62287b2ac0f56d159b42c89f70e8e7adc2",
+    "branch_vs_run138_commit": "IDENTICAL",
+    "main_head": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "branch_ahead_of_main": 293,
+    "branch_behind_main": 2,
+    "merge_base": "58ff8e609fc62e540ab9226ebdb01782b3301fdc",
+    "main_write_performed": false,
+    "merge_performed": false
+  },
+  "official_refresh": {
+    "captured_at_local": "2026-11-20T12:59:07-06:00",
+    "results_endpoint": {
+      "latest_contest": 12384,
+      "latest_date": "2026-11-19",
+      "latest_modality": "CLASSIC",
+      "latest_numbers": [
+        1,
+        2,
+        9,
+        21,
+        25
+      ],
+      "previous_contest": 12383,
+      "previous_modality": "DE_LAS_TRES",
+      "previous_numbers": [
+        1,
+        3,
+        8,
+        27,
+        28
+      ],
+      "2026_11_20_result_published": false
+    },
+    "endpoint_crosscheck": {
+      "dedicated_chispazo_results": "12384 numbers present",
+      "home_results": "12384 numbers present",
+      "daily_mask_pdf_text": "12383 and 12384 both present",
+      "prior_home_results_blank_field_discrepancy": "RESOLVED_AT_THIS_CAPTURE"
+    },
+    "mask_index": {
+      "latest_listed_date": "2026-11-19",
+      "2026_11_20_listed": false
+    },
+    "daily_mask_pdf": {
+      "date": "2026-11-19",
+      "contest_12383": {
+        "modality": "DE_LAS_TRES",
+        "numbers": [
+          1,
+          3,
+          8,
+          27,
+          28
+        ]
+      },
+      "contest_12384": {
+        "modality": "CLASSIC",
+        "numbers": [
+          1,
+          2,
+          9,
+          21,
+          25
+        ]
+      },
+      "web_text_extraction_available": true,
+      "raw_bytes_download_attempted_this_run": true,
+      "raw_bytes_download_succeeded": false,
+      "raw_pdf_sha256": "NOT_CAPTURED",
+      "forensic_byte_custody": false
+    },
+    "today_schedule": {
+      "contest_12385": {
+        "date": "2026-11-20",
+        "time": "15:00",
+        "modality": "DE_LAS_TRES",
+        "status": "SCHEDULED"
+      },
+      "classic": {
+        "date": "2026-11-20",
+        "time": "21:00",
+        "contest_id": null,
+        "status": "SCHEDULED_ID_UNCONFIRMED"
+      },
+      "homepage_card_4294": "UNRELATED_PRODUCT_NOT_CHISPAZO_CLASSIC"
+    },
+    "sources": [
+      "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "https://www.loterianacional.gob.mx/Home/Resultados/",
+      "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-19.pdf?v=19112026215833",
+      "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "https://www.loterianacional.gob.mx/home/index"
+    ]
+  },
+  "custody_static_audit": {
+    "review_type": "STATIC_SOURCE_REVIEW_ONLY",
+    "files": {
+      "custody_py_blob": "6a644838ffe402606f4edd8be3cb6d07e99ad319",
+      "test_custody_py_blob": "e4b40b8f02ea23cdc8b38ce9a38ed848e857ebf1",
+      "physical_intake_py_blob": "f5029c456c0b6524ed6a00ae88c5a0b86ee21f36",
+      "test_physical_intake_py_blob": "6343acb67b45e23f1f4c1dc87d54be64dcc6d347"
+    },
+    "findings": [
+      {
+        "id": "CUSTODY-READ-001",
+        "severity": "MEDIUM",
+        "location": "research/ORIGEN_v0_3/src/origen/custody.py:301-308",
+        "finding": "read_record parses JSON but does not require the received bytes to equal canonical_json_bytes(parsed_record) plus LF, and default json.loads accepts duplicate object keys by keeping the last value.",
+        "impact": "Non-canonical or duplicate-key record files can be accepted into the record pipeline even though the protocol requires canonical serialization; different parsers may interpret ambiguous source bytes differently.",
+        "recommended_hardening": "Reject duplicate JSON keys with an object_pairs_hook and compare exact raw bytes with canonical_json_bytes(parsed) + b'\\n' before returning.",
+        "verification_status": "STATIC_REVIEW_NOT_EXECUTED"
+      },
+      {
+        "id": "CUSTODY-ID-002",
+        "severity": "LOW",
+        "location": "research/ORIGEN_v0_3/src/origen/custody.py:202-205, 237-238",
+        "finding": "verify_seal_record checks that target_contest_id and history_max_contest_id are integers and checks history_max_contest_id == target_contest_id - 1, but does not require target_contest_id > 0. build_seal_record rejects non-positive targets and verify_record_chain rejects targets <= 0, so this gap is limited to standalone verification.",
+        "impact": "A manually rehashed standalone record with target_contest_id <= 0 and matching history cutoff can pass verify_seal_record even though the builder and chain verifier reject it.",
+        "recommended_hardening": "Add an explicit positive target-contest guard to verify_seal_record and a rehashed negative/zero-ID regression test.",
+        "verification_status": "STATIC_REVIEW_NOT_EXECUTED"
+      },
+      {
+        "id": "CUSTODY-WRITE-003",
+        "severity": "LOW",
+        "location": "research/ORIGEN_v0_3/src/origen/custody.py:278-297",
+        "finding": "write_record_exclusive checks the exact field set and record digest but does not run semantic record validation before persisting.",
+        "impact": "A caller can persist a self-consistent but semantically invalid record; later verification rejects several invalid states, but the writer itself does not guarantee a valid sealed record.",
+        "recommended_hardening": "Centralize schema/semantic validation and require it before exclusive persistence; add tests for invalid modality, status, timestamps, and target IDs.",
+        "verification_status": "STATIC_REVIEW_NOT_EXECUTED"
+      }
+    ],
+    "known_external_trust_boundary": [
+      "The custody module explicitly does not authenticate generator/custodian identities, clock sources, official close-time source, digital signatures, trusted timestamp tokens, or tamper-proof storage.",
+      "The physical intake validator checks hash syntax and structural relationships but does not read source artifacts and recompute their hashes, verify signatures, or establish trusted clocks/custody.",
+      "A STRUCTURE_VALID or usable_contests result is not equivalent to AUTHENTICITY_VERIFIED or PROSPECTIVE_ELIGIBLE."
+    ],
+    "tests": {
+      "tests_executed_this_run": false,
+      "coverage_gap_observed": [
+        "No test for standalone verifier accepting target_contest_id <= 0 after recomputing record digest.",
+        "No test for read_record rejecting duplicate JSON keys or non-canonical bytes.",
+        "No test for write_record_exclusive rejecting semantically invalid but correctly rehashed records."
+      ]
+    }
+  },
+  "scientific_disposition": {
+    "new_oos_scored": 0,
+    "authenticated_preclose_snapshots": 0,
+    "independently_custodied_live_outputs": 0,
+    "primary_physical_records_received": 0,
+    "edge_gates_satisfied": false,
+    "predictive_classification": "NO_EDGE_EVIDENCE",
+    "implementation_classification": "MODEL_IMPLEMENTATION_DEFECT",
+    "provenance_classification": "BLOCKED_PROVENANCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "implementation_scope": "CUSTODY_VALIDATOR_HARDENING_ONLY_NOT_PREDICTIVE_MODEL"
+  },
+  "closed_work_not_reopened": [
+    "Run53-56",
+    "Run96-107",
+    "Run99",
+    "Run100.3",
+    "Run132-138",
+    "V312-V320"
+  ]
+}
