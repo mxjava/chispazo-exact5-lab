@@ -45,6 +45,12 @@ def make_rows():
             "calibration_valid_from": "2026-01-01T00:00:00-06:00",
             "calibration_valid_to": "2026-12-31T23:59:59-06:00",
             "calibration_certificate_sha256": "a" * 64,
+            "acta_sha256": "d" * 64,
+            "acta_signature_evidence_ref": "ACTA-12300/signatures",
+            "weighing_strip_sha256": "e" * 64,
+            "weighing_strip_signature_evidence_ref": "TIRA-12300/signatures",
+            "cs11_sha256": "f" * 64,
+            "cs11_signature_evidence_ref": "CS11-12300/signatures",
             "mapping_valid_from": "2026-11-20T16:00:00-06:00",
             "source_document_sha256": "b" * 64,
             "source_document_ref": "ACTA-12300/TIRA-1",
@@ -260,6 +266,25 @@ class PhysicalIntakeTests(unittest.TestCase):
     def test_source_hash_must_be_sha256(self):
         rows = make_rows()
         rows[0]["source_document_sha256"] = "not-a-hash"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_SOURCE_UNVERIFIED", report["quarantined"]["12300"])
+
+
+    def test_missing_controlling_acta_evidence_is_quarantined(self):
+        rows = make_rows()
+        rows[0]["acta_sha256"] = ""
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_SOURCE_UNVERIFIED", report["quarantined"]["12300"])
+
+    def test_missing_signed_weighing_strip_reference_is_quarantined(self):
+        rows = make_rows()
+        rows[0]["weighing_strip_signature_evidence_ref"] = ""
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_SOURCE_UNVERIFIED", report["quarantined"]["12300"])
+
+    def test_missing_cs11_evidence_is_quarantined(self):
+        rows = make_rows()
+        rows[0]["cs11_sha256"] = "not-a-sha256"
         report = validate_physical_rows(rows)
         self.assertIn("Q_SOURCE_UNVERIFIED", report["quarantined"]["12300"])
 
