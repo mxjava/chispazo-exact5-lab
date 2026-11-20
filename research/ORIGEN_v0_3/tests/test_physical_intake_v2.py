@@ -137,6 +137,19 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             result["targets"]["12301"]["reasons"],
         )
 
+    def test_draw_date_uses_mexico_city_local_date_not_utc_date(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["draw_close_at"] = "2026-11-20T18:30:00-06:00"
+            row["measurement_at"] = "2026-11-20T18:40:00-06:00"
+            row["source_signed_at"] = "2026-11-20T18:50:00-06:00"
+            row["source_draw_at"] = "2026-11-21T01:00:00Z"
+            row["evidence_available_at"] = "2026-11-20T19:05:00-06:00"
+            row["custody_received_at"] = "2026-11-20T19:06:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertNotIn("SOURCE_DRAW_DATE_MISMATCH", reasons)
+
     def test_template_contract_has_all_required_fields(self):
         self.assertEqual(len(V2_REQUIRED_COLUMNS), len(set(V2_REQUIRED_COLUMNS)))
         rows = rows_for_target()
