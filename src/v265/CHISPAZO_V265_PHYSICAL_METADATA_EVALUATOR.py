@@ -337,7 +337,8 @@ def main():
             for chunk in iter(lambda: fh.read(1024*1024), b''):
                 digest.update(chunk)
         return digest.hexdigest()
-    rep={'model_version':'V265-regime-proxy-guardrail-1',
+    rep={'model_version':'V269.2-preclose-timestamp-integrity',
+         'evidence_guardrail_version':'V265-regime-proxy-guardrail-1',
          'input_sha256':{'history':sha256_file(args.history),'metadata':sha256_file(args.metadata),
                          'p_family':sha256_file(args.p_family) if args.p_family else None},
          'parameters':{'burn':args.burn,'prior_set':args.prior_set,'prior_machine':args.prior_machine,
