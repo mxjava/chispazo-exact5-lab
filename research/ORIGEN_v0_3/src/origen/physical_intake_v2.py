@@ -214,6 +214,8 @@ def evaluate_temporal_eligibility(
                     reasons.add("SOURCE_SIGNATURE_MISSING")
                 if not str(row["custodian_id"]).strip() or not str(row["custodian_role"]).strip():
                     reasons.add("CUSTODIAN_IDENTITY_MISSING")
+                elif str(row["custodian_id"]).strip() == str(row["source_signer_id"]).strip():
+                    reasons.add("CUSTODIAN_IS_SOURCE_SIGNER")
                 if not str(row["custody_receipt_ref"]).strip():
                     reasons.add("CUSTODY_RECEIPT_MISSING")
                 if not str(row["trusted_timestamp_ref"]).strip():
@@ -265,7 +267,7 @@ def evaluate_temporal_eligibility(
             "INVALID_CUSTODY_RECEIPT_SHA256", "INVALID_CALIBRATION_SHA256",
             "CUSTODY_NOT_INDEPENDENTLY_VERIFIED", "TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",
             "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "SOURCE_SIGNATURE_NOT_INDEPENDENTLY_VERIFIED", "CALIBRATION_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
-            "CUSTODY_RECEIPT_MISSING", "TRUSTED_TIMESTAMP_MISSING",
+            "CUSTODY_RECEIPT_MISSING", "TRUSTED_TIMESTAMP_MISSING", "CUSTODIAN_IS_SOURCE_SIGNER",
             "PRIMARY_SOURCE_MISSING", "SOURCE_SIGNATURE_MISSING",
             "SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE"
         )):
