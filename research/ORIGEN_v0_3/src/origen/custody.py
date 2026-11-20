@@ -251,6 +251,7 @@ def verify_seal_record(
         if not isinstance(record, dict):
             return False, "record JSON must be an object"
         _validate_record_semantics(record)
+        count = record["portfolio_line_count"]
         if record["record_sha256"] != _record_digest(record):
             return False, "record digest mismatch"
         validate_portfolio(portfolio, count)
