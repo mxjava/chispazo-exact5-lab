@@ -233,5 +233,59 @@ class CustodyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.make_record(portfolio=raw)
 
+
+    def _rehash(self, record):
+        unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
+        record["record_sha256"] = sha256_bytes(
+            json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        )
+        return record
+
+    def test_exclusive_writer_rejects_zero_target_even_with_valid_digest(self):
+        record, _ = self.make_record()
+        record["target_contest_id"] = 0
+        self._rehash(record)
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "positive integer"):
+                write_record_exclusive(Path(tmp) / "zero.json", record)
+
+    def test_exclusive_writer_rejects_wrong_modality_even_with_valid_digest(self):
+        record, _ = self.make_record()
+        record["modality"] = "TRES"
+        self._rehash(record)
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "sealed Classic"):
+                write_record_exclusive(Path(tmp) / "wrong-modality.json", record)
+
+    def test_exclusive_writer_rejects_fractional_line_count_even_with_valid_digest(self):
+        record, _ = self.make_record()
+        record["portfolio_line_count"] = 30.5
+        self._rehash(record)
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "exactly 30"):
+                write_record_exclusive(Path(tmp) / "fractional-count.json", record)
+
+    def test_read_record_rejects_duplicate_json_keys(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "duplicate.json"
+            path.write_bytes(b'{"schema_version":"exact5.custody.v1","schema_version":"forged"}\\n')
+            with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
+                read_record(path)
+
+    def test_read_record_rejects_noncanonical_json(self):
+        record, _ = self.make_record()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "pretty.json"
+            path.write_text(json.dumps(record, indent=2) + "\\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "not canonical JSON"):
+                read_record(path)
+
+    def test_read_record_rejects_nonstandard_json_constants(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "nan.json"
+            path.write_bytes(b'{"value":NaN}\\n')
+            with self.assertRaisesRegex(ValueError, "non-standard JSON constant"):
+                read_record(path)
+
 if __name__ == "__main__":
     unittest.main()
