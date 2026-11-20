@@ -357,6 +357,13 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         self.assertIn("EVIDENCE_DOCUMENT_SET_CONFLICT", result["targets"]["12301"]["reasons"])
         self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
 
+    def test_mapping_must_remain_valid_at_physical_measurement(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["mapping_valid_to"] = "2026-11-20T20:54:59-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn("MAPPING_NOT_VALID_AT_TARGET_DRAW", result["targets"]["12301"]["reasons"])
+
     def test_mapping_must_cover_set_assignment_as_well_as_draw(self):
         rows = rows_for_target()
         for row in rows:
