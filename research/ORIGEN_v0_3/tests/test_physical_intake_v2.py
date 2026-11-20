@@ -1,0 +1,131 @@
+from __future__ import annotations
+
+import unittest
+
+from origen.physical_intake_v2 import (
+    V2_REQUIRED_COLUMNS, evaluate_temporal_eligibility,
+)
+
+
+def rows_for_target(available="2026-11-20T18:00:00-06:00",
+                    received="2026-11-20T18:01:00-06:00"):
+    rows = []
+    for number in range(1, 29):
+        rows.append({
+            "source_contest_id": "12300", "target_contest_id": "12301",
+            "contest_id": "12300", "draw_date": "2026-11-20",
+            "modality": "CLASSIC",
+            "draw_close_at": "2026-11-20T19:00:00-06:00",
+            "target_draw_close_at": "2026-11-21T19:00:00-06:00",
+            "sphere_set_id": "SET-A", "set_assigned_at": "2026-11-20T17:00:00-06:00",
+            "sphere_type": "Smartballs", "machine_id": "M-01",
+            "machine_model": "Model-X", "sphere_id": f"SPH-{number:02d}",
+            "printed_number": str(number), "mass_value": "4.700",
+            "mass_unit": "g", "measurement_at": "2026-11-20T17:10:00-06:00",
+            "measurement_resolution": "0.001", "scale_id": "SCALE-1",
+            "calibration_valid_from": "2026-01-01T00:00:00-06:00",
+            "calibration_valid_to": "2026-12-31T23:59:59-06:00",
+            "calibration_certificate_sha256": "a" * 64,
+            "mapping_valid_from": "2026-11-20T16:00:00-06:00",
+            "mapping_valid_to": "2026-11-22T21:30:00-06:00",
+            "draw_at": "2026-11-20T21:00:00-06:00",
+            "source_document_sha256": "b" * 64,
+            "source_document_ref": "DOC-12300",
+            "source_signed_at": "2026-11-20T17:30:00-06:00",
+            "source_signer_id": "SIGNER-1", "source_signature_ref": "SIG-1",
+            "evidence_available_at": available, "custody_received_at": received,
+            "custodian_id": "CUST-1", "custodian_role": "independent-archive",
+            "custody_receipt_ref": "RECEIPT-1",
+            "custody_receipt_sha256": "c" * 64,
+            "trusted_timestamp_ref": "TSA-1",
+        })
+    return rows
+
+
+VERIFIED = dict(
+    verified_custody_refs={"RECEIPT-1"},
+    verified_timestamp_refs={"TSA-1"},
+    verified_source_refs={"DOC-12300"},
+    verified_continuity_targets={"12301"},
+)
+
+
+class PhysicalIntakeV2Tests(unittest.TestCase):
+    def test_complete_independently_verified_preclose_evidence_is_eligible(self):
+        result = evaluate_temporal_eligibility(rows_for_target(), **VERIFIED)
+        target = result["targets"]["12301"]
+        self.assertEqual(target["predictive_eligibility"], "ELIGIBLE_PRE_CLOSE")
+        self.assertEqual(target["reasons"], [])
+
+    def test_measurement_before_close_but_receipt_after_target_close_is_ineligible(self):
+        rows = rows_for_target(received="2026-11-21T19:00:00-06:00")
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "INELIGIBLE_POST_CLOSE",
+        )
+
+    def test_measurement_after_source_close_can_be_eligible_for_later_target(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["measurement_at"] = "2026-11-20T20:00:00-06:00"
+            row["evidence_available_at"] = "2026-11-20T20:05:00-06:00"
+            row["custody_received_at"] = "2026-11-20T20:06:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "ELIGIBLE_PRE_CLOSE",
+        )
+
+    def test_missing_external_custody_and_clock_attestations_fail_closed(self):
+        result = evaluate_temporal_eligibility(rows_for_target())
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("CUSTODY_NOT_INDEPENDENTLY_VERIFIED", reasons)
+        self.assertIn("TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_PROVENANCE",
+        )
+
+    def test_missing_continuity_is_separate_block(self):
+        result = evaluate_temporal_eligibility(
+            rows_for_target(),
+            verified_custody_refs={"RECEIPT-1"},
+            verified_timestamp_refs={"TSA-1"},
+            verified_source_refs={"DOC-12300"},
+        )
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
+    def test_naive_timestamp_blocks_provenance(self):
+        rows = rows_for_target()
+        rows[0]["evidence_available_at"] = "2026-11-20T18:00:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_PROVENANCE",
+        )
+
+    def test_inconsistent_target_close_is_blocked(self):
+        rows = rows_for_target()
+        rows[-1]["target_draw_close_at"] = "2026-11-21T20:00:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_PROVENANCE",
+        )
+        self.assertIn("TARGET_CLOSE_CONFLICT", result["targets"]["12301"]["reasons"])
+
+    def test_template_contract_has_all_required_fields(self):
+        self.assertEqual(len(V2_REQUIRED_COLUMNS), len(set(V2_REQUIRED_COLUMNS)))
+        rows = rows_for_target()
+        self.assertEqual(set(V2_REQUIRED_COLUMNS) - set(rows[0]), set())
+
+    def test_empty_input_is_not_success(self):
+        self.assertEqual(evaluate_temporal_eligibility([])["status"], "EMPTY")
+
+
+if __name__ == "__main__":
+    unittest.main()
