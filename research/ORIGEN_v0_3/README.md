@@ -106,7 +106,7 @@ python -m origen.cli validate-physical-v2 --file .\\data\\physical_evidence_v2.c
 ```
 
 The optional verification JSON accepts only four arrays of exact evidence references:
-`custody_refs`, `timestamp_refs`, `source_refs`, `calibration_refs`, and `continuity_targets`.
+`custody_refs`, `timestamp_refs`, `source_refs`, `signature_refs`, `calibration_refs`, and `continuity_targets`.
 Omitting the file leaves every external attestation unverified and fails closed.
 The file is a handoff from an independent verifier; the CLI does not authenticate
 the verifier, signatures, trusted timestamps, custody receipts, or physical records.
