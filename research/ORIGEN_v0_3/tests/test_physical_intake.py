@@ -12,7 +12,7 @@ from origen.physical_intake import (
 SCHEDULE = {
     "timezone": "America/Mexico_City",
     "draw_date": "2026-11-20",
-    "source_uri": "https://www.loterianacional.gob.mx/",
+    "source_uri": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
     "source_sha256": "c" * 64,
     "captured_at": "2026-11-20T12:00:00-06:00",
     "close_times": {"CLASSIC": "21:00", "TRES": "15:00"},
@@ -67,6 +67,30 @@ class PhysicalIntakeTests(unittest.TestCase):
         for row in rows:
             row["draw_close_at"] = "2026-11-20T19:00:00-06:00"
         report = validate_physical_rows(rows)
+        self.assertIn("Q_TIME", report["quarantined"]["12300"])
+        self.assertNotIn(12300, report["usable_contests"])
+
+
+    def test_forged_official_host_schedule_cannot_override_classic_close(self):
+        rows = make_rows()
+        schedule = dict(SCHEDULE, close_times={"CLASSIC": "19:00", "TRES": "15:00"})
+        for row in rows:
+            row["draw_close_at"] = "2026-11-20T19:00:00-06:00"
+        report = _validate_physical_rows(rows, official_schedule=schedule)
+        self.assertIn("Q_TIME", report["quarantined"]["12300"])
+        self.assertNotIn(12300, report["usable_contests"])
+
+    def test_forged_official_host_schedule_cannot_swap_modality_times(self):
+        rows = make_rows()
+        schedule = dict(SCHEDULE, close_times={"CLASSIC": "21:00", "TRES": "21:00"})
+        report = _validate_physical_rows(rows, official_schedule=schedule)
+        self.assertIn("Q_TIME", report["quarantined"]["12300"])
+        self.assertNotIn(12300, report["usable_contests"])
+
+    def test_schedule_uri_must_be_exact_official_schedule_endpoint(self):
+        rows = make_rows()
+        schedule = dict(SCHEDULE, source_uri="https://www.loterianacional.gob.mx/")
+        report = _validate_physical_rows(rows, official_schedule=schedule)
         self.assertIn("Q_TIME", report["quarantined"]["12300"])
         self.assertNotIn(12300, report["usable_contests"])
 
