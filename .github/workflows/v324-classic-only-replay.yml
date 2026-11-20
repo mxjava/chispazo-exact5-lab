@@ -1,0 +1,75 @@
+name: V324 inferred Clásico-only replay
+
+on:
+  push:
+    branches:
+      - research/v249-snapshot-integrity-20261119
+    paths:
+      - "src/v324/**"
+      - "scripts/audit_v323_maxT.py"
+      - "data/history/Chispazo_through_12249.csv"
+      - ".github/workflows/v324-classic-only-replay.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v324-classic-only-replay
+  cancel-in-progress: false
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip numpy pandas scipy
+      - name: Build conservative Clásico-only history
+        run: |
+          python -m src.v324.classic_history \
+            --history data/history/Chispazo_through_12249.csv \
+            --out-history outputs/v324_classic_history.csv \
+            --manifest outputs/v324_modality_manifest.json
+      - name: Run V264 from Clásico-only history (800-draw warmup)
+        run: |
+          python -m src.v264.CHISPAZO_V264_EXACTSET_ANYTIME \
+            --history outputs/v324_classic_history.csv \
+            --out-dir outputs/v324_classic_replay \
+            --warmup 800
+      - name: Run maxT multiplicity audit on Clásico-only scores
+        run: |
+          python scripts/audit_v323_maxT.py \
+            --scores outputs/v324_classic_replay/v264_expert_log_likelihoods.csv \
+            --out outputs/v324_classic_replay/v324_classic_maxT.json \
+            --resamples 5000 --seed 20261120
+      - name: Attach modality scope and limitations
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("outputs/v324_classic_replay/v324_classic_maxT.json")
+          result=json.loads(p.read_text(encoding="utf-8"))
+          manifest=json.loads(Path("outputs/v324_modality_manifest.json").read_text(encoding="utf-8"))
+          result["scope"]="V324_CLASSIC_ONLY_INFERRED_RESEARCH"
+          result["modality_manifest"]=manifest
+          result["limitations"].append("Clásico membership is inferred from the complete paired numbering sequence and official anchors, not individually tagged in the canonical CSV.")
+          result["limitations"].append("The V324 retrospective result is not prospective evidence and does not establish a 5/5 edge.")
+          p.write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
+          PY
+      - name: Upload Clásico-only evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: v324-classic-only-${{ github.sha }}
+          path: |
+            outputs/v324_classic_history.csv
+            outputs/v324_modality_manifest.json
+            outputs/v324_classic_replay/v264_summary.json
+            outputs/v324_classic_replay/v264_expert_log_likelihoods.csv
+            outputs/v324_classic_replay/v324_classic_maxT.json
+          if-no-files-found: error
+          retention-days: 90
