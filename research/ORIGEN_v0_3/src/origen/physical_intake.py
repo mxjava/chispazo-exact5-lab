@@ -121,7 +121,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             cal_to = _timestamp(str(row["calibration_valid_to"]), "calibration_valid_to")
             if not (assigned < close and measured < close and mapped < close and close < draw_at):
                 row_errors[contest].add("Q_TIME")
-            if not (mapped <= assigned <= mapped_to and mapped <= draw_at <= mapped_to):
+            if not (mapped <= assigned <= measured <= mapped_to and mapped <= draw_at <= mapped_to):
                 row_errors[contest].add("Q_REMAP")
             if draw_at.astimezone(DRAW_TIMEZONE).date().isoformat() != draw_date:
                 row_errors[contest].add("Q_CONTEST_LINK")
