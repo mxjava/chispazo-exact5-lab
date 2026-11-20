@@ -112,6 +112,13 @@
       "policy_8_subject": "electronic signature and custody of participation file",
       "classification": "DOCUMENT_CONTROL_CROSS_REFERENCE_INCONSISTENCY",
       "operational_noncompliance_inferred": false
+    },
+    "recording_requirement": {
+      "policy": 30,
+      "claim": "Recording is required from sphere weighing through the electronic draw; the edited recording (draw only) forms part of the Act.",
+      "evidentiary_value": "May establish actual measurement/loading/draw chronology and identity continuity if original recording, metadata, timecode and custody are received.",
+      "original_recording_received": false,
+      "independent_custody": false
     }
   },
   "non_governing_project_manual": {
@@ -156,7 +163,8 @@
       "Explicit confirmation of any genuinely pre-close measurement or set/mapping assignment.",
       "Current authorized status/version of SGVO-MAN-02.",
       "Clarification of the policy-8/policy-6 cross-reference.",
-      "Full record chain including Act, weighing strip, CS-11, participation-file signature/custody, calibration, archive and incident records."
+      "Full record chain including Act, weighing strip, CS-11, participation-file signature/custody, calibration, archive and incident records.",
+      "Original recording from weighing through draw, edited Act excerpt, timecode, camera/clock metadata, hash and retention/custody chain."
     ]
   },
   "missing_primary_evidence": {
