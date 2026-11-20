@@ -72,7 +72,7 @@ def _official_close_for(row: Mapping[str, Any], schedule: Mapping[str, Any] | No
         if not isinstance(close_times, Mapping):
             return None
         close_time = str(close_times.get(modality, ""))
-        if not re.fullmatch(r"(?:[01]\\d|2[0-3]):[0-5]\\d", close_time):
+        if not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", close_time):
             return None
         expected = datetime.fromisoformat(draw_date + "T" + close_time + ":00").replace(tzinfo=DRAW_TIMEZONE).astimezone(timezone.utc)
         if captured >= expected:
