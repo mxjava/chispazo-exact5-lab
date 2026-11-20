@@ -52,6 +52,7 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     by_number: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     quarantined: dict[str, set[str]] = defaultdict(set)
     row_count = 0
+    rows_by_contest: dict[str, int] = defaultdict(int)
 
     for index, raw in enumerate(rows, start=2):
         row_count += 1
@@ -60,6 +61,7 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             quarantined[f"row:{index}"].add("Q_REMAP")
             continue
         contest = str(int(contest_raw))
+        rows_by_contest[contest] += 1
         try:
             set_id_raw = raw["sphere_set_id"]
             sphere_id_raw = raw["sphere_id"]
@@ -90,6 +92,10 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
 
     forward_conflicts = _overlap_conflicts(by_sphere, "number", quarantined)
     inverse_conflicts = _overlap_conflicts(by_number, "sphere", quarantined)
+    quarantined_rows = sum(
+        1 if key.startswith("row:") else rows_by_contest.get(key, 0)
+        for key, reasons in quarantined.items() if reasons
+    )
     return {
         "status": "MAPPING_CONFLICTS" if quarantined else "MAPPING_HISTORY_CLEAR",
         "row_count": row_count,
@@ -100,7 +106,7 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "overlapping_conflicts": forward_conflicts + inverse_conflicts,
         "interval_conflicts_clear": (forward_conflicts + inverse_conflicts) == 0,
         "overlap_conflicts_clear": (forward_conflicts + inverse_conflicts) == 0,
-        "invalid_or_quarantined_mapping_rows": sum(len(value) > 0 for value in quarantined.values()),
+        "invalid_or_quarantined_mapping_rows": quarantined_rows,
         "continuity_status": "NOT_PROVEN",
         "coverage_basis": "No expected contest inventory or complete date-range manifest was supplied; absence of overlaps does not prove gap-free coverage.",
         "quarantined": {key: sorted(value) for key, value in sorted(quarantined.items())},
