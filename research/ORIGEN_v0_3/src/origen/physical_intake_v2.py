@@ -49,6 +49,7 @@ def evaluate_temporal_eligibility(
     verified_custody_refs: set[str] | None = None,
     verified_timestamp_refs: set[str] | None = None,
     verified_source_refs: set[str] | None = None,
+    verified_signature_refs: set[str] | None = None,
     verified_calibration_refs: set[str] | None = None,
     verified_continuity_targets: set[str] | None = None,
 ) -> dict[str, Any]:
@@ -67,9 +68,10 @@ def evaluate_temporal_eligibility(
     custody = set() if verified_custody_refs is None else verified_custody_refs
     timestamps = set() if verified_timestamp_refs is None else verified_timestamp_refs
     sources = set() if verified_source_refs is None else verified_source_refs
+    signatures = set() if verified_signature_refs is None else verified_signature_refs
     calibrations = set() if verified_calibration_refs is None else verified_calibration_refs
     continuity = set() if verified_continuity_targets is None else verified_continuity_targets
-    for field, values in (("verified_custody_refs", custody), ("verified_timestamp_refs", timestamps), ("verified_source_refs", sources), ("verified_calibration_refs", calibrations), ("verified_continuity_targets", continuity)):
+    for field, values in (("verified_custody_refs", custody), ("verified_timestamp_refs", timestamps), ("verified_source_refs", sources), ("verified_signature_refs", signatures), ("verified_calibration_refs", calibrations), ("verified_continuity_targets", continuity)):
         if not isinstance(values, (set, frozenset)) or any(not isinstance(value, str) or not value.strip() for value in values):
             raise ValueError(f"{field} must be a set of non-empty strings")
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
@@ -249,6 +251,8 @@ def evaluate_temporal_eligibility(
             reasons.add("TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED")
         if not all(str(row.get("source_document_ref", "")) in sources for row in group):
             reasons.add("SOURCE_NOT_INDEPENDENTLY_VERIFIED")
+        if not all(str(row.get("source_signature_ref", "")) in signatures for row in group):
+            reasons.add("SOURCE_SIGNATURE_NOT_INDEPENDENTLY_VERIFIED")
         if not all(str(row.get("calibration_certificate_sha256", "")).strip().lower() in calibrations for row in group):
             reasons.add("CALIBRATION_NOT_INDEPENDENTLY_VERIFIED")
         if target not in continuity:
@@ -260,7 +264,7 @@ def evaluate_temporal_eligibility(
             "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "INVALID_SOURCE_SHA256",
             "INVALID_CUSTODY_RECEIPT_SHA256", "INVALID_CALIBRATION_SHA256",
             "CUSTODY_NOT_INDEPENDENTLY_VERIFIED", "TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",
-            "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "CALIBRATION_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
+            "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "SOURCE_SIGNATURE_NOT_INDEPENDENTLY_VERIFIED", "CALIBRATION_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
             "CUSTODY_RECEIPT_MISSING", "TRUSTED_TIMESTAMP_MISSING",
             "PRIMARY_SOURCE_MISSING", "SOURCE_SIGNATURE_MISSING",
             "SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE"
