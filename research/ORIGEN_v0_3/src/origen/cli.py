@@ -53,6 +53,8 @@ def main():
     elif args.command=="validate-physical": result=validate_physical_csv(args.file)
     elif args.command=="validate-physical-v2":
         verification = _load(args.verification_file) if args.verification_file else {}
+        if not isinstance(verification, dict):
+            raise ValueError("verification manifest must be a JSON object")
         allowed = {"custody_refs", "timestamp_refs", "source_refs", "calibration_refs", "continuity_targets"}
         if set(verification) - allowed:
             raise ValueError("verification manifest contains unsupported keys")
