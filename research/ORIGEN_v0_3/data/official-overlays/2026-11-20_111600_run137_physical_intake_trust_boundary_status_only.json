@@ -1,0 +1,120 @@
+{
+  "schema_version": "exact5.run137.physical_intake_trust_boundary_and_official_refresh.v1",
+  "run_id": "RUN137",
+  "captured_at_local": "2026-11-20T11:16:00-06:00",
+  "timezone": "America/Mexico_City",
+  "scope": {
+    "github_read_only_audit": true,
+    "research_branch_overlay_only": true,
+    "main_write": false,
+    "merge_or_promotion": false,
+    "canonical_history_write": false,
+    "v294_change": false,
+    "challenger_change": false,
+    "code_change": false,
+    "preregistration_change": false,
+    "tests_executed": false,
+    "oos_scoring": false
+  },
+  "invariants": {
+    "v294": "FROZEN",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "canonical_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_blob_baseline": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_baseline": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_reverified_this_run": false,
+    "research_branch": "research/run123-official-timing-audit-20261120",
+    "main_head_from_run136": "424eee9dd906f8235541e97ae61026441083bbfe"
+  },
+  "official_refresh": {
+    "captured_at": "2026-11-20T11:16:00-06:00",
+    "results_page_latest_contest": 12384,
+    "results_page_latest_date": "2026-11-19",
+    "12383": {
+      "modality": "De las Tres",
+      "numbers": [1, 3, 8, 27, 28]
+    },
+    "12384": {
+      "modality": "Classic",
+      "numbers": [1, 2, 9, 21, 25]
+    },
+    "mask_index_latest_date": "2026-11-19",
+    "mask_2026_11_20_listed": false,
+    "next_12385": {
+      "date": "2026-11-20",
+      "time": "15:00",
+      "modality": "De las Tres",
+      "status": "SCHEDULED"
+    },
+    "classic": {
+      "date": "2026-11-20",
+      "time": "21:00",
+      "contest_id": null,
+      "status": "SCHEDULED_ID_UNCONFIRMED"
+    },
+    "wrong_product_card_exclusion": "Home page shows 4294 at 21:00 for another product; not a Chispazo contest ID.",
+    "raw_pdf_sha256": "NOT_CAPTURED",
+    "forensic_custody": false,
+    "sources": [
+      "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "https://www.loterianacional.gob.mx/Home/Resultados/",
+      "https://www.loterianacional.gob.mx/home/index"
+    ]
+  },
+  "code_audit": {
+    "source_path": "research/ORIGEN_v0_3/src/origen/physical_intake.py",
+    "source_blob": "f5029c456c0b6524ed6a00ae88c5a0b86ee21f36",
+    "test_path": "research/ORIGEN_v0_3/tests/test_physical_intake.py",
+    "test_blob": "6343acb67b45e23f1f4c1dc87d54be64dcc6d347",
+    "observed_test_fixture": {
+      "contest_id": "12300",
+      "source_sha256": "synthetic repeated hex, not a digest of source bytes",
+      "acta_sha256": "synthetic repeated hex",
+      "weighing_strip_sha256": "synthetic repeated hex",
+      "cs11_sha256": "synthetic repeated hex",
+      "schedule_source_sha256": "synthetic repeated hex",
+      "schedule_capture_time": "caller-supplied 2026-11-20T12:00:00-06:00",
+      "measurement_at": "2026-11-20T17:10:00-06:00",
+      "close_at": "2026-11-20T21:00:00-06:00",
+      "test_expected_usable_contests": [12300]
+    },
+    "validator_guarantees": {
+      "hash_fields_checked_for_64_lowercase_hex_shape": true,
+      "source_bytes_loaded_and_digest_recomputed": false,
+      "digital_signatures_cryptographically_verified": false,
+      "signer_identity_verified": false,
+      "capture_clock_trusted": false,
+      "sical_close_event_authenticated": false,
+      "custody_chain_verified": false,
+      "predictive_value_established": false
+    },
+    "scope_warning_present_in_code": true,
+    "classification": "STRUCTURE_ONLY_NOT_AUTHENTICATED_EVIDENCE"
+  },
+  "temporal_contract": {
+    "sgvo_pro_05_revision": 39,
+    "official_sequence": "SICAL sales close activity 4.1 precedes weighing activity 5.1; failed weight may trigger case replacement and return to activity 4.1.",
+    "v317_same_draw_preclose_mass": "MODEL_IMPLEMENTATION_DEFECT",
+    "postclose_same_draw_measurement_must_not_be_relabelled_preclose": true,
+    "prior_draw_mass_hypothesis": "NOT_PREREGISTERED; NOT_TESTED; DO_NOT_MODIFY_CHALLENGER"
+  },
+  "scientific_disposition": {
+    "new_oos_scored": 0,
+    "authenticated_preclose_snapshots": 0,
+    "primary_physical_records_received": 0,
+    "edge_gates_satisfied": false,
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "physical_provenance": "BLOCKED_PROVENANCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "closed_work_not_reopened": [
+    "Run53-56",
+    "Run96-107",
+    "Run99",
+    "Run100.3",
+    "Run132-136",
+    "V312-V320"
+  ]
+}
