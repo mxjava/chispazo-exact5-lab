@@ -1,7 +1,7 @@
 {
   "schema_version": "exact5.run132.official_physical_source_audit_status_only.v1",
   "run_id": "RUN132",
-  "captured_at_local": "2026-11-20T07:03:31-06:00",
+  "captured_at_local": "2026-11-20T07:18:06-06:00",
   "timezone": "America/Mexico_City",
   "artifact_type": "official_source_review_and_physical_evidence_requirements_status_only",
   "scope": {
@@ -72,7 +72,8 @@
       },
       "raw_pdf_bytes_downloaded": false,
       "raw_pdf_sha256": "NOT_CAPTURED",
-      "independent_forensic_custody": false
+      "independent_forensic_custody": false,
+      "legal_status": "INFORMATIVE_PUBLICATION_NOT_THE_CONTROLLING_ACTA"
     },
     "dedicated_results_page": {
       "url": "https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados",
@@ -92,7 +93,8 @@
         27,
         28
       ],
-      "matches_daily_mask": true
+      "matches_daily_mask": true,
+      "legal_status": "INFORMATIVE_PUBLICATION_NOT_THE_CONTROLLING_ACTA"
     },
     "general_home_results": {
       "url": "https://www.loterianacional.gob.mx/Home/Resultados/",
@@ -112,7 +114,8 @@
         25
       ],
       "matches_dedicated_results": true,
-      "note": "A cached search snippet earlier showed blank values for 12384, but the direct page opened in this capture contains both winning combinations. Use the directly opened page and mask, not the stale snippet."
+      "note": "A cached search snippet earlier showed blank values for 12384, but the direct page opened in this capture contains both winning combinations. Use the directly opened page and mask, not the stale snippet.",
+      "legal_status": "INFORMATIVE_PUBLICATION_NOT_THE_CONTROLLING_ACTA"
     },
     "next_draws": {
       "contest_12385": {
@@ -130,6 +133,23 @@
         "status_at_capture": "SCHEDULED_ID_NOT_ESTABLISHED"
       },
       "result_or_mask_for_2026_11_20_available_at_capture": false
+    },
+    "legal_authority": {
+      "regulation_title": "Reglamento del Sorteo Chispazo de Pronósticos para la Asistencia Pública",
+      "official_legal_framework_url": "https://www.loterianacional.gob.mx/Home/MarcoJuridico",
+      "official_regulation_pdf_url": "https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf",
+      "last_amendment_listed_by_loteria_nacional": "2012-03-07",
+      "public_page_and_mask_legal_status": "INFORMATIVE_ONLY_UNDER_ARTICLE_8",
+      "controlling_official_result": "ACTA_UNDER_ARTICLE_15",
+      "acta_for_contests_12383_12384_obtained": false,
+      "article_8": "The regulation identifies results in the Acta under Article 15 as official; terminal, phone, website and published result mask are informative only. Official results prevail if there is a difference.",
+      "article_9": "In the presence of the SEGOB inspector, 28 spheres are introduced into the urn, each identified by a different number from 1 to 28; five spheres are extracted at random.",
+      "article_15": "After the ceremony and winner identification, an Acta records background, results and incidents; the SEGOB inspector and designated officials intervene and sign.",
+      "evidence_locations_in_pdf": {
+        "article_8": "PDF page 5, lines 222-250",
+        "article_9": "PDF page 6, lines 254-284",
+        "article_15": "PDF page 8, lines 388-394"
+      }
     }
   },
   "official_physical_procedure_audit": {
@@ -199,17 +219,46 @@
       "scale_resolution_and_calibration_certificate_authenticity_verified": false,
       "actual_contest_specific_weigh_strip_or_acta_obtained": false,
       "actual_contest_specific_cs11_obtained": false,
-      "status": "STRUCTURAL_VALIDATION_ONLY; PHYSICAL EVIDENCE NOT INGESTED"
+      "status": "STRUCTURAL_VALIDATION_ONLY; PHYSICAL EVIDENCE NOT INGESTED",
+      "number_set_cardinality_and_domain_confirmed_by_chispazo_article_9": true,
+      "contest_specific_physical_sphere_id_to_number_crosswalk_obtained": false
     },
     "required_primary_evidence_for_next_phase": [
+      "Controlling Acta under Chispazo Regulation Article 15 for the exact contest; published website and mask are informative only under Article 8",
       "Contest-specific TIRA DE PESAJE with all sphere weights, sphere/kit identity, draw date and contest number, signatures and corrections/replacements",
       "Signed Acta for the exact draw with attachments and custody metadata",
       "Contest-specific CS-11 original or authenticated copy, with captured sphere numbers and sign-offs from Lotería Nacional and SEGOB",
       "Evidence of the exact sphere kit loaded into the machine for that contest",
       "Official mapping/reassignment/replacement history linking each physical sphere identity to its printed number",
       "Calibration certificate and traceable instrument metadata for the scale used in the weighing",
-      "Original downloaded source bytes, SHA-256, independent timestamp/custody record, and verification of all source-document hashes"
-    ]
+      "Original downloaded source bytes, SHA-256, independent timestamp/custody record, and verification of all source-document hashes",
+      "Active controlled version of SGVO-MAN-02 and the Chispazo-specific operating instructions it references"
+    ],
+    "chispazo_regulation": {
+      "cardinality_and_mapping_domain": "CONFIRMED_BY_ARTICLE_9",
+      "sphere_count": 28,
+      "printed_number_domain": [
+        1,
+        28
+      ],
+      "draw_count": 5,
+      "exact_physical_sphere_id_to_printed_number_crosswalk_for_a_specific_contest": "NOT_OBTAINED",
+      "official_result_record": "ACTA_ARTICLE_15",
+      "article_8_publications": "INFORMATIVE_ONLY",
+      "official_pdf_url": "https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf",
+      "legal_framework_url": "https://www.loterianacional.gob.mx/Home/MarcoJuridico",
+      "last_amendment_listed": "2012-03-07"
+    },
+    "referenced_manual_status": {
+      "code": "SGVO-MAN-02",
+      "title": "Manual de Apoyo para la Operación de Sorteos y Equipos Electrónicos",
+      "referenced_by": "SGVO-PRO-05",
+      "found_in_normateca_projects_historical_listing": true,
+      "project_window": "2026-02-23 to 2026-03-04",
+      "listed_filename": "sgvo_man_02p.pdf",
+      "current_effective_version_obtained": false,
+      "decision": "Do not treat the historical project listing as proof of a currently effective manual; obtain the active controlled copy."
+    }
   },
   "repository_and_ci": {
     "repository": "mxjava/chispazo-exact5-lab",
