@@ -253,6 +253,23 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         self.assertIn("INVALID_MASS_OR_RESOLUTION", reasons)
         self.assertIn("INVALID_CALIBRATION_SHA256", reasons)
 
+    def test_source_draw_timestamp_must_be_consistent_across_all_28_spheres(self):
+        rows = rows_for_target()
+        rows[0]["source_draw_at"] = "2026-11-20T21:00:01-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_DRAW_TIME_CONFLICT", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
+    def test_target_draw_equal_to_target_close_is_blocked(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["target_draw_at"] = row["target_draw_close_at"]
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("TARGET_DRAW_TIME_CONFLICT", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
     def test_target_draw_cannot_precede_target_close(self):
         rows = rows_for_target()
         for row in rows:
