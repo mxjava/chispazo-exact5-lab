@@ -1,0 +1,149 @@
+{
+  "schema_version": "exact5.run133.official_refresh_and_v317_gate_followup_status_only.v1",
+  "run_id": "RUN133",
+  "captured_at_local": "2026-11-20T07:56:58-06:00",
+  "timezone": "America/Mexico_City",
+  "artifact_type": "official_result_mask_refresh_and_v317_close_gate_followup_status_only",
+  "scope": {
+    "read_only_official_source_review": true,
+    "isolated_status_overlay_only": true,
+    "github_write_research_branch_only": true,
+    "main_write": false,
+    "merge_or_promotion": false,
+    "canonical_history_write": false,
+    "historical_rebuild": false,
+    "v294_change": false,
+    "challenger_change": false,
+    "predictive_scoring": false,
+    "real_oos_scoring": false
+  },
+  "invariants": {
+    "v294": "FROZEN",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "canonical_history_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_git_blob_expected": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_main_observed": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_research_branch_observed": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_expected": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_sha256_recomputed_from_raw_csv_bytes_this_run": false,
+    "closed_work_not_reopened": [
+      "Run53-56",
+      "Run96-107",
+      "Run132 official physical-source audit"
+    ]
+  },
+  "official_results_refresh": {
+    "capture_time_local": "2026-11-20T07:56:58-06:00",
+    "dedicated_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "latest_contest": 12384,
+      "latest_date": "2026-11-19",
+      "contest_12383": {
+        "modality": "De las Tres",
+        "numbers": [1, 3, 8, 27, 28]
+      },
+      "contest_12384": {
+        "modality": "Clásico",
+        "numbers": [1, 2, 9, 21, 25]
+      },
+      "status": "UNCHANGED_FROM_RUN132"
+    },
+    "daily_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_date": "2026-11-19",
+      "mask_for_2026_11_20_listed": false,
+      "status": "UNCHANGED_FROM_RUN132"
+    },
+    "daily_mask_pdf_2026_11_19": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-19.pdf?v=19112026215833",
+      "page_count": 1,
+      "contest_12383_numbers": [1, 3, 8, 27, 28],
+      "contest_12384_numbers": [1, 2, 9, 21, 25],
+      "web_text_and_visual_review": true,
+      "raw_bytes_download_attempted_this_run": true,
+      "raw_bytes_download_succeeded": false,
+      "raw_pdf_sha256": "NOT_CAPTURED",
+      "independent_forensic_custody": false
+    },
+    "general_home_results": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados/",
+      "direct_page_opened": true,
+      "latest_chispazo_date": "2026-11-19",
+      "contest_12383_numbers": [1, 3, 8, 27, 28],
+      "contest_12384_numbers": [1, 2, 9, 21, 25],
+      "matches_dedicated_results_and_daily_mask": true,
+      "status": "FRESH_AND_CONCORDANT_AT_CAPTURE"
+    },
+    "next_draws": {
+      "contest_12385": {
+        "date": "2026-11-20",
+        "time_local": "15:00",
+        "modality": "De las Tres",
+        "source_url": "https://comercializadores.loterianacional.gob.mx/",
+        "status_at_capture": "SCHEDULED_NOT_YET_DRAWN"
+      },
+      "classic": {
+        "date": "2026-11-20",
+        "scheduled_time_local": "21:00",
+        "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "contest_id": null,
+        "status_at_capture": "SCHEDULED_ID_NOT_ESTABLISHED"
+      },
+      "result_or_mask_for_2026_11_20_available_at_capture": false
+    },
+    "endpoint_discrepancy_history": {
+      "run127_home_endpoint_stale": true,
+      "run132_home_endpoint_caught_up": true,
+      "run133_home_endpoint_still_matches": true,
+      "do_not_infer_classic_contest_id": true
+    }
+  },
+  "v317_close_gate_followup": {
+    "source_path": "research/ORIGEN_v0_3/src/origen/physical_intake.py",
+    "source_blob": "f5029c456c0b6524ed6a00ae88c5a0b86ee21f36",
+    "test_path": "research/ORIGEN_v0_3/tests/test_physical_intake.py",
+    "test_blob": "6343acb67b45e23f1f4c1dc87d54be64dcc6d347",
+    "fixed_schedule_constants": {
+      "CLASSIC": "21:00",
+      "TRES": "15:00"
+    },
+    "caller_cannot_override_fixed_close_times": true,
+    "regression_tests_present": [
+      "test_classic_19h_caller_supplied_close_is_rejected",
+      "test_forged_official_host_schedule_cannot_override_classic_close",
+      "test_forged_official_host_schedule_cannot_swap_modality_times",
+      "test_schedule_uri_must_be_exact_official_schedule_endpoint",
+      "test_missing_official_schedule_fails_closed"
+    ],
+    "run131_finding_disposition": "THE_SPECIFIC_19_00_CLASSIC_OVERRIDE_DEFECT_IS_FIXED_IN_CURRENT_BRANCH_CODE_AND_COVERED_BY_TESTS",
+    "remaining_limitations": [
+      "schedule source_sha256 is only checked for 64-hex shape; source bytes are not fetched or hashed by the validator",
+      "schedule captured_at is caller-supplied and its clock is not independently authenticated",
+      "actual SICAL close event for the exact contest is not represented as a required authenticated input",
+      "physical source hashes, signatures, mapping evidence, calibration records and custody are not authenticated by structural validation"
+    ],
+    "interpretation": "Do not classify the fixed 19:00 override as a current defect. Do not treat validator STRUCTURE_VALID or usable_contests as authenticated pre-close eligibility. Independent custody and actual SICAL close evidence remain mandatory outside this structural validator.",
+    "classification": "BLOCKED_PROVENANCE",
+    "code_change_this_run": false,
+    "tests_executed_this_run": false
+  },
+  "physical_evidence_status": {
+    "acta_12383_12384_obtained": false,
+    "contest_specific_weighing_strips_obtained": false,
+    "contest_specific_cs11_obtained": false,
+    "physical_sphere_id_to_printed_number_crosswalk_obtained": false,
+    "active_controlled_sgvo_man_02_obtained": false,
+    "source_document_raw_bytes_and_independent_custody_complete": false,
+    "status": "BLOCKED_PROVENANCE"
+  },
+  "scientific_classification": {
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "physical_mechanism": "BLOCKED_PROVENANCE",
+    "v317_implementation_defect_currently_demonstrated": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "real_oos_targets_scored_this_run": 0,
+    "preclose_snapshots_authenticated_this_run": 0,
+    "edge_supported_gates_satisfied": false
+  }
+}
