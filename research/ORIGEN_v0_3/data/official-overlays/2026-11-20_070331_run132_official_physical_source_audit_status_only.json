@@ -1,0 +1,248 @@
+{
+  "schema_version": "exact5.run132.official_physical_source_audit_status_only.v1",
+  "run_id": "RUN132",
+  "captured_at_local": "2026-11-20T07:03:31-06:00",
+  "timezone": "America/Mexico_City",
+  "artifact_type": "official_source_review_and_physical_evidence_requirements_status_only",
+  "scope": {
+    "read_only_official_source_review": true,
+    "isolated_status_overlay_only": true,
+    "github_write_to_research_branch_only": true,
+    "main_write": false,
+    "merge_or_promotion": false,
+    "canonical_history_write": false,
+    "historical_rebuild": false,
+    "v294_change": false,
+    "challenger_change": false,
+    "predictive_scoring": false,
+    "real_oos_scoring": false
+  },
+  "invariants": {
+    "v294": "FROZEN",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "canonical_history_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_git_blob_expected": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_main_observed": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_research_branch_observed": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_expected": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_sha256_recomputed_from_raw_csv_bytes_this_run": false,
+    "closed_work_not_reopened": [
+      "Run53-56",
+      "Run96-107"
+    ]
+  },
+  "official_results_refresh": {
+    "daily_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_date": "2026-11-19",
+      "mask_for_2026_11_20_listed": false,
+      "direct_page_opened": true
+    },
+    "daily_mask_pdf_2026_11_19": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-19.pdf?v=19112026215833",
+      "page_count": 1,
+      "web_text_opened": true,
+      "page_0_visual_reviewed": true,
+      "contest_12383": {
+        "modality": "De las Tres",
+        "numbers": [
+          1,
+          3,
+          8,
+          27,
+          28
+        ]
+      },
+      "contest_12384": {
+        "modality": "Clásico",
+        "numbers": [
+          1,
+          2,
+          9,
+          21,
+          25
+        ],
+        "winners_5of5": 1,
+        "winners_4of5": 216,
+        "winners_3of5": 5675,
+        "winners_2of5": 44074,
+        "total_winners": 49966,
+        "total_prize_pool_mxn": 1394780.43
+      },
+      "raw_pdf_bytes_downloaded": false,
+      "raw_pdf_sha256": "NOT_CAPTURED",
+      "independent_forensic_custody": false
+    },
+    "dedicated_results_page": {
+      "url": "https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados",
+      "latest_contest": 12384,
+      "latest_date": "2026-11-19",
+      "contest_12384_numbers": [
+        1,
+        2,
+        9,
+        21,
+        25
+      ],
+      "contest_12383_numbers": [
+        1,
+        3,
+        8,
+        27,
+        28
+      ],
+      "matches_daily_mask": true
+    },
+    "general_home_results": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados/",
+      "direct_page_opened": true,
+      "contest_12383_numbers": [
+        1,
+        3,
+        8,
+        27,
+        28
+      ],
+      "contest_12384_numbers": [
+        1,
+        2,
+        9,
+        21,
+        25
+      ],
+      "matches_dedicated_results": true,
+      "note": "A cached search snippet earlier showed blank values for 12384, but the direct page opened in this capture contains both winning combinations. Use the directly opened page and mask, not the stale snippet."
+    },
+    "next_draws": {
+      "contest_12385": {
+        "date": "2026-11-20",
+        "time_local": "15:00",
+        "modality": "De las Tres",
+        "source_url": "https://comercializadores.loterianacional.gob.mx/",
+        "status_at_capture": "SCHEDULED_NOT_YET_DRAWN"
+      },
+      "classic": {
+        "date": "2026-11-20",
+        "scheduled_time_local": "21:00",
+        "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "contest_id": null,
+        "status_at_capture": "SCHEDULED_ID_NOT_ESTABLISHED"
+      },
+      "result_or_mask_for_2026_11_20_available_at_capture": false
+    }
+  },
+  "official_physical_procedure_audit": {
+    "relevant_procedure": {
+      "code": "SGVO-PRO-05",
+      "title": "Procedimiento Sorteos Electrónicos",
+      "revision": 39,
+      "issue_date": "2003-10",
+      "normateca_last_update": "2026-03-20",
+      "official_normateca_url": "https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+      "official_pdf_url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+      "opened_as_web_pdf": true,
+      "pdf_pages": 38,
+      "sha256_of_raw_pdf_bytes": "NOT_CAPTURED",
+      "forensic_custody": false,
+      "scope_basis": "Procedure explicitly includes Chispazo in electronic-draw reporting/result comparison and describes electronic-draw physical weighing and draw workflow.",
+      "verified_requirements": {
+        "weighing_frequency": "For every electronic draw",
+        "smartballs_mass_g": [
+          4.25,
+          5.25
+        ],
+        "smartballs_max_set_spread_g": 0.3,
+        "pingpong_mass_g": [
+          2.3,
+          3
+        ],
+        "pingpong_max_set_spread_g": 0.15,
+        "witnesses": [
+          "Inspector de SEGOB",
+          "Representante de Dirección General",
+          "Representante de Subdirección General de Ventas y Operaciones"
+        ],
+        "weighing_record": "TIRA DE PESAJE",
+        "signed_record": "The weigh strip is signed and delivered to be attached to the draw Acta",
+        "placement": "Spheres are placed in the draw-machine feeders; LN and SEGOB representatives verify the spheres correspond to the scheduled draw",
+        "winner_crosscheck": "For Tris and Chispazo, SICAL results are compared against the Lotería Nacional winner-selection system",
+        "winner_capture_record": "NÚMEROS GANADORES DE LOS SORTEOS CS-11, signed by Lotería Nacional representatives and SEGOB inspector"
+      },
+      "evidence_locations_in_pdf": {
+        "weighing_limits_and_every_draw": "PDF page 4, web extraction lines 129-138",
+        "witnesses_and_signatures": "PDF pages 4 and 12-13, web extraction lines 139-154 and 544-580",
+        "sphere_placement_and_machine_check": "PDF page 13, web extraction lines 581-593",
+        "chispazo_winner_crosscheck": "PDF page 35, web extraction lines 1892-1902",
+        "CS11_capture_and_signoff": "PDF page 15, web extraction lines 699-753"
+      }
+    },
+    "excluded_procedure": {
+      "code": "SGVO-PRO-34",
+      "title": "Procedimiento para verificación de peso y diámetro de bolas de madera, distribución de boleo, armado y revisión de ábacos",
+      "revision": 1,
+      "official_pdf_url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_34.pdf",
+      "explicit_scope": "Applies exclusively to boleo and ábacos used in Sorteos Tradicionales; expressly excludes draw use and post-draw validation",
+      "decision": "Do not use SGVO-PRO-34 as the governing physical procedure for Chispazo electronic draws.",
+      "evidence_location": "PDF page 3, web extraction lines 32-48"
+    },
+    "implementation_comparison": {
+      "source_path": "research/ORIGEN_v0_3/src/origen/physical_intake.py",
+      "source_blob": "9009da195e5565eb04289d222b413a9f9593cc87",
+      "existing_mass_limits_match_sgvo_pro_05": true,
+      "existing_mass_limits_match_sgvo_pro_34_not_used_as_authority": true,
+      "validator_requires_28_rows_and_numbers_1_to_28": true,
+      "sgvo_pro_05_explicitly_states_chispazo_physical_set_cardinality_28": false,
+      "exact_sphere_to_number_mapping_proven_by_public_procedure": false,
+      "schedule_attestation_bytes_authenticated": false,
+      "source_document_and_calibration_hashes_bound_to_actual_bytes": false,
+      "scale_resolution_and_calibration_certificate_authenticity_verified": false,
+      "actual_contest_specific_weigh_strip_or_acta_obtained": false,
+      "actual_contest_specific_cs11_obtained": false,
+      "status": "STRUCTURAL_VALIDATION_ONLY; PHYSICAL EVIDENCE NOT INGESTED"
+    },
+    "required_primary_evidence_for_next_phase": [
+      "Contest-specific TIRA DE PESAJE with all sphere weights, sphere/kit identity, draw date and contest number, signatures and corrections/replacements",
+      "Signed Acta for the exact draw with attachments and custody metadata",
+      "Contest-specific CS-11 original or authenticated copy, with captured sphere numbers and sign-offs from Lotería Nacional and SEGOB",
+      "Evidence of the exact sphere kit loaded into the machine for that contest",
+      "Official mapping/reassignment/replacement history linking each physical sphere identity to its printed number",
+      "Calibration certificate and traceable instrument metadata for the scale used in the weighing",
+      "Original downloaded source bytes, SHA-256, independent timestamp/custody record, and verification of all source-document hashes"
+    ]
+  },
+  "repository_and_ci": {
+    "repository": "mxjava/chispazo-exact5-lab",
+    "research_branch": "research/run123-official-timing-audit-20261120",
+    "branch_head_before_run132": "c4be00eadfb9618a39ee3e74abfb35ee735a561b",
+    "main_head_observed": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "canonical_blob_equal_on_main_and_branch": true,
+    "writes_to_main": false,
+    "merge_or_promotion": false,
+    "run131_overlay_already_present": true,
+    "current_physical_intake_code_blob": "9009da195e5565eb04289d222b413a9f9593cc87",
+    "current_physical_intake_test_blob": "e6f146aa2af10d663869f0708d6c4298d0d00f44",
+    "latest_code_commit": "c4be00eadfb9618a39ee3e74abfb35ee735a561b",
+    "ci": {
+      "origen_isolated_run_id": 44736642923,
+      "origen_isolated_commit": "c4be00eadfb9618a39ee3e74abfb35ee735a561b",
+      "origen_isolated_conclusion": "success",
+      "origen_isolated_pytest_count": 165,
+      "origen_isolated_duration_seconds": 14.071,
+      "standard_ci_run_id": 44736642615,
+      "standard_ci_commit": "c4be00eadfb9618a39ee3e74abfb35ee735a561b",
+      "standard_ci_conclusion": "success",
+      "standard_ci_compileall": "success",
+      "standard_ci_pytest": "success",
+      "standard_ci_pytest_count": "NOT_CAPTURED"
+    }
+  },
+  "scientific_classification": {
+    "physical_mechanism_evidence": "BLOCKED_PROVENANCE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "real_oos_targets_scored_this_run": 0,
+    "preclose_snapshots_authenticated_this_run": 0,
+    "edge_supported_gates_satisfied": false
+  }
+}
