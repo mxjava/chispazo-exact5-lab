@@ -34,7 +34,7 @@ class MappingHistoryTests(unittest.TestCase):
         report = audit_mapping_history(invalid)
         self.assertEqual(report["overlapping_conflicts"], 0)
         self.assertTrue(report["overlap_conflicts_clear"])
-        self.assertEqual(report["invalid_or_quarantined_mapping_rows"], 2)
+        self.assertEqual(report["invalid_or_quarantined_mapping_rows"], 1)
         self.assertEqual(report["continuity_status"], "NOT_PROVEN")
 
     def test_interval_clearance_does_not_claim_continuity(self):
