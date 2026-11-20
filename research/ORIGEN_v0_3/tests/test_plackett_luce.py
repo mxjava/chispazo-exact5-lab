@@ -102,6 +102,13 @@ class PlackettLuceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "boolean"):
             mass_log_weights([4.7] * 28, True)
 
+    def test_boolean_enumerator_log_weights_are_rejected(self):
+        from origen.plackett_luce import enumerate_set_log_probabilities
+        weights = [0.0] * 28
+        weights[0] = True
+        with self.assertRaisesRegex(ValueError, "not booleans"):
+            enumerate_set_log_probabilities(weights)
+
     def test_boolean_log_weights_are_rejected(self):
         with self.assertRaisesRegex(ValueError, "booleans"):
             log_plackett_luce_set_probability([0.0] * 27 + [True], (1, 2, 3, 4, 5))
