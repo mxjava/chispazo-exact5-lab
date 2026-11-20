@@ -251,6 +251,8 @@ def verify_record_chain(
     expected_final_hash: str | None = None,
 ) -> tuple[bool, str]:
     """Verify ordered ledger; optional external head anchor detects tail truncation."""
+    if not records:
+        return False, "custody chain is empty; no records were verified"
     previous = GENESIS
     seen: set[int] = set()
     last_target = 0
