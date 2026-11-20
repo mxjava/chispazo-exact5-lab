@@ -75,6 +75,18 @@ class MappingHistoryTests(unittest.TestCase):
         report = audit_mapping_history(data)
         self.assertIn("Q_REMAP", report["quarantined"]["1001"])
 
+    def test_none_sphere_id_fails_closed(self):
+        data = rows()
+        data[0]["sphere_id"] = None
+        report = audit_mapping_history(data)
+        self.assertIn("Q_REMAP", report["quarantined"]["1001"])
+
+    def test_none_sphere_set_id_fails_closed(self):
+        data = rows()
+        data[0]["sphere_set_id"] = None
+        report = audit_mapping_history(data)
+        self.assertIn("Q_REMAP", report["quarantined"]["1001"])
+
     def test_missing_contest_id_fails_closed(self):
         data = rows()
         data[0].pop("contest_id")
