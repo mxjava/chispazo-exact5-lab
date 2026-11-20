@@ -87,6 +87,14 @@ def evaluate_temporal_eligibility(
         sphere_types: set[str] = set()
         machine_models: set[str] = set()
         scales: set[str] = set()
+        source_refs: set[str] = set()
+        source_hashes: set[str] = set()
+        custody_refs: set[str] = set()
+        custody_hashes: set[str] = set()
+        calibration_hashes: set[str] = set()
+        signature_refs: set[str] = set()
+        signer_ids: set[str] = set()
+        timestamp_refs: set[str] = set()
         for row in group:
             try:
                 close = _parse_time(row["target_draw_close_at"], "target_draw_close_at")
@@ -103,6 +111,14 @@ def evaluate_temporal_eligibility(
                 sphere_types.add(str(row["sphere_type"]).strip())
                 machine_models.add(str(row["machine_model"]).strip())
                 scales.add(str(row["scale_id"]).strip())
+                source_refs.add(str(row["source_document_ref"]).strip())
+                source_hashes.add(str(row["source_document_sha256"]).strip().lower())
+                custody_refs.add(str(row["custody_receipt_ref"]).strip())
+                custody_hashes.add(str(row["custody_receipt_sha256"]).strip().lower())
+                calibration_hashes.add(str(row["calibration_certificate_sha256"]).strip().lower())
+                signature_refs.add(str(row["source_signature_ref"]).strip())
+                signer_ids.add(str(row["source_signer_id"]).strip())
+                timestamp_refs.add(str(row["trusted_timestamp_ref"]).strip())
                 source_contests.add(str(row["source_contest_id"]).strip())
                 modalities.add(str(row["modality"]).strip().upper())
                 sphere_ids.add(str(row["sphere_id"]).strip())
@@ -121,7 +137,7 @@ def evaluate_temporal_eligibility(
                 calibration_start = _parse_time(row["calibration_valid_from"], "calibration_valid_from")
                 calibration_end = _parse_time(row["calibration_valid_to"], "calibration_valid_to")
                 target_draw = _parse_time(row["draw_at"], "draw_at")
-                if mapping_start >= mapping_end or not (mapping_start <= target_draw <= mapping_end):
+                if mapping_start >= mapping_end or not (mapping_start <= assignment <= target_draw <= mapping_end):
                     reasons.add("MAPPING_NOT_VALID_AT_TARGET_DRAW")
                 if calibration_start >= calibration_end or not (calibration_start <= measurement <= calibration_end):
                     reasons.add("CALIBRATION_NOT_VALID_AT_MEASUREMENT")
@@ -162,6 +178,11 @@ def evaluate_temporal_eligibility(
             reasons.add("SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT")
         if len(sphere_types) != 1 or "" in sphere_types or len(machine_models) != 1 or "" in machine_models or len(scales) != 1 or "" in scales:
             reasons.add("METROLOGY_CONFIGURATION_CONFLICT")
+        if any(len(values) != 1 or "" in values for values in (
+            source_refs, source_hashes, custody_refs, custody_hashes,
+            calibration_hashes, signature_refs, signer_ids, timestamp_refs
+        )):
+            reasons.add("EVIDENCE_DOCUMENT_SET_CONFLICT")
         if len(source_contests) != 1:
             reasons.add("SOURCE_CONTEST_CONFLICT")
         if len(group) != 28 or len(sphere_ids) != 28 or printed_numbers != set(range(1, 29)):
@@ -196,7 +217,8 @@ def evaluate_temporal_eligibility(
             "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", "PHYSICAL_SET_OR_MACHINE_CONFLICT",
             "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC",
             "BROKEN_EVIDENCE_TEMPORAL_ORDER", "TARGET_DRAW_TIME_CONFLICT",
-            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT"
+            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
+            "EVIDENCE_DOCUMENT_SET_CONFLICT"
         )):
             classification = "BLOCKED_CONTINUITY"
         elif reasons:
