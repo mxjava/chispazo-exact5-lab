@@ -17,7 +17,7 @@ The canonical file contains 10,887 rows (contests 1363–12249). Structural audi
 - The paired sequence begins on 2017-09-25 with contests 5923 and 5924.
 - From 5923 through 12248, the file contains 3,163 complete same-date consecutive pairs, always odd/even.
 - Contest 12249 is the final unpaired odd row in this frozen file and is excluded.
-- The selected even-ID history contains 3,163 inferred Clásico contests (5924–12248).
+- The selected even-ID history contains 3,163 inferred Clásico contests (5924–12248). The next inferred Clásico contest after this frozen history is 12250; contest 12249 is the excluded odd-ID draw. The workflow corrects V264's mechanical sequential-next-ID field to this Clásico-specific target. This is target indexing only, not a prediction.
 
 Official Lotería Nacional material supports the parity direction at multiple independent 2026 anchors:
 - Official product page states Chispazo de las Tres at 15:00 and Chispazo Clásico at 21:00: https://www.loterianacional.gob.mx/Chispazo/Chispazo
