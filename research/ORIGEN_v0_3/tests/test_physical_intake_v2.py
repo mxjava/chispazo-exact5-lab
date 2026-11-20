@@ -47,6 +47,7 @@ VERIFIED = dict(
     verified_custody_refs={"RECEIPT-1"},
     verified_timestamp_refs={"TSA-1"},
     verified_source_refs={"DOC-12300"},
+    verified_calibration_refs={"a" * 64},
     verified_continuity_targets={"12301"},
 )
 
@@ -87,6 +88,18 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             result["targets"]["12301"]["predictive_eligibility"],
             "BLOCKED_PROVENANCE",
         )
+
+    def test_calibration_certificate_requires_independent_verification(self):
+        verification = dict(VERIFIED)
+        verification["verified_calibration_refs"] = set()
+        result = evaluate_temporal_eligibility(rows_for_target(), **verification)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("CALIBRATION_NOT_INDEPENDENTLY_VERIFIED", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_PROVENANCE")
+
+    def test_verification_arguments_must_be_sets_of_nonempty_strings(self):
+        with self.assertRaisesRegex(ValueError, "verified_source_refs must be a set"):
+            evaluate_temporal_eligibility(rows_for_target(), verified_source_refs="DOC-12300")
 
     def test_missing_continuity_is_separate_block(self):
         result = evaluate_temporal_eligibility(
