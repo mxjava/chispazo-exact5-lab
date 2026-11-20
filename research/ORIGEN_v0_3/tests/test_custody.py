@@ -148,14 +148,14 @@ class CustodyTests(unittest.TestCase):
     def test_read_record_rejects_duplicate_json_keys(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "duplicate.json"
-            path.write_bytes(b'{"candidate_id":"first","candidate_id":"second"}\\n')
+            path.write_bytes(b'{"candidate_id":"first","candidate_id":"second"}\n')
             with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
                 read_record(path)
 
     def test_read_record_rejects_noncanonical_json_bytes(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "noncanonical.json"
-            path.write_bytes(b'{ "candidate_id":"x" }\\n')
+            path.write_bytes(b'{ "candidate_id":"x" }\n')
             with self.assertRaisesRegex(ValueError, "canonical JSON"):
                 read_record(path)
 
