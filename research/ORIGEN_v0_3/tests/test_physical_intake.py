@@ -82,7 +82,7 @@ class PhysicalIntakeTests(unittest.TestCase):
 
     def test_postclose_measurement_is_quarantined(self):
         rows = make_rows()
-        rows[0]["measurement_at"] = "2026-11-20T19:01:00-06:00"
+        rows[0]["measurement_at"] = "2026-11-20T21:01:00-06:00"
         report = validate_physical_rows(rows)
         self.assertIn("Q_TIME", report["quarantined"]["12300"])
 
