@@ -64,11 +64,11 @@ def evaluate_temporal_eligibility(
     if missing:
         raise ValueError("missing required columns: " + ", ".join(missing))
 
-    custody = verified_custody_refs or set()
-    timestamps = verified_timestamp_refs or set()
-    sources = verified_source_refs or set()
-    calibrations = verified_calibration_refs or set()
-    continuity = verified_continuity_targets or set()
+    custody = set() if verified_custody_refs is None else verified_custody_refs
+    timestamps = set() if verified_timestamp_refs is None else verified_timestamp_refs
+    sources = set() if verified_source_refs is None else verified_source_refs
+    calibrations = set() if verified_calibration_refs is None else verified_calibration_refs
+    continuity = set() if verified_continuity_targets is None else verified_continuity_targets
     for field, values in (("verified_custody_refs", custody), ("verified_timestamp_refs", timestamps), ("verified_source_refs", sources), ("verified_calibration_refs", calibrations), ("verified_continuity_targets", continuity)):
         if not isinstance(values, (set, frozenset)) or any(not isinstance(value, str) or not value.strip() for value in values):
             raise ValueError(f"{field} must be a set of non-empty strings")
