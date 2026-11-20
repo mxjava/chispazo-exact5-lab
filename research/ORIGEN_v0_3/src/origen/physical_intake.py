@@ -37,6 +37,8 @@ REQUIRED_COLUMNS = (
     "acta_sha256", "acta_signature_evidence_ref",
     "weighing_strip_sha256", "weighing_strip_signature_evidence_ref",
     "cs11_sha256", "cs11_signature_evidence_ref",
+    "cs11_draw_date", "cs11_contest_id", "cs11_draw_time", "cs11_case_id",
+    "cs11_result_numbers", "was_drawn",
 )
 QUARANTINE_CODES = {
     "Q_SOURCE_UNVERIFIED", "Q_CONTEST_LINK", "Q_MAPPING", "Q_TIME",
@@ -181,7 +183,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
                 row_errors[contest].add("Q_METROLOGY")
             if measured > _one_calendar_year_after(calibration_at):
                 row_errors[contest].add("Q_METROLOGY")
-            if not all(str(row[k]).strip() for k in ("sphere_set_id", "sphere_type", "machine_id", "machine_model", "sphere_id", "scale_id")):
+            if not all(str(row[k]).strip() for k in ("sphere_set_id", "sphere_type", "machine_id", "machine_model", "sphere_id", "scale_id", "cs11_draw_date", "cs11_contest_id", "cs11_draw_time", "cs11_case_id", "cs11_result_numbers", "was_drawn")):
                 row_errors[contest].add("Q_SOURCE_UNVERIFIED")
             if str(row["mass_unit"]).lower() != "g":
                 row_errors[contest].add("Q_METROLOGY")
@@ -193,6 +195,17 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
             _positive_float(str(row["measurement_resolution"]), "measurement_resolution")
             number = _positive_int(str(row["printed_number"]), "printed_number")
             if number > 28:
+                row_errors[contest].add("Q_MAPPING")
+            if str(row["cs11_draw_date"]) != draw_date or str(row["cs11_contest_id"]) != str(contest):
+                row_errors[contest].add("Q_CONTEST_LINK")
+            if str(row["cs11_case_id"]) != str(row["sphere_set_id"]):
+                row_errors[contest].add("Q_MAPPING")
+            if str(row["cs11_draw_time"]) != OFFICIAL_CLOSE_TIMES.get(str(row["modality"]), ""):
+                row_errors[contest].add("Q_TIME")
+            if str(row["was_drawn"]).strip().lower() not in {"true", "false"}:
+                row_errors[contest].add("Q_MAPPING")
+            cs11_numbers = [part.strip() for part in str(row["cs11_result_numbers"]).split(",")]
+            if len(cs11_numbers) != 5 or any(not part.isdecimal() or not 1 <= int(part) <= 28 for part in cs11_numbers) or len(set(cs11_numbers)) != 5:
                 row_errors[contest].add("Q_MAPPING")
         except (ValueError, TypeError, KeyError):
             row_errors[contest].add("Q_METROLOGY")
@@ -213,7 +226,9 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
                            "calibration_certificate_sha256", "acta_sha256",
                            "acta_signature_evidence_ref", "weighing_strip_sha256",
                            "weighing_strip_signature_evidence_ref", "cs11_sha256",
-                           "cs11_signature_evidence_ref")
+                           "cs11_signature_evidence_ref", "cs11_draw_date",
+                           "cs11_contest_id", "cs11_draw_time", "cs11_case_id",
+                           "cs11_result_numbers")
         for row in group:
             try:
                 numbers.append(int(row["printed_number"]))
@@ -224,6 +239,22 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
             labels.add("Q_MAPPING")
         if len(sphere_ids) != len(set(sphere_ids)) or "" in sphere_ids:
             labels.add("Q_MAPPING")
+        drawn_numbers = []
+        for row in group:
+            if str(row.get("was_drawn", "")).strip().lower() == "true":
+                try:
+                    drawn_numbers.append(int(row["printed_number"]))
+                except (ValueError, TypeError, KeyError):
+                    labels.add("Q_MAPPING")
+        if len(drawn_numbers) != 5 or len(set(drawn_numbers)) != 5:
+            labels.add("Q_MAPPING")
+        if group:
+            try:
+                cs11_numbers = [int(part.strip()) for part in str(group[0]["cs11_result_numbers"]).split(",")]
+                if sorted(drawn_numbers) != sorted(cs11_numbers):
+                    labels.add("Q_MAPPING")
+            except (ValueError, TypeError, KeyError):
+                labels.add("Q_MAPPING")
         for field in identity_fields:
             values = {str(row.get(field, "")) for row in group}
             if len(values) != 1:
