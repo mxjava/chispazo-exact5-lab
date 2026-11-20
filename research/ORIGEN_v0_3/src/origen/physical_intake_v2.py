@@ -179,7 +179,7 @@ def evaluate_temporal_eligibility(
                 reasons.add("INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE")
         if len(closes) != 1:
             reasons.add("TARGET_CLOSE_CONFLICT")
-        if len(target_draws) != 1 or (closes and target_draws and next(iter(target_draws)) < next(iter(closes)):
+        if len(target_draws) != 1 or (closes and target_draws and next(iter(target_draws)) < next(iter(closes))):
             reasons.add("TARGET_DRAW_TIME_CONFLICT")
         if len(assignments) != 1 or len(source_closes) != 1:
             reasons.add("SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT")
