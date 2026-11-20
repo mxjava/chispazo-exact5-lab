@@ -70,6 +70,7 @@ Para cada concurso, entregar los registros originales o copias legibles que perm
 
 - Acta completa del sorteo y anexos, vinculados por concurso y modalidad.
 - Sumario de sorteo (cierre de ventas), CS-11, tira de pesaje y reportes de cierre.
+- Grabación original íntegra desde el pesaje hasta la celebración del sorteo, con archivos fuente, metadatos, identificador de cámara, timecode, sincronización del reloj, fecha de edición y hash disponible. Entregar también el fragmento editado que se incorporó al Acta y la cadena de custodia/retención del original; si el original no se conserva, informarlo expresamente.
 - Archivo de participaciones/cancelaciones y su firma electrónica: identificador, tamaño, hash disponible, fecha/hora de generación y firma, certificado/cadena de confianza y validación.
 - Constancia de entrega al Inspector de SEGOB, folio, dispositivo, depósito en caja de seguridad, sello/bitácora de custodia y accesos/retiros por el Órgano Interno de Control.
 - Confirmación expresa de si la firma electrónica del archivo se genera inmediatamente después del cierre, como indica el Anexo 1 de SGVO-PRO-05, y de qué hora se dispone para acreditar cada paso.
@@ -79,7 +80,7 @@ Para cada concurso, entregar los registros originales o copias legibles que perm
 
 - Respaldo semanal previsto por la política 12, índice del DVD/dispositivo y lista de reportes por concurso.
 - Reportes Chispazo `CLSBR140` (Relación de Ganadores) y `CLSAR110` (Máscara Ganadora), sumario de sorteo, CS-11 y anexos.
-- Actas, bitácoras, comunicaciones de riesgo CS-18, registros de acceso a sala CS-12, bitácoras de limpieza/mantenimiento y cualquier incidencia.
+- Actas, bitácoras e incidencias CS-09; comunicaciones de riesgo CS-18; registros de acceso a sala CS-12; bitácoras de limpieza/mantenimiento; y registros de grabación de cámaras desde el pesaje hasta el sorteo.
 - Si un Acta se firmó después, bitácora y justificación del diferimiento conforme a la política aplicable.
 
 ## 4. Aclaración normativa solicitada
