@@ -184,8 +184,39 @@ def validate_preclose_metadata(metadata):
         )
     return parsed
 
+
+V265_PROMOTION_BLOCKERS = (
+    "NO_28_PER_SPHERE_MASSES",
+    "NO_STABLE_PHYSICAL_SPHERE_IDS",
+    "NO_VERIFIED_SPHERE_ID_TO_PRINTED_NUMBER_MAPPING",
+    "NO_RAW_RFID_TAG_READER_EVENT_LOG",
+    "NO_FEEDER_LOAD_OR_EXTRACTION_ORDER",
+    "NO_PRIMARY_DOCUMENT_AUTHENTICATION_AND_INDEPENDENT_CUSTODY",
+    "NO_TRUSTED_TIMESTAMP_CHAIN_FOR_EACH_PHYSICAL_EVENT",
+    "NO_EXACT5_ANYTIME_E_VALUE_GATE",
+    "NO_TWO_INDEPENDENTLY_SEALED_PRE_CLOSE_OUTPUTS",
+)
+
+
+def v265_evidence_guardrail(proxy_association: bool) -> dict:
+    """V265 regime labels are proxies, never physical-bias or betting evidence."""
+    return {
+        "proxy_association": bool(proxy_association),
+        "research_edge": False,
+        "physical_bias_evidence": False,
+        "physical_measurements_consumed": False,
+        "physical_identity_mapping_verified": False,
+        "rfid_event_log_consumed": False,
+        "extraction_order_consumed": False,
+        "actionable_for_betting": False,
+        "promotion_eligible": False,
+        "classification": "RESEARCH_ONLY_REGIME_PROXY_NOT_PHYSICAL_EVIDENCE",
+        "promotion_blockers": list(V265_PROMOTION_BLOCKERS),
+    }
+
+
 def main():
-    ap=argparse.ArgumentParser(description='V265 evaluator: physical metadata, chronological prequential only')
+    ap=argparse.ArgumentParser(description='V265 regime proxy evaluator: descriptive only, not physical-bias evidence')
     ap.add_argument('--history',required=True)
     ap.add_argument('--metadata',required=True)
     ap.add_argument('--out-dir',default='v265_physical_eval')
@@ -284,20 +315,22 @@ def main():
         adjusted_p, family_size = read_p_family(Path(args.p_family), args.candidate_id, p1)
     # A single unadjusted p-value is never enough to promote after model search.
     sample_ok = len(d) >= 100
-    research_edge=bool(sample_ok and mean>0 and adjusted_p is not None and adjusted_p < 0.05)
-    actionable=bool(research_edge and all_preclose and len(x) == len(h) and len(x) == len(m))
+    proxy_association=bool(
+        sample_ok and mean>0 and adjusted_p is not None and adjusted_p < 0.05
+        and all_preclose and len(x) == len(h) and len(x) == len(m)
+    )
     if not sample_ok:
         decision='RESEARCH_ONLY_INSUFFICIENT_OOS_N'
     elif mean <= 0:
-        decision='NO_PHYSICAL_EDGE'
+        decision='NO_REGIME_PROXY_ASSOCIATION'
     elif adjusted_p is None:
         decision='RESEARCH_ONLY_MULTIPLICITY_CONTROL_REQUIRED'
     elif adjusted_p >= 0.05:
-        decision='NO_PHYSICAL_EDGE_AFTER_HOLM'
-    elif not all_preclose:
-        decision='RESEARCH_EDGE_NOT_ACTIONABLE_METADATA_NOT_PRE_CLOSE'
+        decision='NO_REGIME_PROXY_ASSOCIATION_AFTER_HOLM'
+    elif not all_preclose or len(x) != len(h) or len(x) != len(m):
+        decision='RESEARCH_ONLY_PROXY_METADATA_NOT_PRE_CLOSE_OR_INCOMPLETE'
     else:
-        decision='PROSPECTIVE_GATE_CANDIDATE_REVIEW_REQUIRED'
+        decision='RESEARCH_ONLY_PROXY_ASSOCIATION_NOT_PHYSICAL_BIAS'
     def sha256_file(path):
         digest=hashlib.sha256()
         with open(path,'rb') as fh:
@@ -305,6 +338,7 @@ def main():
                 digest.update(chunk)
         return digest.hexdigest()
     rep={'model_version':'V269.2-preclose-timestamp-integrity',
+         'evidence_guardrail_version':'V265-regime-proxy-guardrail-1',
          'input_sha256':{'history':sha256_file(args.history),'metadata':sha256_file(args.metadata),
                          'p_family':sha256_file(args.p_family) if args.p_family else None},
          'parameters':{'burn':args.burn,'prior_set':args.prior_set,'prior_machine':args.prior_machine,
@@ -314,12 +348,12 @@ def main():
          'multiplicity_controlled': adjusted_p is not None,
          'holm_adjusted_p': adjusted_p, 'p_family_size': family_size,
          'minimum_oos_n':100, 'all_metadata_available_before_close':all_preclose,
-         'research_edge':research_edge,'actionable_for_betting':actionable,
+         **v265_evidence_guardrail(proxy_association),
          'decision': decision,
          'history_rows':len(h),'metadata_rows':len(m),'joined_rows':len(x),
          'metadata_coverage_fraction_of_history':float(len(x)/len(h)) if len(h) else 0.0,
          'preclose_fraction_of_scored_rows':float(d.available_before_close.mean()),
-         'production_rule':'Do not score or promote unless every physical metadata row is available before close by both flag and timestamp, with >=100 prequential OOS rows, positive mean log-lift, and Holm-adjusted p < 0.05 across the predeclared candidate family.'}
+         'production_rule':'V265 consumes only machine_id and sphere_set_id regime labels. Its results are descriptive proxies, never physical-bias evidence, never actionable for betting, and never promotion-eligible. Physical research requires authenticated 28-sphere masses, stable physical IDs and sphere-to-number mapping, RFID event records, feeder/load and extraction order, trusted timestamps and independent custody, plus the project Exact5 prospective gates.'}
     # Stage both artifacts only after all input and multiplicity checks pass.
     # The report is published last and serves as the completion marker.
     try:

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "origen-research"
+version = "0.3.0"
+description = "Auditable research-frame generation, prequential evaluation and adversarial controls"
+requires-python = ">=3.10"
+dependencies = ["tzdata>=2025.2"]
+
+[project.scripts]
+origen = "origen.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.unittest]
+start-directory = "tests"

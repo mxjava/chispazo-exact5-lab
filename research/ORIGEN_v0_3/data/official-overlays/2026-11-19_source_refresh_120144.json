@@ -1,0 +1,103 @@
+{
+  "schema_version": "exact5.official-source-refresh.status-only.v1",
+  "observation": {
+    "observed_at_local": "2026-11-19T12:01:44-06:00",
+    "observation_window_completed_at_utc": "2026-11-19T18:01:44Z",
+    "exact_per_source_retrieval_timestamps_captured": false
+  },
+  "scope": "Official source freshness and endpoint reconciliation only; no prediction, score, canonical append, or modality inference by contest-ID parity.",
+  "latest_official_chispazo_result": {
+    "contest_id": 12382,
+    "draw_date_local": "2026-11-18",
+    "modality": "CLASSIC",
+    "modality_basis": "OFFICIAL_DAILY_MASK_PDF_LABEL_OBSERVED",
+    "winning_numbers": [5, 9, 11, 23, 25],
+    "result_status": "OFFICIAL_RESULT_OBSERVED"
+  },
+  "source_observations": {
+    "official_dedicated_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observed": "12382; 18/11/2026; 05 09 11 23 25; next draw date shown as 19/11/2026",
+      "lines": "76-88, 93-110",
+      "status": "CURRENT_AT_OBSERVATION"
+    },
+    "official_commercializer_chispazo_results": {
+      "url": "https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados",
+      "observed": "12382; 18/11/2026; 05 09 11 23 25",
+      "lines": "76-88, 93-110",
+      "status": "MATCHES_DEDICATED_RESULTS_PAGE"
+    },
+    "official_daily_mask_pdf": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-18.pdf?v=18112026221442",
+      "observed": "Chispazo de las Tres 12381 = 07 12 17 18 19; Chispazo Clásico 12382 = 05 09 11 23 25",
+      "lines": "37-58",
+      "browser_text_readable": true,
+      "raw_bytes_captured": false,
+      "sha256": null,
+      "status": "CONTENT_VERIFIED_RAW_BYTE_CUSTODY_MISSING"
+    },
+    "official_chispazo_schedule": {
+      "url": "https://loterianacional.gob.mx/Chispazo/Chispazo",
+      "observed": "Chispazo de las Tres 15:00; Chispazo Clásico 21:00, daily",
+      "lines": "90-96",
+      "status": "CURRENT_AT_OBSERVATION"
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "search_snapshot_observed": "RESULTADOS 2026-11-18 is the newest listed entry",
+      "direct_open_status": "TIMEOUT",
+      "status": "SEARCH_SNAPSHOT_ONLY"
+    },
+    "commercializer_homepage": {
+      "url": "https://comercializadores.loterianacional.gob.mx/Home/Index",
+      "direct_open_observed": "Chispazo sort 12379 dated 17-Nov-2026 15:00",
+      "direct_open_lines": "120-123",
+      "search_snapshot_observed": "19-Nov-2026 15:00; Chispazo sort 12383",
+      "status": "CONFLICTING_FRESHNESS_DIRECT_PAGE_STALE_SEARCH_SNAPSHOT_NEWER"
+    },
+    "generic_cluster2_results": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxNYXlvcg%3D%3D",
+      "observed": "Chispazo 12373 has numbers; 12374 is placeholder-only; date 14/11/2026",
+      "lines": "230-248",
+      "status": "STALE_DO_NOT_USE_FOR_CURRENT_RESULT"
+    }
+  },
+  "upcoming_draw_handling": {
+    "official_next_draw_date": "2026-11-19",
+    "official_daily_times": ["15:00 DE_LAS_TRES", "21:00 CLASSIC"],
+    "contest_12383_at_15h": "PROVISIONAL_SEARCH_SNAPSHOT_ONLY; direct homepage is stale",
+    "classic_contest_id_at_21h": null,
+    "result_for_2026-11-19_observed": false,
+    "rule": "Do not infer the 21:00 Classic contest ID from parity, sequence, or the 15:00 listing. Wait for a direct official schedule/result or daily mask."
+  },
+  "provenance": {
+    "official_result_cross_source_match": true,
+    "official_modality_label_observed": true,
+    "source_pdf_raw_bytes_captured": false,
+    "source_pdf_sha256": null,
+    "source_document_chain_of_custody": false,
+    "independent_custodian": false,
+    "preclose_prediction_snapshot": false,
+    "exact_source_retrieval_timestamp_captured": false
+  },
+  "research_firewall": {
+    "overlay_status_only": true,
+    "canonical_history_appended": false,
+    "canonical_history_blob": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_history_sha256": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "prediction_payload_exists": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "model_or_challenger_changed": false,
+    "v294_changed": false
+  },
+  "classification": "BLOCKED_PROVENANCE",
+  "notes": [
+    "The dedicated official Chispazo results page, the commercializer Chispazo results endpoint, and the browser-readable official daily mask agree on contest 12382 and its five numbers.",
+    "The commercializer Chispazo results endpoint is no longer stale at 12381; it now matches 12382.",
+    "The generic cluster=2 page remains stale at 12374, and the commercializer homepage direct-open view remains stale at 12379 despite a newer search snapshot listing 12383.",
+    "No 19/11 result existed at the observation time, which was before the published 15:00 draw time.",
+    "The PDF raw bytes could not be downloaded in this environment; no byte-level SHA-256 or independent custody is claimed.",
+    "This overlay is not a prospective output and must never be used to reconstruct a pre-close PMF, rank, or score."
+  ]
+}

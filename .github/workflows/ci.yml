@@ -5,6 +5,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: src:research/ORIGEN_v0_3/src
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -1,0 +1,21 @@
+{
+  "protocol_status": "DRAFT",
+  "primary_test_id": "primary_log_lift",
+  "family_p_values": {
+    "primary_log_lift": 1.0,
+    "frequency_expert": 1.0,
+    "transition_expert": 1.0
+  },
+  "min_observations": 100,
+  "alpha": 0.05,
+  "gates": {
+    "preregistered": false,
+    "untouched_prospective": false,
+    "independent_custody": false,
+    "data_integrity_pass": false,
+    "two_prospective_outputs": false
+  },
+  "observations": [
+    {"p_alt": 0.000010, "p_null": 0.000010}
+  ]
+}
