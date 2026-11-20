@@ -61,7 +61,7 @@ Para cada concurso, entregar los registros originales o copias legibles que perm
 ### D. Equipo y metrología
 
 - Marca, modelo, identificador y número de serie de báscula; resolución, precisión e incertidumbre declarada.
-- Certificado de calibración vigente para la fecha de cada pesaje, trazabilidad, tolerancia y fechas de validez.
+- Certificado de calibración vigente para la fecha de cada pesaje, trazabilidad, tolerancia y fechas de validez. La política 25 de SGVO-PRO-05 establece calibración de básculas al menos una vez al año; entregar el calendario anual, certificados y evidencia de cualquier calibración extraordinaria.
 - Inspecciones, mantenimiento, ajustes, fallas y sustituciones de báscula.
 - Identificador/modelo/serie de máquina, alimentador y equipo de esferas utilizados en cada concurso.
 - Confirmación del tipo de esfera y límites operativos aplicados.
