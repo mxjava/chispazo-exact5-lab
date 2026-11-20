@@ -50,7 +50,8 @@ Its activity sequence is explicit:
 2. The next section is **Pesaje y Colocación de las Esferas**; activity 5.1 then weighs spheres one by one in numerical order.
 3. Activities 5.4–5.5 sign/review the weighing strip and attach it to the Act; 5.6 places the spheres into the feeders.
 4. Annex 1 says the electronic signature for the participation file is generated immediately after automatic sales closure.
-5. Policy 30 requires recording from sphere weighing through the electronic draw; the edited recording (draw only) is part of the Act. This is a potential primary timing/identity witness, subject to obtaining the original recording and its custody metadata.
+5. Policy 25 requires scale calibration at least annually.
+6. Policy 30 requires recording from sphere weighing through the electronic draw; the edited recording (draw only) is part of the Act. This is a potential primary timing/identity witness, subject to obtaining the original recording and its custody metadata.
 
 The procedure's policy 9 also gives 15:00 for De las Tres and 21:00 for nocturnal sales closure. The published order therefore places the same-contest weighing after sales closure, not before it.
 
