@@ -173,7 +173,7 @@ def evaluate_temporal_eligibility(
                 mapping_end = _parse_time(row["mapping_valid_to"], "mapping_valid_to")
                 calibration_start = _parse_time(row["calibration_valid_from"], "calibration_valid_from")
                 calibration_end = _parse_time(row["calibration_valid_to"], "calibration_valid_to")
-                if mapping_start >= mapping_end or not (mapping_start <= assignment <= target_draw <= mapping_end):
+                if mapping_start >= mapping_end or not (mapping_start <= assignment <= measurement <= target_draw <= mapping_end):
                     reasons.add("MAPPING_NOT_VALID_AT_TARGET_DRAW")
                 if calibration_start >= calibration_end or not (calibration_start <= measurement <= calibration_end):
                     reasons.add("CALIBRATION_NOT_VALID_AT_MEASUREMENT")
