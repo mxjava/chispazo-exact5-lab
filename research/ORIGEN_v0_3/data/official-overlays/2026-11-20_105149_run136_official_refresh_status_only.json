@@ -1,0 +1,141 @@
+{
+  "schema_version": "exact5.run136.official_refresh_status_only.v1",
+  "run_id": "RUN136",
+  "captured_at_local": "2026-11-20T10:51:49-06:00",
+  "timezone": "America/Mexico_City",
+  "scope": {
+    "read_only_official_sources": true,
+    "research_branch_overlay_only": true,
+    "main_write": false,
+    "promotion_or_merge": false,
+    "canonical_history_write": false,
+    "v294_change": false,
+    "challenger_change": false,
+    "code_change": false,
+    "preregistration_change": false,
+    "tests_run": false,
+    "scoring": false
+  },
+  "invariants": {
+    "v294": "FROZEN",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "canonical_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_blob_baseline": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_baseline": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_reverified_this_run": false,
+    "main_head": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "research_branch": "research/run123-official-timing-audit-20261120",
+    "branch_compare": {
+      "status": "diverged",
+      "ahead_by": 287,
+      "behind_by": 2,
+      "merge_base": "58ff8e609fc62e540ab9226ebdb01782b3301fdc"
+    }
+  },
+  "official_results": {
+    "dedicated_page": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "latest_contest": 12384,
+    "latest_date": "2026-11-19",
+    "12383": {
+      "modality": "De las Tres",
+      "numbers": [1, 3, 8, 27, 28]
+    },
+    "12384": {
+      "modality": "Classic",
+      "numbers": [1, 2, 9, 21, 25]
+    },
+    "general_results_match": true,
+    "next_draw_date": "2026-11-20"
+  },
+  "mask": {
+    "index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "latest_listed_date": "2026-11-19",
+    "2026_11_20_listed": false,
+    "pdf_2026_11_19": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-19.pdf?v=19112026215833",
+    "pdf_web_text_confirms_12383_12384": true,
+    "raw_download_attempted": true,
+    "raw_download": "FAILED",
+    "raw_sha256": "NOT_CAPTURED",
+    "forensic_custody": false
+  },
+  "schedule": {
+    "12385": {
+      "date": "2026-11-20",
+      "time": "15:00",
+      "modality": "De las Tres",
+      "status": "SCHEDULED_NOT_YET_DRAWN"
+    },
+    "classic": {
+      "date": "2026-11-20",
+      "time": "21:00",
+      "id": null,
+      "status": "SCHEDULED_ID_NOT_ESTABLISHED"
+    },
+    "result_or_mask_2026_11_20_available": false,
+    "do_not_infer_classic_id_from_other_product_cards": true
+  },
+  "provenance": {
+    "contest_sical_sumario": false,
+    "participation_cancellation_files": false,
+    "md5_and_transfer_logs": false,
+    "signed_acta": false,
+    "signed_weighing_strip": false,
+    "cs11": false,
+    "continuous_video": false,
+    "sphere_case_and_number_mapping": false,
+    "v317_same_draw_preclose_mass": "MODEL_IMPLEMENTATION_DEFECT",
+    "physical_evidence": "BLOCKED_PROVENANCE"
+  },
+  "closed_research_reviewed_read_only": {
+    "V312": {
+      "mean_log_lift_nats": -0.026229689,
+      "cumulative_log_lift_nats": -181.5881372
+    },
+    "V313": {
+      "p_number": 0.9155,
+      "p_pair": 0.537,
+      "p_temporal": 0.4455,
+      "holm_p": 1.0
+    },
+    "V314": {
+      "global_p": 0.9825
+    },
+    "V315": {
+      "global_p": 0.591
+    },
+    "V316": {
+      "global_p": 0.9995
+    },
+    "V318": {
+      "global_p": 0.7855
+    },
+    "V319": {
+      "global_p": 0.182
+    },
+    "V320": {
+      "isolated_tests": 153,
+      "root_ci": "352 passed, 2 skipped, 16 subtests passed",
+      "physical_data": false
+    },
+    "replayed": false,
+    "conclusion": "No completed retrospective or engineering run establishes prospective edge; no closed experiment was rerun."
+  },
+  "scientific_disposition": {
+    "oos_scored": 0,
+    "authenticated_preclose_snapshots": 0,
+    "primary_physical_records_received": 0,
+    "edge_gates_satisfied": false,
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "closed_work_not_reopened": [
+    "Run53-56",
+    "Run96-107",
+    "Run99",
+    "Run100.3",
+    "Run132-135",
+    "V312-V316",
+    "V318-V320"
+  ]
+}
