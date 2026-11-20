@@ -67,8 +67,9 @@ def evaluate_temporal_eligibility(
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for row in materialized:
         target = str(row.get("target_contest_id", "")).strip()
-        if not target:
-            raise ValueError("target_contest_id: missing")
+        if not target.isdecimal() or int(target) <= 0:
+            raise ValueError("target_contest_id: positive contest ID required")
+        target = str(int(target))
         grouped[target].append(row)
 
     results: dict[str, dict[str, Any]] = {}
@@ -104,6 +105,24 @@ def evaluate_temporal_eligibility(
                 measurement = _parse_time(row["measurement_at"], "measurement_at")
                 source_close = _parse_time(row["draw_close_at"], "draw_close_at")
                 source_draw = _parse_time(row["source_draw_at"], "source_draw_at")
+                source_draw_local_date = datetime.fromisoformat(
+                    str(row["source_draw_at"]).strip().replace("Z", "+00:00")
+                ).date().isoformat()
+                contest_id = str(row["contest_id"]).strip()
+                source_contest_id = str(row["source_contest_id"]).strip()
+                if (not contest_id.isdecimal() or int(contest_id) <= 0
+                        or not source_contest_id.isdecimal() or int(source_contest_id) <= 0):
+                    reasons.add("INVALID_SOURCE_CONTEST_ID")
+                elif int(contest_id) != int(source_contest_id):
+                    reasons.add("SOURCE_CONTEST_ID_MISMATCH")
+                try:
+                    declared_draw_date = datetime.fromisoformat(
+                        str(row["draw_date"]).strip()
+                    ).date().isoformat()
+                    if declared_draw_date != source_draw_local_date:
+                        reasons.add("SOURCE_DRAW_DATE_MISMATCH")
+                except ValueError:
+                    reasons.add("INVALID_SOURCE_DRAW_DATE")
                 target_draw = _parse_time(row["target_draw_at"], "target_draw_at")
                 assignment = _parse_time(row["set_assigned_at"], "set_assigned_at")
                 signed = _parse_time(row["source_signed_at"], "source_signed_at")
@@ -112,6 +131,10 @@ def evaluate_temporal_eligibility(
                 assignments.add(assignment)
                 source_closes.add(source_close)
                 source_draws.add(source_draw)
+                for identity_field in ("sphere_type", "machine_model", "scale_id", "sphere_id", "sphere_set_id", "machine_id"):
+                    identity_value = row[identity_field]
+                    if not isinstance(identity_value, str) or not identity_value.strip():
+                        reasons.add("INVALID_PHYSICAL_IDENTITY")
                 sphere_types.add(str(row["sphere_type"]).strip())
                 machine_models.add(str(row["machine_model"]).strip())
                 scales.add(str(row["scale_id"]).strip())
@@ -239,7 +262,10 @@ def evaluate_temporal_eligibility(
             "MEASUREMENT_AFTER_SOURCE_DRAW", "SOURCE_SIGNED_PRECEDES_MEASUREMENT",
             "SOURCE_SIGNED_AFTER_SOURCE_DRAW", "BROKEN_SOURCE_SIGNATURE_TEMPORAL_ORDER",
             "BROKEN_EVIDENCE_AVAILABILITY_ORDER", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
-            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "SOURCE_DRAW_TIME_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
+            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "SOURCE_DRAW_TIME_CONFLICT",
+            "INVALID_SOURCE_CONTEST_ID", "SOURCE_CONTEST_ID_MISMATCH",
+            "SOURCE_DRAW_DATE_MISMATCH", "INVALID_SOURCE_DRAW_DATE",
+            "INVALID_PHYSICAL_IDENTITY", "METROLOGY_CONFIGURATION_CONFLICT",
             "EVIDENCE_DOCUMENT_SET_CONFLICT"
         )):
             classification = "BLOCKED_CONTINUITY"
