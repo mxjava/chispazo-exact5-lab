@@ -227,7 +227,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
         "row_count": len(materialized),
         "usable_contests": usable,
         "quarantined": quarantined,
-        "scope_warning": "Structural validation only; schedule attestation shape is checked but source bytes, clock trust, signatures and predictive value are not authenticated or established.",
+        "scope_warning": "Structural validation only; schedule attestation shape is checked but source bytes, clock trust, signatures and predictive value are not established or authenticated.",
     }
 
 
