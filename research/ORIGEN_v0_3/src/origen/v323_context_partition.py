@@ -12,6 +12,7 @@ import csv
 import hashlib
 import json
 import math
+from statistics import median
 from collections import Counter
 from pathlib import Path
 
@@ -155,7 +156,7 @@ def evaluate_history(
             "regimes": list(REGIMES),
         },
         "mean_log_lift": sum(lifts) / len(lifts),
-        "median_log_lift": sorted(lifts)[len(lifts) // 2],
+        "median_log_lift": median(lifts),
         "cumulative_log_lift": sum(lifts),
         "positive_log_lift_fraction": sum(x > 0 for x in lifts) / len(lifts),
         "exact_rank_1_count": sum(r["rank_low"] == r["rank_high"] == 1 for r in records),
