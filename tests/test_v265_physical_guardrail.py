@@ -9,6 +9,10 @@ def test_v265_regime_proxy_can_never_be_physical_bias_evidence():
     assert result["proxy_association"] is True
     assert result["research_edge"] is False
     assert result["physical_bias_evidence"] is False
+    assert result["physical_measurements_consumed"] is False
+    assert result["physical_identity_mapping_verified"] is False
+    assert result["rfid_event_log_consumed"] is False
+    assert result["extraction_order_consumed"] is False
     assert result["classification"] == "RESEARCH_ONLY_REGIME_PROXY_NOT_PHYSICAL_EVIDENCE"
 
 
