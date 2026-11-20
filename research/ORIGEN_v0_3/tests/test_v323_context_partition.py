@@ -1,5 +1,5 @@
 import unittest
-from statistics import median
+from origen.v323_context_partition import median
 
 from origen.v323_context_partition import context_regime, WINDOW, REGIMES
 from origen.v322_hierarchical_partition import HierarchicalPartitionModel
