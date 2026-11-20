@@ -102,6 +102,7 @@ def evaluate_temporal_eligibility(
                 received = _parse_time(row["custody_received_at"], "custody_received_at")
                 measurement = _parse_time(row["measurement_at"], "measurement_at")
                 source_close = _parse_time(row["draw_close_at"], "draw_close_at")
+                source_draw = _parse_time(row["draw_at"], "draw_at")
                 assignment = _parse_time(row["set_assigned_at"], "set_assigned_at")
                 signed = _parse_time(row["source_signed_at"], "source_signed_at")
                 closes.add(close)
@@ -143,8 +144,12 @@ def evaluate_temporal_eligibility(
                     reasons.add("CALIBRATION_NOT_VALID_AT_MEASUREMENT")
                 if available >= close or received >= close:
                     reasons.add("EVIDENCE_NOT_AVAILABLE_PRE_CLOSE")
-                if not (assignment <= measurement <= available <= received < close):
+                if source_draw < source_close:
+                    reasons.add("SOURCE_DRAW_PRECEDES_SOURCE_CLOSE")
+                if not (assignment <= source_close <= source_draw <= measurement <= available <= received < close):
                     reasons.add("BROKEN_EVIDENCE_TEMPORAL_ORDER")
+                if measurement < source_draw:
+                    reasons.add("MEASUREMENT_PRECEDES_SOURCE_DRAW")
                 if signed > available:
                     reasons.add("SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE")
                 try:
@@ -216,7 +221,8 @@ def evaluate_temporal_eligibility(
             "PHYSICAL_CONTINUITY_NOT_VERIFIED", "SOURCE_CONTEST_CONFLICT",
             "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", "PHYSICAL_SET_OR_MACHINE_CONFLICT",
             "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC",
-            "BROKEN_EVIDENCE_TEMPORAL_ORDER", "TARGET_DRAW_TIME_CONFLICT",
+            "BROKEN_EVIDENCE_TEMPORAL_ORDER", "MEASUREMENT_PRECEDES_SOURCE_DRAW",
+            "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
             "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
             "EVIDENCE_DOCUMENT_SET_CONFLICT"
         )):
