@@ -241,6 +241,26 @@ class CustodyTests(unittest.TestCase):
         )
         return record
 
+    def test_verifier_rejects_zero_target_even_with_valid_digest(self):
+        record, raw = self.make_record()
+        record["target_contest_id"] = 0
+        self._rehash(record)
+        ok, reason = verify_seal_record(record, raw)
+        self.assertFalse(ok)
+        self.assertIn("positive integer", reason)
+
+    def test_verifier_rejects_non_30_line_claim_even_with_valid_digest(self):
+        record, raw = self.make_record()
+        record["portfolio_line_count"] = 29
+        self._rehash(record)
+        ok, reason = verify_seal_record(record, raw)
+        self.assertFalse(ok)
+        self.assertIn("exactly 30", reason)
+
+    def test_builder_rejects_non_30_line_contract(self):
+        with self.assertRaisesRegex(ValueError, "exactly 30"):
+            self.make_record(expected_lines=29)
+
     def test_exclusive_writer_rejects_zero_target_even_with_valid_digest(self):
         record, _ = self.make_record()
         record["target_contest_id"] = 0
