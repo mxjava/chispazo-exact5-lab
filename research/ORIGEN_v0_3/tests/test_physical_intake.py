@@ -203,7 +203,7 @@ class PhysicalIntakeTests(unittest.TestCase):
     def test_utc_close_timestamp_is_compared_in_mexico_city_timezone(self):
         rows = make_rows()
         for row in rows:
-            row["draw_close_at"] = "2026-11-21T01:00:00Z"
+            row["draw_close_at"] = "2026-11-21T03:00:00Z"
         report = validate_physical_rows(rows)
         self.assertEqual(report["usable_contests"], [12300])
 
