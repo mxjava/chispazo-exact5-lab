@@ -68,6 +68,8 @@ def _official_close_for(row: Mapping[str, Any], schedule: Mapping[str, Any] | No
         captured = _timestamp(str(schedule.get("captured_at", "")), "schedule.captured_at")
         modality = str(row.get("modality", ""))
         draw_date = str(row.get("draw_date", ""))
+        if schedule.get("draw_date") != draw_date:
+            return None
         close_times = schedule.get("close_times")
         if not isinstance(close_times, Mapping):
             return None
