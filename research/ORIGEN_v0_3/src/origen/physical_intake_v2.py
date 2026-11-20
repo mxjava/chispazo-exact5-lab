@@ -9,7 +9,7 @@ from __future__ import annotations
 import csv
 import math
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
@@ -105,9 +105,17 @@ def evaluate_temporal_eligibility(
                 measurement = _parse_time(row["measurement_at"], "measurement_at")
                 source_close = _parse_time(row["draw_close_at"], "draw_close_at")
                 source_draw = _parse_time(row["source_draw_at"], "source_draw_at")
-                source_draw_local_date = datetime.fromisoformat(
-                    str(row["source_draw_at"]).strip().replace("Z", "+00:00")
-                ).date().isoformat()
+                source_draw_local_date = source_draw.date().isoformat()
+                declared_date_raw = row["draw_date"]
+                if not isinstance(declared_date_raw, str) or not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", declared_date_raw.strip()):
+                    reasons.add("INVALID_SOURCE_DRAW_DATE")
+                    declared_draw_date = ""
+                else:
+                    try:
+                        declared_draw_date = date.fromisoformat(declared_date_raw.strip()).isoformat()
+                    except ValueError:
+                        reasons.add("INVALID_SOURCE_DRAW_DATE")
+                        declared_draw_date = ""
                 contest_id = str(row["contest_id"]).strip()
                 source_contest_id = str(row["source_contest_id"]).strip()
                 if (not contest_id.isdecimal() or int(contest_id) <= 0
@@ -115,14 +123,8 @@ def evaluate_temporal_eligibility(
                     reasons.add("INVALID_SOURCE_CONTEST_ID")
                 elif int(contest_id) != int(source_contest_id):
                     reasons.add("SOURCE_CONTEST_ID_MISMATCH")
-                try:
-                    declared_draw_date = datetime.fromisoformat(
-                        str(row["draw_date"]).strip()
-                    ).date().isoformat()
-                    if declared_draw_date != source_draw_local_date:
-                        reasons.add("SOURCE_DRAW_DATE_MISMATCH")
-                except ValueError:
-                    reasons.add("INVALID_SOURCE_DRAW_DATE")
+                if declared_draw_date and declared_draw_date != source_draw_local_date:
+                    reasons.add("SOURCE_DRAW_DATE_MISMATCH")
                 target_draw = _parse_time(row["target_draw_at"], "target_draw_at")
                 assignment = _parse_time(row["set_assigned_at"], "set_assigned_at")
                 signed = _parse_time(row["source_signed_at"], "source_signed_at")
