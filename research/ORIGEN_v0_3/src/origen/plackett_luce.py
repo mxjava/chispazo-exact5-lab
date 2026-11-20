@@ -28,7 +28,14 @@ def mass_log_weights(masses_g: Sequence[float], beta_per_sd: float) -> tuple[flo
     """Return log weights exp(beta*z_mass), with z based on all 28 spheres."""
     if len(masses_g) != N_SPHERES:
         raise ValueError("exactly 28 masses are required in printed-number order")
-    values = tuple(float(value) for value in masses_g)
+    if any(isinstance(value, bool) for value in masses_g):
+        raise ValueError("masses_g must contain real numbers, not booleans")
+    if isinstance(beta_per_sd, bool):
+        raise ValueError("beta_per_sd must be a finite real number, not a boolean")
+    try:
+        values = tuple(float(value) for value in masses_g)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("all masses must be finite and positive") from exc
     if any(not math.isfinite(value) or value <= 0 for value in values):
         raise ValueError("all masses must be finite and positive")
     beta = float(beta_per_sd)
@@ -48,8 +55,13 @@ def log_plackett_luce_set_probability(
     draw_size: int = DRAW_SIZE,
 ) -> float:
     """Log probability of an unordered set under sequential Plackett-Luce draws."""
-    logs = tuple(float(value) for value in log_weights)
-    if len(logs) != N_SPHERES or any(not math.isfinite(value) for value in logs):
+    if len(log_weights) != N_SPHERES or any(isinstance(value, bool) for value in log_weights):
+        raise ValueError("log_weights must contain 28 finite real values, not booleans")
+    try:
+        logs = tuple(float(value) for value in log_weights)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("log_weights must contain 28 finite values") from exc
+    if any(not math.isfinite(value) for value in logs):
         raise ValueError("log_weights must contain 28 finite values")
     if not isinstance(draw_size, int) or isinstance(draw_size, bool) or not 1 <= draw_size <= N_SPHERES:
         raise ValueError("draw_size must be an integer from 1 to 28")
@@ -130,10 +142,15 @@ def prequential_e_process(log_likelihood_ratios: Sequence[float]) -> dict[str, o
     Inputs must be generated in chronological order from features frozen before
     each corresponding draw close. This function does not verify that provenance.
     """
+    if any(isinstance(value, bool) for value in log_likelihood_ratios):
+        raise ValueError("log likelihood ratios must be real numbers, not booleans")
     cumulative = 0.0
     log_e_values: list[float] = []
     for index, value in enumerate(log_likelihood_ratios, start=1):
-        increment = float(value)
+        try:
+            increment = float(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"log likelihood ratio {index} must be finite") from exc
         if not math.isfinite(increment):
             raise ValueError(f"log likelihood ratio {index} must be finite")
         cumulative += increment
