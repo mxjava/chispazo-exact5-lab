@@ -268,7 +268,7 @@ class CustodyTests(unittest.TestCase):
     def test_read_record_rejects_duplicate_json_keys(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "duplicate.json"
-            path.write_bytes(b'{"schema_version":"exact5.custody.v1","schema_version":"forged"}\\n')
+            path.write_bytes(b'{"schema_version":"exact5.custody.v1","schema_version":"forged"}\n')
             with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
                 read_record(path)
 
@@ -276,14 +276,14 @@ class CustodyTests(unittest.TestCase):
         record, _ = self.make_record()
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "pretty.json"
-            path.write_text(json.dumps(record, indent=2) + "\\n", encoding="utf-8")
+            path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "not canonical JSON"):
                 read_record(path)
 
     def test_read_record_rejects_nonstandard_json_constants(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "nan.json"
-            path.write_bytes(b'{"value":NaN}\\n')
+            path.write_bytes(b'{"value":NaN}\n')
             with self.assertRaisesRegex(ValueError, "non-standard JSON constant"):
                 read_record(path)
 
