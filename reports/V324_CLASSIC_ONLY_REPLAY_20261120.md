@@ -2,9 +2,9 @@
 
 Date: 2026-11-20  
 Branch: `research/v249-snapshot-integrity-20261119`  
-Workflow run: [44757412786](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44757412786) — **success**  
-Workflow head: `67f60623d4dd91318f35c762d917b0f49efc1e4f`  
-Artifact: `14637882334` — SHA-256 `35ca40d517ffed8e574184488ed4a80ca10d699ac162e3366107ce992201e4e0`
+Workflow run: [44757654571](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44757654571) — **success**  
+Workflow head: `4327ce8c4ffa1c8ee4b5eb48a7f8000f85fd7dad`  
+Artifact: `14640390339` — SHA-256 `9599071f2f7aea5c6440a7d493c246e97af34216da6f8bcbfefefdf8d7d9868d`
 
 ## Why this replay was necessary
 
