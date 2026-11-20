@@ -31,7 +31,7 @@ REQUIRED_COLUMNS = (
     "sphere_set_id", "set_assigned_at", "sphere_type", "machine_id",
     "machine_model", "sphere_id", "printed_number", "mass_value",
     "mass_unit", "measurement_at", "measurement_resolution",
-    "scale_id", "calibration_valid_from", "calibration_valid_to",
+    "scale_id", "calibration_performed_at", "calibration_valid_from", "calibration_valid_to",
     "calibration_certificate_sha256", "mapping_valid_from",
     "source_document_sha256", "source_document_ref",
 )
@@ -87,6 +87,13 @@ def _official_close_for(row: Mapping[str, Any], schedule: Mapping[str, Any] | No
         return expected
     except (ValueError, TypeError, KeyError):
         return None
+
+def _one_calendar_year_after(value: datetime) -> datetime:
+    try:
+        return value.replace(year=value.year + 1)
+    except ValueError:
+        return value.replace(year=value.year + 1, day=28)
+
 
 def _positive_float(value: str, field: str) -> float:
     try:
@@ -155,13 +162,16 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
             assigned = _timestamp(str(row["set_assigned_at"]), "set_assigned_at")
             measured = _timestamp(str(row["measurement_at"]), "measurement_at")
             mapped = _timestamp(str(row["mapping_valid_from"]), "mapping_valid_from")
+            calibration_at = _timestamp(str(row["calibration_performed_at"]), "calibration_performed_at")
             cal_from = _timestamp(str(row["calibration_valid_from"]), "calibration_valid_from")
             cal_to = _timestamp(str(row["calibration_valid_to"]), "calibration_valid_to")
             if not (assigned < close and measured < close and mapped < close):
                 row_errors[contest].add("Q_TIME")
             if mapped > assigned:
                 row_errors[contest].add("Q_MAPPING")
-            if not (cal_from <= measured <= cal_to):
+            if not (cal_from <= calibration_at <= cal_to and calibration_at <= measured <= cal_to):
+                row_errors[contest].add("Q_METROLOGY")
+            if measured > _one_calendar_year_after(calibration_at):
                 row_errors[contest].add("Q_METROLOGY")
             if not all(str(row[k]).strip() for k in ("sphere_set_id", "sphere_type", "machine_id", "machine_model", "sphere_id", "scale_id")):
                 row_errors[contest].add("Q_SOURCE_UNVERIFIED")
@@ -189,7 +199,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]], *, official_schedu
         sphere_ids: list[str] = []
         identity_fields = ("modality", "draw_date", "draw_close_at", "sphere_set_id",
                            "set_assigned_at", "sphere_type", "machine_id", "machine_model",
-                           "scale_id", "measurement_resolution", "calibration_valid_from",
+                           "scale_id", "measurement_resolution", "calibration_performed_at", "calibration_valid_from",
                            "calibration_valid_to", "mapping_valid_from",
                            "source_document_sha256", "source_document_ref",
                            "calibration_certificate_sha256")
