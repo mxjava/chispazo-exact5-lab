@@ -107,7 +107,7 @@ def evaluate_temporal_eligibility(
                 source_draw = _parse_time(row["source_draw_at"], "source_draw_at")
                 source_draw_local_date = source_draw.date().isoformat()
                 declared_date_raw = row["draw_date"]
-                if not isinstance(declared_date_raw, str) or not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", declared_date_raw.strip()):
+                if not isinstance(declared_date_raw, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", declared_date_raw.strip()):
                     reasons.add("INVALID_SOURCE_DRAW_DATE")
                     declared_draw_date = ""
                 else:
