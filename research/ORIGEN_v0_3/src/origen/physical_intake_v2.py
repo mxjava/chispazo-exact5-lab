@@ -29,16 +29,7 @@ V2_REQUIRED_COLUMNS = (
     "source_signer_id", "source_signature_ref", "evidence_available_at",
     "custody_received_at", "custodian_id", "custodian_role",
     "custody_receipt_ref", "custody_receipt_sha256", "trusted_timestamp_ref",
-) 
-
-NULL_PROVENANCE_COLUMNS = frozenset({
-    "source_document_sha256", "source_document_ref", "source_signed_at",
-    "source_signer_id", "source_signature_ref", "evidence_available_at",
-    "custody_received_at", "custodian_id", "custodian_role",
-    "custody_receipt_ref", "custody_receipt_sha256", "trusted_timestamp_ref",
-    "calibration_certificate_sha256",
-})
-
+)
 
 def _parse_time(value: Any, field: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
@@ -117,11 +108,8 @@ def evaluate_temporal_eligibility(
         signer_ids: set[str] = set()
         timestamp_refs: set[str] = set()
         for row in group:
-            null_fields = {field for field in V2_REQUIRED_COLUMNS if row.get(field) is None}
-            if null_fields:
+            if any(row.get(field) is None for field in V2_REQUIRED_COLUMNS):
                 reasons.add("NULL_REQUIRED_FIELD")
-            if null_fields & NULL_PROVENANCE_COLUMNS:
-                reasons.add("NULL_PROVENANCE_FIELD")
             try:
                 close = _parse_time(row["target_draw_close_at"], "target_draw_close_at")
                 available = _parse_time(row["evidence_available_at"], "evidence_available_at")
@@ -277,7 +265,7 @@ def evaluate_temporal_eligibility(
         if "EVIDENCE_NOT_AVAILABLE_PRE_CLOSE" in reasons:
             classification = "INELIGIBLE_POST_CLOSE"
         elif any(reason in reasons for reason in (
-            "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "NULL_PROVENANCE_FIELD", "INVALID_SOURCE_SHA256",
+            "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "NULL_REQUIRED_FIELD", "INVALID_SOURCE_SHA256",
             "INVALID_CUSTODY_RECEIPT_SHA256", "INVALID_CALIBRATION_SHA256",
             "CUSTODY_NOT_INDEPENDENTLY_VERIFIED", "TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",
             "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "SOURCE_SIGNATURE_NOT_INDEPENDENTLY_VERIFIED", "CALIBRATION_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
@@ -287,7 +275,7 @@ def evaluate_temporal_eligibility(
         )):
             classification = "BLOCKED_PROVENANCE"
         elif any(reason in reasons for reason in (
-            "PHYSICAL_CONTINUITY_NOT_VERIFIED", "NULL_REQUIRED_FIELD", "SOURCE_CONTEST_CONFLICT",
+            "PHYSICAL_CONTINUITY_NOT_VERIFIED", "SOURCE_CONTEST_CONFLICT",
             "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", "PHYSICAL_SET_OR_MACHINE_CONFLICT",
             "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC",
             "BROKEN_EVIDENCE_TEMPORAL_ORDER", "MEASUREMENT_PRECEDES_SOURCE_CLOSE",
