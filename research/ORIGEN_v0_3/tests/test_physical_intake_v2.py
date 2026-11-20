@@ -32,7 +32,7 @@ def rows_for_target(available="2026-11-20T21:15:00-06:00",
             "target_draw_at": "2026-11-21T21:00:00-06:00",
             "source_document_sha256": "b" * 64,
             "source_document_ref": "DOC-12300",
-            "source_signed_at": "2026-11-20T21:12:00-06:00",
+            "source_signed_at": "2026-11-20T20:58:00-06:00",
             "source_signer_id": "SIGNER-1", "source_signature_ref": "SIG-1",
             "evidence_available_at": available, "custody_received_at": received,
             "custodian_id": "CUST-1", "custodian_role": "independent-archive",
@@ -187,6 +187,41 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         reasons = result["targets"]["12301"]["reasons"]
         self.assertNotIn("TARGET_DRAW_TIME_CONFLICT", reasons)
         self.assertNotIn("MAPPING_NOT_VALID_AT_TARGET_DRAW", reasons)
+
+    def test_evidence_available_before_source_draw_is_allowed_after_signature(self):
+        rows = rows_for_target(
+            available="2026-11-20T20:59:00-06:00",
+            received="2026-11-20T20:59:30-06:00",
+        )
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "ELIGIBLE_PRE_CLOSE",
+        )
+
+    def test_source_signature_must_follow_measurement_and_precede_source_draw(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["source_signed_at"] = "2026-11-20T21:01:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_SIGNED_AFTER_SOURCE_DRAW", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
+    def test_source_signature_cannot_precede_measurement(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["source_signed_at"] = "2026-11-20T20:54:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_SIGNED_PRECEDES_MEASUREMENT", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
 
     def test_measurement_cannot_precede_set_assignment(self):
         rows = rows_for_target()

@@ -150,8 +150,16 @@ def evaluate_temporal_eligibility(
                     reasons.add("MEASUREMENT_PRECEDES_SOURCE_CLOSE")
                 if measurement > source_draw:
                     reasons.add("MEASUREMENT_AFTER_SOURCE_DRAW")
-                if not (assignment <= source_close <= measurement <= source_draw <= available <= received < close):
+                if signed < measurement:
+                    reasons.add("SOURCE_SIGNED_PRECEDES_MEASUREMENT")
+                if signed > source_draw:
+                    reasons.add("SOURCE_SIGNED_AFTER_SOURCE_DRAW")
+                if not (assignment <= source_close <= measurement <= source_draw < close):
                     reasons.add("BROKEN_EVIDENCE_TEMPORAL_ORDER")
+                if not (measurement <= signed <= source_draw):
+                    reasons.add("BROKEN_SOURCE_SIGNATURE_TEMPORAL_ORDER")
+                if not (signed <= available <= received < close):
+                    reasons.add("BROKEN_EVIDENCE_AVAILABILITY_ORDER")
                 if signed > available:
                     reasons.add("SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE")
                 try:
@@ -224,7 +232,9 @@ def evaluate_temporal_eligibility(
             "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", "PHYSICAL_SET_OR_MACHINE_CONFLICT",
             "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC",
             "BROKEN_EVIDENCE_TEMPORAL_ORDER", "MEASUREMENT_PRECEDES_SOURCE_CLOSE",
-            "MEASUREMENT_AFTER_SOURCE_DRAW", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
+            "MEASUREMENT_AFTER_SOURCE_DRAW", "SOURCE_SIGNED_PRECEDES_MEASUREMENT",
+            "SOURCE_SIGNED_AFTER_SOURCE_DRAW", "BROKEN_SOURCE_SIGNATURE_TEMPORAL_ORDER",
+            "BROKEN_EVIDENCE_AVAILABILITY_ORDER", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
             "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
             "EVIDENCE_DOCUMENT_SET_CONFLICT"
         )):

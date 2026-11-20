@@ -56,7 +56,7 @@ No sustituir la evidencia oficial original por un CSV transcrito. Conservar docu
 Para cada `target_contest_id`:
 - `evidence_available_at < target_draw_close_at` y `custody_received_at < target_draw_close_at`.
 - `target_draw_at >= target_draw_close_at`; validar la vigencia del mapeo hasta `target_draw_at`, no hasta el sorteo de origen.
-- Para el evento de origen, la secuencia del procedimiento SGVO-PRO-05 rev. 39 es: asignación/confirmación del estuche, cierre de ventas, pesaje, colocación en alimentadores y celebración del sorteo. El contrato V2 usa `set_assigned_at <= draw_close_at <= measurement_at <= source_draw_at`.
+- Para el evento de origen, SGVO-PRO-05 rev. 39 ordena asignación/confirmación, cierre de ventas, pesaje, firma/entrega de la tira, colocación en alimentadores y extracción. El contrato V2 separa `set_assigned_at <= draw_close_at <= measurement_at <= source_signed_at <= source_draw_at` de `source_signed_at <= evidence_available_at <= custody_received_at < target_draw_close_at`. La disponibilidad/custodia puede ocurrir antes o después de la extracción de origen; no se fuerza una relación entre `source_draw_at` y `evidence_available_at`.
 - El recibo/custodio/sello debe verificarse de forma independiente; hashes recalculados sobre los bytes exactos.
 - Fuente, firma, certificado y reloj deben pasar verificación independiente.
 - Probar continuidad del `sphere_set_id`, máquina y mapeo esfera↔número durante todo el intervalo hasta el sorteo objetivo. Si hubo sustitución, re-pesaje, remapeo, incidente o hueco documental, excluir la característica afectada o poner el target en cuarentena.
@@ -82,8 +82,8 @@ Nunca usar `STRUCTURE_VALID` como sinónimo de autenticado o elegible.
 8. Zona horaria ausente, timestamp ambiguo, `available_at >= target_close` y `custody_received_at >= target_close` bloquean elegibilidad.
 9. Cambio de sphere_set, máquina, esfera, mapeo, calibración vencida, sustitución o incidente intermedio bloquea continuidad para el target afectado.
 10. No confundir el sorteo de origen con el objetivo: `source_draw_at` y `target_draw_at` son campos distintos. El mapeo debe cubrir el intervalo desde la asignación hasta el sorteo objetivo.
-11. La secuencia `set_assigned_at <= draw_close_at <= measurement_at <= source_draw_at` se basa en SGVO-PRO-05 rev. 39 (actividades 3.1, 4.1, 5.1, 5.6 y 11.1); si cambia el procedimiento, revisar esta regla contra la fuente primaria antes de modificarla.
-11. Las pruebas deben cubrir ambos sentidos del mapeo y límites cerrados de intervalos.
+11. La secuencia física y de firma `set_assigned_at <= draw_close_at <= measurement_at <= source_signed_at <= source_draw_at` se basa en SGVO-PRO-05 rev. 39 (actividades 3.1, 4.1, 5.1, 5.4–5.6 y 11.1). La disponibilidad/custodia se valida por separado y debe ocurrir antes del cierre objetivo; puede ser anterior o posterior a la extracción de origen. Si cambia el procedimiento, revisar estas reglas contra la fuente primaria antes de modificarlas.
+11. Las pruebas deben cubrir ambos sentidos del mapeo y límites cerrados de intervalos; además, deben probar que la tira se firma después del pesaje y antes de la extracción, y que la disponibilidad/custodia puede ocurrir a ambos lados de la extracción de origen pero siempre antes del cierre objetivo.
 12. Ninguna prueba debe escribir en el histórico canónico, V294, main o challengers.
 
 ## Alcance y estado

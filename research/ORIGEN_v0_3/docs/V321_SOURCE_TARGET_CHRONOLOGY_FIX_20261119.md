@@ -2,36 +2,42 @@
 
 Fecha: 2026-11-19 (corte de investigación)
 Rama: `research/origen-v0.3-engine-20261118`
-Estado: corrección de ingeniería propuesta en rama de investigación; pendiente de CI en este commit. No es evidencia física ni estadística.
+Estado: corrección de ingeniería en rama de investigación; validación CI en curso. No es evidencia física ni estadística.
 
 ## Hallazgo confirmado
 
-La versión previa de `physical_intake_v2.py` imponía:
+La versión previa de `physical_intake_v2.py` imponía `source_close <= source_draw <= measurement` y reutilizaba `draw_at` como si fuera tanto la extracción de origen como la del objetivo.
 
-`source_close <= source_draw <= measurement`
+SGVO-PRO-05, revisión 39, describe:
+1. Actividad 3.1: confirmar el número de sorteo y el estuche.
+2. Actividad 4.1: verificar y documentar el cierre automático de ventas.
+3. Actividad 5.1: pesar las esferas.
+4. Actividades 5.4–5.5: firmar y entregar la tira de pesaje.
+5. Actividad 5.6: depositar las esferas en los alimentadores.
+6. Actividad 11.1: accionar la máquina para realizar el sorteo.
 
-y reutilizaba `draw_at` como si fuera tanto la extracción de origen como la del objetivo. Ambas decisiones eran incorrectas:
+Por tanto, la secuencia física/de firma del origen es `set_assigned_at <= source_close <= measurement_at <= source_signed_at <= source_draw_at`. La disponibilidad/custodia del documento para el sistema de puntuación es un evento separado: `source_signed_at <= evidence_available_at <= custody_received_at < target_draw_close_at`. Esa disponibilidad/custodia puede ocurrir antes o después de la extracción de origen; no debe forzarse un orden entre `source_draw_at` y `evidence_available_at`.
 
-1. SGVO-PRO-05, revisión 39, ordena cerrar ventas (actividad 4.1), pesar las esferas (5.1), colocarlas en alimentadores (5.6) y después accionar la máquina para realizar el sorteo (11.1). Por tanto, para el sorteo de origen la cronología aplicable es `set_assigned_at <= source_close <= measurement_at <= source_draw_at`, no la inversa.
-2. El intervalo `mapping_valid_from/to` debe cubrir el uso del mapeo hasta el sorteo objetivo. Comprobarlo solamente en el sorteo de origen no acredita que el mapeo siga vigente para el objetivo.
-3. `target_draw_close_at` es el cierre de ventas del objetivo; el sorteo objetivo ocurre al cierre o después. La comprobación anterior rechazaba el orden normal al comparar el timestamp de origen con el cierre objetivo.
+Además, `target_draw_at` debe ser un campo independiente de `source_draw_at`, debe ocurrir al cierre de ventas objetivo o después, y el intervalo de mapeo debe cubrir el uso hasta `target_draw_at`.
 
-Fuente primaria: SGVO-PRO-05 rev. 39, publicado 20-03-2026, apartados V.4.1, V.5.1–5.6 y V.11.1. URL:
+Fuente primaria: SGVO-PRO-05 rev. 39, publicado 20-03-2026, actividades V.3.1, V.4.1, V.5.1, V.5.4–5.6 y V.11.1:
 https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
 
 ## Corrección en V2
 
-- Se sustituye el campo ambiguo `draw_at` por `source_draw_at`.
-- Se agrega `target_draw_at` como timestamp independiente obligatorio.
-- Se exige `assignment <= source_close <= measurement <= source_draw <= evidence_available <= custody_received < target_close`.
-- Se exige `target_draw_at >= target_draw_close_at`.
-- La vigencia del mapeo se comprueba hasta `target_draw_at`.
-- Se agregan regresiones para pesaje después del cierre y antes de la extracción de origen, medición posterior a la extracción, extracción de origen antes del cierre, extracción objetivo anterior al cierre y cobertura del mapeo hasta el objetivo.
-- La plantilla V2 refleja ambos timestamps.
+- Campo `draw_at` sustituido por `source_draw_at`.
+- `target_draw_at` agregado como timestamp independiente obligatorio.
+- Orden de evento físico: `assignment <= source_close <= measurement <= source_draw < target_close`.
+- Orden de firma: `measurement <= source_signed_at <= source_draw_at`.
+- Orden de disponibilidad/custodia: `source_signed_at <= evidence_available_at <= custody_received_at < target_draw_close_at`.
+- Se permite disponibilidad/custodia anterior o posterior al sorteo de origen, siempre antes del cierre objetivo.
+- El mapeo se comprueba hasta `target_draw_at`.
+- Se agregan pruebas de pesaje post-cierre/pre-extracción, firma post-pesaje/pre-extracción, disponibilidad a ambos lados de la extracción, medición posterior a la extracción, extracción de origen anterior al cierre, extracción objetivo anterior al cierre y cobertura del mapeo hasta el objetivo.
+- Plantilla y contrato V2 actualizados.
 
 ## Límites
 
-La corrección solo valida coherencia temporal declarada. No autentica el reloj, el documento, la firma, el custodio, el mapeo físico ni la continuidad del estuche. No se recibieron masas primarias ni calibración independiente. No se calcula PMF, ranking ni score y no se modifica ningún challenger.
+La corrección solo valida coherencia temporal declarada. No autentica el reloj, documento, firma, custodio, mapeo físico ni continuidad del estuche. No se recibieron masas primarias ni calibración independiente. No se calcula PMF, ranking ni score; no se modifica ningún challenger.
 
 ## Protección
 
