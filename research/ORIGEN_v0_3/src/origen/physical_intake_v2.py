@@ -49,6 +49,7 @@ def evaluate_temporal_eligibility(
     verified_custody_refs: set[str] | None = None,
     verified_timestamp_refs: set[str] | None = None,
     verified_source_refs: set[str] | None = None,
+    verified_calibration_refs: set[str] | None = None,
     verified_continuity_targets: set[str] | None = None,
 ) -> dict[str, Any]:
     """Classify each target independently; missing external attestations fail closed.
@@ -66,7 +67,11 @@ def evaluate_temporal_eligibility(
     custody = verified_custody_refs or set()
     timestamps = verified_timestamp_refs or set()
     sources = verified_source_refs or set()
+    calibrations = verified_calibration_refs or set()
     continuity = verified_continuity_targets or set()
+    for field, values in (("verified_custody_refs", custody), ("verified_timestamp_refs", timestamps), ("verified_source_refs", sources), ("verified_calibration_refs", calibrations), ("verified_continuity_targets", continuity)):
+        if not isinstance(values, (set, frozenset)) or any(not isinstance(value, str) or not value.strip() for value in values):
+            raise ValueError(f"{field} must be a set of non-empty strings")
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for row in materialized:
         target = str(row.get("target_contest_id", "")).strip()
@@ -244,6 +249,8 @@ def evaluate_temporal_eligibility(
             reasons.add("TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED")
         if not all(str(row.get("source_document_ref", "")) in sources for row in group):
             reasons.add("SOURCE_NOT_INDEPENDENTLY_VERIFIED")
+        if not all(str(row.get("calibration_certificate_sha256", "")).strip().lower() in calibrations for row in group):
+            reasons.add("CALIBRATION_NOT_INDEPENDENTLY_VERIFIED")
         if target not in continuity:
             reasons.add("PHYSICAL_CONTINUITY_NOT_VERIFIED")
 
@@ -253,7 +260,7 @@ def evaluate_temporal_eligibility(
             "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "INVALID_SOURCE_SHA256",
             "INVALID_CUSTODY_RECEIPT_SHA256", "INVALID_CALIBRATION_SHA256",
             "CUSTODY_NOT_INDEPENDENTLY_VERIFIED", "TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",
-            "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
+            "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "CALIBRATION_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
             "CUSTODY_RECEIPT_MISSING", "TRUSTED_TIMESTAMP_MISSING",
             "PRIMARY_SOURCE_MISSING", "SOURCE_SIGNATURE_MISSING",
             "SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE"
