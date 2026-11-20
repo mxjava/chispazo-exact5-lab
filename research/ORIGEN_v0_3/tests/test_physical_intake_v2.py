@@ -47,6 +47,7 @@ VERIFIED = dict(
     verified_custody_refs={"RECEIPT-1"},
     verified_timestamp_refs={"TSA-1"},
     verified_source_refs={"DOC-12300"},
+    verified_signature_refs={"SIG-1"},
     verified_calibration_refs={"a" * 64},
     verified_continuity_targets={"12301"},
 )
@@ -88,6 +89,14 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             result["targets"]["12301"]["predictive_eligibility"],
             "BLOCKED_PROVENANCE",
         )
+
+    def test_source_signature_requires_independent_verification(self):
+        verification = dict(VERIFIED)
+        verification["verified_signature_refs"] = set()
+        result = evaluate_temporal_eligibility(rows_for_target(), **verification)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_SIGNATURE_NOT_INDEPENDENTLY_VERIFIED", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_PROVENANCE")
 
     def test_calibration_certificate_requires_independent_verification(self):
         verification = dict(VERIFIED)
