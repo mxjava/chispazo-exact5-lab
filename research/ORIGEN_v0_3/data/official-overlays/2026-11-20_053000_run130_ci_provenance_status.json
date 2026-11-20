@@ -1,0 +1,95 @@
+{
+  "run_id": "RUN130",
+  "captured_at": "2026-11-20T05:30:00-06:00",
+  "timezone": "America/Mexico_City",
+  "scope": "read-only official-source and GitHub CI provenance checkpoint",
+  "invariants": {
+    "V294": "FROZEN",
+    "canonical_history_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_git_blob": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "main_head": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "no_main_writes": true,
+    "no_promotion_or_merge": true,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "official_status": {
+    "latest_published_classic": {
+      "contest": 12384,
+      "date": "2026-11-19",
+      "numbers": [1, 2, 9, 21, 25],
+      "source": "https://www.loterianacional.gob.mx/Chispazo/Resultados"
+    },
+    "next_announced_draw": {
+      "contest": 12385,
+      "date": "2026-11-20",
+      "time_local": "15:00",
+      "modality": "De las Tres",
+      "source": "https://comercializadores.loterianacional.gob.mx/"
+    },
+    "classic_2026_11_20": {
+      "time_local": "21:00",
+      "contest_id": null,
+      "note": "No contest ID inferred."
+    },
+    "mask_index_latest_date": "2026-11-19",
+    "result_2026_11_20_published_at_capture": false,
+    "mask_2026_11_20_published_at_capture": false,
+    "general_results_endpoint_discrepancy": "Dedicated Chispazo page has 12384 numbers; general results page may still show blank numbers for 12384."
+  },
+  "github_ci": {
+    "run129": {
+      "workflow_run_id": 44724346145,
+      "job_id": 136247842811,
+      "commit": "8d4ce0ca4c5aef922884cea377c0b8c0b7d3f26f",
+      "branch": "research/run123-official-timing-audit-20261120",
+      "conclusion": "success",
+      "steps": ["pip install -r requirements.txt", "python -m compileall -q src", "pytest -q"],
+      "test_count": null,
+      "scope_note": "Standard repository CI passed; exact pytest count not exposed by the job metadata inspected."
+    },
+    "run121_integrated_branch": {
+      "head": "62f041a6ff27bc4a9a22f705eb3458b5f09a5191",
+      "workflow_run_id": 44537153662,
+      "conclusion": "success",
+      "job_id": 135605489346,
+      "steps": ["pip install -r requirements.txt", "python -m compileall -q src", "pytest -q"],
+      "package_specific_tests_covered": false
+    },
+    "run121_cross_component_branch": {
+      "head": "62972dd94360b29e07be66193c687bc2f8e13f3a",
+      "workflow_run_count_reported": 16,
+      "latest_workflow_run_id": 44542059925,
+      "latest_conclusion": "success",
+      "package_specific_tests_covered": false
+    },
+    "run121_artifacts": {
+      "integrated_latest_run_artifact_count": 0,
+      "cross_component_latest_run_artifact_count": 0,
+      "release_count": 0,
+      "source_zip_recovered": false,
+      "declared_zip_sha256_unverified": "f173b3441e0f0b776ee69de2ed96aba44729890961c3e24d0a30eb72a2130fcb"
+    },
+    "run121_repository_tree": {
+      "integrated_branch_contains_report_docs": true,
+      "integrated_branch_contains_executable_package_source": false,
+      "integrated_branch_contains_package_tests": false,
+      "note": "The tree query found Run119-121 documentation but not src/origen/run_gate.py, tests/test_run_gate.py, or the claimed packaged source modules."
+    }
+  },
+  "V317": {
+    "classification": "MODEL_IMPLEMENTATION_DEFECT",
+    "finding": "physical_intake.py compares measurement timestamps against the caller-supplied draw_close_at but does not independently authenticate SICAL close time or enforce the official modality schedule; test fixture accepts CLASSIC at 19:00.",
+    "source_paths": [
+      "research/ORIGEN_v0_3/src/origen/physical_intake.py",
+      "research/ORIGEN_v0_3/tests/test_physical_intake.py"
+    ],
+    "no_code_change_in_run130": true,
+    "no_v317_pytest_execution_in_run130": true
+  },
+  "scientific_status": {
+    "physical_provenance": "BLOCKED_PROVENANCE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "real_oos_targets_scored_in_run130": 0,
+    "preclose_snapshots_authenticated": 0
+  }
+}
