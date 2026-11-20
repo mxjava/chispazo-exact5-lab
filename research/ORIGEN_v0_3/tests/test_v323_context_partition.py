@@ -1,10 +1,14 @@
 import unittest
+from statistics import median
 
 from origen.v323_context_partition import context_regime, WINDOW, REGIMES
 from origen.v322_hierarchical_partition import HierarchicalPartitionModel
 
 
 class TestV323ContextPartition(unittest.TestCase):
+    def test_even_sample_median_uses_midpoint(self):
+        self.assertEqual(median([-2.0, 1.0, 3.0, 10.0]), 2.0)
+
     def test_context_requires_exact_prior_window(self):
         with self.assertRaises(ValueError):
             context_regime([[1, 2, 3, 4, 5]] * (WINDOW - 1))
