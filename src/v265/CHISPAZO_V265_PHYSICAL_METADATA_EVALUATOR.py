@@ -204,6 +204,10 @@ def v265_evidence_guardrail(proxy_association: bool) -> dict:
         "proxy_association": bool(proxy_association),
         "research_edge": False,
         "physical_bias_evidence": False,
+        "physical_measurements_consumed": False,
+        "physical_identity_mapping_verified": False,
+        "rfid_event_log_consumed": False,
+        "extraction_order_consumed": False,
         "actionable_for_betting": False,
         "promotion_eligible": False,
         "classification": "RESEARCH_ONLY_REGIME_PROXY_NOT_PHYSICAL_EVIDENCE",
@@ -212,7 +216,7 @@ def v265_evidence_guardrail(proxy_association: bool) -> dict:
 
 
 def main():
-    ap=argparse.ArgumentParser(description='V265 evaluator: physical metadata, chronological prequential only')
+    ap=argparse.ArgumentParser(description='V265 regime proxy evaluator: descriptive only, not physical-bias evidence')
     ap.add_argument('--history',required=True)
     ap.add_argument('--metadata',required=True)
     ap.add_argument('--out-dir',default='v265_physical_eval')
