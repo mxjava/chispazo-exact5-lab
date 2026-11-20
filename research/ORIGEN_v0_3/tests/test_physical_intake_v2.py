@@ -139,7 +139,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_mapping_must_cover_target_draw(self):
         rows = rows_for_target()
         for row in rows:
-            row["mapping_valid_to"] = "2026-11-21T20:59:59-06:00"
+            row["mapping_valid_to"] = "2026-11-20T20:59:59-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertIn("MAPPING_NOT_VALID_AT_TARGET_DRAW", result["targets"]["12301"]["reasons"])
         self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
