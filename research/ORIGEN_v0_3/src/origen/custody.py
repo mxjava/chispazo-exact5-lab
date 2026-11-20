@@ -122,6 +122,8 @@ def build_seal_record(
     expected_lines: int = 30,
 ) -> dict[str, Any]:
     """Build a hash-bound record; caller must retain an independent receipt."""
+    if not isinstance(expected_lines, int) or isinstance(expected_lines, bool) or expected_lines != 30:
+        raise ValueError("expected_lines must be exactly 30")
     if not isinstance(target_contest_id, int) or isinstance(target_contest_id, bool) or target_contest_id <= 0:
         raise ValueError("target_contest_id must be a positive integer")
     if (not isinstance(history_max_contest_id, int) or isinstance(history_max_contest_id, bool)
@@ -199,13 +201,15 @@ def verify_seal_record(
             return False, "unsupported record schema"
         if set(record) != _RECORD_FIELDS:
             return False, "record fields do not match exact v1 schema"
-        if not isinstance(record.get("target_contest_id"), int) or isinstance(record.get("target_contest_id"), bool):
-            return False, "target_contest_id must be an integer"
+        if (not isinstance(record.get("target_contest_id"), int)
+                or isinstance(record.get("target_contest_id"), bool)
+                or record.get("target_contest_id") <= 0):
+            return False, "target_contest_id must be a positive integer"
         if not isinstance(record.get("history_max_contest_id"), int) or isinstance(record.get("history_max_contest_id"), bool):
             return False, "history_max_contest_id must be an integer"
         count = record.get("portfolio_line_count")
-        if not isinstance(count, int) or isinstance(count, bool) or count <= 0:
-            return False, "portfolio_line_count must be a positive integer"
+        if not isinstance(count, int) or isinstance(count, bool) or count != 30:
+            return False, "portfolio_line_count must be exactly 30"
         for field in ("candidate_spec_sha256", "history_sha256", "environment_manifest_sha256",
                       "portfolio_sha256", "custodian_recomputed_sha256",
                       "previous_record_sha256", "record_sha256"):
