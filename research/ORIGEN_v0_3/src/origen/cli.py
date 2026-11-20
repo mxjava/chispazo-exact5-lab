@@ -34,7 +34,7 @@ def main():
     l=sub.add_parser("audit-ledger"); l.add_argument("--ledger",required=True)
     ml=sub.add_parser("audit-search-path"); ml.add_argument("--ledger",required=True)
     pi=sub.add_parser("validate-physical",help="validate provenance and structure of long-form physical sphere CSV"); pi.add_argument("--file",required=True)
-    pv=sub.add_parser("validate-physical-v2",help="evaluate V2 pre-close eligibility for source-to-target physical evidence"); pv.add_argument("--file",required=True); pv.add_argument("--verification-file",help="JSON with independently verified custody_refs, timestamp_refs, source_refs and continuity_targets")
+    pv=sub.add_parser("validate-physical-v2",help="evaluate V2 pre-close eligibility for source-to-target physical evidence"); pv.add_argument("--file",required=True); pv.add_argument("--verification-file",help="JSON with independently verified custody_refs, timestamp_refs, source_refs, signature_refs, calibration_refs and continuity_targets")
     h=sub.add_parser("holm"); h.add_argument("--file",required=True)
     s=sub.add_parser("split"); s.add_argument("--n",type=int,required=True); s.add_argument("--warmup",type=int,required=True); s.add_argument("--evaluation-size",type=int); s.add_argument("--rolling",action="store_true"); s.add_argument("--horizon",type=int,default=100)
     e=sub.add_parser("evaluate"); e.add_argument("--file",required=True)
@@ -55,7 +55,7 @@ def main():
         verification = _load(args.verification_file) if args.verification_file else {}
         if not isinstance(verification, dict):
             raise ValueError("verification manifest must be a JSON object")
-        allowed = {"custody_refs", "timestamp_refs", "source_refs", "calibration_refs", "continuity_targets"}
+        allowed = {"custody_refs", "timestamp_refs", "source_refs", "signature_refs", "calibration_refs", "continuity_targets"}
         if set(verification) - allowed:
             raise ValueError("verification manifest contains unsupported keys")
         if any(not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value) for value in verification.values()):
@@ -65,6 +65,7 @@ def main():
             verified_custody_refs=set(verification.get("custody_refs", [])),
             verified_timestamp_refs=set(verification.get("timestamp_refs", [])),
             verified_source_refs=set(verification.get("source_refs", [])),
+            verified_signature_refs=set(verification.get("signature_refs", [])),
             verified_calibration_refs=set(verification.get("calibration_refs", [])),
             verified_continuity_targets=set(verification.get("continuity_targets", [])),
         )
