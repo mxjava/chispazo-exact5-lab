@@ -10,6 +10,7 @@ import csv
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+import re
 from typing import Any, Iterable, Mapping
 
 V2_REQUIRED_COLUMNS = (
@@ -74,6 +75,11 @@ def evaluate_temporal_eligibility(
         reasons: set[str] = set()
         closes: set[datetime] = set()
         source_contests: set[str] = set()
+        modalities: set[str] = set()
+        sphere_ids: set[str] = set()
+        printed_numbers: set[int] = set()
+        set_ids: set[str] = set()
+        machine_ids: set[str] = set()
         for row in group:
             try:
                 close = _parse_time(row["target_draw_close_at"], "target_draw_close_at")
@@ -83,6 +89,28 @@ def evaluate_temporal_eligibility(
                 _parse_time(row["draw_close_at"], "draw_close_at")
                 closes.add(close)
                 source_contests.add(str(row["source_contest_id"]).strip())
+                modalities.add(str(row["modality"]).strip().upper())
+                sphere_ids.add(str(row["sphere_id"]).strip())
+                set_ids.add(str(row["sphere_set_id"]).strip())
+                machine_ids.add(str(row["machine_id"]).strip())
+                try:
+                    printed_numbers.add(int(str(row["printed_number"]).strip()))
+                except ValueError:
+                    reasons.add("INVALID_PRINTED_NUMBER")
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["source_document_sha256"]).strip()):
+                    reasons.add("INVALID_SOURCE_SHA256")
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["custody_receipt_sha256"]).strip()):
+                    reasons.add("INVALID_CUSTODY_RECEIPT_SHA256")
+                measurement = _parse_time(row["measurement_at"], "measurement_at")
+                mapping_start = _parse_time(row["mapping_valid_from"], "mapping_valid_from")
+                mapping_end = _parse_time(row["mapping_valid_to"], "mapping_valid_to")
+                calibration_start = _parse_time(row["calibration_valid_from"], "calibration_valid_from")
+                calibration_end = _parse_time(row["calibration_valid_to"], "calibration_valid_to")
+                target_draw = _parse_time(row["draw_at"], "draw_at")
+                if mapping_start >= mapping_end or not (mapping_start <= target_draw <= mapping_end):
+                    reasons.add("MAPPING_NOT_VALID_AT_TARGET_DRAW")
+                if calibration_start >= calibration_end or not (calibration_start <= measurement <= calibration_end):
+                    reasons.add("CALIBRATION_NOT_VALID_AT_MEASUREMENT")
                 if available >= close or received >= close:
                     reasons.add("EVIDENCE_NOT_AVAILABLE_PRE_CLOSE")
                 if not str(row["custodian_id"]).strip() or not str(row["custodian_role"]).strip():
@@ -99,6 +127,12 @@ def evaluate_temporal_eligibility(
             reasons.add("TARGET_CLOSE_CONFLICT")
         if len(source_contests) != 1:
             reasons.add("SOURCE_CONTEST_CONFLICT")
+        if len(group) != 28 or len(sphere_ids) != 28 or printed_numbers != set(range(1, 29)):
+            reasons.add("INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET")
+        if len(set_ids) != 1 or "" in set_ids or len(machine_ids) != 1 or "" in machine_ids:
+            reasons.add("PHYSICAL_SET_OR_MACHINE_CONFLICT")
+        if modalities != {"CLASSIC"}:
+            reasons.add("MODALITY_NOT_VERIFIED_CLASSIC")
         if not all(str(row.get("custody_receipt_ref", "")) in custody for row in group):
             reasons.add("CUSTODY_NOT_INDEPENDENTLY_VERIFIED")
         if not all(str(row.get("trusted_timestamp_ref", "")) in timestamps for row in group):
@@ -111,7 +145,9 @@ def evaluate_temporal_eligibility(
         if "EVIDENCE_NOT_AVAILABLE_PRE_CLOSE" in reasons:
             classification = "INELIGIBLE_POST_CLOSE"
         elif any(reason in reasons for reason in (
-            "PHYSICAL_CONTINUITY_NOT_VERIFIED", "SOURCE_CONTEST_CONFLICT"
+            "PHYSICAL_CONTINUITY_NOT_VERIFIED", "SOURCE_CONTEST_CONFLICT",
+            "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", "PHYSICAL_SET_OR_MACHINE_CONFLICT",
+            "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC"
         )):
             classification = "BLOCKED_CONTINUITY"
         elif reasons:
