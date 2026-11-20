@@ -1,0 +1,76 @@
+{
+  "run_id": "RUN126",
+  "captured_at_local": "2026-11-20T03:09:10-06:00",
+  "timezone": "America/Mexico_City",
+  "artifact_type": "official_procedure_temporal_nuance_status_only",
+  "preservation": {
+    "main_head": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "research_branch": "research/run123-official-timing-audit-20261120",
+    "research_branch_head_before_run126": "a8f8ae0807773d939badb8203c9e4a76b41f3615",
+    "canonical_git_blob_main": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_research_branch": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_expected": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_sha256_recomputed": false,
+    "v294": "FROZEN"
+  },
+  "official_status": {
+    "latest_result": {
+      "contest": 12384,
+      "date": "2026-11-19",
+      "modality": "CLASSIC",
+      "numbers": [
+        1,
+        2,
+        9,
+        21,
+        25
+      ]
+    },
+    "latest_mask_date": "2026-11-19",
+    "result_2026_11_20_published": false,
+    "scheduled_2026_11_20": {
+      "contest": 12385,
+      "time": "15:00",
+      "modality": "DE_LAS_TRES"
+    },
+    "classic_time": "21:00",
+    "classic_contest_id": null,
+    "home_results_12384_numbers_blank_discrepancy": true
+  },
+  "procedure": {
+    "code": "SGVO-PRO-05",
+    "revision": 39,
+    "activity_3_1": "Before sales close: confirms draw number and sphere case to be used with SEGOB inspector and General Directorate representative.",
+    "activity_4_1": "Verifies SICAL sales closure and contest/date/time.",
+    "activity_5_1": "After closure: weighs each sphere individually in numerical order.",
+    "activity_5_3": "If weight fails, changes sphere case and returns to activity 4.1.",
+    "activities_5_6_6_1": "Loads spheres into feeders and verifies they correspond to the draw.",
+    "policy_6": "Weighing occurs for every draw; failed case is replaced and reweighed.",
+    "quality_plan_cs11": "Contains date, contest number, case number and sphere-to-number correspondence; pre-close availability is not specified."
+  },
+  "v317": {
+    "same_draw_mass_preclose": "NOT_SUPPORTED_BY_PUBLISHED_SEQUENCE",
+    "preclose_planned_case_confirmation": "PROCESS_STEP_EXISTS_BUT_NO_AUTHENTICATED_RECORD_RECEIVED",
+    "preclose_sphere_number_mapping": "NOT_ESTABLISHED",
+    "postclose_case_switch_possible": true,
+    "lagged_same_case_hypothesis": "BLOCKED_PROVENANCE",
+    "no_code_or_challenger_changes": true,
+    "no_scoring": true
+  },
+  "provenance": {
+    "official_pdf_text_opened": true,
+    "raw_pdf_bytes": false,
+    "raw_pdf_sha256": null,
+    "independent_custody": false,
+    "per_draw_mass_strips_received": false,
+    "physical_sphere_ids_and_mapping_received": false,
+    "preclose_case_assignment_records_received": false,
+    "oos_targets_scored": 0
+  },
+  "classification": {
+    "same_draw_v317_timing_contract": "MODEL_IMPLEMENTATION_DEFECT",
+    "lagged_same_case_hypothesis": "BLOCKED_PROVENANCE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
