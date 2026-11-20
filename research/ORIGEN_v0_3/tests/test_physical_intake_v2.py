@@ -90,6 +90,15 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "BLOCKED_PROVENANCE",
         )
 
+    def test_custodian_must_be_independent_from_source_signer(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["custodian_id"] = row["source_signer_id"]
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("CUSTODIAN_IS_SOURCE_SIGNER", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_PROVENANCE")
+
     def test_source_signature_requires_independent_verification(self):
         verification = dict(VERIFIED)
         verification["verified_signature_refs"] = set()
