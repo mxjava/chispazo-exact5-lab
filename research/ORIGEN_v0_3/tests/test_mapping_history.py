@@ -30,6 +30,7 @@ class MappingHistoryTests(unittest.TestCase):
     def test_invalid_rows_do_not_masquerade_as_overlap_conflicts(self):
         invalid = rows()
         invalid[0]["sphere_id"] = " "
+        invalid.append({**invalid[0], "sphere_id": "BALL-02", "printed_number": "8"})
         report = audit_mapping_history(invalid)
         self.assertEqual(report["overlapping_conflicts"], 0)
         self.assertTrue(report["overlap_conflicts_clear"])
