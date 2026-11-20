@@ -1,0 +1,220 @@
+{
+  "schema_version": "exact5.run135.official_refresh_normateca_sical_temporal_status_only.v1",
+  "run_id": "RUN135",
+  "captured_at_local": "2026-11-20T09:56:43-06:00",
+  "timezone": "America/Mexico_City",
+  "artifact_type": "official_results_mask_normateca_sical_and_v317_temporal_status_only",
+  "scope": {
+    "official_source_review": "READ_ONLY",
+    "github_research_branch_overlay_only": true,
+    "main_write": false,
+    "merge_or_promotion": false,
+    "canonical_history_write": false,
+    "historical_rebuild": false,
+    "v294_change": false,
+    "challenger_change": false,
+    "v317_code_change": false,
+    "preregistration_change": false,
+    "predictive_scoring": false,
+    "real_oos_scoring": false,
+    "tests_executed_this_run": false
+  },
+  "invariants": {
+    "v294": "FROZEN",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "canonical_history_path": "data/history/Chispazo_through_12249.csv",
+    "canonical_git_blob_expected": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_main_observed": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_research_branch_observed": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_expected": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_sha256_recomputed_from_raw_csv_bytes_this_run": false,
+    "main_head_observed": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "research_branch": "research/run123-official-timing-audit-20261120",
+    "research_branch_compare_before_this_overlay": {
+      "status": "DIVERGED",
+      "ahead_of_main": 284,
+      "behind_main": 2,
+      "merge_base": "58ff8e609fc62e540ab9226ebdb01782b3301fdc",
+      "reconciliation_performed": false
+    },
+    "closed_work_not_reopened": [
+      "Run53-56",
+      "Run96-107",
+      "Run99",
+      "Run100.3",
+      "Run132-134"
+    ]
+  },
+  "official_results_refresh": {
+    "dedicated_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "latest_contest": 12384,
+      "latest_date": "2026-11-19",
+      "contest_12383": {
+        "modality": "De las Tres",
+        "numbers": [1, 3, 8, 27, 28]
+      },
+      "contest_12384": {
+        "modality": "Classic",
+        "numbers": [1, 2, 9, 21, 25]
+      },
+      "status": "UNCHANGED_AT_CAPTURE"
+    },
+    "general_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados/",
+      "latest_chispazo_date": "2026-11-19",
+      "contest_12383_numbers": [1, 3, 8, 27, 28],
+      "contest_12384_numbers": [1, 2, 9, 21, 25],
+      "matches_dedicated_results_page": true
+    },
+    "daily_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_date": "2026-11-19",
+      "visible_dates": [
+        "2026-11-19", "2026-11-18", "2026-11-17", "2026-11-16",
+        "2026-11-15", "2026-11-14", "2026-11-13", "2026-11-12",
+        "2026-11-11", "2026-11-10"
+      ],
+      "mask_for_2026_11_20_listed": false
+    },
+    "daily_mask_pdf_2026_11_19": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-19.pdf?v=19112026215833",
+      "web_text_and_visual_review": true,
+      "contest_12383_numbers": [1, 3, 8, 27, 28],
+      "contest_12384_numbers": [1, 2, 9, 21, 25],
+      "raw_bytes_download_attempted_this_run": false,
+      "raw_pdf_sha256": "NOT_CAPTURED",
+      "independent_forensic_custody": false
+    },
+    "next_draws": {
+      "contest_12385": {
+        "date": "2026-11-20",
+        "time_local": "15:00",
+        "modality": "De las Tres",
+        "source_url": "https://comercializadores.loterianacional.gob.mx/",
+        "status_at_capture": "SCHEDULED_NOT_YET_DRAWN"
+      },
+      "classic": {
+        "date": "2026-11-20",
+        "scheduled_time_local": "21:00",
+        "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "contest_id": null,
+        "status_at_capture": "SCHEDULED_ID_NOT_ESTABLISHED"
+      },
+      "result_or_mask_for_2026_11_20_available_at_capture": false
+    }
+  },
+  "normateca_and_provenance_refresh": {
+    "active_normative_index": {
+      "url": "https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+      "reviewed_directly": true,
+      "sgvo_pro_05": {
+        "listed_as_current": true,
+        "last_updated": "2026-03-20",
+        "document_url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+        "revision": 39,
+        "type": "PUBLIC"
+      },
+      "sgaf_int_48": {
+        "listed_as_current": true,
+        "last_updated": "2026-03-27",
+        "document_url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgaf_int_48.pdf",
+        "revision": 8,
+        "type": "PUBLIC",
+        "publication_date_visible_in_scan": "2026-03-27"
+      },
+      "sgvo_man_02": {
+        "listed_in_current_sustantive_index": false,
+        "status": "CURRENT_CONTROLLED_VERSION_NOT_ESTABLISHED"
+      }
+    },
+    "project_historical_normative_index": {
+      "url": "https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0",
+      "sgvo_man_02_project_copy": {
+        "listed_as_project_historical_entry": true,
+        "period_start": "2026-02-23",
+        "period_end": "2026-03-04",
+        "filename": "sgvo_man_02p.pdf",
+        "document_url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/PROYECTO/sgvo_man_02p.pdf",
+        "internal_document_marking": "TIPO: RESERVADO",
+        "issue_date": "2011-06",
+        "revision": 9,
+        "use_as_controlling_authority": false,
+        "notable_text": "The project/reserved copy says sphere weighing is preferably performed after sales close. This is corroborative only and not treated as the current controlling manual."
+      }
+    },
+    "sgvo_pro_05_sequence": {
+      "policy_9": "Automatic sales close is 15:00 for De las Tres and 21:00 for nocturnal draws; changes require authorized approval and institutional notice.",
+      "activity_3_1": "Before the Cierre de Venta section, confirm draw number and planned sphere case with SEGOB inspector and Lotería Nacional representative.",
+      "activity_4_1": "SICAL screen must show betting status Cerrado; date, time, draw number and sales are checked; printed sumario is initialled.",
+      "activity_5_1": "The next procedure section is Pesaje y Colocación de las Esferas; spheres are weighed one by one after the Cierre de Venta section.",
+      "activities_5_3_to_5_5": "If weight is unacceptable, notify representatives, change sphere case and return to activity 4.1; if acceptable, sign the weighing strip and attach it to the Act.",
+      "policy_30": "Recording covers the process from sphere weighing through the electronic draw; edited draw recording forms part of the Act.",
+      "implication": "The public current procedure orders the same-draw weighing after the SICAL sales-close activity. It does not support V317's requirement that same-draw masses be available before close under the normal sequence."
+    },
+    "sgaf_int_48_sical_chain": {
+      "document_name": "Instructivo del Servicio Integral de Captación de Apuestas en Línea (SICAL)",
+      "revision": 8,
+      "type": "PUBLIC",
+      "visible_publication_date": "2026-03-27",
+      "key_points_from_scanned_pages": [
+        "After automatic sales close, SICAL sends a firma MD5 for each participation file to Lotería Nacional and stores the files on designated servers.",
+        "For 13:00, 15:00, 17:00 and 19:00 draws, sales files and MD5 are copied to contingency server alongside the draws.",
+        "For 21:00 draws, sales files and MD5 are copied from production to contingency server the following day, then loaded and checked."
+      ],
+      "custody_caveat": "No contest-specific SICAL sumario, participation/cancellation file, MD5 record, production/contingency transfer log or independently timestamped close event was obtained in this run. MD5 is preserved as the procedure's named integrity mechanism, not represented as a modern collision-resistant digest."
+    }
+  },
+  "v317_temporal_contract_review": {
+    "source_path": "research/ORIGEN_v0_3/src/origen/physical_intake.py",
+    "source_blob": "f5029c456c0b6524ed6a00ae88c5a0b86ee21f36",
+    "test_path": "research/ORIGEN_v0_3/tests/test_physical_intake.py",
+    "test_blob": "6343acb67b45e23f1f4c1dc87d54be64dcc6d347",
+    "current_code_rules": {
+      "measurement_must_precede_same_draw_close": true,
+      "mapping_must_precede_same_draw_close": true,
+      "set_assignment_must_precede_same_draw_close": true,
+      "source_sha256_bytes_binding_authenticated": false,
+      "caller_capture_clock_authenticated": false,
+      "actual_sical_close_event_required_as_authenticated_input": false
+    },
+    "fixture": {
+      "test_name": "test_complete_preclose_contest_is_structurally_usable",
+      "modality": "CLASSIC",
+      "set_assigned_at": "2026-11-20T17:00:00-06:00",
+      "measurement_at": "2026-11-20T17:10:00-06:00",
+      "close_at": "2026-11-20T21:00:00-06:00",
+      "expected_result": "STRUCTURALLY_USABLE",
+      "procedure_compatibility": "NOT_ESTABLISHED; public procedure places weighing after SICAL close activity"
+    },
+    "classification": {
+      "same_draw_preclose_mass_contract": "MODEL_IMPLEMENTATION_DEFECT",
+      "physical_primary_evidence": "BLOCKED_PROVENANCE",
+      "predictive_edge": "NO_EDGE_EVIDENCE",
+      "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+    },
+    "code_change_this_run": false,
+    "preregistration_change_this_run": false,
+    "tests_executed_this_run": false,
+    "scoring_this_run": false
+  },
+  "next_evidence_acquisition_targets": [
+    "Contest-specific SICAL sumario of sales close showing status Cerrado, draw ID, date, time and sales, with original electronic file and custodian attestation.",
+    "Original SICAL participation and cancellation files, corresponding MD5 records, production/contingency transfer logs and trusted timestamps; for 21:00 draws, request the following-day transfer evidence.",
+    "Signed Acta with annexes, including the original signed weighing strip and CS-11.",
+    "Continuous original video covering weighing through draw, plus retention and custody records.",
+    "Sphere-case identity/assignment/replacement log and physical sphere-ID-to-printed-number crosswalk; preserve post-close case switches as events, never pre-close predictors.",
+    "Current controlled SGVO-MAN-02 version or written confirmation that no active manual governs beyond SGVO-PRO-05."
+  ],
+  "scientific_disposition": {
+    "real_oos_targets_scored_this_run": 0,
+    "preclose_snapshots_authenticated_this_run": 0,
+    "physical_primary_records_received_this_run": 0,
+    "edge_supported_gates_satisfied": false,
+    "v317_same_draw_contract": "MODEL_IMPLEMENTATION_DEFECT",
+    "physical_mechanism": "BLOCKED_PROVENANCE",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
