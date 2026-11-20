@@ -344,7 +344,9 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         reasons = result["targets"]["12301"]["reasons"]
         self.assertIn("INVALID_PHYSICAL_IDENTITY", reasons)
-        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_PROVENANCE")
+        self.assertIn("NULL_REQUIRED_FIELD", reasons)
+        self.assertNotIn("NULL_PROVENANCE_FIELD", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
 
     def test_contest_id_must_match_source_contest_id(self):
         rows = rows_for_target()
@@ -409,7 +411,8 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                 result = evaluate_temporal_eligibility(rows, **verification)
                 target = result["targets"]["12301"]
                 self.assertIn("NULL_REQUIRED_FIELD", target["reasons"])
-                self.assertNotEqual(target["predictive_eligibility"], "ELIGIBLE_PRE_CLOSE")
+                self.assertIn("NULL_PROVENANCE_FIELD", target["reasons"])
+                self.assertEqual(target["predictive_eligibility"], "BLOCKED_PROVENANCE")
 
 
 if __name__ == "__main__":
