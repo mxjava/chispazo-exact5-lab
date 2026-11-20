@@ -60,6 +60,14 @@ jobs:
           result["limitations"].append("Clásico membership is inferred from the complete paired numbering sequence and official anchors, not individually tagged in the canonical CSV.")
           result["limitations"].append("The V324 retrospective result is not prospective evidence and does not establish a 5/5 edge.")
           p.write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
+          summary_path=Path("outputs/v324_classic_replay/v264_summary.json")
+          summary=json.loads(summary_path.read_text(encoding="utf-8"))
+          summary["sequential_next_id_before_modality_filter"]=summary["target"]
+          summary["target"]=int(manifest["post_transition"]["classic_max_contest"])+2
+          summary["target_scope"]="next_inferred_classic_contest"
+          summary["ranking_status"]="RESEARCH_ONLY_NO_EDGE"
+          summary["limitations"]=["The model was trained only on inferred Clásico draws; the next sequential contest ID belongs to the other modality and is not the Clásico target.","No betting recommendation or predictive edge is established."]
+          summary_path.write_text(json.dumps(summary,indent=2)+"\n",encoding="utf-8")
           PY
       - name: Upload Clásico-only evidence
         uses: actions/upload-artifact@v4
