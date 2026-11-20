@@ -106,7 +106,7 @@ python -m origen.cli validate-physical-v2 --file .\\data\\physical_evidence_v2.c
 ```
 
 The optional verification JSON accepts only four arrays of exact evidence references:
-`custody_refs`, `timestamp_refs`, `source_refs`, and `continuity_targets`.
+`custody_refs`, `timestamp_refs`, `source_refs`, `calibration_refs`, and `continuity_targets`.
 Omitting the file leaves every external attestation unverified and fails closed.
 The file is a handoff from an independent verifier; the CLI does not authenticate
 the verifier, signatures, trusted timestamps, custody receipts, or physical records.
@@ -115,7 +115,7 @@ signed report and its hash outside this repository and audit it separately.
 
 V2 checks source contest identity/date, Mexico City local draw date, the 28-sphere
 set, source-to-target chronology, evidence availability before the target close,
-and externally supplied verification references. It is an eligibility gate, not
+including independent verification of the calibration certificate digest, and externally supplied verification references. It is an eligibility gate, not
 a predictor or a physical-bias test.
 
 ### V317 physical-mass mechanism (preregistered; blocked)
