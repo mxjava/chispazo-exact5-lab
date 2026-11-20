@@ -27,6 +27,11 @@ class MappingHistoryTests(unittest.TestCase):
         self.assertEqual(report["status"], "MAPPING_HISTORY_CLEAR")
         self.assertEqual(report["overlapping_conflicts"], 0)
 
+    def test_interval_clearance_does_not_claim_continuity(self):
+        report = audit_mapping_history(rows())
+        self.assertTrue(report["interval_conflicts_clear"])
+        self.assertEqual(report["continuity_status"], "NOT_PROVEN")
+
     def test_overlapping_sphere_remap_quarantines_both_contests(self):
         data = rows()
         data[1]["printed_number"] = "8"
