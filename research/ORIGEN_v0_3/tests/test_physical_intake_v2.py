@@ -161,6 +161,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         rows = rows_for_target()
         for row in rows:
             row["set_assigned_at"] = "2026-11-20T17:20:00-06:00"
+            row["measurement_at"] = "2026-11-20T17:10:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertIn("BROKEN_EVIDENCE_TEMPORAL_ORDER", result["targets"]["12301"]["reasons"])
 
