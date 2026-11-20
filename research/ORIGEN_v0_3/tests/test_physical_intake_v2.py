@@ -179,6 +179,20 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertIn("TARGET_DRAW_TIME_CONFLICT", result["targets"]["12301"]["reasons"])
 
+    def test_mixed_primary_document_hashes_are_blocked(self):
+        rows = rows_for_target()
+        rows[0]["source_document_sha256"] = "d" * 64
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn("EVIDENCE_DOCUMENT_SET_CONFLICT", result["targets"]["12301"]["reasons"])
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
+    def test_mapping_must_cover_set_assignment_as_well_as_draw(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["mapping_valid_from"] = "2026-11-20T17:05:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn("MAPPING_NOT_VALID_AT_TARGET_DRAW", result["targets"]["12301"]["reasons"])
+
     def test_empty_input_is_not_success(self):
         self.assertEqual(evaluate_temporal_eligibility([])["status"], "EMPTY")
 
