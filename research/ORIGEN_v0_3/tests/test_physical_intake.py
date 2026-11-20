@@ -41,6 +41,7 @@ def make_rows():
             "measurement_at": "2026-11-20T17:10:00-06:00",
             "measurement_resolution": "0.001",
             "scale_id": "SCALE-1",
+            "calibration_performed_at": "2026-01-01T00:00:00-06:00",
             "calibration_valid_from": "2026-01-01T00:00:00-06:00",
             "calibration_valid_to": "2026-12-31T23:59:59-06:00",
             "calibration_certificate_sha256": "a" * 64,
@@ -132,6 +133,24 @@ class PhysicalIntakeTests(unittest.TestCase):
     def test_calibration_must_cover_measurement(self):
         rows = make_rows()
         rows[0]["calibration_valid_to"] = "2026-11-20T17:00:00-06:00"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
+
+
+    def test_calibration_older_than_one_calendar_year_is_quarantined(self):
+        rows = make_rows()
+        for row in rows:
+            row["calibration_performed_at"] = "2025-11-19T17:00:00-06:00"
+            row["calibration_valid_from"] = "2025-11-19T17:00:00-06:00"
+            row["calibration_valid_to"] = "2027-01-01T00:00:00-06:00"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
+        self.assertNotIn(12300, report["usable_contests"])
+
+    def test_calibration_performed_after_measurement_is_quarantined(self):
+        rows = make_rows()
+        for row in rows:
+            row["calibration_performed_at"] = "2026-11-20T17:11:00-06:00"
         report = validate_physical_rows(rows)
         self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
 
