@@ -152,6 +152,18 @@ class PhysicalIntakeTests(unittest.TestCase):
         report = validate_physical_rows(rows)
         self.assertIn("Q_REMAP", report["quarantined"]["12300"])
 
+    def test_mapping_must_be_valid_at_measurement(self):
+        rows = make_rows()
+        rows[0]["mapping_valid_to"] = "2026-11-20T17:09:59-06:00"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_REMAP", report["quarantined"]["12300"])
+
+    def test_measurement_cannot_precede_set_assignment(self):
+        rows = make_rows()
+        rows[0]["measurement_at"] = "2026-11-20T16:59:00-06:00"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_REMAP", report["quarantined"]["12300"])
+
     def test_mapping_must_remain_valid_through_draw(self):
         rows = make_rows()
         rows[0]["mapping_valid_to"] = "2026-11-20T20:59:59-06:00"
