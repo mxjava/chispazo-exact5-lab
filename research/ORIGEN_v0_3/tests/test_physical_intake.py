@@ -11,6 +11,7 @@ from origen.physical_intake import (
 
 SCHEDULE = {
     "timezone": "America/Mexico_City",
+    "draw_date": "2026-11-20",
     "source_uri": "https://www.loterianacional.gob.mx/",
     "source_sha256": "c" * 64,
     "captured_at": "2026-11-20T12:00:00-06:00",
@@ -73,6 +74,12 @@ class PhysicalIntakeTests(unittest.TestCase):
         report = _validate_physical_rows(make_rows())
         self.assertIn("Q_TIME", report["quarantined"]["12300"])
         self.assertNotIn(12300, report["usable_contests"])
+
+    def test_schedule_for_different_draw_date_fails_closed(self):
+        rows = make_rows()
+        schedule = dict(SCHEDULE, draw_date="2026-11-21")
+        report = _validate_physical_rows(rows, official_schedule=schedule)
+        self.assertIn("Q_TIME", report["quarantined"]["12300"])
 
     def test_untrusted_schedule_host_fails_closed(self):
         rows = make_rows()
