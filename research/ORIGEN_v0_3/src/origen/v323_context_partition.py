@@ -29,10 +29,17 @@ REGIMES = ("LOW_REPEAT", "TYPICAL_REPEAT", "HIGH_REPEAT")
 
 def context_regime(prior_draws: list[list[int]]) -> tuple[str, float]:
     """Classify only the preceding 20 Classic draws; no target is accepted."""
-    if len(prior_draws) != WINDOW:
+    if not isinstance(prior_draws, (list, tuple)) or len(prior_draws) != WINDOW:
         raise ValueError("context_requires_exactly_20_prior_draws")
+    validated = []
+    for draw in prior_draws:
+        if (not isinstance(draw, (list, tuple)) or len(draw) != 5
+                or any(not isinstance(x, int) or isinstance(x, bool) for x in draw)
+                or len(set(draw)) != 5 or any(x < 1 or x > 28 for x in draw)):
+            raise ValueError("context_contains_invalid_classic_draw")
+        validated.append(set(draw))
     overlaps = [
-        len(set(prior_draws[i]).intersection(prior_draws[i + 1]))
+        len(validated[i].intersection(validated[i + 1]))
         for i in range(WINDOW - 1)
     ]
     mean_overlap = sum(overlaps) / len(overlaps)
