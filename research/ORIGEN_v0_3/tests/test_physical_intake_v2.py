@@ -129,6 +129,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             verified_custody_refs={"RECEIPT-1"},
             verified_timestamp_refs={"TSA-1"},
             verified_source_refs={"DOC-12300"},
+            verified_signature_refs={"SIG-1"},
             verified_calibration_refs={"a" * 64},
         )
         self.assertEqual(
