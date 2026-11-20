@@ -101,6 +101,10 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "verified_source_refs must be a set"):
             evaluate_temporal_eligibility(rows_for_target(), verified_source_refs="DOC-12300")
 
+    def test_empty_list_is_not_accepted_as_verification_set(self):
+        with self.assertRaisesRegex(ValueError, "verified_source_refs must be a set"):
+            evaluate_temporal_eligibility(rows_for_target(), verified_source_refs=[])
+
     def test_missing_continuity_is_separate_block(self):
         result = evaluate_temporal_eligibility(
             rows_for_target(),
