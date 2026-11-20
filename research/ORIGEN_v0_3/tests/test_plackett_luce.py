@@ -96,6 +96,20 @@ class PlackettLuceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "28 finite"):
             log_plackett_luce_set_probability((0.0,) * 27, (1, 2, 3, 4, 5))
 
+    def test_boolean_masses_and_beta_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "booleans"):
+            mass_log_weights([4.7] * 27 + [True], 1.0)
+        with self.assertRaisesRegex(ValueError, "boolean"):
+            mass_log_weights([4.7] * 28, True)
+
+    def test_boolean_log_weights_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "booleans"):
+            log_plackett_luce_set_probability([0.0] * 27 + [True], (1, 2, 3, 4, 5))
+
+    def test_boolean_e_process_increment_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "booleans"):
+            prequential_e_process([0.0, True])
+
 
 if __name__ == "__main__":
     unittest.main()
