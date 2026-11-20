@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 from origen.custody import (
-    GENESIS, build_seal_record, read_record, sha256_bytes,
+    GENESIS, build_seal_record, canonical_json_bytes, read_record, sha256_bytes,
     verify_seal_record, verify_record_chain, write_record_exclusive,
 )
 
@@ -32,6 +32,11 @@ def portfolio_bytes() -> bytes:
 
 
 class CustodyTests(unittest.TestCase):
+    @staticmethod
+    def rehash_record(record):
+        unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
+        record["record_sha256"] = sha256_bytes(canonical_json_bytes(unsigned))
+
     def make_record(self, portfolio=None, **overrides):
         data = portfolio if portfolio is not None else portfolio_bytes()
         values = dict(
@@ -122,6 +127,37 @@ class CustodyTests(unittest.TestCase):
         ok, reason = verify_seal_record(record, raw)
         self.assertFalse(ok)
         self.assertIn("target_contest_id", reason)
+
+    def test_verifier_rejects_nonpositive_target_after_valid_rehash(self):
+        record, raw = self.make_record()
+        record["target_contest_id"] = 0
+        record["history_max_contest_id"] = -1
+        self.rehash_record(record)
+        ok, reason = verify_seal_record(record, raw)
+        self.assertFalse(ok)
+        self.assertIn("positive integer", reason)
+
+    def test_writer_rejects_semantically_invalid_record_after_valid_rehash(self):
+        record, _ = self.make_record()
+        record["modality"] = "TRES"
+        self.rehash_record(record)
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "sealed Classic"):
+                write_record_exclusive(Path(tmp) / "invalid.json", record)
+
+    def test_read_record_rejects_duplicate_json_keys(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "duplicate.json"
+            path.write_bytes(b'{"candidate_id":"first","candidate_id":"second"}\\n')
+            with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
+                read_record(path)
+
+    def test_read_record_rejects_noncanonical_json_bytes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "noncanonical.json"
+            path.write_bytes(b'{ "candidate_id":"x" }\\n')
+            with self.assertRaisesRegex(ValueError, "canonical JSON"):
+                read_record(path)
 
     def test_verifier_rejects_unknown_or_missing_schema_fields(self):
         record, raw = self.make_record()
