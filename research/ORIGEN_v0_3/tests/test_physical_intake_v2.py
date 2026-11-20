@@ -387,5 +387,30 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         self.assertEqual(evaluate_temporal_eligibility([])["status"], "EMPTY")
 
 
+    def test_null_provenance_fields_cannot_become_literal_none(self):
+        cases = (
+            ("source_document_ref", "verified_source_refs"),
+            ("source_signature_ref", "verified_signature_refs"),
+            ("custody_receipt_ref", "verified_custody_refs"),
+            ("trusted_timestamp_ref", "verified_timestamp_refs"),
+            ("custodian_id", None),
+            ("custodian_role", None),
+            ("source_signer_id", None),
+            ("calibration_certificate_sha256", "verified_calibration_refs"),
+        )
+        for field, verifier_arg in cases:
+            with self.subTest(field=field):
+                rows = rows_for_target()
+                for row in rows:
+                    row[field] = None
+                verification = dict(VERIFIED)
+                if verifier_arg is not None:
+                    verification[verifier_arg] = set(verification[verifier_arg]) | {"None"}
+                result = evaluate_temporal_eligibility(rows, **verification)
+                target = result["targets"]["12301"]
+                self.assertIn("NULL_REQUIRED_FIELD", target["reasons"])
+                self.assertNotEqual(target["predictive_eligibility"], "ELIGIBLE_PRE_CLOSE")
+
+
 if __name__ == "__main__":
     unittest.main()
