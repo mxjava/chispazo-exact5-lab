@@ -1,0 +1,81 @@
+{
+  "run_id": "RUN127",
+  "captured_at_local": "2026-11-20T03:16:37-06:00",
+  "timezone": "America/Mexico_City",
+  "artifact_type": "official_endpoint_freshness_discrepancy_status_only",
+  "preservation": {
+    "main_head": "424eee9dd906f8235541e97ae61026441083bbfe",
+    "research_branch": "research/run123-official-timing-audit-20261120",
+    "v294": "FROZEN",
+    "canonical_git_blob_main": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_git_blob_research_branch": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_sha256_expected": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_sha256_recomputed": false,
+    "main_written": false,
+    "promotion_or_merge": false
+  },
+  "official_observations": {
+    "dedicated_chispazo_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "contest": 12384,
+      "date": "2026-11-19",
+      "modality": "CLASSIC",
+      "numbers": [
+        1,
+        2,
+        9,
+        21,
+        25
+      ],
+      "next_draw_date_text": "20/11/2026",
+      "contest_12385_not_confirmed_on_this_page": true
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_date": "2026-11-19",
+      "mask_2026_11_20_listed": false
+    },
+    "commercializer_home_search_index": {
+      "url": "https://comercializadores.loterianacional.gob.mx/",
+      "snippet_reports": {
+        "contest": 12385,
+        "date": "2026-11-20",
+        "time": "15:00"
+      },
+      "source_kind": "official_site_search_index_snippet",
+      "direct_open_corroborated": false
+    },
+    "commercializer_home_direct_open": {
+      "url": "https://comercializadores.loterianacional.gob.mx/home/",
+      "opened_content_date": "2026-10-12",
+      "status": "STALE",
+      "does_not_corroborate_12385": true
+    },
+    "official_chispazo_schedule": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "de_las_tres_time": "15:00",
+      "classic_time": "21:00",
+      "classic_contest_id_2026_11_20": null
+    },
+    "home_results_panel": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados/",
+      "contest_12384_numbers_blank": true,
+      "dedicated_results_page_has_numbers": true
+    }
+  },
+  "provenance": {
+    "20_nov_daily_mask_received": false,
+    "raw_pdf_bytes_received": false,
+    "raw_pdf_sha256": null,
+    "independent_custody": false,
+    "preclose_snapshot": false,
+    "oos_targets_scored": 0
+  },
+  "classification": {
+    "contest_12385_schedule_identity": "PROVISIONAL_SOURCE_DISCREPANCY",
+    "predictive_edge": "NO_EDGE_EVIDENCE",
+    "physical_evidence": "BLOCKED_PROVENANCE",
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "next_valid_action": "Keep 12385/15:00 as provisional from the official search-index snippet only; do not promote to canonical or use it as an authenticated target until direct current official schedule/results/mask evidence identifies contest, date and modality."
+}
