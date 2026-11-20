@@ -51,6 +51,12 @@ def make_rows():
             "weighing_strip_signature_evidence_ref": "TIRA-12300/signatures",
             "cs11_sha256": "f" * 64,
             "cs11_signature_evidence_ref": "CS11-12300/signatures",
+            "cs11_draw_date": "2026-11-20",
+            "cs11_contest_id": "12300",
+            "cs11_draw_time": "21:00",
+            "cs11_case_id": "SET-A",
+            "cs11_result_numbers": "1,2,3,4,5",
+            "was_drawn": "true" if number <= 5 else "false",
             "mapping_valid_from": "2026-11-20T16:00:00-06:00",
             "source_document_sha256": "b" * 64,
             "source_document_ref": "ACTA-12300/TIRA-1",
@@ -287,6 +293,36 @@ class PhysicalIntakeTests(unittest.TestCase):
         rows[0]["cs11_sha256"] = "not-a-sha256"
         report = validate_physical_rows(rows)
         self.assertIn("Q_SOURCE_UNVERIFIED", report["quarantined"]["12300"])
+
+
+    def test_cs11_drawn_numbers_must_match_five_flagged_physical_spheres(self):
+        rows = make_rows()
+        rows[0]["cs11_result_numbers"] = "1,2,3,4,6"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_MAPPING", report["quarantined"]["12300"])
+
+    def test_exactly_five_physical_spheres_must_be_flagged_as_drawn(self):
+        rows = make_rows()
+        rows[5]["was_drawn"] = "true"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_MAPPING", report["quarantined"]["12300"])
+
+    def test_cs11_must_bind_to_same_contest_date_and_sphere_case(self):
+        rows = make_rows()
+        rows[0]["cs11_contest_id"] = "12301"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_CONTEST_LINK", report["quarantined"]["12300"])
+
+        rows = make_rows()
+        rows[0]["cs11_case_id"] = "SET-B"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_MAPPING", report["quarantined"]["12300"])
+
+    def test_cs11_draw_time_must_match_official_modality_close(self):
+        rows = make_rows()
+        rows[0]["cs11_draw_time"] = "19:00"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_TIME", report["quarantined"]["12300"])
 
     def test_missing_columns_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "missing required columns"):
