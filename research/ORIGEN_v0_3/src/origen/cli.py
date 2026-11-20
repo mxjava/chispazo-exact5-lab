@@ -53,7 +53,7 @@ def main():
     elif args.command=="validate-physical": result=validate_physical_csv(args.file)
     elif args.command=="validate-physical-v2":
         verification = _load(args.verification_file) if args.verification_file else {}
-        allowed = {"custody_refs", "timestamp_refs", "source_refs", "continuity_targets"}
+        allowed = {"custody_refs", "timestamp_refs", "source_refs", "calibration_refs", "continuity_targets"}
         if set(verification) - allowed:
             raise ValueError("verification manifest contains unsupported keys")
         if any(not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value) for value in verification.values()):
@@ -63,6 +63,7 @@ def main():
             verified_custody_refs=set(verification.get("custody_refs", [])),
             verified_timestamp_refs=set(verification.get("timestamp_refs", [])),
             verified_source_refs=set(verification.get("source_refs", [])),
+            verified_calibration_refs=set(verification.get("calibration_refs", [])),
             verified_continuity_targets=set(verification.get("continuity_targets", [])),
         )
     elif args.command=="holm":
