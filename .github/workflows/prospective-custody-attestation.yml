@@ -27,6 +27,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Validate manifest and pre-close window
         id: validate
@@ -69,7 +71,8 @@ jobs:
               "schema_version", "contest_id", "modality", "candidate_id",
               "source_commit_sha", "input_history_sha256", "input_max_contest_id",
               "payload_sha256", "generated_at_utc", "scheduled_close_at_utc",
-              "timezone", "status", "schedule_source_url", "schedule_source_sha256"
+              "timezone", "status", "schedule_source_url", "schedule_source_sha256",
+              "schedule_source_archive_path"
           }
           missing = sorted(required - obj.keys())
           extra = sorted(obj.keys() - required)
@@ -98,6 +101,16 @@ jobs:
               raise SystemExit("schedule_source_url must use an official gob.mx HTTPS host")
           if not re.fullmatch(r"[0-9a-f]{64}", str(obj["schedule_source_sha256"])):
               raise SystemExit("invalid schedule_source_sha256")
+          archive_rel = pathlib.PurePosixPath(str(obj["schedule_source_archive_path"]))
+          if archive_rel.is_absolute() or ".." in archive_rel.parts or not str(archive_rel).startswith("data/schedule-evidence/"):
+              raise SystemExit("schedule_source_archive_path must be inside data/schedule-evidence/")
+          archive_path = pathlib.Path(str(archive_rel))
+          if not archive_path.is_file():
+              raise SystemExit("official schedule evidence archive is missing from the committed repository")
+          import hashlib
+          archive_digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+          if archive_digest != obj["schedule_source_sha256"]:
+              raise SystemExit("official schedule evidence archive SHA-256 mismatch")
           if obj["modality"] != "CLASSIC" or obj["status"] != "READY_FOR_ATTESTATION":
               raise SystemExit("manifest must be CLASSIC and READY_FOR_ATTESTATION")
           for key in ("input_history_sha256", "payload_sha256"):
