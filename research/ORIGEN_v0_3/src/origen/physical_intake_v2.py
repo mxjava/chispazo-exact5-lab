@@ -144,10 +144,16 @@ def evaluate_temporal_eligibility(
                 machine_models.add(_canonical_identifier(row["machine_model"]))
                 scales.add(_canonical_identifier(row["scale_id"]))
                 source_refs.add(_canonical_identifier(row["source_document_ref"]))
-                source_hashes.add(str(row["source_document_sha256"]).strip().lower())
+                source_hash_raw = row["source_document_sha256"]
+                custody_hash_raw = row["custody_receipt_sha256"]
+                calibration_hash_raw = row["calibration_certificate_sha256"]
+                source_hash = source_hash_raw.strip().lower() if type(source_hash_raw) is str else ""
+                custody_hash = custody_hash_raw.strip().lower() if type(custody_hash_raw) is str else ""
+                calibration_hash = calibration_hash_raw.strip().lower() if type(calibration_hash_raw) is str else ""
+                source_hashes.add(source_hash)
                 custody_refs.add(_canonical_identifier(row["custody_receipt_ref"]))
-                custody_hashes.add(str(row["custody_receipt_sha256"]).strip().lower())
-                calibration_hashes.add(str(row["calibration_certificate_sha256"]).strip().lower())
+                custody_hashes.add(custody_hash)
+                calibration_hashes.add(calibration_hash)
                 signature_refs.add(_canonical_identifier(row["source_signature_ref"]))
                 signer_ids.add(_canonical_identifier(row["source_signer_id"]))
                 timestamp_refs.add(_canonical_identifier(row["trusted_timestamp_ref"]))
@@ -157,12 +163,15 @@ def evaluate_temporal_eligibility(
                 set_ids.add(_canonical_identifier(row["sphere_set_id"]))
                 machine_ids.add(_canonical_identifier(row["machine_id"]))
                 try:
-                    printed_numbers.add(int(str(row["printed_number"]).strip()))
+                    printed_raw = row["printed_number"]
+                    if type(printed_raw) is not str:
+                        raise ValueError("printed_number must be exact built-in text")
+                    printed_numbers.add(int(printed_raw.strip()))
                 except ValueError:
                     reasons.add("INVALID_PRINTED_NUMBER")
-                if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["source_document_sha256"]).strip()):
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", source_hash):
                     reasons.add("INVALID_SOURCE_SHA256")
-                if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["custody_receipt_sha256"]).strip()):
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", custody_hash):
                     reasons.add("INVALID_CUSTODY_RECEIPT_SHA256")
                 mapping_start = _parse_time(row["mapping_valid_from"], "mapping_valid_from")
                 mapping_end = _parse_time(row["mapping_valid_to"], "mapping_valid_to")
@@ -205,9 +214,10 @@ def evaluate_temporal_eligibility(
                         reasons.add("INVALID_MASS_OR_RESOLUTION")
                 except (ValueError, TypeError):
                     reasons.add("INVALID_MASS_OR_RESOLUTION")
-                if str(row["mass_unit"]).strip().lower() != "g":
+                mass_unit_raw = row["mass_unit"]
+                if type(mass_unit_raw) is not str or mass_unit_raw.strip().lower() != "g":
                     reasons.add("UNSUPPORTED_MASS_UNIT")
-                if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["calibration_certificate_sha256"]).strip()):
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", calibration_hash):
                     reasons.add("INVALID_CALIBRATION_SHA256")
                 if not _canonical_identifier(row["source_signature_ref"]) or not _canonical_identifier(row["source_signer_id"]):
                     reasons.add("SOURCE_SIGNATURE_MISSING")
