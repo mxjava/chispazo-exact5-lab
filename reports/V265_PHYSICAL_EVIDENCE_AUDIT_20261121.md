@@ -13,7 +13,7 @@ La página oficial clasifica Chispazo dentro de los **Sorteos Electrónicos** y 
 Fuentes:
 - [Página oficial de Chispazo](https://loterianacional.gob.mx/Chispazo/Chispazo)
 - [Reglamento Chispazo, arts. 5, 9 y 15](https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/ChizpasoDOF18062003.pdf)
-- [Normateca de Lotería Nacional — normas sustantivas](https://loterianacional.gob.mx/Normateca/Sustantivas?id=2)
+- [Normateca de Lotería Nacional — normas sustantivas](https://loterianacional.gob.mx/Normateca/Sustantivas?id=2)\n- [SEGOB — Inspección y Vigilancia de sorteos de Lotería Nacional](https://www.juegosysorteos.gob.mx/es/Juegos_y_Sorteos/inspecciones_lotenal_pronosticos)\n- [SEGOB/Lotería Nacional — convenio de colaboración y asistencia de inspectores, 20-11-2020](https://www.gob.mx/lotenal/prensa/fortalecen-lazos-de-colaboracion-la-loteria-nacional-y-la-direccion-general-de-juegos-y-sorteos-de-la-secretaria-de-gobernacion)
 
 Para el conjunto de entrenamiento de Clásico, la etiqueta debe provenir de la modalidad publicada para cada concurso. La paridad del identificador no sustituye una etiqueta oficial de modalidad en un panel de evidencia física.
 
