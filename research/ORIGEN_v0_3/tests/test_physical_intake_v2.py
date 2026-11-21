@@ -52,6 +52,42 @@ VERIFIED = dict(
 
 
 class PhysicalIntakeV2Tests(unittest.TestCase):
+    def test_malformed_declared_reference_containers_fail_closed(self):
+        invalid_values = (
+            "prefixRECEIPT-1suffix",  # would pass substring membership in the old code
+            ["RECEIPT-1"],
+            {"RECEIPT-1", 7},
+            {""},
+        )
+        for invalid in invalid_values:
+            with self.subTest(invalid=repr(invalid)):
+                with self.assertRaises(ValueError):
+                    evaluate_temporal_eligibility(
+                        rows_for_target(),
+                        declared_custody_refs=invalid,
+                        declared_timestamp_refs=VERIFIED["declared_timestamp_refs"],
+                        declared_source_refs=VERIFIED["declared_source_refs"],
+                        declared_continuity_targets=VERIFIED["declared_continuity_targets"],
+                    )
+
+    def test_frozenset_declarations_remain_structural_only(self):
+        result = evaluate_temporal_eligibility(
+            rows_for_target(),
+            declared_custody_refs=frozenset({"RECEIPT-1"}),
+            declared_timestamp_refs=frozenset({"TSA-1"}),
+            declared_source_refs=frozenset({"DOC-12300"}),
+            declared_continuity_targets=frozenset({"12301"}),
+        )
+        self.assertEqual(result["status"], "STRUCTURAL_REVIEW_ONLY")
+        self.assertEqual(
+            result["authentication_status"],
+            "NOT_AUTHENTICATED_BY_THIS_MODULE",
+        )
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
     def test_structural_preclose_does_not_claim_independent_authentication(self):
         result = evaluate_temporal_eligibility(rows_for_target(), **VERIFIED)
         target = result["targets"]["12301"]
