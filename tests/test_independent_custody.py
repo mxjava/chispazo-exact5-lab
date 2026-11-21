@@ -11,10 +11,10 @@ from src.validation.independent_custody import CustodyError, validate_receipt
 def fixture(tmp_path: Path):
     from itertools import combinations, islice
 
-    payload_bytes = ("\\n".join(
+    payload_bytes = ("\n".join(
         "-".join(f"{n:02d}" for n in combo)
         for combo in islice(combinations(range(1, 29), 5), 30)
-    ) + "\\n").encode("utf-8")
+    ) + "\n").encode("utf-8")
     payload = tmp_path / "payload.bin"
     payload.write_bytes(payload_bytes)
     digest = hashlib.sha256(payload_bytes).hexdigest()
@@ -96,6 +96,7 @@ def test_rejects_manifest_metadata_changed_after_receipt(tmp_path):
         validate_receipt(
             changed_manifest, receipt, payload.read_bytes(),
             manifest_bytes=changed_manifest_bytes,
+            schedule_evidence_bytes=schedule_bytes,
             expected_custodian_identity=receipt["custodian_identity"], now=now,
         )
 
@@ -106,13 +107,14 @@ def test_rejects_manifest_object_not_matching_captured_bytes(tmp_path):
         validate_receipt(
             manifest, receipt, payload.read_bytes(),
             manifest_bytes=b'{"contest_id":999}',
+            schedule_evidence_bytes=schedule_bytes,
             expected_custodian_identity=receipt["custodian_identity"], now=now,
         )
 
 
 def test_rejects_payload_byte_mutation(tmp_path):
     manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
-    payload.write_bytes(b"tampered bytes")
+    payload.write_bytes(payload.read_bytes().replace(b"01-02-03-04-05", b"01-02-03-04-06", 1))
     with pytest.raises(CustodyError, match="payload bytes"):
         validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
@@ -132,7 +134,7 @@ def test_rejects_duplicate_json_keys(tmp_path):
 def test_rejects_receipt_predating_manifest_generation(tmp_path):
     manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
     receipt["received_at_utc"] = "2026-12-01T21:58:00Z"
-    with pytest.raises(CustodyError, match="predates manifest generation"):
+    with pytest.raises(CustodyError, match="strictly follow manifest generation"):
         validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
                               schedule_evidence_bytes=schedule_bytes,
@@ -266,7 +268,7 @@ def test_rejects_non_gob_mx_schedule_source(tmp_path):
 def test_rejects_29_line_payload_even_when_hashes_match(tmp_path):
     manifest, receipt, payload, now, _, schedule_bytes = fixture(tmp_path)
     payload_lines = payload.read_bytes().splitlines()[:-1]
-    short_payload = b"\\n".join(payload_lines) + b"\\n"
+    short_payload = b"\n".join(payload_lines) + b"\n"
     digest = hashlib.sha256(short_payload).hexdigest()
     manifest["payload_sha256"] = digest
     receipt["payload_sha256"] = digest
@@ -285,7 +287,7 @@ def test_rejects_duplicate_portfolio_line_even_when_hashes_match(tmp_path):
     manifest, receipt, payload, now, _, schedule_bytes = fixture(tmp_path)
     lines = payload.read_bytes().splitlines()
     lines[-1] = lines[0]
-    duplicate_payload = b"\\n".join(lines) + b"\\n"
+    duplicate_payload = b"\n".join(lines) + b"\n"
     digest = hashlib.sha256(duplicate_payload).hexdigest()
     manifest["payload_sha256"] = digest
     receipt["payload_sha256"] = digest
