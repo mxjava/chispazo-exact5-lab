@@ -34,8 +34,13 @@ def canonical_payload(envelope: Mapping[str, Any]) -> bytes:
 
 
 def _utc(value: Any, field: str) -> datetime:
-    if type(value) is not str or not value.strip():
-        raise ValueError(f"{field}: missing UTC timestamp")
+    if type(value) is not str or not re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?(?:Z|\\+00:00)",
+        value,
+    ):
+        raise ValueError(
+            f"{field}: exact built-in canonical extended ISO-8601 UTC text required"
+        )
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
@@ -161,8 +166,8 @@ def verify_artifact_bytes(
     verification_time_utc: str,
 ) -> dict[str, Any]:
     """Verify signature and bind it to the exact original artifact bytes."""
-    if not isinstance(artifact_bytes, bytes):
-        return {"status": "BLOCKED", "reason": "artifact must be supplied as raw bytes"}
+    if type(artifact_bytes) is not bytes:
+        return {"status": "BLOCKED", "reason": "artifact must be supplied as exact built-in raw bytes"}
     digest = hashlib.sha256(artifact_bytes).hexdigest()
     result = verify_attestation(
         envelope,
