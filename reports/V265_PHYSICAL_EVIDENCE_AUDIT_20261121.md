@@ -40,7 +40,8 @@ La secuencia relevante de su sección V es:
 |---|---|---|---|
 | Estado de máquina/equipo | CS-02, inspección diaria | Antes del cierre en la secuencia publicada | **Potencial**, sólo con formulario auténtico, valor por concurso y timestamp anterior al cierre |
 | Estuche seleccionado | Confirmación operativa previa; CS-11 es posterior | Se confirma antes del cierre; el registro público por concurso no está disponible | **Potencial**, sólo si el ID exacto se publica/verifica antes del cierre |
-| ID de máquina/modelo/serie | Inventario y/o lectura RFID; no se identifica por concurso en el SOP público | Momento de lectura/asignación no publicado | **No actualmente**; requerir log RFID y timestamp |
+| ID de máquina/modelo/serie | Inventario de máquinas y RFID; no se identifica por concurso en el SOP público | Momento de lectura/asignación no publicado | **No actualmente**; requerir log RFID y timestamp |
+| ID de estuche / RFID de estuche | CS-11 incluye número de estuche seleccionado; RFID del estuche no está documentado | El número se confirma antes del cierre y se registra en CS-11 después; no se publica el ID por concurso | **Potencial sólo el número de estuche**, si se publica pre-cierre; no atribuir RFID al estuche sin prueba |
 | Tipo de esfera | Tira de Pesaje/manual operativo | Se identifica durante el pesaje posterior al cierre; el SOP contempla Smartballs y Ping Pong, pero no publica cuál se usa en cada Clásico | **No para el mismo concurso** sin evidencia pre-cierre distinta |
 | Peso individual de las 28 esferas | Tira de Pesaje | Después del cierre; un peso por esfera, en orden numérico | **No** para pronóstico pre-cierre del mismo concurso |
 | Peso mínimo, máximo y rango | Tira de Pesaje | Después del cierre | **No** para pronóstico pre-cierre del mismo concurso |
@@ -65,7 +66,7 @@ La norma no identifica públicamente qué tipo de esfera se utiliza en cada conc
 ### RFID y equipo
 El Informe de Gestión Gubernamental 2018–2024 indica que el 7-03-2022 se entregaron 14 máquinas para sorteos electrónicos (10 Júpiter, 2 Mercury 5 y 2 Mercury 8), que las máquinas y esferas contaban con reconocimiento RFID, que la instalación inició el 8-03-2022 y concluyó el 10-03-2022. Esto prueba la existencia declarada de la tecnología en el inventario adquirido; **no** prueba qué máquina, estuche o tag se utilizó en cada concurso ni que exista un registro público de lectura.
 
-El mismo informe afirma “10 juegos” para cada uno de siete productos (Tris, Chispazo, Gana Gato, Melate Retro, Melate, Revancha y Revanchita), pero declara un total de 60. La multiplicación literal da 70. Se registra como inconsistencia documental; no se usa el total para inferir el inventario.
+El mismo informe afirma “10 juegos” para cada uno de siete productos (Tris, Chispazo, Gana Gato, Melate Retro, Melate, Revancha y Revanchita), pero declara un total de 60. La multiplicación literal da 70. Se registra como inconsistencia documental; no se usa el total para inferir el inventario. El informe menciona RFID para máquinas y esferas; no afirma que los estuches/cajas como unidades independientes tengan tag RFID. Por tanto, el ID de estuche que aparece en CS-11 no debe llamarse RFID de estuche sin un inventario o log que lo demuestre.
 
 El informe también refiere que, al cierre de junio de 2024, proyectos para 8 máquinas y 2 sistemas RFID, y para 4 balanzas de precisión, no habían sido autorizados. Esto sólo describe el estado reportado a esa fecha; no prueba qué compras ocurrieron después.
 
