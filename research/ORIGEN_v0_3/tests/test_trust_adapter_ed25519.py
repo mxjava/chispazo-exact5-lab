@@ -127,7 +127,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
             self.envelope, sort_keys=True, separators=(",", ":"),
             ensure_ascii=False, allow_nan=False,
         ).encode("utf-8")
-        for raw in (spaced, canonical + b"\\n"):
+        for raw in (spaced, canonical + b"\n"):
             with self.subTest(raw=raw[-8:]):
                 with self.assertRaisesRegex(ValueError, "canonical UTF-8 JSON"):
                     parse_attestation_json(raw)
