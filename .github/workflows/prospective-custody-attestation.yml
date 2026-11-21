@@ -61,12 +61,12 @@ jobs:
           def require_regular_git_file(path, label):
               entries = subprocess.check_output(
                   ["git", "ls-tree", "-z", "HEAD", "--", str(path)]
-              ).split(b"\\0")
+              ).split(b"\0")
               matches = []
               for entry in entries:
                   if not entry:
                       continue
-                  metadata, tab, tracked_path = entry.partition(b"\\t")
+                  metadata, tab, tracked_path = entry.partition(b"\t")
                   if tab and tracked_path.decode("utf-8") == str(path):
                       matches.append(metadata.split()[0])
               if len(matches) != 1 or matches[0] not in (b"100644", b"100755"):
