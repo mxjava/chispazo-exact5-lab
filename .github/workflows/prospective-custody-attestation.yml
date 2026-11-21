@@ -131,10 +131,8 @@ jobs:
           close = parse(obj["scheduled_close_at_utc"])
           if generated_raw.utcoffset() != dt.timedelta(0):
               raise SystemExit("generated_at_utc must be expressed in UTC")
-          from zoneinfo import ZoneInfo
-          expected_close_offset = close_raw.astimezone(ZoneInfo(obj["timezone"])).utcoffset()
-          if close_raw.utcoffset() != expected_close_offset:
-              raise SystemExit("scheduled_close_at_utc offset does not match declared timezone")
+          if close_raw.utcoffset() != dt.timedelta(0):
+              raise SystemExit("scheduled_close_at_utc must be expressed in UTC (Z or +00:00)")
           now = dt.datetime.now(dt.timezone.utc)
           if generated > now + dt.timedelta(minutes=2):
               raise SystemExit("generated_at_utc is in the future")
