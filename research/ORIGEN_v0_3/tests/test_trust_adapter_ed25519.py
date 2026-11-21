@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import unittest
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from origen.trust_adapter import canonical_payload, verify_attestation, verify_artifact_bytes
+from origen.trust_adapter import (canonical_payload, parse_attestation_json, verify_attestation, verify_attestation_json, verify_artifact_bytes)
 
 
 class Ed25519TrustAdapterTests(unittest.TestCase):
@@ -84,6 +85,63 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         result = self.verify(envelope=altered)
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("non-canonical base64", result["reason"])
+
+    def test_canonical_json_envelope_is_parsed_and_verified(self):
+        raw = json.dumps(
+            self.envelope, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False, allow_nan=False,
+        ).encode("utf-8")
+        self.assertEqual(parse_attestation_json(raw), self.envelope)
+        result = verify_attestation_json(
+            raw, trust_roots=self.roots, expected_role="CUSTODIAN",
+            expected_subject_sha256=self.subject,
+            verification_time_utc="2026-11-21T11:00:00Z",
+        )
+        self.assertEqual(result["status"], "SIGNATURE_VALID")
+
+    def test_duplicate_json_member_is_rejected_before_last_value_wins(self):
+        canonical = json.dumps(
+            self.envelope, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False, allow_nan=False,
+        )
+        needle = '"schema_version":"exact5.attestation.ed25519.v1"'
+        self.assertIn(needle, canonical)
+        duplicated = canonical.replace(
+            needle,
+            '"schema_version":"attacker","schema_version":"exact5.attestation.ed25519.v1"',
+            1,
+        ).encode("utf-8")
+        with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
+            parse_attestation_json(duplicated)
+        result = verify_attestation_json(
+            duplicated, trust_roots=self.roots, expected_role="CUSTODIAN",
+            expected_subject_sha256=self.subject,
+            verification_time_utc="2026-11-21T11:00:00Z",
+        )
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("duplicate JSON object key", result["reason"])
+
+    def test_noncanonical_json_whitespace_and_trailing_lf_are_rejected(self):
+        spaced = json.dumps(self.envelope).encode("utf-8")
+        canonical = json.dumps(
+            self.envelope, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False, allow_nan=False,
+        ).encode("utf-8")
+        for raw in (spaced, canonical + b"\\n"):
+            with self.subTest(raw=raw[-8:]):
+                with self.assertRaisesRegex(ValueError, "canonical UTF-8 JSON"):
+                    parse_attestation_json(raw)
+
+    def test_attestation_json_bytes_subclass_is_rejected(self):
+        class SpoofedBytes(bytes):
+            pass
+
+        with self.assertRaisesRegex(ValueError, "exact built-in bytes"):
+            parse_attestation_json(SpoofedBytes(b"{}"))
+
+    def test_attestation_json_must_be_an_object(self):
+        with self.assertRaisesRegex(ValueError, "exact built-in object"):
+            parse_attestation_json(b"[]")
 
     def test_valid_signature_reports_only_pinned_key_assurance(self):
         result = self.verify()
