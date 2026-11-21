@@ -181,3 +181,19 @@ Classification remains `BLOCKED_PROVENANCE / RESEARCH_ONLY_NO_EDGE`.
 - Generic timestamp checks and syntactic source hashes are not independent provenance. Physical records, independent custody, untouched OOS and Exact5 promotion gates remain outstanding.
 
 All closed historical runs remain closed. Do not repeat Run53–56 or Run96–106, rebuild retrospective PMFs/ranks/scores, or use `append_verified_result.py` to classify or mutate canonical history without verified modality and provenance.
+
+
+## Operational update — 2026-11-21 15:52 America/Mexico_City
+
+### Official Chispazo result refresh
+- Updated status-only artifact: `research/ORIGEN_v0_3/data/official-overlays/2026-11-21_official_result_refresh_status_only.json`.
+- The dedicated official Chispazo results page now publishes contest **12387**, dated 21-Nov-2026: **01 05 11 18 19**.
+- The official home index advertises contest 12387 in the 15:00 slot. The official Chispazo product page states De las Tres at 15:00 and Clásico at 21:00. Therefore 12387 is classified as **De las Tres by official schedule match**, not by same-day mask visual inspection.
+- The mask index still lists 20-Nov as its latest date; no 21-Nov mask/PDF was available in the inspected index. The 21:00 Clásico is a separate scheduled slot; no Clásico contest ID or result is inferred from 12387.
+- No original 21-Nov mask bytes, source SHA-256, trusted source timestamp, independent custody receipt, or signed pre-close snapshot were captured. The result is a public outcome, not physical evidence or a prospective sealed observation.
+- No canonical append, no historical replay, no score computation, no V294/challenger change, and no main write. All eligibility flags remain false; production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
+### ORIGEN CSV parser hardening
+- Commit `0ced1f8934a1be2d6cee89c8a686866433766828` adds a fail-closed guard against duplicate, blank, or whitespace-padded CSV header names in `evaluate_temporal_csv`. Duplicate headers are ambiguous because `csv.DictReader` silently overwrites earlier values with the last occurrence.
+- Added an adversarial regression that places `DE LAS TRES` in the first `modality` column and `CLASSIC` in a duplicated trailing `modality` column. The parser must reject the file before any structural classification.
+- CI for commit `0ced1f8934a1be2d6cee89c8a686866433766828` was triggered on PR #13 and push; results are pending at the time of this update.
