@@ -65,12 +65,14 @@ Para evitar una respuesta parcial, añadir a la búsqueda por cada Clásico:
 
 ### Parámetros de pesaje que deben poder contrastarse
 
-SGVO-PRO-05 revisión 39 establece que el pesaje se realiza **para cada sorteo** y distingue:
+SGVO-PRO-05 revisión 39 establece que el pesaje se realiza **para cada sorteo**. Su definición de **Tira de Pesaje** indica que registra el peso de cada esfera y debe estar firmada por el responsable del pesaje, el representante de la Dirección de Operación de Concursos, Juegos y Sorteos, el representante de la Dirección General y el Inspector de SEGOB. Solicito que se conserven visibles esas cuatro firmas/roles, no sólo el nombre del archivo. El procedimiento distingue:
 
 - Smartballs: 4.25 g a 5.25 g; diferencia entre la esfera de menor y mayor peso no mayor a 0.30 g.
 - Ping Pong: 2.30 g a 3.00 g; diferencia entre la esfera de menor y mayor peso no mayor a 0.15 g.
 
 Por ello, la tira solicitada debe permitir recuperar los pesos individuales, tipo de esfera, estuche/conjunto, fecha y hora, identificación de la báscula y firmas o rúbricas; no basta una tabla de promedios ni una declaración general de cumplimiento. Los umbrales son criterios documentales del procedimiento, no mediciones observadas de ningún sorteo específico.
+
+Además, cuando exista un suceso que afecte o pueda afectar el resultado, solicitar la **Bitácora de Concursos y Sorteos CS-09** y su vínculo con la incidencia del Acta; para cambios de guardia o suplencias, el formato **CS-14** y el oficio/registro de sustitución. Estos documentos complementan CS-18 (comunicación de riesgo) y permiten distinguir una incidencia operativa de una anomalía de procedencia.
 
 ### Alcance y límite de la fuente
 
