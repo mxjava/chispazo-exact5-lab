@@ -315,5 +315,31 @@ class CustodyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exact built-in text"):
             self.make_record(candidate_spec_sha256=SpoofedDigest("f" * 64))
 
+
+    def test_parse_utc_rejects_noncanonical_iso8601_forms(self):
+        invalid_values = (
+            "2026-11-20 17:00:00Z",
+            "2026-11-20T17:00Z",
+            "2026-11-20T17:00:00+0000",
+            "2026-11-20T17:00:00Z ",
+        )
+        for value in invalid_values:
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "canonical extended ISO-8601"):
+                    parse_utc(value, "generated_at_utc")
+
+    def test_verify_rejects_string_subclass_chain_anchor(self):
+        record, raw = self.make_record()
+
+        class SpoofedDigest(str):
+            def __eq__(self, other):
+                return True
+
+        ok, reason = verify_seal_record(
+            record, raw, expected_previous=SpoofedDigest("not-a-digest")
+        )
+        self.assertFalse(ok)
+        self.assertIn("exact built-in text", reason)
+
 if __name__ == "__main__":
     unittest.main()
