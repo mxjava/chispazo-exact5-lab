@@ -16,11 +16,16 @@ def fixture(tmp_path: Path):
     manifest = {
         "contest_id": 12399, "modality": "CLASSIC", "candidate_id": "candidate-A",
         "source_commit_sha": "a" * 40, "payload_sha256": digest,
+        "input_history_sha256": "c" * 64, "input_max_contest_id": 12398,
         "generated_at_utc": "2026-12-01T21:59:00Z",
         "scheduled_close_at_utc": close,
     }
+    manifest_bytes = json.dumps(
+        manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode("utf-8")
     receipt = {
-        "schema_version": "1.0", "receipt_type": "INDEPENDENT_CUSTODY_RECEIPT",
+        "schema_version": "1.1", "receipt_type": "INDEPENDENT_CUSTODY_RECEIPT",
+        "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
         "contest_id": 12399, "modality": "CLASSIC", "candidate_id": "candidate-A",
         "source_commit_sha": "a" * 40, "payload_sha256": digest,
         "payload_size_bytes": len(payload.read_bytes()),
@@ -32,12 +37,13 @@ def fixture(tmp_path: Path):
         "independent_retrieval_test": True,
     }
     now = dt.datetime(2026, 12, 1, 22, 30, tzinfo=dt.timezone.utc)
-    return manifest, receipt, payload, now
+    return manifest, receipt, payload, now, manifest_bytes
 
 
 def test_accepts_valid_independent_receipt_structure(tmp_path):
-    manifest, receipt, payload, now = fixture(tmp_path)
+    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
     result = validate_receipt(manifest, receipt, payload,
+                              manifest_bytes=manifest_bytes,
                               expected_custodian_identity=receipt["custodian_identity"], now=now)
     assert result["status"] == "CUSTODY_RECEIPT_VALIDATED_PENDING_SIGNATURE_VERIFICATION"
 
@@ -56,6 +62,32 @@ def test_rejects_adversarial_receipt_mutations(tmp_path, mutation, message):
     with pytest.raises(CustodyError, match=message):
         validate_receipt(manifest, receipt, payload,
                          expected_custodian_identity="https://custodian.example/attestor", now=now)
+
+
+def test_rejects_manifest_metadata_changed_after_receipt(tmp_path):
+    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
+    changed_manifest = dict(manifest)
+    changed_manifest["input_history_sha256"] = "d" * 64
+    changed_manifest_bytes = json.dumps(
+        changed_manifest, sort_keys=True, separators=(",", ":"),
+        ensure_ascii=False, allow_nan=False,
+    ).encode("utf-8")
+    with pytest.raises(CustodyError, match="manifest_sha256"):
+        validate_receipt(
+            changed_manifest, receipt, payload,
+            manifest_bytes=changed_manifest_bytes,
+            expected_custodian_identity=receipt["custodian_identity"], now=now,
+        )
+
+
+def test_rejects_manifest_object_not_matching_captured_bytes(tmp_path):
+    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
+    with pytest.raises(CustodyError, match="does not match the exact captured manifest bytes"):
+        validate_receipt(
+            manifest, receipt, payload,
+            manifest_bytes=b'{"contest_id":999}',
+            expected_custodian_identity=receipt["custodian_identity"], now=now,
+        )
 
 
 def test_rejects_payload_byte_mutation(tmp_path):
