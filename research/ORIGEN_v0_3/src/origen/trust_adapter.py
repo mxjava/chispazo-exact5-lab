@@ -118,3 +118,29 @@ def verify_attestation(
         }
     except (TypeError, ValueError, KeyError, OverflowError) as exc:
         return {"status": "BLOCKED", "reason": str(exc)}
+
+ 
+def verify_artifact_bytes(
+    envelope: Mapping[str, Any],
+    artifact_bytes: bytes,
+    *,
+    trust_roots: Mapping[str, Mapping[str, Any]],
+    expected_role: str,
+    verification_time_utc: str,
+) -> dict[str, Any]:
+    """Verify signature and bind it to the exact original artifact bytes."""
+    if not isinstance(artifact_bytes, bytes):
+        return {"status": "BLOCKED", "reason": "artifact must be supplied as raw bytes"}
+    digest = hashlib.sha256(artifact_bytes).hexdigest()
+    result = verify_attestation(
+        envelope,
+        trust_roots=trust_roots,
+        expected_role=expected_role,
+        expected_subject_sha256=digest,
+        verification_time_utc=verification_time_utc,
+    )
+    if result.get("status") != "SIGNATURE_VALID":
+        return result
+    return {**result, "artifact_byte_length": len(artifact_bytes),
+            "artifact_sha256": digest,
+            "byte_integrity_status": "MATCHED"}
