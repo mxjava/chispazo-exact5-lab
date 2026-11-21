@@ -14,7 +14,8 @@ def make_inputs(tmp_path, *, available=True, known_offset_hours=-1, omit_known=F
     n = 40
     contests = list(range(2001, 2001 + n))
     draws = [tuple(sorted(((i * 5 + j) % 28) + 1 for j in range(5))) for i in range(n)]
-    history = pd.DataFrame({"CONCURSO": contests, **{f"R{k+1}": [draw[k] for draw in draws] for k in range(5)}})
+    history = pd.DataFrame({"CONCURSO": contests,
+        "SLOT": ["21:00"] * n, **{f"R{k+1}": [draw[k] for draw in draws] for k in range(5)}})
     close = pd.date_range("2026-01-01 18:00:00", periods=n, freq="D", tz="America/Mexico_City")
     known = close + pd.Timedelta(hours=known_offset_hours)
     metadata = pd.DataFrame({
