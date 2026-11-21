@@ -193,8 +193,14 @@ def evaluate_temporal_eligibility(
                 if signed > available:
                     reasons.add("SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE")
                 try:
-                    mass = float(str(row["mass_value"]).strip())
-                    resolution = float(str(row["measurement_resolution"]).strip())
+                    mass_raw = row["mass_value"]
+                    resolution_raw = row["measurement_resolution"]
+                    # CSV scalar fields must be exact text. Do not let attacker-
+                    # controlled __str__ implementations normalize arbitrary objects.
+                    if type(mass_raw) is not str or type(resolution_raw) is not str:
+                        raise ValueError("non-canonical mass or resolution")
+                    mass = float(mass_raw.strip())
+                    resolution = float(resolution_raw.strip())
                     if not math.isfinite(mass) or mass <= 0 or not math.isfinite(resolution) or resolution <= 0:
                         reasons.add("INVALID_MASS_OR_RESOLUTION")
                 except (ValueError, TypeError):
