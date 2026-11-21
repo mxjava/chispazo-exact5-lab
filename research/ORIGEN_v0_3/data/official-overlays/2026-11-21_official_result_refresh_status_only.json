@@ -1,6 +1,6 @@
 {
   "schema": "exact5.official_overlay.status_only.v3",
-  "observed_at_local": "2026-11-21T15:52:28-06:00",
+  "observed_at_local": "2026-11-21T17:01:21-06:00",
   "purpose": "Status-only refresh from public official Lotería Nacional endpoints. No prediction, no pre-close snapshot, no canonical-history append.",
   "classification": "OFFICIAL_RESULTS_PUBLISHED_MODALITY_BASIS_MIXED",
   "correction": {
@@ -92,11 +92,22 @@
     "advertisement_source": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
     "modality_classification": "SCHEDULED_CLASICO_NO_CONTEST_ID_OR_RESULT_CONFIRMED",
     "result_published_at_observation": false,
-    "note": "The official Chispazo product page states Clásico at 21:00 daily. At this observation the dedicated results page publishes 12387 in the 15:00 slot but no 21:00 Clásico contest ID or result. Do not infer the Classic contest ID from the 15:00 draw."
+    "note": "The dedicated Chispazo result endpoint still publishes 12387 in the 15:00 slot but no 21:00 result. The secondary Home/Resultados index displays a blank 12388 placeholder dated 21-Nov-2026; because it carries no explicit modality label or winning numbers, retain it as an unconfirmed pending placeholder only. Do not use it as a scored result or physical evidence.",
+    "secondary_results_index_placeholder": {
+      "source_url": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxTdXBlcmlvcg%3D%3D",
+      "contest_id": 12388,
+      "date": "2026-11-21",
+      "numbers": null,
+      "number_status": "BLANK_PLACEHOLDER_NOT_PUBLISHED_RESULT",
+      "modality": null,
+      "modality_status": "NOT_EXPLICITLY_LABELLED_ON_SECONDARY_INDEX",
+      "schedule_context": "The official Chispazo product page lists De las Tres at 15:00 and Clásico at 21:00. The placeholder is consistent with a pending same-day draw but is not itself modality proof.",
+      "eligibility": "NOT_ELIGIBLE_FOR_SCORING_OR_PROSPECTIVE_EVIDENCE"
+    }
   },
   "endpoint_discrepancies": {
     "dedicated_chispazo_results_page": "Publishes contest 12387 dated 21/11/2026 with 01 05 11 18 19; modality is assigned by matching the official 15:00 slot.",
-    "home_results_page": "Not used as the primary source for this refresh; prefer the dedicated Chispazo results page for the latest Chispazo result.",
+    "home_results_page": "The official Home/Resultados index now displays contest 12387 with 01 05 11 18 19 and a following blank placeholder 12388 dated 21/11/2026. The placeholder has no winning numbers and no explicit Chispazo modality label; do not treat it as a published result or as independently confirmed Clásico identity.",
     "mask_index": "Lists RESULTADOS 2026-11-20 as latest; no 2026-11-21 mask is listed.",
     "mask_pdf": "The 20-Nov official one-page PDF visually confirms 12385 De las Tres and 12386 Clásico. No 21-Nov PDF was available in the inspected index."
   },
@@ -266,6 +277,69 @@
         "rule": "Do not infer the 21:00 Clásico contest ID from contest 12387, which matches the 15:00 De las Tres slot."
       },
       "interpretation": "Contest 12387 is an official public result (01 05 11 18 19) and is assigned to De las Tres by the official 15:00 schedule match, not by a same-day mask label. The 21:00 Clásico remains a separate scheduled draw with no contest ID or result confirmed in the inspected Chispazo result endpoint.",
+      "integrity_limits": {
+        "original_2026_11_21_mask_bytes_captured": false,
+        "source_sha256": "NOT_CAPTURED",
+        "independent_custody": false,
+        "signed_preclose_snapshot": false,
+        "source_timestamp_provenance": false
+      },
+      "eligibility": {
+        "snapshot_preclose": false,
+        "oos_eligible": false,
+        "score_computed": false,
+        "canonical_history_appended": false,
+        "canonical_append_verified": false,
+        "challenger_changed": false,
+        "v294_changed": false,
+        "main_modified": false,
+        "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+      }
+    },
+    {
+      "observed_at_local": "2026-11-21T17:01:21-06:00",
+      "observation_scope": "Pre-21:00 official endpoint refresh; distinguish published 15:00 De las Tres result from pending 21:00 Clásico slot.",
+      "dedicated_results_page": {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+        "latest_published_contest_id": 12387,
+        "latest_published_date": "2026-11-21",
+        "latest_published_numbers": [
+          1,
+          5,
+          11,
+          18,
+          19
+        ],
+        "modality_label_on_results_page": false,
+        "result_for_21_00_classic_visible": false
+      },
+      "secondary_home_results_page": {
+        "url": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxTdXBlcmlvcg%3D%3D",
+        "contest_12387_numbers": [
+          1,
+          5,
+          11,
+          18,
+          19
+        ],
+        "contest_12388_placeholder": {
+          "date": "2026-11-21",
+          "numbers": null,
+          "modality_label": null
+        },
+        "interpretation": "A blank placeholder only; no result or explicit modality label."
+      },
+      "official_product_schedule": {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "de_las_tres_time_local": "15:00",
+        "clasico_time_local": "21:00"
+      },
+      "mask_index": {
+        "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+        "latest_listed_mask_date": "2026-11-20",
+        "mask_for_2026_11_21_listed": false
+      },
+      "interpretation": "Contest 12387 remains the public 15:00 De las Tres result by official schedule match. The secondary Home/Resultados page exposes a blank 12388 placeholder for the same date, but it is not modality-labelled and has no winning numbers. The 21:00 Clásico remains pending; do not infer or score its outcome.",
       "integrity_limits": {
         "original_2026_11_21_mask_bytes_captured": false,
         "source_sha256": "NOT_CAPTURED",
