@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.2 custody receipt binding (2026-11-20)
+- Found a provenance gap: the external receipt signed selected manifest fields but did not commit to the complete manifest bytes, leaving history cutoff/hash, environment metadata and other manifest fields mutable without invalidating the receipt.
+- Bumped the independent receipt schema to 1.1 and require `manifest_sha256`, computed over the exact raw manifest bytes received by the custodian.
+- The verifier now rejects a manifest object that differs from its captured bytes and rejects any receipt whose signed manifest digest does not match those exact bytes.
+- Added regression tests for post-receipt mutation of `input_history_sha256` and for a parsed manifest object that does not match its captured bytes.
+- No real receipt or custody event was created; this is a verifier-contract change only. External custodian, signature, trusted timestamp, independent retention, two witnessed dry-runs and physical evidence remain outstanding.
+- V294, challenger, canonical history and `main` remain untouched.
+
+
 ## 0.3.0
 - Added chronological and expanding-window evaluation splits.
 - Added paired prequential log-score summaries and exact sign testing.
