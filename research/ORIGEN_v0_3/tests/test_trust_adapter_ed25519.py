@@ -21,6 +21,8 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
             "custody-key-01": {
                 "public_key_b64": base64.b64encode(public).decode("ascii"),
                 "roles": ["CUSTODIAN"],
+                "enabled": True,
+                "revoked": False,
             }
         }
         self.subject = hashlib.sha256(b"exact sealed portfolio bytes").hexdigest()
@@ -140,6 +142,13 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
     def test_trust_root_rejects_unknown_fields(self):
         roots = {"custody-key-01": dict(self.roots["custody-key-01"], operator_override=True)}
         self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
+
+    def test_trust_root_requires_explicit_enabled_and_revoked_state(self):
+        for field in ("enabled", "revoked"):
+            with self.subTest(field=field):
+                roots = {"custody-key-01": dict(self.roots["custody-key-01"])}
+                roots["custody-key-01"].pop(field)
+                self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
 
     def test_trust_root_flags_must_be_booleans(self):
         roots = {"custody-key-01": dict(self.roots["custody-key-01"], revoked="false")}
