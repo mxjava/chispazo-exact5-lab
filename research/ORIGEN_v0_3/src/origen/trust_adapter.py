@@ -24,6 +24,8 @@ _FIELDS = {
 
 def canonical_payload(envelope: Mapping[str, Any]) -> bytes:
     """Return canonical signed bytes, excluding the detached signature."""
+    if type(envelope) is not dict or any(type(key) is not str for key in envelope):
+        raise ValueError("attestation envelope must be an exact dict with built-in string keys")
     payload = {key: value for key, value in envelope.items() if key != "signature_b64"}
     return json.dumps(
         payload, sort_keys=True, separators=(",", ":"),
@@ -32,7 +34,7 @@ def canonical_payload(envelope: Mapping[str, Any]) -> bytes:
 
 
 def _utc(value: Any, field: str) -> datetime:
-    if not isinstance(value, str) or not value.strip():
+    if type(value) is not str or not value.strip():
         raise ValueError(f"{field}: missing UTC timestamp")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -57,32 +59,34 @@ def verify_attestation(
     Caller-supplied roots are only as trustworthy as their provisioning channel.
     """
     try:
-        if not isinstance(envelope, Mapping) or set(envelope) != _FIELDS | {"signature_b64"}:
-            raise ValueError("attestation fields do not match exact schema")
-        if not isinstance(trust_roots, Mapping):
+        if type(envelope) is not dict or set(envelope) != _FIELDS | {"signature_b64"}:
+            raise ValueError("attestation must be an exact dict matching the exact schema")
+        if any(type(envelope[field]) is not str for field in _FIELDS | {"signature_b64"}):
+            raise ValueError("all attestation fields must be exact built-in strings")
+        if type(trust_roots) is not dict:
             raise ValueError("trust_roots must be a mapping controlled outside the evidence bundle")
-        if not isinstance(expected_role, str) or not expected_role:
+        if type(expected_role) is not str or not expected_role:
             raise ValueError("expected_role must be a non-empty string")
-        if not isinstance(expected_subject_sha256, str) or not _HEX64.fullmatch(expected_subject_sha256):
+        if type(expected_subject_sha256) is not str or not _HEX64.fullmatch(expected_subject_sha256):
             raise ValueError("expected_subject_sha256 must be 64 lowercase hexadecimal characters")
         if envelope["schema_version"] != "exact5.attestation.ed25519.v1":
             raise ValueError("unsupported attestation schema")
         key_id, role = envelope["key_id"], envelope["role"]
-        if not isinstance(key_id, str) or not key_id or not isinstance(role, str) or not role:
+        if type(key_id) is not str or not key_id or type(role) is not str or not role:
             raise ValueError("key_id and role must be non-empty strings")
         if role != expected_role:
             raise ValueError("attestation role mismatch")
         subject = envelope["subject_sha256"]
-        if not isinstance(subject, str) or not _HEX64.fullmatch(subject):
+        if type(subject) is not str or not _HEX64.fullmatch(subject):
             raise ValueError("subject_sha256 must be 64 lowercase hexadecimal characters")
         if subject != expected_subject_sha256 or not _HEX64.fullmatch(expected_subject_sha256):
             raise ValueError("attestation subject hash mismatch")
         nonce = envelope["nonce"]
-        if not isinstance(nonce, str) or len(nonce) < 16:
+        if type(nonce) is not str or len(nonce) < 16:
             raise ValueError("nonce must contain at least 16 characters")
 
         root = trust_roots.get(key_id)
-        if not isinstance(root, Mapping):
+        if type(root) is not dict:
             raise ValueError("key_id is not present in pinned trust roots")
         allowed_root_fields = {"public_key_b64", "roles", "enabled", "revoked"}
         if set(root) - allowed_root_fields or not {"public_key_b64", "roles"}.issubset(root):
@@ -92,8 +96,8 @@ def verify_attestation(
         ):
             raise ValueError("pinned trust root enabled/revoked flags must be booleans")
         roles = root.get("roles")
-        if (not isinstance(roles, list)
-                or any(not isinstance(item, str) or not item for item in roles)):
+        if (type(roles) is not list
+                or any(type(item) is not str or not item for item in roles)):
             raise ValueError("pinned trust root roles must be an explicit string list")
         if role not in roles:
             raise ValueError("pinned key is not authorized for requested role")
@@ -101,6 +105,8 @@ def verify_attestation(
             raise ValueError("pinned key is revoked or disabled by trust policy")
 
         try:
+            if type(root["public_key_b64"]) is not str:
+                raise ValueError("public_key_b64 must be exact built-in text")
             public_bytes = base64.b64decode(root["public_key_b64"], validate=True)
             signature = base64.b64decode(envelope["signature_b64"], validate=True)
         except (KeyError, ValueError, binascii.Error) as exc:
