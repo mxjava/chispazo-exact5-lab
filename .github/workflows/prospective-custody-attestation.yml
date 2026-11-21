@@ -72,8 +72,9 @@ jobs:
               "timezone", "status", "schedule_source_url", "schedule_source_sha256"
           }
           missing = sorted(required - obj.keys())
-          if missing:
-              raise SystemExit(f"missing fields: {missing}")
+          extra = sorted(obj.keys() - required)
+          if missing or extra:
+              raise SystemExit(f"manifest key mismatch; missing={missing}, extra={extra}")
           if obj["schema_version"] != "1.0":
               raise SystemExit("unsupported schema_version; expected 1.0")
           if isinstance(obj["contest_id"], bool) or not isinstance(obj["contest_id"], int) or obj["contest_id"] <= 0:
@@ -89,8 +90,12 @@ jobs:
               ZoneInfo(obj["timezone"])
           except Exception as exc:
               raise SystemExit(f"invalid IANA timezone: {exc}")
-          if not isinstance(obj["schedule_source_url"], str) or not obj["schedule_source_url"].startswith("https://"):
-              raise SystemExit("schedule_source_url must be an HTTPS official schedule reference")
+          from urllib.parse import urlparse
+          schedule_url = urlparse(str(obj["schedule_source_url"]))
+          if schedule_url.scheme != "https" or not schedule_url.hostname or not (
+              schedule_url.hostname == "gob.mx" or schedule_url.hostname.endswith(".gob.mx")
+          ):
+              raise SystemExit("schedule_source_url must use an official gob.mx HTTPS host")
           if not re.fullmatch(r"[0-9a-f]{64}", str(obj["schedule_source_sha256"])):
               raise SystemExit("invalid schedule_source_sha256")
           if obj["modality"] != "CLASSIC" or obj["status"] != "READY_FOR_ATTESTATION":
@@ -105,8 +110,16 @@ jobs:
               if parsed.tzinfo is None:
                   raise SystemExit("timestamps must be timezone-aware")
               return parsed.astimezone(dt.timezone.utc)
+          generated_raw = dt.datetime.fromisoformat(str(obj["generated_at_utc"]).replace("Z", "+00:00"))
+          close_raw = dt.datetime.fromisoformat(str(obj["scheduled_close_at_utc"]).replace("Z", "+00:00"))
           generated = parse(obj["generated_at_utc"])
           close = parse(obj["scheduled_close_at_utc"])
+          if generated_raw.utcoffset() != dt.timedelta(0):
+              raise SystemExit("generated_at_utc must be expressed in UTC")
+          from zoneinfo import ZoneInfo
+          expected_close_offset = close_raw.astimezone(ZoneInfo(obj["timezone"])).utcoffset()
+          if close_raw.utcoffset() != expected_close_offset:
+              raise SystemExit("scheduled_close_at_utc offset does not match declared timezone")
           now = dt.datetime.now(dt.timezone.utc)
           if generated > now + dt.timedelta(minutes=2):
               raise SystemExit("generated_at_utc is in the future")
@@ -116,6 +129,8 @@ jobs:
               raise SystemExit("input_max_contest_id must be a non-negative integer")
           if obj["input_max_contest_id"] >= obj["contest_id"]:
               raise SystemExit("history cutoff must precede target contest")
+          if p.stem != str(obj["contest_id"]):
+              raise SystemExit("manifest filename must match contest_id")
           if not isinstance(obj["input_history_sha256"], str) or not isinstance(obj["payload_sha256"], str):
               raise SystemExit("hash fields must be strings")
           if not isinstance(obj["source_commit_sha"], str):
