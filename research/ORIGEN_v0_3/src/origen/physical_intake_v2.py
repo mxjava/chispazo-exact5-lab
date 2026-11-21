@@ -30,13 +30,18 @@ V2_REQUIRED_COLUMNS = (
 
 
 def _declared_reference_set(value: Any, field: str) -> set[str]:
-    """Validate caller declarations as exact set containers, never as substring inputs."""
+    """Accept only exact built-in strings in canonical set containers."""
     if value is None:
         return set()
     if type(value) not in (set, frozenset):
-        raise ValueError(f"{field} must be a set or frozenset of non-empty strings")
-    if any(not isinstance(ref, str) or not ref.strip() for ref in value):
-        raise ValueError(f"{field} must contain only non-empty strings")
+        raise ValueError(f"{field} must be a set or frozenset of canonical strings")
+    if any(
+        type(ref) is not str or not ref or ref != ref.strip()
+        for ref in value
+    ):
+        raise ValueError(
+            f"{field} must contain only exact built-in strings without surrounding whitespace"
+        )
     return set(value)
 
 

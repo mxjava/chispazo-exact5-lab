@@ -53,11 +53,20 @@ VERIFIED = dict(
 
 class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_malformed_declared_reference_containers_fail_closed(self):
+        class SpoofedReference(str):
+            def __hash__(self):
+                return hash("RECEIPT-1")
+
+            def __eq__(self, other):
+                return other == "RECEIPT-1"
+
         invalid_values = (
             "prefixRECEIPT-1suffix",  # would pass substring membership in the old code
             ["RECEIPT-1"],
             {"RECEIPT-1", 7},
             {""},
+            {" RECEIPT-1 "},
+            {SpoofedReference("ATTACKER-CONTROLLED")},
         )
         for invalid in invalid_values:
             with self.subTest(invalid=repr(invalid)):
