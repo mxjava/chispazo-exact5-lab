@@ -50,6 +50,19 @@ def _utc(value: Any, field: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def _decode_canonical_base64(value: Any, field: str) -> bytes:
+    """Decode strict padded base64 and reject alternate encodings of the same bytes."""
+    if type(value) is not str:
+        raise ValueError(f"{field} must be exact built-in base64 text")
+    try:
+        decoded = base64.b64decode(value, validate=True)
+    except (ValueError, binascii.Error) as exc:
+        raise ValueError(f"{field} is not valid strict base64") from exc
+    if base64.b64encode(decoded).decode("ascii") != value:
+        raise ValueError(f"{field} must use canonical padded base64")
+    return decoded
+
+
 def verify_attestation(
     envelope: Mapping[str, Any],
     *,
@@ -114,12 +127,10 @@ def verify_attestation(
             raise ValueError("pinned key is revoked or disabled by trust policy")
 
         try:
-            if type(root["public_key_b64"]) is not str:
-                raise ValueError("public_key_b64 must be exact built-in text")
-            public_bytes = base64.b64decode(root["public_key_b64"], validate=True)
-            signature = base64.b64decode(envelope["signature_b64"], validate=True)
+            public_bytes = _decode_canonical_base64(root["public_key_b64"], "public_key_b64")
+            signature = _decode_canonical_base64(envelope["signature_b64"], "signature_b64")
         except (KeyError, ValueError, binascii.Error) as exc:
-            raise ValueError("invalid base64 key or signature") from exc
+            raise ValueError("invalid or non-canonical base64 key or signature") from exc
         if len(public_bytes) != 32 or len(signature) != 64:
             raise ValueError("invalid Ed25519 public key or signature length")
 
