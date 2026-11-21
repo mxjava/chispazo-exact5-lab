@@ -1,0 +1,51 @@
+{
+  "schema": "exact5.official_overlay.status_only.v1",
+  "observed_date": "2026-11-21",
+  "purpose": "Official result refresh only; not a canonical-history append, prediction, or independent custody record.",
+  "classification": "STATUS_ONLY_OFFICIAL_PUBLICATION",
+  "draws": [
+    {
+      "contest_id": 12385,
+      "date": "2026-11-20",
+      "modality": "DE_LAS_TRES",
+      "modality_basis": "Official Loteria Nacional results PDF labels this draw as Chispazo De las tres.",
+      "numbers": [3, 13, 20, 22, 23],
+      "source_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf"
+    },
+    {
+      "contest_id": 12386,
+      "date": "2026-11-20",
+      "modality": "CLASICO",
+      "modality_basis": "Official Loteria Nacional results PDF labels this draw as Chispazo Clasico.",
+      "numbers": [2, 4, 9, 18, 24],
+      "source_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf"
+    }
+  ],
+  "next_advertised_chispazo": {
+    "contest_id": 12387,
+    "date": "2026-11-21",
+    "advertised_time_local": "15:00",
+    "modality": "UNCONFIRMED",
+    "note": "The official home page advertises contest 12387 at 15:00; this overlay does not infer modality or numbers."
+  },
+  "source_crosscheck": {
+    "official_results_page": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_home_page": "https://www.loterianacional.gob.mx/",
+    "official_mask_index_or_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf",
+    "publication_consistency": "The official results page and the 2026-11-20 results PDF agree on contests 12385 and 12386."
+  },
+  "integrity_limits": {
+    "original_pdf_bytes_captured": false,
+    "source_sha256": null,
+    "independent_custody": false,
+    "signed_preclose_snapshot": false
+  },
+  "firewall": {
+    "append_to_canonical_history": false,
+    "modify_main": false,
+    "modify_v294": false,
+    "retrospective_reconstruction_of_preclose_scores": false,
+    "claim_predictive_edge": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
