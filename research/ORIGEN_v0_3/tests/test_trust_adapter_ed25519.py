@@ -73,6 +73,48 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         ).decode("ascii")
         self.assertEqual(self.verify(envelope=altered)["status"], "BLOCKED")
 
+
+    def test_noncanonical_utc_forms_are_rejected_even_when_signed(self):
+        invalid_values = (
+            "2026-11-21 10:00:00Z",
+            "2026-11-21T10:00Z",
+            "2026-11-21T10:00:00+0000",
+            "2026-11-21T10:00:00Z ",
+        )
+        for value in invalid_values:
+            with self.subTest(value=value):
+                altered = dict(self.envelope, issued_at_utc=value)
+                altered["signature_b64"] = base64.b64encode(
+                    self.private.sign(canonical_payload(altered))
+                ).decode("ascii")
+                result = self.verify(envelope=altered)
+                self.assertEqual(result["status"], "BLOCKED")
+                self.assertIn("canonical extended ISO-8601 UTC", result["reason"])
+
+    def test_canonical_explicit_utc_offset_is_accepted(self):
+        altered = dict(
+            self.envelope,
+            issued_at_utc="2026-11-21T10:00:00+00:00",
+            expires_at_utc="2026-11-21T12:00:00+00:00",
+        )
+        altered["signature_b64"] = base64.b64encode(
+            self.private.sign(canonical_payload(altered))
+        ).decode("ascii")
+        self.assertEqual(self.verify(envelope=altered)["status"], "SIGNATURE_VALID")
+
+    def test_artifact_bytes_subclass_is_rejected(self):
+        class SpoofedBytes(bytes):
+            def __len__(self):
+                return 1
+
+        result = verify_artifact_bytes(
+            self.envelope, SpoofedBytes(b"exact sealed portfolio bytes"),
+            trust_roots=self.roots, expected_role="CUSTODIAN",
+            verification_time_utc="2026-11-21T11:00:00Z",
+        )
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("exact built-in raw bytes", result["reason"])
+
     def test_mapping_subclass_cannot_present_different_signed_and_read_values(self):
         class SpoofedEnvelope(dict):
             def __init__(self, stored, presented):
