@@ -395,6 +395,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         received = _utc(report["received_at_utc"], "received_at_utc")
         close = _utc(report["official_close_at_utc"], "official_close_at_utc")
+        generated = _utc(manifest["generated_at_utc"], "manifest.generated_at_utc")
+        if integrated_at <= generated:
+            raise CustodyError("Rekor timestamp must strictly follow manifest generation")
         if integrated_at < received - dt.timedelta(minutes=2):
             raise CustodyError("Rekor timestamp materially predates the custodian receipt time")
         if integrated_at >= close:
