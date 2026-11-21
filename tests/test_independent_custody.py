@@ -90,6 +90,7 @@ def test_signature_verification_requires_rekor_integrated_timestamp(tmp_path, mo
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, "", ""))
     receipt_path = tmp_path / "receipt.json"
     bundle_path = tmp_path / "bundle.json"
+    receipt_path.write_text('{"receipt":"placeholder"}', encoding="utf-8")
     bundle_path.write_text(json.dumps({
         "verificationMaterial": {
             "tlogEntries": [{"integratedTime": 1796162520}]
@@ -143,6 +144,7 @@ def test_signature_verification_rejects_bundle_without_rekor_timestamp(tmp_path,
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, "", ""))
     receipt_path = tmp_path / "receipt.json"
     bundle_path = tmp_path / "bundle.json"
+    receipt_path.write_text('{"receipt":"placeholder"}', encoding="utf-8")
     bundle_path.write_text('{"verificationMaterial": {"tlogEntries": []}}', encoding="utf-8")
     with pytest.raises(CustodyError, match="no transparency-log timestamp"):
         verify_signature(receipt_path, bundle_path, "trusted-identity", "trusted-issuer")
