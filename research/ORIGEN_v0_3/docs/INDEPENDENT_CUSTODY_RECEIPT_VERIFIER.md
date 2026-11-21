@@ -47,7 +47,11 @@ Required keys (no extras, duplicate JSON keys refused):
 The values above are illustrative only; never use them as a real event.
 
 The custodian must hash the **exact raw manifest bytes** it received and place
-that digest in the signed `manifest_sha256` field. The verifier compares this
+that digest in the signed `manifest_sha256` field.
+The CLI captures manifest, receipt, payload and bundle bytes once in memory; the same
+receipt bytes are supplied to structural validation and Cosign, and the same bundle
+bytes are supplied to Cosign and Rekor-time parsing. Temporary files are only the
+Cosign CLI transport and are checked against the captured bytes after verification. The verifier compares this
 digest with the captured manifest bytes before accepting any receipt fields.
 This binds every manifest field—including history cutoff/hash, candidate
 metadata, source commit, payload digest, generation time, and official close—
