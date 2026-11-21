@@ -114,7 +114,7 @@ def test_rejects_manifest_object_not_matching_captured_bytes(tmp_path):
 
 def test_rejects_payload_byte_mutation(tmp_path):
     manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
-    payload.write_bytes(payload.read_bytes().replace(b"01-02-03-04-05", b"01-02-03-04-06", 1))
+    payload.write_bytes(payload.read_bytes().replace(b"01-02-03-04-05", b"01-02-04-05-06", 1))
     with pytest.raises(CustodyError, match="payload bytes"):
         validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
