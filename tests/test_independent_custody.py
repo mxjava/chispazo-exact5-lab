@@ -57,7 +57,7 @@ def test_accepts_valid_independent_receipt_structure(tmp_path):
     (lambda r: r.update(modality="THREE"), "CLASSIC"),
 ])
 def test_rejects_adversarial_receipt_mutations(tmp_path, mutation, message):
-    manifest, receipt, payload, now = fixture(tmp_path)
+    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
     mutation(receipt)
     with pytest.raises(CustodyError, match=message):
         validate_receipt(manifest, receipt, payload.read_bytes(),
@@ -92,7 +92,7 @@ def test_rejects_manifest_object_not_matching_captured_bytes(tmp_path):
 
 
 def test_rejects_payload_byte_mutation(tmp_path):
-    manifest, receipt, payload, now = fixture(tmp_path)
+    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
     payload.write_bytes(b"tampered bytes")
     with pytest.raises(CustodyError, match="payload bytes"):
         validate_receipt(manifest, receipt, payload.read_bytes(),
@@ -110,7 +110,7 @@ def test_rejects_duplicate_json_keys(tmp_path):
 
 
 def test_rejects_receipt_predating_manifest_generation(tmp_path):
-    manifest, receipt, payload, now = fixture(tmp_path)
+    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
     receipt["received_at_utc"] = "2026-12-01T21:58:00Z"
     with pytest.raises(CustodyError, match="predates manifest generation"):
         validate_receipt(manifest, receipt, payload.read_bytes(),
