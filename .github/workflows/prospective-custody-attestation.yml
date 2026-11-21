@@ -36,15 +36,24 @@ jobs:
         env:
           INPUT_MANIFEST_PATH: ${{ inputs.manifest_path }}
           INPUT_CONTEST_ID: ${{ inputs.expected_contest_id }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: |
           set -euo pipefail
           python - <<'PY'
           import datetime as dt, json, os, pathlib, re, subprocess
           if os.environ["GITHUB_EVENT_NAME"] == "push":
-              changed = subprocess.check_output(
-                  ["git", "diff-tree", "--no-commit-id", "--name-only", "-r", os.environ["GITHUB_SHA"]],
-                  text=True
-              ).splitlines()
+              before = os.environ.get("GITHUB_EVENT_BEFORE", "")
+              head = os.environ["GITHUB_SHA"]
+              if before and not re.fullmatch(r"0{40}", before):
+                  changed = subprocess.check_output(
+                      ["git", "diff", "--name-only", before, head, "--"],
+                      text=True
+                  ).splitlines()
+              else:
+                  changed = subprocess.check_output(
+                      ["git", "diff-tree", "--root", "--no-commit-id", "--name-only", "-r", head],
+                      text=True
+                  ).splitlines()
               paths = [x for x in changed if re.fullmatch(r"data/prospective-commitments/[^/]+\.json", x)]
               if len(paths) != 1:
                   raise SystemExit("push must change exactly one prospective commitment manifest")
