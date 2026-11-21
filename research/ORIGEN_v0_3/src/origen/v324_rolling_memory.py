@@ -28,11 +28,21 @@ EXPECTED_HISTORY_SHA256 = "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc
 class RollingPartitionModel(HierarchicalPartitionModel):
     """V322 PMF with exact FIFO removal of observations outside a fixed window."""
 
+    def __init__(self, alpha: float = ALPHA):
+        super().__init__(alpha=alpha)
+        self.observed_counts: dict[tuple[int, ...], int] = {}
+
+    def update(self, draw: list[int] | tuple[int, ...]) -> None:
+        super().update(draw)
+        combo = tuple(sorted(draw))
+        self.observed_counts[combo] = self.observed_counts.get(combo, 0) + 1
+
     def remove(self, draw: list[int] | tuple[int, ...]) -> None:
         if len(draw) != 5 or any(not isinstance(x, int) or isinstance(x, bool) for x in draw):
             raise ValueError("invalid_training_draw")
         combo = tuple(sorted(draw))
-        if combo not in self.combo_index or self.draws_seen <= 0:
+        if (combo not in self.combo_index or self.draws_seen <= 0
+                or self.observed_counts.get(combo, 0) <= 0):
             raise ValueError("cannot_remove_unknown_or_empty_draw")
         idx = self.combo_index[combo]
         paths = [tree_path[idx] for tree_path in self.paths_by_tree]
@@ -47,6 +57,11 @@ class RollingPartitionModel(HierarchicalPartitionModel):
                 prefix_id = tree.prefix_indices[depth - 1][path[:depth]]
                 tree.training_prefix_counts[depth - 1][prefix_id] -= 1
         self.draws_seen -= 1
+        remaining = self.observed_counts[combo] - 1
+        if remaining:
+            self.observed_counts[combo] = remaining
+        else:
+            del self.observed_counts[combo]
 
 
 def evaluate_window(history_path: str | Path, output_dir: str | Path,
