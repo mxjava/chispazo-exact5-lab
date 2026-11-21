@@ -16,7 +16,7 @@
 ## Reglamento Chispazo
 - URL: https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/ChizpasoDOF18062003.pdf
 - Publicado el 18-06-2003; última reforma indicada 07-03-2012.
-- Artículos 5 y 9: números 1–28, 28 esferas y extracción de cinco al azar; artículo 15: acta con resultados e incidencias.
+- Artículos 5 y 9: números 1–28, 28 esferas y extracción de cinco al azar; artículo 15: acta con resultados e incidencias. El artículo 8 establece que el resultado oficial es el asentado en el Acta; la web, terminal, teléfono y mascarilla son informativos. El PDF conserva una discrepancia: artículo 2 menciona 25 números, pero los artículos 5 y 9 dicen 1–28/28 esferas; registrar la inconsistencia y usar los artículos 5 y 9 para la mecánica.
 
 ## Informe de Gestión Gubernamental 2018–2024
 - URL: https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf
