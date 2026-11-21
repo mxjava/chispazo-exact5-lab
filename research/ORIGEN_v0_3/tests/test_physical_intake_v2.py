@@ -44,10 +44,10 @@ def rows_for_target(available="2026-11-20T21:15:00-06:00",
 
 
 VERIFIED = dict(
-    verified_custody_refs={"RECEIPT-1"},
-    verified_timestamp_refs={"TSA-1"},
-    verified_source_refs={"DOC-12300"},
-    verified_continuity_targets={"12301"},
+    declared_custody_refs={"RECEIPT-1"},
+    declared_timestamp_refs={"TSA-1"},
+    declared_source_refs={"DOC-12300"},
+    declared_continuity_targets={"12301"},
 )
 
 
@@ -62,6 +62,27 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         )
         self.assertEqual(target["predictive_eligibility"], "STRUCTURAL_PRE_CLOSE_ONLY")
         self.assertEqual(target["reasons"], [])
+
+    def test_caller_supplied_reference_strings_are_declarations_not_authentication(self):
+        # These deliberately fabricated identifiers satisfy only structural membership.
+        result = evaluate_temporal_eligibility(
+            rows_for_target(),
+            declared_custody_refs={"RECEIPT-1"},
+            declared_timestamp_refs={"TSA-1"},
+            declared_source_refs={"DOC-12300"},
+            declared_continuity_targets={"12301"},
+        )
+        self.assertEqual(result["status"], "STRUCTURAL_REVIEW_ONLY")
+        self.assertEqual(
+            result["authentication_status"],
+            "NOT_AUTHENTICATED_BY_THIS_MODULE",
+        )
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+        self.assertNotIn("authenticated", result)
+        self.assertNotIn("authenticated", result["targets"]["12301"])
 
     def test_measurement_before_close_but_receipt_after_target_close_is_ineligible(self):
         rows = rows_for_target(received="2026-11-21T19:00:00-06:00")
@@ -96,9 +117,9 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_missing_continuity_is_separate_block(self):
         result = evaluate_temporal_eligibility(
             rows_for_target(),
-            verified_custody_refs={"RECEIPT-1"},
-            verified_timestamp_refs={"TSA-1"},
-            verified_source_refs={"DOC-12300"},
+            declared_custody_refs={"RECEIPT-1"},
+            declared_timestamp_refs={"TSA-1"},
+            declared_source_refs={"DOC-12300"},
         )
         self.assertEqual(
             result["targets"]["12301"]["predictive_eligibility"],
