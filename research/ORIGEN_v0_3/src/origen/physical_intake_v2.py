@@ -328,7 +328,15 @@ def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[st
         reader = csv.DictReader(stream)
         if reader.fieldnames is None:
             raise ValueError("CSV has no header")
-        missing = sorted(set(V2_REQUIRED_COLUMNS) - set(reader.fieldnames))
+        headers = reader.fieldnames
+        if any(
+            type(name) is not str or not name or name != name.strip()
+            for name in headers
+        ):
+            raise ValueError("CSV headers must be non-empty canonical strings")
+        if len(headers) != len(set(headers)):
+            raise ValueError("CSV headers must be unique; duplicate column names are ambiguous")
+        missing = sorted(set(V2_REQUIRED_COLUMNS) - set(headers))
         if missing:
             raise ValueError("missing required columns: " + ", ".join(missing))
         return evaluate_temporal_eligibility(reader, **verification)

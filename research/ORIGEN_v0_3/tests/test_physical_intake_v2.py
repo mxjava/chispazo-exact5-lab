@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import csv
+import tempfile
 import unittest
+from pathlib import Path
 
 from origen.physical_intake_v2 import (
-    V2_REQUIRED_COLUMNS, evaluate_temporal_eligibility,
+    V2_REQUIRED_COLUMNS, evaluate_temporal_csv, evaluate_temporal_eligibility,
 )
 
 
@@ -539,6 +542,24 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_empty_input_is_not_success(self):
         self.assertEqual(evaluate_temporal_eligibility([])["status"], "EMPTY")
 
+
+
+    def test_csv_duplicate_headers_are_rejected_before_dictreader_overwrite(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["modality"] = "DE LAS TRES"
+        headers = list(V2_REQUIRED_COLUMNS) + ["modality"]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "duplicate-header.csv"
+            with path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.writer(stream)
+                writer.writerow(headers)
+                for row in rows:
+                    writer.writerow(
+                        [row[column] for column in V2_REQUIRED_COLUMNS] + ["CLASSIC"]
+                    )
+            with self.assertRaisesRegex(ValueError, "CSV headers must be unique"):
+                evaluate_temporal_csv(path, **VERIFIED)
 
 if __name__ == "__main__":
     unittest.main()
