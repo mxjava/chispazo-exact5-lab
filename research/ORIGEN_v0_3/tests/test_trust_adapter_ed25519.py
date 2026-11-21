@@ -93,6 +93,16 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         roots = {"custody-key-01": dict(self.roots["custody-key-01"], roles=["SOURCE_SIGNER"])}
         self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
 
+    def test_roles_must_be_an_explicit_list(self):
+        roots = {"custody-key-01": dict(self.roots["custody-key-01"], roles="CUSTODIAN")}
+        self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
+
+    def test_revoked_or_disabled_key_is_rejected(self):
+        roots = {"custody-key-01": dict(self.roots["custody-key-01"], revoked=True)}
+        self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
+        roots = {"custody-key-01": dict(self.roots["custody-key-01"], enabled=False)}
+        self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
+
     def test_wrong_subject_is_rejected(self):
         self.assertEqual(self.verify(subject="e" * 64)["status"], "BLOCKED")
 
