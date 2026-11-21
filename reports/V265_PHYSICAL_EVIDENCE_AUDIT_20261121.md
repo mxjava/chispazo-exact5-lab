@@ -19,7 +19,7 @@ Para el conjunto de entrenamiento de Clásico, la etiqueta debe provenir de la m
 
 ## 3. Procedimiento vigente y cronología respecto al cierre
 
-La versión que la Normateca lista como vigente es **SGVO-PRO-05, revisión 39, DN-07 versión 09**, publicada el **20-03-2026**: [PDF oficial](https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf).
+La versión que la Normateca lista como vigente es **SGVO-PRO-05, revisión 39, DN-07 versión 09**; la ficha de Normateca muestra actualización al **20-03-2026**. El PDF conserva como fecha de emisión original octubre de 2003: [PDF oficial](https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf).
 
 La secuencia relevante de su sección V es:
 
