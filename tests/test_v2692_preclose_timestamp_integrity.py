@@ -20,6 +20,7 @@ def make_inputs(tmp_path, *, available=True, known_offset_hours=-1, omit_known=F
     known = close + pd.Timedelta(hours=known_offset_hours)
     metadata = pd.DataFrame({
         "CONCURSO": contests,
+        "SLOT": ["21:00"] * n,
         "planned_sphere_set_id_preclose": ["S1"] * n,
         "final_sphere_set_id_postweigh": ["S1"] * n,
         "final_sphere_set_known_time_utc": (close + pd.Timedelta(hours=1)).tz_convert("UTC").astype(str),
