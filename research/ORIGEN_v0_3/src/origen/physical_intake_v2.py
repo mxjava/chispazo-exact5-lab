@@ -173,9 +173,9 @@ def evaluate_temporal_eligibility(
                 machine_ids.add(_canonical_identifier(row["machine_id"]))
                 try:
                     printed_raw = row["printed_number"]
-                    if type(printed_raw) is not str:
-                        raise ValueError("printed_number must be exact built-in text")
-                    printed_numbers.add(int(printed_raw.strip()))
+                    if type(printed_raw) is not str or not re.fullmatch(r"(?:[1-9]|1[0-9]|2[0-8])", printed_raw):
+                        raise ValueError("printed_number must be canonical decimal text from 1 through 28")
+                    printed_numbers.add(int(printed_raw))
                 except ValueError:
                     reasons.add("INVALID_PRINTED_NUMBER")
                 if not re.fullmatch(r"[0-9a-fA-F]{64}", source_hash):
