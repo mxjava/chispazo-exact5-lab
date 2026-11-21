@@ -161,6 +161,48 @@
         "main_modified": false,
         "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
       }
+    },
+    {
+      "observed_at_local": "2026-11-21T15:00:02-06:00",
+      "observation_scope": "Immediate post-slot refresh of official Chispazo result and daily-mask endpoints",
+      "dedicated_results_page": {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+        "latest_published_contest_id": 12386,
+        "latest_published_date": "2026-11-20",
+        "result_for_contest_12387_visible": false,
+        "result_for_2026_11_21_visible": false
+      },
+      "home_index": {
+        "url": "https://www.loterianacional.gob.mx/home/index",
+        "advertised_contest_id": 12387,
+        "advertised_date": "2026-11-21",
+        "advertised_time_local": "15:00",
+        "advertisement_still_visible": true
+      },
+      "mask_index": {
+        "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+        "latest_listed_mask_date": "2026-11-20",
+        "mask_for_2026_11_21_listed": false
+      },
+      "interpretation": "At 15:00:02 local, the official result page and mask index had not yet published contest 12387 or a 21-Nov mask. This is a publication-latency observation, not evidence that the draw did not occur. Contest 12387 remains the scheduled 15:00 De las Tres draw; no Clásico contest ID or numbers are inferred.",
+      "integrity_limits": {
+        "original_2026_11_21_mask_bytes_captured": false,
+        "source_sha256": "NOT_CAPTURED",
+        "independent_custody": false,
+        "signed_preclose_snapshot": false,
+        "source_timestamp_provenance": false
+      },
+      "eligibility": {
+        "snapshot_preclose": false,
+        "oos_eligible": false,
+        "score_computed": false,
+        "canonical_history_appended": false,
+        "canonical_append_verified": false,
+        "challenger_changed": false,
+        "v294_changed": false,
+        "main_modified": false,
+        "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+      }
     }
   ]
 }
