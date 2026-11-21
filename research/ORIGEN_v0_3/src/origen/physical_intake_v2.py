@@ -219,9 +219,14 @@ def evaluate_temporal_eligibility(
             calibration_hashes, signature_refs, signer_ids, timestamp_refs
         )):
             reasons.add("EVIDENCE_DOCUMENT_SET_CONFLICT")
-        if len(source_contests) != 1:
+        if len(source_contests) != 1 or "" in source_contests:
             reasons.add("SOURCE_CONTEST_CONFLICT")
-        if len(group) != 28 or len(sphere_ids) != 28 or printed_numbers != set(range(1, 29)):
+        if (
+            len(group) != 28
+            or len(sphere_ids) != 28
+            or "" in sphere_ids
+            or printed_numbers != set(range(1, 29))
+        ):
             reasons.add("INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET")
         if len(set_ids) != 1 or "" in set_ids or len(machine_ids) != 1 or "" in machine_ids:
             reasons.add("PHYSICAL_SET_OR_MACHINE_CONFLICT")

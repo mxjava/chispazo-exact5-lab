@@ -202,6 +202,30 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         self.assertIn("INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", result["targets"]["12301"]["reasons"])
         self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
 
+    def test_blank_sphere_id_is_rejected_even_when_unique_count_is_28(self):
+        rows = rows_for_target()
+        rows[0]["sphere_id"] = "   "
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET",
+            result["targets"]["12301"]["reasons"],
+        )
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
+    def test_blank_source_contest_id_is_rejected(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["source_contest_id"] = " "
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn("SOURCE_CONTEST_CONFLICT", result["targets"]["12301"]["reasons"])
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
     def test_non_classic_modality_is_not_eligible(self):
         rows = rows_for_target()
         rows[0]["modality"] = "DE LAS TRES"
