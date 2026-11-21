@@ -49,6 +49,40 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
             verification_time_utc=now,
         )
 
+    def test_noncanonical_public_key_base64_pad_bits_are_rejected(self):
+        encoded = self.roots["custody-key-01"]["public_key_b64"]
+        alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        index = alphabet.index(encoded[-2])
+        alternate = encoded[:-2] + alphabet[index + 1] + "="
+        self.assertNotEqual(alternate, encoded)
+        self.assertEqual(
+            base64.b64decode(alternate, validate=True),
+            base64.b64decode(encoded, validate=True),
+        )
+        roots = {
+            "custody-key-01": dict(
+                self.roots["custody-key-01"], public_key_b64=alternate
+            )
+        }
+        result = self.verify(roots=roots)
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("non-canonical base64", result["reason"])
+
+    def test_noncanonical_signature_base64_pad_bits_are_rejected(self):
+        encoded = self.envelope["signature_b64"]
+        alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        index = alphabet.index(encoded[-2])
+        alternate = encoded[:-2] + alphabet[index + 1] + "="
+        self.assertNotEqual(alternate, encoded)
+        self.assertEqual(
+            base64.b64decode(alternate, validate=True),
+            base64.b64decode(encoded, validate=True),
+        )
+        altered = dict(self.envelope, signature_b64=alternate)
+        result = self.verify(envelope=altered)
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("non-canonical base64", result["reason"])
+
     def test_valid_signature_reports_only_pinned_key_assurance(self):
         result = self.verify()
         self.assertEqual(result["status"], "SIGNATURE_VALID")
