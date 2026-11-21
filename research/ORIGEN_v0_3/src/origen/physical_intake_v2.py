@@ -50,8 +50,10 @@ def evaluate_temporal_eligibility(
 ) -> dict[str, Any]:
     """Classify each target independently; missing external attestations fail closed.
 
-    The verification sets must be populated by an independent verifier, not from
-    caller-supplied booleans in the CSV. An empty/omitted set means unverified.
+    The `verified_*` sets are caller-supplied reference declarations used only for
+    structural membership checks. This function cannot authenticate their origin,
+    signer, timestamp, custodian, or external continuity. Never treat membership in
+    these sets as an authenticated verification receipt. An empty/omitted set fails closed.
     """
     materialized = list(rows)
     if not materialized:
