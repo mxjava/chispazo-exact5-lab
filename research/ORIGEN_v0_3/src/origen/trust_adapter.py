@@ -77,8 +77,14 @@ def verify_attestation(
         root = trust_roots.get(key_id)
         if not isinstance(root, Mapping):
             raise ValueError("key_id is not present in pinned trust roots")
-        if role not in root.get("roles", []):
+        roles = root.get("roles")
+        if (not isinstance(roles, list)
+                or any(not isinstance(item, str) or not item for item in roles)):
+            raise ValueError("pinned trust root roles must be an explicit string list")
+        if role not in roles:
             raise ValueError("pinned key is not authorized for requested role")
+        if root.get("revoked") is True or root.get("enabled", True) is not True:
+            raise ValueError("pinned key is revoked or disabled by trust policy")
 
         try:
             public_bytes = base64.b64decode(root["public_key_b64"], validate=True)
