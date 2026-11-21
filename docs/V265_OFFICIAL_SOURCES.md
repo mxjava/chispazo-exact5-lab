@@ -36,10 +36,10 @@ La norma vigente confirma:
 - CS-02 antes del cierre.
 - Pesaje individual en cada sorteo; Smartballs: 4.25–5.25 g y rango máximo 0.30 g; Ping Pong: 2.30–3.00 g y rango máximo 0.15 g.
 - Tira firmada y anexada al acta.
-- CS-11 posterior a la extracción; la revisión 39 publica como campos mínimos fecha, nombre/número de sorteo, hora del sorteo, estuche seleccionado, resultados y firmas de elaboración/verificación/certificación/representante DG. La hora es del evento, no por esfera; no se publica campo de RFID individual, orden ni timestamp de cada extracción.
+- CS-11 posterior a la extracción; la revisión 39 publica como campos mínimos fecha, nombre/número de sorteo, hora del sorteo, estuche seleccionado, resultados y firmas de elaboración/verificación/certificación/representante DG. La hora es del evento, no por esfera; no se publica campo de RFID individual, orden ni timestamp de cada extracción. El procedimiento no define que el orden escrito de los resultados sea el orden físico de extracción.
 - Calibración de básculas al menos anual; mantenimiento preventivo/correctivo según calendario anual.
 - Incidencias en acta y Bitácora de Concursos y Sorteos (CS-09) cuando afectan resultados.
-- Grabación desde el pesaje hasta la celebración; la grabación editada forma parte del acta.
+- Grabación desde el pesaje hasta la celebración como testigo documental; la versión editada anexada al acta es sólo el sorteo, por lo que para reconstruir el pesaje se necesita el máster continuo original y sus timecodes.
 - CS-12 registra accesos a la sala durante el evento.
 
 RFID: el Informe de Gestión 2018–2024 declara que las máquinas y esferas adquiridas para sorteos electrónicos tenían reconocimiento RFID y que la instalación quedó concluida el 10-03-2022. No publica identificadores RFID por máquina/esfera, el mapeo etiqueta→número ni registros de lectura por concurso. El total de juegos del informe es aritméticamente inconsistente (10 juegos para cada uno de 7 productos, pero total declarado 60); no usar ese total para inferir inventario.
