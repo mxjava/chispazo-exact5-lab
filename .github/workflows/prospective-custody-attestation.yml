@@ -58,6 +58,20 @@ jobs:
                   or not manifest_path.startswith("data/prospective-commitments/")
                   or p.suffix != ".json"):
               raise SystemExit("manifest path must be a committed JSON file under data/prospective-commitments/")
+          def require_regular_git_file(path, label):
+              entries = subprocess.check_output(
+                  ["git", "ls-tree", "-z", "HEAD", "--", str(path)]
+              ).split(b"\\0")
+              matches = []
+              for entry in entries:
+                  if not entry:
+                      continue
+                  metadata, tab, tracked_path = entry.partition(b"\\t")
+                  if tab and tracked_path.decode("utf-8") == str(path):
+                      matches.append(metadata.split()[0])
+              if len(matches) != 1 or matches[0] not in (b"100644", b"100755"):
+                  raise SystemExit(f"{label} must be a regular committed Git blob; symlinks and non-regular objects are refused")
+          require_regular_git_file(p, "manifest")
           def unique_object(pairs):
               result = {}
               for key, value in pairs:
@@ -109,6 +123,7 @@ jobs:
           archive_path = pathlib.Path(str(archive_rel))
           if not archive_path.is_file():
               raise SystemExit("official schedule evidence archive is missing from the committed repository")
+          require_regular_git_file(archive_path, "official schedule evidence archive")
           import hashlib
           archive_digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
           if archive_digest != obj["schedule_source_sha256"]:
