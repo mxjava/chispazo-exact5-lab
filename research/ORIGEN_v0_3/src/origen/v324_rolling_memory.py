@@ -11,6 +11,7 @@ import csv
 import hashlib
 import json
 import math
+from statistics import median
 from collections import deque
 from pathlib import Path
 
@@ -105,7 +106,7 @@ def evaluate_window(history_path: str | Path, output_dir: str | Path,
         "window_classic": window_classic, "alpha_fixed": alpha,
         "universe_size": UNIVERSE_SIZE,
         "mean_log_lift": sum(lifts) / len(lifts),
-        "median_log_lift": sorted(lifts)[len(lifts)//2],
+        "median_log_lift": median(lifts),
         "cumulative_log_lift": sum(lifts),
         "positive_log_lift_fraction": sum(x > 0 for x in lifts) / len(lifts),
         "exact_rank_1_count": sum(r["rank_low"] == r["rank_high"] == 1 for r in records),
