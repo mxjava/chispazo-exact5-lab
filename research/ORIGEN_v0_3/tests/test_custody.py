@@ -341,5 +341,21 @@ class CustodyTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("exact built-in text", reason)
 
+
+    def test_read_record_rejects_duplicate_json_object_keys(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "duplicate.json"
+            path.write_bytes(b'{"schema_version":"bad","schema_version":"exact5.custody.v1"}\n')
+            with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
+                read_record(path)
+
+    def test_read_record_rejects_noncanonical_json_encoding(self):
+        record, _ = self.make_record()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "noncanonical.json"
+            path.write_text(json.dumps(record) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "canonical JSON encoding"):
+                read_record(path)
+
 if __name__ == "__main__":
     unittest.main()
