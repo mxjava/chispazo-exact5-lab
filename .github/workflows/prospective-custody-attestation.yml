@@ -54,18 +54,45 @@ jobs:
           p = pathlib.Path(manifest_path)
           if p.is_absolute() or ".." in p.parts or not p.is_file():
               raise SystemExit("manifest path must be a committed repository file")
-          obj = json.loads(p.read_text(encoding="utf-8"))
+          def unique_object(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise ValueError(f"duplicate JSON key: {key}")
+                  result[key] = value
+              return result
+          try:
+              obj = json.loads(p.read_text(encoding="utf-8"), object_pairs_hook=unique_object)
+          except (json.JSONDecodeError, ValueError) as exc:
+              raise SystemExit(f"invalid manifest JSON: {exc}")
           required = {
               "schema_version", "contest_id", "modality", "candidate_id",
               "source_commit_sha", "input_history_sha256", "input_max_contest_id",
               "payload_sha256", "generated_at_utc", "scheduled_close_at_utc",
-              "timezone", "status"
+              "timezone", "status", "schedule_source_url", "schedule_source_sha256"
           }
           missing = sorted(required - obj.keys())
           if missing:
               raise SystemExit(f"missing fields: {missing}")
+          if obj["schema_version"] != "1.0":
+              raise SystemExit("unsupported schema_version; expected 1.0")
+          if isinstance(obj["contest_id"], bool) or not isinstance(obj["contest_id"], int) or obj["contest_id"] <= 0:
+              raise SystemExit("contest_id must be a positive integer")
           if expected_id and str(obj["contest_id"]) != expected_id:
               raise SystemExit("contest_id does not match workflow input")
+          if not isinstance(obj["candidate_id"], str) or not obj["candidate_id"].strip():
+              raise SystemExit("candidate_id must be a non-empty string")
+          if not isinstance(obj["timezone"], str) or not obj["timezone"].strip():
+              raise SystemExit("timezone must be a non-empty IANA timezone")
+          try:
+              from zoneinfo import ZoneInfo
+              ZoneInfo(obj["timezone"])
+          except Exception as exc:
+              raise SystemExit(f"invalid IANA timezone: {exc}")
+          if not isinstance(obj["schedule_source_url"], str) or not obj["schedule_source_url"].startswith("https://"):
+              raise SystemExit("schedule_source_url must be an HTTPS official schedule reference")
+          if not re.fullmatch(r"[0-9a-f]{64}", str(obj["schedule_source_sha256"])):
+              raise SystemExit("invalid schedule_source_sha256")
           if obj["modality"] != "CLASSIC" or obj["status"] != "READY_FOR_ATTESTATION":
               raise SystemExit("manifest must be CLASSIC and READY_FOR_ATTESTATION")
           for key in ("input_history_sha256", "payload_sha256"):
@@ -85,8 +112,21 @@ jobs:
               raise SystemExit("generated_at_utc is in the future")
           if now >= close or generated >= close:
               raise SystemExit("REFUSED: attestation must occur before official sales close")
-          if int(obj["input_max_contest_id"]) >= int(obj["contest_id"]):
+          if isinstance(obj["input_max_contest_id"], bool) or not isinstance(obj["input_max_contest_id"], int) or obj["input_max_contest_id"] < 0:
+              raise SystemExit("input_max_contest_id must be a non-negative integer")
+          if obj["input_max_contest_id"] >= obj["contest_id"]:
               raise SystemExit("history cutoff must precede target contest")
+          if not isinstance(obj["input_history_sha256"], str) or not isinstance(obj["payload_sha256"], str):
+              raise SystemExit("hash fields must be strings")
+          if not isinstance(obj["source_commit_sha"], str):
+              raise SystemExit("source_commit_sha must be a string")
+          subprocess.check_call(["git", "cat-file", "-e", obj["source_commit_sha"] + "^{commit}"])
+          subprocess.check_call(["git", "merge-base", "--is-ancestor", obj["source_commit_sha"], os.environ["GITHUB_SHA"]])
+          source_time = dt.datetime.fromisoformat(subprocess.check_output(
+              ["git", "show", "-s", "--format=%cI", obj["source_commit_sha"]], text=True
+          ).strip()).astimezone(dt.timezone.utc)
+          if source_time > generated:
+              raise SystemExit("source commit must exist no later than generated_at_utc")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
               out.write("manifest_path=" + str(p) + "\n")
               out.write("contest_id=" + str(obj["contest_id"]) + "\n")
@@ -110,7 +150,7 @@ jobs:
           set -euo pipefail
           cosign verify-blob \
             --bundle custody-bundle.json \
-            --certificate-identity-regexp '^https://github.com/mxjava/chispazo-exact5-lab/.github/workflows/prospective-custody-attestation.yml@refs/heads/.+$' \
+            --certificate-identity 'https://github.com/mxjava/chispazo-exact5-lab/.github/workflows/prospective-custody-attestation.yml@refs/heads/fix/origen-v03-integrity-guards-20261120' \
             --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
             "$MANIFEST_PATH"
 
