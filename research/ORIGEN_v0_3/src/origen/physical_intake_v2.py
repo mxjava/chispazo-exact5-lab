@@ -144,6 +144,8 @@ def evaluate_temporal_eligibility(
                 machine_models.add(_canonical_identifier(row["machine_model"]))
                 scales.add(_canonical_identifier(row["scale_id"]))
                 source_refs.add(_canonical_identifier(row["source_document_ref"]))
+                # This API also accepts in-memory mappings, not only CSV rows:
+                # never use __str__ to normalize untrusted scalar objects.
                 source_hash_raw = row["source_document_sha256"]
                 custody_hash_raw = row["custody_receipt_sha256"]
                 calibration_hash_raw = row["calibration_certificate_sha256"]
