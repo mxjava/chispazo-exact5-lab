@@ -52,7 +52,7 @@ def parse_utc(value: str, field: str) -> datetime:
         r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|\+00:00)",
         value,
     ):
-        raise ValueError(f"{field} must be exact built-in canonical extended ISO-8601 UTC text")
+        raise ValueError(f"{field} must be exact built-in canonical extended ISO-8601 UTC text with an explicit UTC offset (+00:00 or Z)")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
@@ -233,8 +233,10 @@ def verify_seal_record(
         actual = sha256_bytes(portfolio)
         if actual != record["portfolio_sha256"] or actual != record["custodian_recomputed_sha256"]:
             return False, "portfolio bytes do not match generator and custodian hashes"
-        if expected_previous is not None and record["previous_record_sha256"] != expected_previous:
-            return False, "previous-record chain link mismatch"
+        if expected_previous is not None:
+            _require_sha(expected_previous, "expected_previous")
+            if record["previous_record_sha256"] != expected_previous:
+                return False, "previous-record chain link mismatch"
         generated = parse_utc(record["generated_at_utc"], "generated_at_utc")
         received = parse_utc(record["received_at_utc"], "received_at_utc")
         closes = parse_utc(record["official_draw_close_at_utc"], "official_draw_close_at_utc")
