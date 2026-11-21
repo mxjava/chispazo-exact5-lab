@@ -55,6 +55,11 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_structural_preclose_does_not_claim_independent_authentication(self):
         result = evaluate_temporal_eligibility(rows_for_target(), **VERIFIED)
         target = result["targets"]["12301"]
+        self.assertEqual(result["status"], "STRUCTURAL_REVIEW_ONLY")
+        self.assertEqual(
+            result["authentication_status"],
+            "NOT_AUTHENTICATED_BY_THIS_MODULE",
+        )
         self.assertEqual(target["predictive_eligibility"], "STRUCTURAL_PRE_CLOSE_ONLY")
         self.assertEqual(target["reasons"], [])
 
