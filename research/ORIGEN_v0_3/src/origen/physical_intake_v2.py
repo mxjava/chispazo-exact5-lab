@@ -53,8 +53,10 @@ def _canonical_identifier(value: Any) -> str:
 
 
 def _parse_time(value: Any, field: str) -> datetime:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{field}: missing timestamp")
+    # Exact built-in str is required: subclasses can override strip/replace and
+    # make attacker-controlled text parse as a different, valid timestamp.
+    if type(value) is not str or not value.strip():
+        raise ValueError(f"{field}: missing or non-canonical timestamp")
     try:
         result = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
