@@ -43,13 +43,16 @@ def canonical_json_bytes(value: Mapping[str, Any]) -> bytes:
 
 
 def _require_sha(value: Any, field: str) -> None:
-    if not isinstance(value, str) or not _HEX64.fullmatch(value):
-        raise ValueError(f"{field} must be 64 lowercase hexadecimal characters")
+    if type(value) is not str or not _HEX64.fullmatch(value):
+        raise ValueError(f"{field} must be exact built-in text with 64 lowercase hexadecimal characters")
 
 
 def parse_utc(value: str, field: str) -> datetime:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{field} must be a non-empty ISO-8601 timestamp")
+    if type(value) is not str or not re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?(?:Z|\\+00:00)",
+        value,
+    ):
+        raise ValueError(f"{field} must be canonical extended ISO-8601 UTC text")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
@@ -60,9 +63,9 @@ def parse_utc(value: str, field: str) -> datetime:
 
 
 def validate_portfolio(portfolio: bytes, expected_lines: int = 30) -> list[str]:
-    if not isinstance(portfolio, bytes):
-        raise TypeError("portfolio must be supplied as exact bytes")
-    if not isinstance(expected_lines, int) or isinstance(expected_lines, bool) or expected_lines <= 0:
+    if type(portfolio) is not bytes:
+        raise TypeError("portfolio must be supplied as exact built-in bytes")
+    if type(expected_lines) is not int or expected_lines <= 0:
         raise ValueError("expected_lines must be a positive integer")
     if not portfolio or not portfolio.endswith(b"\n"):
         raise ValueError("portfolio must be non-empty and end with LF")
@@ -122,13 +125,13 @@ def build_seal_record(
     expected_lines: int = 30,
 ) -> dict[str, Any]:
     """Build a hash-bound record; caller must retain an independent receipt."""
-    if not isinstance(target_contest_id, int) or isinstance(target_contest_id, bool) or target_contest_id <= 0:
-        raise ValueError("target_contest_id must be a positive integer")
-    if (not isinstance(history_max_contest_id, int) or isinstance(history_max_contest_id, bool)
+    if type(target_contest_id) is not int or target_contest_id <= 0:
+        raise ValueError("target_contest_id must be an exact positive integer")
+    if (type(history_max_contest_id) is not int
             or history_max_contest_id != target_contest_id - 1):
         raise ValueError("history cutoff must be an integer exactly target_contest_id - 1")
-    if modality != "CLASSIC":
-        raise ValueError("only CLASSIC modality is eligible")
+    if type(modality) is not str or modality != "CLASSIC":
+        raise ValueError("only exact built-in CLASSIC modality text is eligible")
     for field, value in (
         ("candidate_spec_sha256", candidate_spec_sha256),
         ("history_sha256", history_sha256),
@@ -137,7 +140,7 @@ def build_seal_record(
         ("previous_record_sha256", previous_record_sha256),
     ):
         _require_sha(value, field)
-    if not isinstance(source_commit, str) or not _SHA40.fullmatch(source_commit):
+    if type(source_commit) is not str or not _SHA40.fullmatch(source_commit):
         raise ValueError("source_commit must be a full 40-character Git SHA")
     for field, value in (
         ("candidate_id", candidate_id), ("generator_id", generator_id),
@@ -145,8 +148,8 @@ def build_seal_record(
         ("custodian_clock_source", custodian_clock_source),
         ("official_draw_close_source", official_draw_close_source),
     ):
-        if not isinstance(value, str) or not value.strip():
-            raise ValueError(f"{field} must be non-empty")
+        if type(value) is not str or not value or value != value.strip():
+            raise ValueError(f"{field} must be exact non-empty canonical text")
     if generator_id == custodian_id:
         raise ValueError("generator and custodian identities must be distinct")
     validate_portfolio(portfolio, expected_lines)
@@ -195,31 +198,34 @@ def verify_seal_record(
 ) -> tuple[bool, str]:
     """Verify schema, digest, byte binding, temporal order, and optional chain link."""
     try:
-        if not isinstance(record, dict) or record.get("schema_version") != "exact5.custody.v1":
+        if type(record) is not dict:
+            return False, "record must be an exact built-in dict"
+        if type(record.get("schema_version")) is not str or record.get("schema_version") != "exact5.custody.v1":
             return False, "unsupported record schema"
         if set(record) != _RECORD_FIELDS:
             return False, "record fields do not match exact v1 schema"
-        if not isinstance(record.get("target_contest_id"), int) or isinstance(record.get("target_contest_id"), bool):
-            return False, "target_contest_id must be an integer"
-        if not isinstance(record.get("history_max_contest_id"), int) or isinstance(record.get("history_max_contest_id"), bool):
-            return False, "history_max_contest_id must be an integer"
+        if type(record.get("target_contest_id")) is not int:
+            return False, "target_contest_id must be an exact built-in integer"
+        if type(record.get("history_max_contest_id")) is not int:
+            return False, "history_max_contest_id must be an exact built-in integer"
         count = record.get("portfolio_line_count")
-        if not isinstance(count, int) or isinstance(count, bool) or count <= 0:
+        if type(count) is not int or count <= 0:
             return False, "portfolio_line_count must be a positive integer"
         for field in ("candidate_spec_sha256", "history_sha256", "environment_manifest_sha256",
                       "portfolio_sha256", "custodian_recomputed_sha256",
                       "previous_record_sha256", "record_sha256"):
             _require_sha(record.get(field), field)
-        if not isinstance(record.get("source_commit"), str) or not _SHA40.fullmatch(record["source_commit"]):
+        if type(record.get("source_commit")) is not str or not _SHA40.fullmatch(record["source_commit"]):
             return False, "source_commit must be a full 40-character Git SHA"
         for field in ("candidate_id", "generator_id", "custodian_id",
                       "generator_clock_source", "custodian_clock_source",
                       "official_draw_close_source"):
-            if not isinstance(record.get(field), str) or not record[field].strip():
-                return False, f"{field} must be non-empty"
+            if type(record.get(field)) is not str or not record[field] or record[field] != record[field].strip():
+                return False, f"{field} must be exact non-empty canonical text"
         if record["generator_id"] == record["custodian_id"]:
             return False, "generator and custodian identities are not independent"
-        if record.get("seal_status") != "SEALED" or record.get("modality") != "CLASSIC":
+        if (type(record.get("seal_status")) is not str or record.get("seal_status") != "SEALED"
+                or type(record.get("modality")) is not str or record.get("modality") != "CLASSIC"):
             return False, "record is not a sealed Classic registration"
         if record["record_sha256"] != _record_digest(record):
             return False, "record digest mismatch"
@@ -277,7 +283,7 @@ def verify_record_chain(
 
 def write_record_exclusive(path: str | Path, record: dict[str, Any]) -> None:
     """Create a record file without replacement; this is not tamper-proof storage."""
-    if not isinstance(record, dict) or set(record) != _RECORD_FIELDS:
+    if type(record) is not dict or set(record) != _RECORD_FIELDS:
         raise ValueError("record does not match exact v1 schema")
     if record.get("record_sha256") != _record_digest(record):
         raise ValueError("record digest mismatch; refusing to write")
