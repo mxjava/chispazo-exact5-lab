@@ -201,7 +201,7 @@ jobs:
         run: |
           set -euo pipefail
           cosign verify-blob \
-            --bundle custody-bundle.json \
+            --bundle originator-attestation.bundle.json \
             --certificate-identity 'https://github.com/mxjava/chispazo-exact5-lab/.github/workflows/prospective-custody-attestation.yml@refs/heads/fix/origen-v03-integrity-guards-20261120' \
             --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
             "$MANIFEST_PATH"
@@ -212,7 +212,7 @@ jobs:
           name: originator-commitment-${{ steps.validate.outputs.contest_id }}
           path: |
             ${{ steps.validate.outputs.manifest_path }}
-            custody-bundle.json
+            originator-attestation.bundle.json
           if-no-files-found: error
           retention-days: 90
 
