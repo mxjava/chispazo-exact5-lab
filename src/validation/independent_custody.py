@@ -114,6 +114,8 @@ def validate_receipt(
     expected_custodian_identity: str,
     now: dt.datetime | None = None,
 ) -> dict[str, Any]:
+    if not isinstance(manifest, dict) or not isinstance(receipt, dict):
+        raise CustodyError("manifest and receipt must be JSON objects")
     if not isinstance(manifest_bytes, bytes):
         raise CustodyError("manifest_bytes must be the exact captured manifest bytes")
     parsed_manifest = _loads_json(manifest_bytes, "captured manifest")
@@ -189,6 +191,7 @@ def validate_receipt(
     return {
         "status": "CUSTODY_RECEIPT_VALIDATED_PENDING_SIGNATURE_VERIFICATION",
         "contest_id": contest_id,
+        "manifest_sha256": manifest_digest,
         "payload_sha256": actual,
         "payload_size_bytes": len(raw),
         "custodian_identity": custodian,
