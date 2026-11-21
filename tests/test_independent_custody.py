@@ -9,16 +9,34 @@ from src.validation.independent_custody import CustodyError, validate_receipt
 
 
 def fixture(tmp_path: Path):
+    from itertools import combinations, islice
+
+    payload_bytes = ("\\n".join(
+        "-".join(f"{n:02d}" for n in combo)
+        for combo in islice(combinations(range(1, 29), 5), 30)
+    ) + "\\n").encode("utf-8")
     payload = tmp_path / "payload.bin"
-    payload.write_bytes(b"immutable prediction bytes")
-    digest = hashlib.sha256(payload.read_bytes()).hexdigest()
+    payload.write_bytes(payload_bytes)
+    digest = hashlib.sha256(payload_bytes).hexdigest()
+    schedule_evidence_bytes = b"official schedule archive fixture\\n"
+    schedule_digest = hashlib.sha256(schedule_evidence_bytes).hexdigest()
     close = "2026-12-01T23:00:00Z"
     manifest = {
-        "contest_id": 12399, "modality": "CLASSIC", "candidate_id": "candidate-A",
-        "source_commit_sha": "a" * 40, "payload_sha256": digest,
-        "input_history_sha256": "c" * 64, "input_max_contest_id": 12398,
+        "schema_version": "1.0",
+        "contest_id": 12399,
+        "modality": "CLASSIC",
+        "candidate_id": "candidate-A",
+        "source_commit_sha": "a" * 40,
+        "input_history_sha256": "c" * 64,
+        "input_max_contest_id": 12398,
+        "payload_sha256": digest,
         "generated_at_utc": "2026-12-01T21:59:00Z",
         "scheduled_close_at_utc": close,
+        "timezone": "America/Mexico_City",
+        "status": "READY_FOR_ATTESTATION",
+        "schedule_source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "schedule_source_sha256": schedule_digest,
+        "schedule_source_archive_path": "data/schedule-evidence/official-schedule-2026-12-01.html",
     }
     manifest_bytes = json.dumps(
         manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
@@ -28,7 +46,7 @@ def fixture(tmp_path: Path):
         "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
         "contest_id": 12399, "modality": "CLASSIC", "candidate_id": "candidate-A",
         "source_commit_sha": "a" * 40, "payload_sha256": digest,
-        "payload_size_bytes": len(payload.read_bytes()),
+        "payload_size_bytes": len(payload_bytes),
         "received_at_utc": "2026-12-01T22:00:00Z", "official_close_at_utc": close,
         "originator_identity": "https://github.com/example/generator",
         "custodian_identity": "https://custodian.example/attestor",
@@ -37,13 +55,13 @@ def fixture(tmp_path: Path):
         "independent_retrieval_test": True,
     }
     now = dt.datetime(2026, 12, 1, 22, 30, tzinfo=dt.timezone.utc)
-    return manifest, receipt, payload, now, manifest_bytes
-
+    return manifest, receipt, payload, now, manifest_bytes, schedule_evidence_bytes
 
 def test_accepts_valid_independent_receipt_structure(tmp_path):
-    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
+    manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
     result = validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
+                              schedule_evidence_bytes=schedule_bytes,
                               expected_custodian_identity=receipt["custodian_identity"], now=now)
     assert result["status"] == "CUSTODY_RECEIPT_VALIDATED_PENDING_SIGNATURE_VERIFICATION"
 
@@ -57,16 +75,17 @@ def test_accepts_valid_independent_receipt_structure(tmp_path):
     (lambda r: r.update(modality="THREE"), "CLASSIC"),
 ])
 def test_rejects_adversarial_receipt_mutations(tmp_path, mutation, message):
-    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
+    manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
     mutation(receipt)
     with pytest.raises(CustodyError, match=message):
         validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
+                              schedule_evidence_bytes=schedule_bytes,
                          expected_custodian_identity="https://custodian.example/attestor", now=now)
 
 
 def test_rejects_manifest_metadata_changed_after_receipt(tmp_path):
-    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
+    manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
     changed_manifest = dict(manifest)
     changed_manifest["input_history_sha256"] = "d" * 64
     changed_manifest_bytes = json.dumps(
@@ -82,7 +101,7 @@ def test_rejects_manifest_metadata_changed_after_receipt(tmp_path):
 
 
 def test_rejects_manifest_object_not_matching_captured_bytes(tmp_path):
-    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
+    manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
     with pytest.raises(CustodyError, match="does not match the exact captured manifest bytes"):
         validate_receipt(
             manifest, receipt, payload.read_bytes(),
@@ -92,11 +111,12 @@ def test_rejects_manifest_object_not_matching_captured_bytes(tmp_path):
 
 
 def test_rejects_payload_byte_mutation(tmp_path):
-    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
+    manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
     payload.write_bytes(b"tampered bytes")
     with pytest.raises(CustodyError, match="payload bytes"):
         validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
+                              schedule_evidence_bytes=schedule_bytes,
                          expected_custodian_identity=receipt["custodian_identity"], now=now)
 
 
@@ -110,11 +130,12 @@ def test_rejects_duplicate_json_keys(tmp_path):
 
 
 def test_rejects_receipt_predating_manifest_generation(tmp_path):
-    manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
+    manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
     receipt["received_at_utc"] = "2026-12-01T21:58:00Z"
     with pytest.raises(CustodyError, match="predates manifest generation"):
         validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
+                              schedule_evidence_bytes=schedule_bytes,
                          expected_custodian_identity=receipt["custodian_identity"], now=now)
 
 
@@ -183,3 +204,97 @@ def test_signature_verification_rejects_bundle_without_rekor_timestamp(tmp_path,
     bundle_path.write_text('{"verificationMaterial": {"tlogEntries": []}}', encoding="utf-8")
     with pytest.raises(CustodyError, match="no transparency-log timestamp"):
         verify_signature(receipt_path.read_bytes(), bundle_path.read_bytes(), "trusted-identity", "trusted-issuer")
+
+
+def _resign_manifest(manifest, receipt):
+    manifest_bytes = json.dumps(
+        manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode("utf-8")
+    receipt["manifest_sha256"] = hashlib.sha256(manifest_bytes).hexdigest()
+    return manifest_bytes
+
+
+def test_rejects_schedule_archive_byte_mutation(tmp_path):
+    manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
+    with pytest.raises(CustodyError, match="schedule_source_sha256"):
+        validate_receipt(
+            manifest, receipt, payload.read_bytes(),
+            manifest_bytes=manifest_bytes,
+            schedule_evidence_bytes=schedule_bytes + b"tampered",
+            expected_custodian_identity=receipt["custodian_identity"], now=now,
+        )
+
+
+def test_rejects_receipt_at_exact_generation_time(tmp_path):
+    manifest, receipt, payload, now, manifest_bytes, schedule_bytes = fixture(tmp_path)
+    receipt["received_at_utc"] = manifest["generated_at_utc"]
+    with pytest.raises(CustodyError, match="strictly follow manifest generation"):
+        validate_receipt(
+            manifest, receipt, payload.read_bytes(),
+            manifest_bytes=manifest_bytes,
+            schedule_evidence_bytes=schedule_bytes,
+            expected_custodian_identity=receipt["custodian_identity"], now=now,
+        )
+
+
+def test_rejects_history_cutoff_at_target_contest(tmp_path):
+    manifest, receipt, payload, now, _, schedule_bytes = fixture(tmp_path)
+    manifest["input_max_contest_id"] = manifest["contest_id"]
+    manifest_bytes = _resign_manifest(manifest, receipt)
+    with pytest.raises(CustodyError, match="strictly before contest_id"):
+        validate_receipt(
+            manifest, receipt, payload.read_bytes(),
+            manifest_bytes=manifest_bytes,
+            schedule_evidence_bytes=schedule_bytes,
+            expected_custodian_identity=receipt["custodian_identity"], now=now,
+        )
+
+
+def test_rejects_non_gob_mx_schedule_source(tmp_path):
+    manifest, receipt, payload, now, _, schedule_bytes = fixture(tmp_path)
+    manifest["schedule_source_url"] = "https://example.com/fake-schedule"
+    manifest_bytes = _resign_manifest(manifest, receipt)
+    with pytest.raises(CustodyError, match="official gob.mx HTTPS host"):
+        validate_receipt(
+            manifest, receipt, payload.read_bytes(),
+            manifest_bytes=manifest_bytes,
+            schedule_evidence_bytes=schedule_bytes,
+            expected_custodian_identity=receipt["custodian_identity"], now=now,
+        )
+
+
+def test_rejects_29_line_payload_even_when_hashes_match(tmp_path):
+    manifest, receipt, payload, now, _, schedule_bytes = fixture(tmp_path)
+    payload_lines = payload.read_bytes().splitlines()[:-1]
+    short_payload = b"\\n".join(payload_lines) + b"\\n"
+    digest = hashlib.sha256(short_payload).hexdigest()
+    manifest["payload_sha256"] = digest
+    receipt["payload_sha256"] = digest
+    receipt["payload_size_bytes"] = len(short_payload)
+    manifest_bytes = _resign_manifest(manifest, receipt)
+    with pytest.raises(CustodyError, match="exactly 30 lines"):
+        validate_receipt(
+            manifest, receipt, short_payload,
+            manifest_bytes=manifest_bytes,
+            schedule_evidence_bytes=schedule_bytes,
+            expected_custodian_identity=receipt["custodian_identity"], now=now,
+        )
+
+
+def test_rejects_duplicate_portfolio_line_even_when_hashes_match(tmp_path):
+    manifest, receipt, payload, now, _, schedule_bytes = fixture(tmp_path)
+    lines = payload.read_bytes().splitlines()
+    lines[-1] = lines[0]
+    duplicate_payload = b"\\n".join(lines) + b"\\n"
+    digest = hashlib.sha256(duplicate_payload).hexdigest()
+    manifest["payload_sha256"] = digest
+    receipt["payload_sha256"] = digest
+    receipt["payload_size_bytes"] = len(duplicate_payload)
+    manifest_bytes = _resign_manifest(manifest, receipt)
+    with pytest.raises(CustodyError, match="portfolio lines must be unique"):
+        validate_receipt(
+            manifest, receipt, duplicate_payload,
+            manifest_bytes=manifest_bytes,
+            schedule_evidence_bytes=schedule_bytes,
+            expected_custodian_identity=receipt["custodian_identity"], now=now,
+        )
