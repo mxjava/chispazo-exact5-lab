@@ -43,14 +43,14 @@ def _parse_time(value: Any, field: str) -> datetime:
 def evaluate_temporal_eligibility(
     rows: Iterable[Mapping[str, Any]],
     *,
-    verified_custody_refs: set[str] | None = None,
-    verified_timestamp_refs: set[str] | None = None,
-    verified_source_refs: set[str] | None = None,
-    verified_continuity_targets: set[str] | None = None,
+    declared_custody_refs: set[str] | None = None,
+    declared_timestamp_refs: set[str] | None = None,
+    declared_source_refs: set[str] | None = None,
+    declared_continuity_targets: set[str] | None = None,
 ) -> dict[str, Any]:
     """Classify each target independently; missing external attestations fail closed.
 
-    The `verified_*` sets are caller-supplied reference declarations used only for
+    The `declared_*` sets are caller-supplied reference declarations used only for
     structural membership checks. This function cannot authenticate their origin,
     signer, timestamp, custodian, or external continuity. Never treat membership in
     these sets as an authenticated verification receipt. An empty/omitted set fails closed.
@@ -62,10 +62,10 @@ def evaluate_temporal_eligibility(
     if missing:
         raise ValueError("missing required columns: " + ", ".join(missing))
 
-    custody = verified_custody_refs or set()
-    timestamps = verified_timestamp_refs or set()
-    sources = verified_source_refs or set()
-    continuity = verified_continuity_targets or set()
+    custody = declared_custody_refs or set()
+    timestamps = declared_timestamp_refs or set()
+    sources = declared_source_refs or set()
+    continuity = declared_continuity_targets or set()
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for row in materialized:
         target = str(row.get("target_contest_id", "")).strip()
