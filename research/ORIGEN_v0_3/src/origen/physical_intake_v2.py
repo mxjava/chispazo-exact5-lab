@@ -52,10 +52,20 @@ def _canonical_identifier(value: Any) -> str:
     return value
 
 
+def _canonical_sha256(value: Any) -> str:
+    """Return lowercase digest only for exact, unpadded 64-hex text."""
+    if type(value) is not str or not re.fullmatch(r"[0-9a-fA-F]{64}", value):
+        return ""
+    return value.lower()
+
+
 def _parse_time(value: Any, field: str) -> datetime:
-    # Exact built-in str is required: subclasses can override strip/replace and
-    # make attacker-controlled text parse as a different, valid timestamp.
-    if type(value) is not str or not value.strip():
+    # Require one unambiguous extended ISO-8601 representation. fromisoformat()
+    # accepts looser forms (space separators, compact offsets, omitted seconds).
+    if type(value) is not str or not re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?(?:Z|[+-][0-9]{2}:[0-9]{2})",
+        value,
+    ):
         raise ValueError(f"{field}: missing or non-canonical timestamp")
     try:
         result = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -153,12 +163,9 @@ def evaluate_temporal_eligibility(
                 source_refs.add(_canonical_identifier(row["source_document_ref"]))
                 # This API also accepts in-memory mappings, not only CSV rows:
                 # never use __str__ to normalize untrusted scalar objects.
-                source_hash_raw = row["source_document_sha256"]
-                custody_hash_raw = row["custody_receipt_sha256"]
-                calibration_hash_raw = row["calibration_certificate_sha256"]
-                source_hash = source_hash_raw.strip().lower() if type(source_hash_raw) is str else ""
-                custody_hash = custody_hash_raw.strip().lower() if type(custody_hash_raw) is str else ""
-                calibration_hash = calibration_hash_raw.strip().lower() if type(calibration_hash_raw) is str else ""
+                source_hash = _canonical_sha256(row["source_document_sha256"])
+                custody_hash = _canonical_sha256(row["custody_receipt_sha256"])
+                calibration_hash = _canonical_sha256(row["calibration_certificate_sha256"])
                 source_hashes.add(source_hash)
                 custody_refs.add(_canonical_identifier(row["custody_receipt_ref"]))
                 custody_hashes.add(custody_hash)
