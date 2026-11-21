@@ -31,7 +31,7 @@ No añadir un campo de identidad de custodio escrito por el generador como susti
 ## Contrato mínimo de recibo del custodio
 
 El recibo firmado debe incluir:
-- `schema_version`, `receipt_id`, `contest_id`, `modality=CLASSIC`, `draw_date_local`, `timezone`, `official_close_at_utc`, `schedule_evidence_sha256`;
+- `schema_version=1.1`, `receipt_id`, `manifest_sha256` (SHA-256 over the exact raw manifest bytes received by the custodian), `contest_id`, `modality=CLASSIC`, `draw_date_local`, `timezone`, `official_close_at_utc`, `schedule_evidence_sha256`;
 - `candidate_id`, `candidate_version`, `source_commit_sha`, `config_sha256`, `environment_sha256`;
 - `input_history_sha256`, `input_max_contest_id`, `input_row_count`;
 - `payload_sha256`, `ciphertext_sha256` (si aplica), `custodian_recomputed_payload_sha256`, `custodian_recomputed_ciphertext_sha256`;
