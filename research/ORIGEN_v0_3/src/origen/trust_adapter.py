@@ -35,7 +35,7 @@ def canonical_payload(envelope: Mapping[str, Any]) -> bytes:
 
 def _utc(value: Any, field: str) -> datetime:
     if type(value) is not str or not re.fullmatch(
-        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?(?:Z|\\+00:00)",
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|\+00:00)",
         value,
     ):
         raise ValueError(
