@@ -1,0 +1,73 @@
+import datetime as dt
+import hashlib
+import json
+from pathlib import Path
+
+import pytest
+
+from src.validation.independent_custody import CustodyError, validate_receipt
+
+
+def fixture(tmp_path: Path):
+    payload = tmp_path / "payload.bin"
+    payload.write_bytes(b"immutable prediction bytes")
+    digest = hashlib.sha256(payload.read_bytes()).hexdigest()
+    close = "2026-12-01T23:00:00Z"
+    manifest = {
+        "contest_id": 12399, "modality": "CLASSIC", "candidate_id": "candidate-A",
+        "source_commit_sha": "a" * 40, "payload_sha256": digest,
+        "scheduled_close_at_utc": close,
+    }
+    receipt = {
+        "schema_version": "1.0", "receipt_type": "INDEPENDENT_CUSTODY_RECEIPT",
+        "contest_id": 12399, "modality": "CLASSIC", "candidate_id": "candidate-A",
+        "source_commit_sha": "a" * 40, "payload_sha256": digest,
+        "payload_size_bytes": len(payload.read_bytes()),
+        "received_at_utc": "2026-12-01T22:00:00Z", "official_close_at_utc": close,
+        "originator_identity": "https://github.com/example/generator",
+        "custodian_identity": "https://custodian.example/attestor",
+        "retention_uri": "https://vault.example/object/abc",
+        "retention_object_version": "version-0001",
+        "independent_retrieval_test": True,
+    }
+    now = dt.datetime(2026, 12, 1, 22, 30, tzinfo=dt.timezone.utc)
+    return manifest, receipt, payload, now
+
+
+def test_accepts_valid_independent_receipt_structure(tmp_path):
+    manifest, receipt, payload, now = fixture(tmp_path)
+    result = validate_receipt(manifest, receipt, payload,
+                              expected_custodian_identity=receipt["custodian_identity"], now=now)
+    assert result["status"] == "CUSTODY_RECEIPT_VALIDATED_PENDING_SIGNATURE_VERIFICATION"
+
+
+@pytest.mark.parametrize("mutation, message", [
+    (lambda r: r.update(custodian_identity="attacker"), "custodian identity"),
+    (lambda r: r.update(originator_identity=r["custodian_identity"]), "must be distinct"),
+    (lambda r: r.update(received_at_utc="2026-12-01T23:00:00Z"), "at/after official close"),
+    (lambda r: r.update(independent_retrieval_test=False), "retrieval test"),
+    (lambda r: r.update(payload_size_bytes=1), "payload_size_bytes"),
+    (lambda r: r.update(modality="THREE"), "CLASSIC"),
+])
+def test_rejects_adversarial_receipt_mutations(tmp_path, mutation, message):
+    manifest, receipt, payload, now = fixture(tmp_path)
+    mutation(receipt)
+    with pytest.raises(CustodyError, match=message):
+        validate_receipt(manifest, receipt, payload,
+                         expected_custodian_identity="https://custodian.example/attestor", now=now)
+
+
+def test_rejects_payload_byte_mutation(tmp_path):
+    manifest, receipt, payload, now = fixture(tmp_path)
+    payload.write_bytes(b"tampered bytes")
+    with pytest.raises(CustodyError, match="payload bytes"):
+        validate_receipt(manifest, receipt, payload,
+                         expected_custodian_identity=receipt["custodian_identity"], now=now)
+
+
+def test_rejects_duplicate_json_keys(tmp_path):
+    from src.validation.independent_custody import _load_json
+    path = tmp_path / "duplicate.json"
+    path.write_text('{"contest_id": 1, "contest_id": 2}', encoding="utf-8")
+    with pytest.raises(CustodyError, match="duplicate JSON key"):
+        _load_json(path)
