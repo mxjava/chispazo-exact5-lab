@@ -24,7 +24,7 @@ class CustodyError(ValueError):
 
 
 RECEIPT_KEYS = {
-    "schema_version", "receipt_type", "contest_id", "modality", "candidate_id",
+    "schema_version", "receipt_type", "manifest_sha256", "contest_id", "modality", "candidate_id",
     "source_commit_sha", "payload_sha256", "payload_size_bytes",
     "received_at_utc", "official_close_at_utc", "originator_identity",
     "custodian_identity", "retention_uri", "retention_object_version",
@@ -41,14 +41,34 @@ def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return out
 
 
+def _loads_json(raw: bytes, label: str) -> dict[str, Any]:
+    if not isinstance(raw, bytes):
+        raise CustodyError(f"{label} must be supplied as exact bytes")
+    try:
+        value = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_object)
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise CustodyError(f"cannot parse strict JSON {label}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise CustodyError(f"{label} must contain a JSON object")
+    return value
+
+
+def _canonical_json_bytes(value: dict[str, Any]) -> bytes:
+    try:
+        return json.dumps(
+            value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise CustodyError(f"manifest cannot be represented as strict JSON: {exc}") from exc
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_object)
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raw = path.read_bytes()
+    except OSError as exc:
         raise CustodyError(f"cannot read strict JSON {path}: {exc}") from exc
-    if not isinstance(value, dict):
-        raise CustodyError(f"{path} must contain a JSON object")
-    return value
+    return _loads_json(raw, str(path))
 
 
 def _utc(value: Any, field: str) -> dt.datetime:
@@ -90,15 +110,27 @@ def validate_receipt(
     receipt: dict[str, Any],
     payload_path: Path,
     *,
+    manifest_bytes: bytes,
     expected_custodian_identity: str,
     now: dt.datetime | None = None,
 ) -> dict[str, Any]:
+    if not isinstance(manifest_bytes, bytes):
+        raise CustodyError("manifest_bytes must be the exact captured manifest bytes")
+    parsed_manifest = _loads_json(manifest_bytes, "captured manifest")
+    if _canonical_json_bytes(parsed_manifest) != _canonical_json_bytes(manifest):
+        raise CustodyError("manifest object does not match the exact captured manifest bytes")
+    manifest_digest = hashlib.sha256(manifest_bytes).hexdigest()
     missing = sorted(RECEIPT_KEYS - receipt.keys())
     extra = sorted(receipt.keys() - RECEIPT_KEYS)
     if missing or extra:
         raise CustodyError(f"receipt key mismatch; missing={missing}, extra={extra}")
-    if receipt["schema_version"] != "1.0" or receipt["receipt_type"] != "INDEPENDENT_CUSTODY_RECEIPT":
+    if receipt["schema_version"] != "1.1" or receipt["receipt_type"] != "INDEPENDENT_CUSTODY_RECEIPT":
         raise CustodyError("unsupported receipt schema or receipt_type")
+    declared_manifest_digest = receipt["manifest_sha256"]
+    if not isinstance(declared_manifest_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", declared_manifest_digest):
+        raise CustodyError("manifest_sha256 must be a lowercase 64-hex SHA-256")
+    if declared_manifest_digest != manifest_digest:
+        raise CustodyError("receipt manifest_sha256 does not match the exact manifest bytes")
     contest_id = receipt["contest_id"]
     if isinstance(contest_id, bool) or not isinstance(contest_id, int) or contest_id <= 0:
         raise CustodyError("contest_id must be a positive integer")
@@ -254,8 +286,10 @@ def main(argv: list[str] | None = None) -> int:
 
             manifest = _load_json(snapshots["manifest"])
             receipt = _load_json(snapshots["receipt"])
+            manifest_bytes = snapshots["manifest"].read_bytes()
             report = validate_receipt(
                 manifest, receipt, snapshots["payload"],
+                manifest_bytes=manifest_bytes,
                 expected_custodian_identity=args.custodian_identity,
             )
             integrated_at = verify_signature(
