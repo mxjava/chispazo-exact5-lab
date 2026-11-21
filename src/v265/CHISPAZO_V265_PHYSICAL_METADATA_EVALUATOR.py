@@ -199,6 +199,22 @@ def validate_postclose_final_metadata(metadata):
     return True
 
 
+def validate_classic_slot(metadata):
+    """Fail closed unless every row is explicitly identified as the 21:00 Classic draw."""
+    if "SLOT" not in metadata.columns:
+        raise ValueError("metadata missing SLOT; Classic modality cannot be established")
+    allowed = {"21:00", "21:00:00", "CLASICO", "CLÁSICO", "CLASSIC"}
+    values = metadata["SLOT"].astype("string").str.strip().str.upper()
+    invalid = values.isna() | ~values.isin(allowed)
+    if invalid.any():
+        contests = metadata.loc[invalid, "CONCURSO"].astype(int).tolist()[:5]
+        raise ValueError(
+            "physical evaluator accepts Classic 21:00 rows only; "
+            f"invalid_SLOT_contests={contests}"
+        )
+    return True
+
+
 def validate_source_provenance(metadata):
     """Require a traceable source reference and a syntactically valid SHA-256 per row."""
     required = {"source_document", "source_url", "source_sha256"}
@@ -274,7 +290,7 @@ def main():
     h=pd.read_csv(args.history)
     m=pd.read_csv(args.metadata)
     req_h=['CONCURSO','R1','R2','R3','R4','R5']
-    req_m=['CONCURSO','planned_sphere_set_id_preclose','final_sphere_set_id_postweigh','final_sphere_set_known_time_utc','machine_id','available_before_close','close_time_local','metadata_known_time_local','source_document','source_url','source_sha256']
+    req_m=['CONCURSO','SLOT','planned_sphere_set_id_preclose','final_sphere_set_id_postweigh','final_sphere_set_known_time_utc','machine_id','available_before_close','close_time_local','metadata_known_time_local','source_document','source_url','source_sha256']
     for c in req_h:
         if c not in h: raise ValueError(f'history missing {c}')
     for c in req_m:
@@ -303,6 +319,7 @@ def main():
     ]
     # The boolean flag alone is not proof: require source-known time < close time
     # for every row, including burn-in, before any physical label enters the state.
+    validate_classic_slot(m)
     validate_preclose_metadata(m)
     validate_source_provenance(m)
     validate_postclose_final_metadata(m)
