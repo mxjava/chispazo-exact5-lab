@@ -70,3 +70,12 @@
 - 146 tests passed; full fixed-era replay and artifact upload succeeded (run 44447156133).
 - Era A n=6,075; era B n=1,648; global max z=4.3320; null q95=6.8491; Monte Carlo p=0.1820. `NO_ERA_DIFFERENCE_DETECTED`.
 - No causal equipment attribution or predictive signal.
+
+## 2026-11-20 — Custody verifier contract and source refresh
+
+- The independent receipt verifier now validates the complete manifest v1.0 key set and semantic constraints: positive Classic contest ID, prior history cutoff, 40/64-character source and history digests, valid IANA timezone, HTTPS gob.mx schedule source, safe data/schedule-evidence/ archive path, and generation strictly before close.
+- The verifier now requires the exact archived schedule-evidence bytes (--schedule-evidence) and checks their SHA-256 against the manifest. It validates the candidate payload as exactly 30 unique canonical LF lines, each containing five distinct ascending values from 01 through 28.
+- Receipt chronology is strict: generation < independent receipt < official close. Structural validation remains separate from Cosign/Rekor signature verification and does not establish legal custodian independence or source authenticity by itself.
+- V324/V325/V326 historical audits are now workflow_dispatch only. Unrelated research-branch pushes no longer replay these closed retrospective analyses.
+- Added status-only official-source overlay 2026-11-20_225251_source_refresh_status_only.json: 12385 = 03 13 20 22 23 (De las Tres); 12386 is scheduled Classic at 21:00 but remains blank in official Home/Resultados at the observation; the official mask index remains at 19-Nov. The commercializer dedicated extract remains stale at 12384.
+- No canonical append, no use of append_verified_result.py, no V294/challenger change, no main write, and no promotion. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
