@@ -52,6 +52,26 @@ VERIFIED = dict(
 
 
 class PhysicalIntakeV2Tests(unittest.TestCase):
+    def test_timestamp_string_subclass_cannot_spoof_valid_time(self):
+        class SpoofedTimestamp(str):
+            def strip(self, *args, **kwargs):
+                return "2026-11-20T21:15:00-06:00"
+
+            def replace(self, old, new, *args, **kwargs):
+                return "2026-11-20T21:15:00-06:00"
+
+        rows = rows_for_target()
+        rows[0]["evidence_available_at"] = SpoofedTimestamp("attacker-controlled")
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE",
+            result["targets"]["12301"]["reasons"],
+        )
+        self.assertNotEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
     def test_malformed_declared_reference_containers_fail_closed(self):
         class SpoofedReference(str):
             def __hash__(self):
