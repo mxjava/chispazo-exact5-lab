@@ -23,6 +23,7 @@ def inputs(tmp_path, duplicate_metadata=False, duplicate_history=False, bad_draw
     contests = list(range(1000, 1140))
     history = pd.DataFrame({
         "CONCURSO": contests,
+        "SLOT": ["21:00"] * 140,
         "R1": [1.0] * 140, "R2": [2.0] * 140, "R3": [3.0] * 140,
         "R4": [4.0] * 140, "R5": [5.0] * 140,
     })
