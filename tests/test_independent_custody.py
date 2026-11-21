@@ -182,4 +182,4 @@ def test_signature_verification_rejects_bundle_without_rekor_timestamp(tmp_path,
     receipt_path.write_text('{"receipt":"placeholder"}', encoding="utf-8")
     bundle_path.write_text('{"verificationMaterial": {"tlogEntries": []}}', encoding="utf-8")
     with pytest.raises(CustodyError, match="no transparency-log timestamp"):
-        verify_signature(receipt_path, bundle_path, "trusted-identity", "trusted-issuer")
+        verify_signature(receipt_path.read_bytes(), bundle_path.read_bytes(), "trusted-identity", "trusted-issuer")
