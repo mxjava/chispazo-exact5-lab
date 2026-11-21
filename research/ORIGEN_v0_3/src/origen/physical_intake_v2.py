@@ -91,6 +91,13 @@ def evaluate_temporal_eligibility(
     materialized = list(rows)
     if not materialized:
         return {"status": "EMPTY", "targets": {}, "row_count": 0}
+    # DictReader yields exact dicts. Reject custom Mapping/dict subclasses because
+    # their get(), __getitem__(), or iteration methods can present inconsistent data.
+    if any(
+        type(row) is not dict or any(type(key) is not str for key in row)
+        for row in materialized
+    ):
+        raise ValueError("rows must be exact built-in dict objects with built-in string keys")
     missing = sorted(set(V2_REQUIRED_COLUMNS) - set(materialized[0]))
     if missing:
         raise ValueError("missing required columns: " + ", ".join(missing))
