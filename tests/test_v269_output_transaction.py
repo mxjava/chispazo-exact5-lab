@@ -30,6 +30,7 @@ def inputs(tmp_path, duplicate_metadata=False, duplicate_history=False, bad_draw
     closes = pd.date_range("2026-01-01 18:00:00", periods=140, freq="D", tz="America/Mexico_City")
     metadata = pd.DataFrame({
         "CONCURSO": contests,
+        "SLOT": ["21:00"] * 140,
         "planned_sphere_set_id_preclose": ["S1"] * 140,
         "final_sphere_set_id_postweigh": ["S1"] * 140,
         "final_sphere_set_known_time_utc": (closes + pd.Timedelta(hours=1)).tz_convert("UTC").astype(str),
@@ -109,6 +110,7 @@ def test_extra_metadata_contests_fail_closed(tmp_path):
     metadata = pd.read_csv(mp)
     metadata.loc[len(metadata)] = {
         "CONCURSO": 99999,
+        "SLOT": "21:00",
         "planned_sphere_set_id_preclose": "S1",
         "final_sphere_set_id_postweigh": "S1",
         "final_sphere_set_known_time_utc": "2026-06-01T23:00:00Z",
