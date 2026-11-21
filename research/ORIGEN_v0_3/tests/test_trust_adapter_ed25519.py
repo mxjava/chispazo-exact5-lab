@@ -56,6 +56,38 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(result["replay_status"], "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER")
 
 
+    def test_timestamp_string_subclass_cannot_spoof_valid_utc_time(self):
+        class SpoofedTimestamp(str):
+            def strip(self, *args, **kwargs):
+                return "2026-11-21T10:00:00Z"
+
+            def replace(self, old, new, *args, **kwargs):
+                return "2026-11-21T10:00:00+00:00"
+
+        altered = dict(self.envelope)
+        altered["issued_at_utc"] = SpoofedTimestamp("attacker-controlled")
+        altered["signature_b64"] = base64.b64encode(
+            self.private.sign(canonical_payload(altered))
+        ).decode("ascii")
+        self.assertEqual(self.verify(envelope=altered)["status"], "BLOCKED")
+
+    def test_mapping_subclass_cannot_present_different_signed_and_read_values(self):
+        class SpoofedEnvelope(dict):
+            def __init__(self, stored, presented):
+                super().__init__(stored)
+                self.presented = presented
+
+            def __getitem__(self, key):
+                return self.presented[key]
+
+            def items(self):
+                return self.presented.items()
+
+        stored = dict(self.envelope, issued_at_utc="not-a-time")
+        presented = dict(self.envelope)
+        spoofed = SpoofedEnvelope(stored, presented)
+        self.assertEqual(self.verify(envelope=spoofed)["status"], "BLOCKED")
+
     def test_signature_is_bound_to_exact_original_bytes(self):
         raw = b"exact sealed portfolio bytes"
         result = verify_artifact_bytes(
