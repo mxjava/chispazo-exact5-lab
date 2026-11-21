@@ -107,7 +107,7 @@ Datos documentales auténticos nuevos:
 - Licitación audiovisual 2021: especificación de grabación continua y archivo.
 - Video oficial de muestra: Clásico 12246, 12-09-2026.
 
-No se localizó una base pública por concurso con CS-02, CS-11, tiras de pesaje, RFID, mantenimiento/calibración, CS-09, CS-12, timestamps de extracción o archivos originales con firma electrónica. Por ello no hay panel físico auténtico para ejecutar un OOS ni para estimar un efecto.
+No se localizó una base pública por concurso con actas oficiales, CS-02, CS-11, tiras de pesaje, RFID, mantenimiento/calibración, CS-09, CS-12, timestamps de extracción o archivos originales con firma electrónica. Por ello no hay panel físico auténtico para ejecutar un OOS ni para estimar un efecto; los resultados web no sustituyen el acta legalmente oficial.
 
 Bloqueos reales:
 - falta la Tira de Pesaje de cada Clásico, con las 28 medidas y unidad;
