@@ -104,5 +104,63 @@
     "daily_mask_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf?v=20112026221431",
     "home_schedule": "https://www.loterianacional.gob.mx/home/index",
     "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
-  }
+  },
+  "refreshes": [
+    {
+      "observed_at_local": "2026-11-21T14:54:58-06:00",
+      "observation_scope": "Official public endpoint refresh before the advertised 15:00 Chispazo draw",
+      "dedicated_results_page": {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+        "latest_published_contest_id": 12386,
+        "latest_published_date": "2026-11-20",
+        "latest_published_numbers": [
+          2,
+          4,
+          9,
+          18,
+          24
+        ],
+        "result_for_2026_11_21_visible": false
+      },
+      "schedule": {
+        "product_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "home_index_url": "https://www.loterianacional.gob.mx/home/index",
+        "advertised_contest_id": 12387,
+        "advertised_date": "2026-11-21",
+        "advertised_time_local": "15:00",
+        "modality": "DE_LAS_TRES",
+        "modality_basis": "Official Chispazo product page states De las Tres at 15:00 and Clásico at 21:00."
+      },
+      "mask_index": {
+        "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+        "latest_listed_mask_date": "2026-11-20",
+        "mask_for_2026_11_21_listed": false
+      },
+      "classic_21_00": {
+        "scheduled": true,
+        "advertised_contest_id": null,
+        "result_visible": false,
+        "rule": "Do not infer a contest ID from the 15:00 De las Tres schedule or advance the Classic counter."
+      },
+      "interpretation": "At the observation time, contest 12387 is the advertised 15:00 De las Tres draw, not the 21:00 Clásico. The 21-Nov result and same-day mask are not yet published in the inspected official endpoints. No new result row is created.",
+      "integrity_limits": {
+        "original_2026_11_21_mask_bytes_captured": false,
+        "source_sha256": "NOT_CAPTURED",
+        "independent_custody": false,
+        "signed_preclose_snapshot": false,
+        "source_timestamp_provenance": false
+      },
+      "eligibility": {
+        "snapshot_preclose": false,
+        "oos_eligible": false,
+        "score_computed": false,
+        "canonical_history_appended": false,
+        "canonical_append_verified": false,
+        "challenger_changed": false,
+        "v294_changed": false,
+        "main_modified": false,
+        "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+      }
+    }
+  ]
 }
