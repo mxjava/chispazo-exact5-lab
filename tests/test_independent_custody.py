@@ -42,7 +42,7 @@ def fixture(tmp_path: Path):
 
 def test_accepts_valid_independent_receipt_structure(tmp_path):
     manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
-    result = validate_receipt(manifest, receipt, payload,
+    result = validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
                               expected_custodian_identity=receipt["custodian_identity"], now=now)
     assert result["status"] == "CUSTODY_RECEIPT_VALIDATED_PENDING_SIGNATURE_VERIFICATION"
@@ -60,7 +60,7 @@ def test_rejects_adversarial_receipt_mutations(tmp_path, mutation, message):
     manifest, receipt, payload, now = fixture(tmp_path)
     mutation(receipt)
     with pytest.raises(CustodyError, match=message):
-        validate_receipt(manifest, receipt, payload,
+        validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
                          expected_custodian_identity="https://custodian.example/attestor", now=now)
 
@@ -75,7 +75,7 @@ def test_rejects_manifest_metadata_changed_after_receipt(tmp_path):
     ).encode("utf-8")
     with pytest.raises(CustodyError, match="manifest_sha256"):
         validate_receipt(
-            changed_manifest, receipt, payload,
+            changed_manifest, receipt, payload.read_bytes(),
             manifest_bytes=changed_manifest_bytes,
             expected_custodian_identity=receipt["custodian_identity"], now=now,
         )
@@ -85,7 +85,7 @@ def test_rejects_manifest_object_not_matching_captured_bytes(tmp_path):
     manifest, receipt, payload, now, manifest_bytes = fixture(tmp_path)
     with pytest.raises(CustodyError, match="does not match the exact captured manifest bytes"):
         validate_receipt(
-            manifest, receipt, payload,
+            manifest, receipt, payload.read_bytes(),
             manifest_bytes=b'{"contest_id":999}',
             expected_custodian_identity=receipt["custodian_identity"], now=now,
         )
@@ -95,7 +95,7 @@ def test_rejects_payload_byte_mutation(tmp_path):
     manifest, receipt, payload, now = fixture(tmp_path)
     payload.write_bytes(b"tampered bytes")
     with pytest.raises(CustodyError, match="payload bytes"):
-        validate_receipt(manifest, receipt, payload,
+        validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
                          expected_custodian_identity=receipt["custodian_identity"], now=now)
 
@@ -113,7 +113,7 @@ def test_rejects_receipt_predating_manifest_generation(tmp_path):
     manifest, receipt, payload, now = fixture(tmp_path)
     receipt["received_at_utc"] = "2026-12-01T21:58:00Z"
     with pytest.raises(CustodyError, match="predates manifest generation"):
-        validate_receipt(manifest, receipt, payload,
+        validate_receipt(manifest, receipt, payload.read_bytes(),
                               manifest_bytes=manifest_bytes,
                          expected_custodian_identity=receipt["custodian_identity"], now=now)
 
@@ -131,7 +131,7 @@ def test_signature_verification_requires_rekor_integrated_timestamp(tmp_path, mo
             "tlogEntries": [{"integratedTime": 1796162520}]
         }
     }), encoding="utf-8")
-    timestamp = verify_signature(receipt_path, bundle_path, "trusted-identity", "trusted-issuer")
+    timestamp = verify_signature(receipt_path.read_bytes(), bundle_path.read_bytes(), "trusted-identity", "trusted-issuer")
     assert timestamp.tzinfo == dt.timezone.utc
     assert timestamp.year == 2026
 
@@ -165,7 +165,7 @@ def test_signature_verification_uses_identical_snapshots_for_cosign_and_rekor(tm
         return subprocess.CompletedProcess(command, 0, "", "")
 
     monkeypatch.setattr(subprocess, "run", mutate_originals_after_cosign_starts)
-    timestamp = verify_signature(receipt_path, bundle_path, "trusted-identity", "trusted-issuer")
+    timestamp = verify_signature(receipt_path.read_bytes(), bundle_path.read_bytes(), "trusted-identity", "trusted-issuer")
     assert observed["receipt_snapshot"] == original_receipt
     assert observed["bundle_snapshot"] == original_bundle
     assert observed["receipt_is_snapshot"] is True
