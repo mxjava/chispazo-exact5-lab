@@ -52,7 +52,7 @@ def parse_utc(value: str, field: str) -> datetime:
         r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|\+00:00)",
         value,
     ):
-        raise ValueError(f"{field} must be canonical extended ISO-8601 UTC text")
+        raise ValueError(f"{field} must be exact built-in canonical extended ISO-8601 UTC text")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
