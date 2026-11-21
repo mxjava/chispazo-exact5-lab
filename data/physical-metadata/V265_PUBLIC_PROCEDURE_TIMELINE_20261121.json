@@ -3,22 +3,270 @@
   "audit_date": "2026-11-21",
   "product": "Chispazo Clásico",
   "classification": "electronic_draw",
-  "primary_procedure": {"code":"SGVO-PRO-05","revision":39,"last_updated_in_current_normateca":"2026-03-20","url":"https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"},
+  "primary_procedure": {
+    "code": "SGVO-PRO-05",
+    "revision": 39,
+    "last_updated_in_current_normateca": "2026-03-20",
+    "url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"
+  },
   "events": [
-    {"order":1,"activity":"2.1","event":"equipment_preparation_and_inspection","stage":"pre_close","record":"CS-02","data_fields_explicitly_defined_publicly":[],"source_pages":["SGVO-PRO-05 pp.12,24"],"notes":"Inspection is before closure in the workflow and is required before each draw; the public procedure does not enumerate CS-02 fields or publish per-draw CS-02 records."},
-    {"order":2,"activity":"3.1","event":"confirm_contest_number_and_sphere_case_to_be_used","stage":"pre_close","record":null,"data_fields_explicitly_defined_publicly":["contest_number","planned_sphere_case"],"source_pages":["SGVO-PRO-05 p.12"],"notes":"The procedure places this confirmation before sales closure, but lists no dedicated register. The final case may differ if the post-close weighing rejects the first case."},
-    {"order":3,"activity":"4.1","event":"automatic_sales_close","stage":"close","record":"Sumario de Sorteo","data_fields_explicitly_defined_publicly":["date","time","contest_number","status_closed","gross_sales","cancellations","net_sales"],"source_pages":["SGVO-PRO-05 pp.12,31"],"notes":"SICAL shows status Closed; the summary is printed and signed/rubricated. This is the temporal boundary for same-draw ticket selection."},
-    {"order":4,"activity":"5.1-5.5","event":"weigh_each_sphere_in_numeric_order_and_sign_strip","stage":"post_close_pre_draw","record":"Tira de Pesaje","data_fields_explicitly_defined_publicly":["weight_of_each_sphere"],"source_pages":["SGVO-PRO-05 pp.13-14,31"],"notes":"The activity follows 4.1. The glossary defines the strip as recording the weight of each sphere. The public text does not enumerate its timestamp fields or publish actual strips."},
-    {"order":5,"activity":"5.2-5.4","event":"validate_limits_and_replace_case_if_nonconforming","stage":"post_close_pre_draw","record":"Tira de Pesaje","data_fields_explicitly_defined_publicly":["pass_fail_against_sphere_type_limits","case_replacement_occurrence"],"source_pages":["SGVO-PRO-05 p.5, p.14"],"notes":"If any weight criterion fails, another case is selected and weighed again. The final selected case is therefore not guaranteed to equal the pre-close planned case."},
-    {"order":6,"activity":"5.6-6.1","event":"load_spheres_into_machine_feeders_in_progressive_order_and_verify","stage":"post_close_pre_draw","record":"Tira de Pesaje / verification","data_fields_explicitly_defined_publicly":["loading_order_is_progressive"],"source_pages":["SGVO-PRO-05 p.14"],"notes":"Progressive loading order is not the same as extraction order. The public procedure does not define a structured per-ball load timestamp."},
-    {"order":7,"activity":"7.1-10.1","event":"freeze_participation_and_cancellation_files_with_electronic_signatures","stage":"post_close_pre_draw","record":"Firma Electrónica","data_fields_explicitly_defined_publicly":["participation_file_signature","cancellation_file_signature","date"],"source_pages":["SGVO-PRO-05 pp.5-6,15-16"],"notes":"These signatures protect the closed sales files and are stored with SEGOB/OIC custody. They are generated after close and are not physical-mechanism measurements."},
-    {"order":8,"activity":"11.1-12.1","event":"machine_draw_and_camera_record_of_exhibited_numbers","stage":"draw","record":"room_camera_video","data_fields_explicitly_defined_publicly":["numbers_as_captured_in_exhibitors"],"source_pages":["SGVO-PRO-05 p.4 policy 30","SGVO-PRO-05 p.16"],"notes":"Policy 30 requires recording from sphere weighing through the electronic draw; the edited draw-only copy forms part of the Acta. Cameras record numbers as balls are captured. No public original recording, per-ball timestamps, or RFID telemetry was located."},
-    {"order":9,"activity":"13.1-13.6","event":"record_and_sign_winning_numbers_and_selected_case","stage":"post_draw","record":"CS-11","data_fields_explicitly_defined_publicly":["draw_date","contest_number","sphere_case_number","spheres_vs_recorded_numbers","participant_names","signatures"],"source_pages":["SGVO-PRO-05 pp.16-17,25-26"],"notes":"CS-11 is completed after the draw and attached to the Acta. The public quality plan lists date, draw number, case number, spheres versus recorded numbers, and participant names; signatures are collected in step 13.5. It does not list machine asset ID, individual sphere weights, RFID tag IDs, or per-ball extraction timestamps."},
-    {"order":10,"activity":"21.3-25.1","event":"record_incidents_in_acta_and_log","stage":"post_draw","record":"Acta / CS-09","data_fields_explicitly_defined_publicly":["incident_description","bitacora_entry_if_applicable"],"source_pages":["SGVO-PRO-05 pp.8-9,20-21,31"],"notes":"Incidents are recorded when an event departs from procedure and affects results; post-draw Acta/CS-09 are retrospective for the same draw."}
+    {
+      "order": 1,
+      "activity": "2.1",
+      "event": "equipment_preparation_and_inspection",
+      "stage": "pre_close",
+      "record": "CS-02",
+      "data_fields_explicitly_defined_publicly": [],
+      "source_pages": [
+        "SGVO-PRO-05 pp.12,24"
+      ],
+      "notes": "Inspection is before closure in the workflow and is required before each draw; the public procedure does not enumerate CS-02 fields or publish per-draw CS-02 records."
+    },
+    {
+      "order": 2,
+      "activity": "3.1",
+      "event": "confirm_contest_number_and_sphere_case_to_be_used",
+      "stage": "pre_close",
+      "record": null,
+      "data_fields_explicitly_defined_publicly": [
+        "contest_number",
+        "planned_sphere_case"
+      ],
+      "source_pages": [
+        "SGVO-PRO-05 p.12"
+      ],
+      "notes": "The procedure places this confirmation before sales closure, but lists no dedicated register. The final case may differ if the post-close weighing rejects the first case."
+    },
+    {
+      "order": 3,
+      "activity": "4.1",
+      "event": "automatic_sales_close",
+      "stage": "close",
+      "record": "Sumario de Sorteo",
+      "data_fields_explicitly_defined_publicly": [
+        "date",
+        "time",
+        "contest_number",
+        "status_closed",
+        "gross_sales",
+        "cancellations",
+        "net_sales"
+      ],
+      "source_pages": [
+        "SGVO-PRO-05 pp.12,31"
+      ],
+      "notes": "SICAL shows status Closed; the summary is printed and signed/rubricated. This is the temporal boundary for same-draw ticket selection."
+    },
+    {
+      "order": 4,
+      "activity": "5.1-5.5",
+      "event": "weigh_each_sphere_in_numeric_order_and_sign_strip",
+      "stage": "post_close_pre_draw",
+      "record": "Tira de Pesaje",
+      "data_fields_explicitly_defined_publicly": [
+        "weight_of_each_sphere"
+      ],
+      "source_pages": [
+        "SGVO-PRO-05 pp.13-14,31"
+      ],
+      "notes": "The activity follows 4.1. The glossary defines the strip as recording the weight of each sphere. The public text does not enumerate its timestamp fields or publish actual strips."
+    },
+    {
+      "order": 5,
+      "activity": "5.2-5.4",
+      "event": "validate_limits_and_replace_case_if_nonconforming",
+      "stage": "post_close_pre_draw",
+      "record": "Tira de Pesaje",
+      "data_fields_explicitly_defined_publicly": [
+        "pass_fail_against_sphere_type_limits",
+        "case_replacement_occurrence"
+      ],
+      "source_pages": [
+        "SGVO-PRO-05 p.5, p.14"
+      ],
+      "notes": "If any weight criterion fails, another case is selected and weighed again. The final selected case is therefore not guaranteed to equal the pre-close planned case."
+    },
+    {
+      "order": 6,
+      "activity": "5.6-6.1",
+      "event": "load_spheres_into_machine_feeders_in_progressive_order_and_verify",
+      "stage": "post_close_pre_draw",
+      "record": "Tira de Pesaje / verification",
+      "data_fields_explicitly_defined_publicly": [
+        "loading_order_is_progressive"
+      ],
+      "source_pages": [
+        "SGVO-PRO-05 p.14"
+      ],
+      "notes": "Progressive loading order is not the same as extraction order. The public procedure does not define a structured per-ball load timestamp."
+    },
+    {
+      "order": 7,
+      "activity": "7.1-10.1",
+      "event": "freeze_participation_and_cancellation_files_with_electronic_signatures",
+      "stage": "post_close_pre_draw",
+      "record": "Firma Electrónica",
+      "data_fields_explicitly_defined_publicly": [
+        "participation_file_signature",
+        "cancellation_file_signature",
+        "date"
+      ],
+      "source_pages": [
+        "SGVO-PRO-05 pp.5-6,15-16"
+      ],
+      "notes": "These signatures protect the closed sales files and are stored with SEGOB/OIC custody. They are generated after close and are not physical-mechanism measurements."
+    },
+    {
+      "order": 8,
+      "activity": "11.1-12.1",
+      "event": "machine_draw_and_camera_record_of_exhibited_numbers",
+      "stage": "draw",
+      "record": "room_camera_video",
+      "data_fields_explicitly_defined_publicly": [
+        "numbers_as_captured_in_exhibitors"
+      ],
+      "source_pages": [
+        "SGVO-PRO-05 p.4 policy 30",
+        "SGVO-PRO-05 p.16"
+      ],
+      "notes": "Policy 30 requires recording from sphere weighing through the electronic draw; the edited draw-only copy forms part of the Acta. Cameras record numbers as balls are captured. No public original recording, per-ball timestamps, or RFID telemetry was located."
+    },
+    {
+      "order": 9,
+      "activity": "13.1-13.6",
+      "event": "record_and_sign_winning_numbers_and_selected_case",
+      "stage": "post_draw",
+      "record": "CS-11",
+      "data_fields_explicitly_defined_publicly": [
+        "draw_date",
+        "contest_number",
+        "sphere_case_number",
+        "spheres_vs_recorded_numbers",
+        "participant_names",
+        "signatures"
+      ],
+      "source_pages": [
+        "SGVO-PRO-05 pp.16-17,25-26"
+      ],
+      "notes": "CS-11 is completed after the draw and attached to the Acta. The public quality plan lists date, draw number, case number, spheres versus recorded numbers, and participant names; signatures are collected in step 13.5. It does not list machine asset ID, individual sphere weights, RFID tag IDs, or per-ball extraction timestamps."
+    },
+    {
+      "order": 10,
+      "activity": "21.3-25.1",
+      "event": "record_incidents_in_acta_and_log",
+      "stage": "post_draw",
+      "record": "Acta / CS-09",
+      "data_fields_explicitly_defined_publicly": [
+        "incident_description",
+        "bitacora_entry_if_applicable"
+      ],
+      "source_pages": [
+        "SGVO-PRO-05 pp.8-9,20-21,31"
+      ],
+      "notes": "Incidents are recorded when an event departs from procedure and affects results; post-draw Acta/CS-09 are retrospective for the same draw."
+    }
   ],
-  "video_recording_policy": {"required":true,"scope":"from sphere weighing through the electronic draw","purpose":"documentary witness for any later clarification","edited_copy":"draw-only edit","media":["DVD","CD","USB"],"acta_attachment":true,"public_original_recording_located":false,"source_pages":["SGVO-PRO-05 p.4 policy 30","SGVO-PRO-05 p.16 activities 12.1-12.2"]},
-  "public_hardware_evidence": {"source_url":"https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf","report":"Informe de Gestión Gubernamental 2018-2024","page":43,"facts":["14 electronic draw machines delivered 2022-03-07: 10 Jupiter, 2 Mercury 5, 2 Mercury 8","10 sphere sets per product are stated, including Chispazo","all machines and spheres are stated to have RFID recognition","installation completed 2022-03-10"],"count_inconsistency":"The report names seven products and says 10 sets for each (which arithmetically implies 70), but states a total of 60 sets. Do not treat the total set count as verified without clarification.","limits":"This is inventory/capability evidence, not a draw-by-draw machine ID, sphere-set ID, RFID read log, or evidence that an RFID scan was recorded for every draw."},
-  "public_data_status": {"draw_level_cs02_records_located":false,"draw_level_cs11_records_located":false,"draw_level_weigh_strips_located":false,"draw_level_machine_asset_ids_located":false,"draw_level_sphere_case_ids_located":false,"draw_level_rfid_ids_or_read_logs_located":false,"individual_sphere_weights_located":false,"per_sphere_extraction_order_and_timestamps_located":false,"electronic_draw_machine_maintenance_logs_located":false,"scale_calibration_certificates_located":false,"draw_level_incident_records_located":false,"original_room_camera_recordings_located":false,"official_livestream_examples_located":true,"public_rule":"The Chispazo regulation identifies the Acta as the official result; website and result mask are informational only."},
-  "source_urls": {"normateca_current_index":"https://loterianacional.gob.mx/Normateca/Sustantivas?id=2","chispazo_product":"https://loterianacional.gob.mx/Chispazo/Chispazo","chispazo_regulation":"https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf","segob_2012_chispazo_reform":"https://sidof.segob.gob.mx/notas/docFuente/5236917","traditional_weight_diameter_procedure":"https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_34.pdf","traditional_maintenance_procedure":"https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_08.pdf","official_livestream_example":"https://www.youtube.com/watch?v=0yFt8VedP1Y"},
-  "v265_code_audit": {"source_file":"src/v265/CHISPAZO_V265_PHYSICAL_METADATA_EVALUATOR.py","git_blob_sha1":"ca83e4af6ccd12f68ff0a725969561254b0be866","required_metadata_columns":["CONCURSO","sphere_set_id","machine_id","available_before_close","close_time_local","metadata_known_time_local"],"used_features":["sphere_set_id","machine_id"],"not_ingested_by_evaluator":["individual_sphere_weights_01_to_28","rfid_tag_ids","rfid_read_timestamps","per_ball_extraction_order","per_ball_extraction_timestamps","incident_details","machine_maintenance_history","scale_calibration_history"],"preclose_rule":"Every metadata row must be flagged available_before_close and metadata_known_time_local must be strictly earlier than close_time_local.","coverage_rule":"Metadata CONCURSO coverage must exactly match the history.","minimum_oos_rows":100,"multiplicity":"Holm-adjusted predeclared p-family is supported.","anytime_e_value_gate":false,"source_timestamp_provenance_gate":false,"field_specific_availability_timestamps":false,"extraction_order_gate":false,"actionability_risk":"The code can set actionable_for_betting=true from positive mean log-lift, Holm p<0.05, complete coverage and the generic preclose timestamp checks, without an anytime e-value gate; this is below the project's stated promotion standard.","interpretation":"Machine/sphere-set conditional predictive association only; not a physical-bias test."}
+  "video_recording_policy": {
+    "required": true,
+    "scope": "from sphere weighing through the electronic draw",
+    "purpose": "documentary witness for any later clarification",
+    "edited_copy": "draw-only edit",
+    "media": [
+      "DVD",
+      "CD",
+      "USB"
+    ],
+    "acta_attachment": true,
+    "public_original_recording_located": false,
+    "source_pages": [
+      "SGVO-PRO-05 p.4 policy 30",
+      "SGVO-PRO-05 p.16 activities 12.1-12.2"
+    ]
+  },
+  "public_hardware_evidence": {
+    "source_url": "https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf",
+    "report": "Informe de Gestión Gubernamental 2018-2024",
+    "page": 43,
+    "facts": [
+      "14 electronic draw machines delivered 2022-03-07: 10 Jupiter, 2 Mercury 5, 2 Mercury 8",
+      "10 sphere sets per product are stated, including Chispazo",
+      "all machines and spheres are stated to have RFID recognition",
+      "installation completed 2022-03-10"
+    ],
+    "count_inconsistency": "The report names seven products and says 10 sets for each (which arithmetically implies 70), but states a total of 60 sets. Do not treat the total set count as verified without clarification.",
+    "limits": "This is inventory/capability evidence, not a draw-by-draw machine ID, sphere-set ID, RFID read log, or evidence that an RFID scan was recorded for every draw."
+  },
+  "public_data_status": {
+    "draw_level_cs02_records_located": false,
+    "draw_level_cs11_records_located": false,
+    "draw_level_weigh_strips_located": false,
+    "draw_level_machine_asset_ids_located": false,
+    "draw_level_sphere_case_ids_located": false,
+    "draw_level_rfid_ids_or_read_logs_located": false,
+    "individual_sphere_weights_located": false,
+    "per_sphere_extraction_order_and_timestamps_located": false,
+    "electronic_draw_machine_maintenance_logs_located": false,
+    "scale_calibration_certificates_located": false,
+    "draw_level_incident_records_located": false,
+    "original_room_camera_recordings_located": false,
+    "official_livestream_examples_located": true,
+    "public_rule": "The Chispazo regulation identifies the Acta as the official result; website and result mask are informational only."
+  },
+  "source_urls": {
+    "normateca_current_index": "https://loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+    "chispazo_product": "https://loterianacional.gob.mx/Chispazo/Chispazo",
+    "chispazo_regulation": "https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf",
+    "segob_2012_chispazo_reform": "https://sidof.segob.gob.mx/notas/docFuente/5236917",
+    "traditional_weight_diameter_procedure": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_34.pdf",
+    "traditional_maintenance_procedure": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_08.pdf",
+    "official_livestream_example": "https://www.youtube.com/watch?v=0yFt8VedP1Y"
+  },
+  "v265_code_audit": {
+    "source_file": "src/v265/CHISPAZO_V265_PHYSICAL_METADATA_EVALUATOR.py",
+    "git_blob_sha1": "0010b5f07c6cbfcb78201180fbe758d68e61b031",
+    "required_metadata_columns": [
+      "CONCURSO",
+      "SLOT",
+      "planned_sphere_set_id_preclose",
+      "final_sphere_set_id_postweigh",
+      "final_sphere_set_known_time_utc",
+      "machine_id",
+      "available_before_close",
+      "close_time_local",
+      "metadata_known_time_local",
+      "source_document",
+      "source_url",
+      "source_sha256"
+    ],
+    "used_features": [
+      "planned_sphere_set_id_preclose",
+      "machine_id"
+    ],
+    "audit_only_fields": [
+      "final_sphere_set_id_postweigh",
+      "final_sphere_set_known_time_utc"
+    ],
+    "not_ingested_by_evaluator": [
+      "individual_sphere_weights_01_to_28",
+      "rfid_tag_ids",
+      "rfid_read_timestamps",
+      "per_ball_extraction_order",
+      "per_ball_extraction_timestamps",
+      "incident_details",
+      "machine_maintenance_history",
+      "scale_calibration_history"
+    ],
+    "classic_modality_rule": "Every metadata row must contain SLOT explicitly identifying the 21:00 Classic slot; missing, unknown, or other slots fail closed.",
+    "preclose_rule": "Every metadata row must be flagged available_before_close and metadata_known_time_local must be strictly earlier than close_time_local; this generic timestamp is not independently authenticated and does not establish field-specific provenance.",
+    "coverage_rule": "Metadata CONCURSO coverage must exactly match the history.",
+    "minimum_oos_rows": 100,
+    "multiplicity": "Holm-adjusted predeclared p-family is supported.",
+    "anytime_e_value_gate": false,
+    "source_timestamp_provenance_gate": false,
+    "field_specific_availability_timestamps": false,
+    "extraction_order_gate": false,
+    "actionable_for_betting_hardcoded_false": true,
+    "actionability_risk": "The evaluator now hardcodes actionable_for_betting=false and emits external Exact5/custody blockers. It still does not ingest or verify the project's anytime e-value, independent custody, authentic source bytes, or field-specific timestamps; it remains research-only.",
+    "interpretation": "Machine/planned-sphere-set conditional predictive association only; not a physical-bias test."
+  }
 }
