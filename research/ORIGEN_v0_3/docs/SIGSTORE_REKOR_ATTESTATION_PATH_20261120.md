@@ -1,7 +1,7 @@
 # Exact5 — External cryptographic attestation path (Sigstore/Rekor)
 
 Date: 2026-11-20
-Status: IMPLEMENTED AS A WORKFLOW DESIGN; NOT YET EXECUTED OR CERTIFIED
+Status: WORKFLOW COMMITTED; EXECUTION AND EXTERNAL CERTIFICATION PENDING
 Branch: fix/origen-v03-integrity-guards-20261120
 
 ## Objective
@@ -20,7 +20,7 @@ Official references:
 1. Generate the portfolio and preserve its exact bytes privately.
 2. Create a public commitment manifest containing only hashes and non-sensitive metadata. Do not include the combinations, plaintext ticket, or a reversible encoding.
 3. Commit the manifest to the research branch before sales close. The manifest records the generation time, target, modality, candidate commit, history cutoff/hash, portfolio SHA-256, and authoritative scheduled close.
-4. Dispatch .github/workflows/prospective-custody-attestation.yml while the sales-close time is still in the future.
+4. Push the single manifest to data/prospective-commitments/<contest-id>.json on the research branch while the sales-close time is still in the future. The push event starts the workflow; workflow_dispatch is also available when the workflow is enabled on the default branch.
 5. The workflow validates target, modality, hashes, chronology, and that the current time is before close. It then signs the manifest with GitHub Actions OIDC using Cosign. Cosign submits the signed entry to Rekor and produces a bundle.
 6. The workflow verifies the bundle against the expected GitHub workflow identity and OIDC issuer, then retains the manifest and bundle as an artifact.
 7. An independent reviewer downloads the manifest and bundle, verifies the signature/transparency-log proof, checks Rekor's integrated time against the official sales-close source, and independently hashes the private payload when it is released after close.
