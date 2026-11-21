@@ -100,6 +100,42 @@ def test_signature_verification_requires_rekor_integrated_timestamp(tmp_path, mo
     assert timestamp.year == 2026
 
 
+
+def test_signature_verification_uses_identical_snapshots_for_cosign_and_rekor(tmp_path, monkeypatch):
+    import subprocess
+    from src.validation.independent_custody import verify_signature
+
+    receipt_path = tmp_path / "receipt.json"
+    bundle_path = tmp_path / "bundle.json"
+    original_receipt = b'{"receipt":"original"}'
+    original_bundle = json.dumps({
+        "verificationMaterial": {"tlogEntries": [{"integratedTime": 1796162520}]}
+    }).encode("utf-8")
+    receipt_path.write_bytes(original_receipt)
+    bundle_path.write_bytes(original_bundle)
+
+    observed = {}
+    def mutate_originals_after_cosign_starts(command, **kwargs):
+        signed_receipt = Path(command[-1])
+        signed_bundle = Path(command[command.index("--bundle") + 1])
+        observed["receipt_snapshot"] = signed_receipt.read_bytes()
+        observed["bundle_snapshot"] = signed_bundle.read_bytes()
+        observed["receipt_is_snapshot"] = signed_receipt != receipt_path
+        observed["bundle_is_snapshot"] = signed_bundle != bundle_path
+        receipt_path.write_bytes(b'{"receipt":"swapped"}')
+        bundle_path.write_text(json.dumps({
+            "verificationMaterial": {"tlogEntries": [{"integratedTime": 1796169999}]}
+        }), encoding="utf-8")
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", mutate_originals_after_cosign_starts)
+    timestamp = verify_signature(receipt_path, bundle_path, "trusted-identity", "trusted-issuer")
+    assert observed["receipt_snapshot"] == original_receipt
+    assert observed["bundle_snapshot"] == original_bundle
+    assert observed["receipt_is_snapshot"] is True
+    assert observed["bundle_is_snapshot"] is True
+    assert timestamp == dt.datetime.fromtimestamp(1796162520, tz=dt.timezone.utc)
+
 def test_signature_verification_rejects_bundle_without_rekor_timestamp(tmp_path, monkeypatch):
     import subprocess
     from src.validation.independent_custody import verify_signature
