@@ -242,7 +242,7 @@ def evaluate_temporal_eligibility(
         elif reasons:
             classification = "BLOCKED_PROVENANCE"
         else:
-            classification = "ELIGIBLE_PRE_CLOSE"
+            classification = "STRUCTURAL_PRE_CLOSE_ONLY"
         results[target] = {
             "predictive_eligibility": classification,
             "reasons": sorted(reasons),
@@ -254,9 +254,10 @@ def evaluate_temporal_eligibility(
         "targets": results,
         "row_count": len(materialized),
         "scope_warning": (
-            "Temporal gate only. ELIGIBLE_PRE_CLOSE means external attestations were "
-            "declared verified by the independent verifier; it is not a physical-bias "
-            "finding or a predictive-edge claim."
+            "Structural temporal gate only. STRUCTURAL_PRE_CLOSE_ONLY means declared "
+            "chronology and caller-provided reference membership passed; this module "
+            "does not authenticate those references. It is not authenticated provenance, "
+            "a physical-bias finding, or a predictive-edge claim."
         ),
     }
 
