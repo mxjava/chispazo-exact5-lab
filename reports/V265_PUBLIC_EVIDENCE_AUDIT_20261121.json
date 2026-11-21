@@ -1,20 +1,61 @@
 {
   "audit_date": "2026-11-21",
   "product": "Chispazo Clásico",
-  "procedure": {"code":"SGVO-PRO-05","revision":39,"last_updated_in_current_normateca":"2026-03-20","url":"https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"},
+  "procedure": {
+    "code": "SGVO-PRO-05",
+    "revision": 39,
+    "last_updated_in_current_normateca": "2026-03-20",
+    "url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"
+  },
   "procedure_chronology_validated": true,
   "preclose_procedure_events": [
-    {"activity":"2.1","event":"equipment_preparation_and_inspection","record":"CS-02"},
-    {"activity":"3.1","event":"confirm_contest_number_and_sphere_case_to_be_used","record":null}
+    {
+      "activity": "2.1",
+      "event": "equipment_preparation_and_inspection",
+      "record": "CS-02"
+    },
+    {
+      "activity": "3.1",
+      "event": "confirm_contest_number_and_sphere_case_to_be_used",
+      "record": null
+    }
   ],
   "postclose_events": [
-    {"activity":"5.1-5.5","event":"weigh_each_sphere_in_numeric_order_and_sign_strip","record":"Tira de Pesaje"},
-    {"activity":"5.2-5.4","event":"validate_limits_and_replace_case_if_nonconforming","record":"Tira de Pesaje"},
-    {"activity":"5.6-6.1","event":"load_spheres_into_machine_feeders_in_progressive_order_and_verify","record":"Tira de Pesaje / verification"},
-    {"activity":"7.1-10.1","event":"freeze_participation_and_cancellation_files_with_electronic_signatures","record":"Firma Electrónica"},
-    {"activity":"11.1-12.1","event":"machine_draw_and_camera_record_of_exhibited_numbers","record":"room_camera_video"},
-    {"activity":"13.1-13.6","event":"record_and_sign_winning_numbers_and_selected_case","record":"CS-11"},
-    {"activity":"21.3-25.1","event":"record_incidents_in_acta_and_log","record":"Acta / CS-09"}
+    {
+      "activity": "5.1-5.5",
+      "event": "weigh_each_sphere_in_numeric_order_and_sign_strip",
+      "record": "Tira de Pesaje"
+    },
+    {
+      "activity": "5.2-5.4",
+      "event": "validate_limits_and_replace_case_if_nonconforming",
+      "record": "Tira de Pesaje"
+    },
+    {
+      "activity": "5.6-6.1",
+      "event": "load_spheres_into_machine_feeders_in_progressive_order_and_verify",
+      "record": "Tira de Pesaje / verification"
+    },
+    {
+      "activity": "7.1-10.1",
+      "event": "freeze_participation_and_cancellation_files_with_electronic_signatures",
+      "record": "Firma Electrónica"
+    },
+    {
+      "activity": "11.1-12.1",
+      "event": "machine_draw_and_camera_record_of_exhibited_numbers",
+      "record": "room_camera_video"
+    },
+    {
+      "activity": "13.1-13.6",
+      "event": "record_and_sign_winning_numbers_and_selected_case",
+      "record": "CS-11"
+    },
+    {
+      "activity": "21.3-25.1",
+      "event": "record_incidents_in_acta_and_log",
+      "record": "Acta / CS-09"
+    }
   ],
   "same_draw_preclose_physical_values_located": [],
   "any_same_draw_preclose_physical_value_located": false,
@@ -27,8 +68,29 @@
   "evidence_of_physical_bias": false,
   "prospective_edge": false,
   "decision": "BLOCKED_PUBLIC_DRAW_LEVEL_PHYSICAL_DATA",
-  "blockers": ["no public per-draw individual sphere weights","no public per-draw machine asset IDs","no public per-draw sphere-case IDs","no public per-draw RFID IDs/read timestamps","no public per-sphere extraction order/timestamps","no public draw-level CS-02 records","no public draw-level CS-11/Acta records","V265 evaluator has no project anytime e-value gate","V265 does not verify provenance of field-specific timestamps"],
+  "blockers": [
+    "no public per-draw individual sphere weights",
+    "no public per-draw machine asset IDs",
+    "no public per-draw sphere-case IDs",
+    "no public per-draw RFID IDs/read timestamps",
+    "no public per-sphere extraction order/timestamps",
+    "no public draw-level CS-02 records",
+    "no public draw-level CS-11/Acta records",
+    "V265 evaluator does not ingest or verify the project anytime e-value",
+    "V265 generic metadata timestamps and syntactic source hashes are not independently authenticated"
+  ],
   "v265_interpretation": "Machine/sphere-set conditional predictive association only; not a physical-bias test.",
   "v265_actionability_gate_complete": false,
-  "promotion_rule": "No predictive or betting claim until exact-set prequential OOS, full multiplicity control, and the project's anytime e-value gate pass; mechanism claims additionally require per-draw physical measurements, asset/set IDs, extraction order and event timestamps."
+  "promotion_rule": "No predictive or betting claim until exact-set prequential OOS, full multiplicity control, and the project's anytime e-value gate pass; mechanism claims additionally require per-draw physical measurements, asset/set IDs, extraction order and event timestamps.",
+  "v265_actionable_for_betting_hardcoded_false": true,
+  "v265_classic_slot_gate": true,
+  "v265_code_blob_sha1": "0010b5f07c6cbfcb78201180fbe758d68e61b031",
+  "v265_validation": {
+    "workflow_run": 44932594545,
+    "head_commit": "dc1bfb7524809ce7455c09b2d57a0e4ab9451403",
+    "compileall": "PASS",
+    "pytest_passed": 278,
+    "pytest_skipped": 2,
+    "pytest_failed": 0
+  }
 }
