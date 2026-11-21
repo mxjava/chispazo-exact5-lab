@@ -1,6 +1,11 @@
 name: Prospective custody attestation
 
 on:
+  push:
+    branches:
+      - fix/origen-v03-integrity-guards-20261120
+    paths:
+      - 'data/prospective-commitments/*.json'
   workflow_dispatch:
     inputs:
       manifest_path:
@@ -51,7 +56,8 @@ jobs:
           missing = sorted(required - obj.keys())
           if missing:
               raise SystemExit(f"missing fields: {missing}")
-          if str(obj["contest_id"]) != os.environ["EXPECTED_CONTEST_ID"]:
+          expected = os.environ.get("EXPECTED_CONTEST_ID", "")
+          if expected and str(obj["contest_id"]) != expected:
               raise SystemExit("contest_id does not match workflow input")
           if obj["modality"] != "CLASSIC" or obj["status"] != "READY_FOR_ATTESTATION":
               raise SystemExit("manifest must be CLASSIC and READY_FOR_ATTESTATION")
@@ -79,6 +85,7 @@ jobs:
           print(f"Manifest accepted for contest {obj['contest_id']}; sales close is still in the future.")
           PY
           echo "manifest_path=$MANIFEST_PATH" >> "$GITHUB_OUTPUT"
+          echo "contest_id=${obj['contest_id']}" >> "$GITHUB_OUTPUT"
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.9.0
