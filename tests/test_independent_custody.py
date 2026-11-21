@@ -61,6 +61,7 @@ def test_rejects_adversarial_receipt_mutations(tmp_path, mutation, message):
     mutation(receipt)
     with pytest.raises(CustodyError, match=message):
         validate_receipt(manifest, receipt, payload,
+                              manifest_bytes=manifest_bytes,
                          expected_custodian_identity="https://custodian.example/attestor", now=now)
 
 
@@ -95,6 +96,7 @@ def test_rejects_payload_byte_mutation(tmp_path):
     payload.write_bytes(b"tampered bytes")
     with pytest.raises(CustodyError, match="payload bytes"):
         validate_receipt(manifest, receipt, payload,
+                              manifest_bytes=manifest_bytes,
                          expected_custodian_identity=receipt["custodian_identity"], now=now)
 
 
@@ -112,6 +114,7 @@ def test_rejects_receipt_predating_manifest_generation(tmp_path):
     receipt["received_at_utc"] = "2026-12-01T21:58:00Z"
     with pytest.raises(CustodyError, match="predates manifest generation"):
         validate_receipt(manifest, receipt, payload,
+                              manifest_bytes=manifest_bytes,
                          expected_custodian_identity=receipt["custodian_identity"], now=now)
 
 
