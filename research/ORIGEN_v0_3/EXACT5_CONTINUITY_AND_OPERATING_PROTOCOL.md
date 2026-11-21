@@ -157,3 +157,27 @@ Classification remains `BLOCKED_PROVENANCE / RESEARCH_ONLY_NO_EDGE`.
 - Final isolated ORIGEN: runs `44470243887` (push) and `44470250160` (PR), both success, 153 tests passed.
 - Final root CI: run `44470243842` success, 352 passed, 2 skipped, 16 subtests passed; PR run `44470250079` also success.
 - The earlier 152-test run remains recorded as the first pass; the 153-test result supersedes it for current validation. No physical records or predictive edge were produced.
+
+
+## Operational update — 2026-11-21 11:53 America/Mexico_City
+
+### Official result/mask overlay
+- Status-only overlay: `research/ORIGEN_v0_3/data/official-overlays/2026-11-21_official_result_refresh_status_only.json`.
+- Latest schema-v3 correction commit: `eb08acdb6a50ab3b5159348864f52bba075b480b`.
+- The dedicated Chispazo results page and the official 20-Nov mask agree on:
+  - 12385 — **De las Tres** — 03 13 20 22 23.
+  - 12386 — **Clásico** — 02 04 09 18 24.
+- The modality labels are explicit on a visual inspection of page 1 of the official mask; the PDF text extraction omits the logo labels. Do not downgrade these two rows to inferred modality.
+- Home/Resultados still shows 12386 blank while the dedicated Chispazo page and 20-Nov mask publish it; retain this as a stale endpoint discrepancy.
+- The home index advertises 12387 for 21-Nov at 15:00. At the 11:53 observation time no result was published; do not infer a later Clásico ID.
+- Original PDF bytes/SHA-256 were not captured. No independent custody or signed pre-close snapshot exists. All overlay rows remain `snapshot_preclose=false`, `oos_eligible=false`, `score_computed=false`.
+- No canonical append, no `append_verified_result.py`, no main write, no V294/challenger change, no promotion. Production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
+### V265.1 parallel hardening
+- PR #12 remains draft/unmerged: https://github.com/mxjava/chispazo-exact5-lab/pull/12
+- Added a fail-closed Classic modality guard requiring explicit `SLOT=21:00` in every physical metadata row; missing/unknown/De las Tres values fail closed.
+- Corrected two CLI test fixture builders and an extra-row fixture that initially omitted SLOT. The first post-guard CI failure was a fixture/schema mismatch, not a model result; subsequent latest PR CI run `44932932622` passed `compileall` and **278 tests passed, 2 skipped**.
+- Public procedure/audit docs now reference the current evaluator blob `0010b5f07c6cbfcb78201180fbe758d68e61b031`, distinguish pre-close planned set from post-weigh final set, and state that `actionable_for_betting` is hardcoded false.
+- Generic timestamp checks and syntactic source hashes are not independent provenance. Physical records, independent custody, untouched OOS and Exact5 promotion gates remain outstanding.
+
+All closed historical runs remain closed. Do not repeat Run53–56 or Run96–106, rebuild retrospective PMFs/ranks/scores, or use `append_verified_result.py` to classify or mutate canonical history without verified modality and provenance.
