@@ -57,9 +57,12 @@ python -m src.validation.independent_custody `
   --oidc-issuer "EXACT_TRUSTED_OIDC_ISSUER"
 ```
 
-Exit codes: 0 only after byte/metadata validation **and** successful cosign
-verification; 2 for blocked provenance. A structural pass alone is explicitly
-not `CUSTODY_ACCEPTED`.
+Exit codes: 0 only after byte/metadata validation, successful Cosign verification,
+and a valid Rekor `integratedTime` from the verified bundle proving the signed
+receipt entered the transparency log before official close; 2 for blocked
+provenance. The claimed `received_at_utc` must not predate manifest generation,
+and the verified Rekor time must not materially predate that claim. A structural
+pass alone is explicitly not `CUSTODY_ACCEPTED`.
 
 ## Mandatory external controls
 
@@ -74,3 +77,23 @@ This tool does not prove that a claimed retention URI is immutable, that the
 custodian is legally independent, or that physical draw evidence is authentic.
 Those require external review and evidence. Prediction custody, physical
 evidence certification and statistical edge are separate gates.
+
+
+## Trusted timestamp boundary
+
+A timestamp typed into the receipt is a signed custodian assertion, not a trusted
+timestamp by itself. The verifier therefore requires Cosign to validate the
+receipt signature and then requires exactly one valid `verificationMaterial.tlogEntries[].integratedTime`
+from that same verified Sigstore bundle. The Rekor integrated time must be before
+the official close and cannot materially predate the custodian's signed receipt
+time. A missing transparency-log timestamp fails closed.
+
+The repository-controlled workflow is separately named and labelled
+`ORIGINATOR_BUILD_ATTESTATION_ONLY`. Its GitHub OIDC identity is not the
+custodian identity and its artifact retention is not independent custody.
+
+This still does not prove the legal independence of the custodian or the
+immutability/recoverability of the external retention location. Those require
+independent contract/review and witnessed retrieval. The Boolean
+`independent_retrieval_test` is a custodian assertion, not a substitute for
+the witnessed test report and external audit evidence.
