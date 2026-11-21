@@ -561,5 +561,21 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "CSV headers must be unique"):
                 evaluate_temporal_csv(path, **VERIFIED)
 
+
+    def test_printed_sphere_number_requires_canonical_decimal_1_through_28(self):
+        invalid_values = ("01", "+1", " 1", "1 ", "0", "29", "1.0", "")
+        for value in invalid_values:
+            with self.subTest(value=value):
+                rows = rows_for_target()
+                rows[0]["printed_number"] = value
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                reasons = result["targets"]["12301"]["reasons"]
+                self.assertIn("INVALID_PRINTED_NUMBER", reasons)
+                self.assertIn("INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", reasons)
+                self.assertNotEqual(
+                    result["targets"]["12301"]["predictive_eligibility"],
+                    "STRUCTURAL_PRE_CLOSE_ONLY",
+                )
+
 if __name__ == "__main__":
     unittest.main()
