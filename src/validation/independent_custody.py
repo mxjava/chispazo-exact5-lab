@@ -108,7 +108,7 @@ def _read_regular_file(path: Path, label: str) -> bytes:
 def validate_receipt(
     manifest: dict[str, Any],
     receipt: dict[str, Any],
-    payload_path: Path,
+    payload_bytes: bytes,
     *,
     manifest_bytes: bytes,
     expected_custodian_identity: str,
@@ -116,6 +116,8 @@ def validate_receipt(
 ) -> dict[str, Any]:
     if not isinstance(manifest, dict) or not isinstance(receipt, dict):
         raise CustodyError("manifest and receipt must be JSON objects")
+    if not isinstance(payload_bytes, bytes):
+        raise CustodyError("payload_bytes must be the exact captured payload bytes")
     if not isinstance(manifest_bytes, bytes):
         raise CustodyError("manifest_bytes must be the exact captured manifest bytes")
     parsed_manifest = _loads_json(manifest_bytes, "captured manifest")
@@ -148,9 +150,7 @@ def validate_receipt(
     digest = receipt["payload_sha256"]
     if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
         raise CustodyError("payload_sha256 must be a lowercase 64-hex SHA-256")
-    if not payload_path.is_file() or payload_path.is_symlink():
-        raise CustodyError("payload must be an existing regular file (symlinks refused)")
-    raw = payload_path.read_bytes()
+    raw = payload_bytes
     actual = hashlib.sha256(raw).hexdigest()
     if actual != digest:
         raise CustodyError("payload bytes do not match the receipt SHA-256")
@@ -202,15 +202,15 @@ def validate_receipt(
 
 
 def verify_signature(
-    receipt_path: Path, bundle_path: Path, identity: str, issuer: str
+    receipt_bytes: bytes, bundle_bytes: bytes, identity: str, issuer: str
 ) -> dt.datetime:
     if not identity.strip() or not issuer.strip():
         raise CustodyError("trusted custodian identity and OIDC issuer must be configured explicitly")
+    if not isinstance(receipt_bytes, bytes) or not isinstance(bundle_bytes, bytes):
+        raise CustodyError("receipt and Sigstore bundle must be the exact captured input bytes")
 
-    # Cosign and the timestamp parser must consume the exact same receipt and
-    # bundle bytes. Never verify one path and then parse that mutable path again.
-    receipt_bytes = _read_regular_file(receipt_path, "custody receipt")
-    bundle_bytes = _read_regular_file(bundle_path, "Sigstore bundle")
+    # Structural validation, Cosign and Rekor parsing all receive these same
+    # immutable in-memory bytes. Temporary files exist only for Cosign's CLI.
     with tempfile.TemporaryDirectory(prefix="exact5-custody-verify-") as temporary:
         snapshot_dir = Path(temporary)
         receipt_snapshot = snapshot_dir / "receipt.json"
@@ -237,7 +237,7 @@ def verify_signature(
         # verification. Parse the captured bundle bytes, not the source path.
         if receipt_snapshot.read_bytes() != receipt_bytes or bundle_snapshot.read_bytes() != bundle_bytes:
             raise CustodyError("receipt or Sigstore bundle changed during signature verification")
-        bundle = _load_json(bundle_snapshot)
+        bundle = _loads_json(bundle_bytes, "captured Sigstore bundle")
 
     material = bundle.get("verificationMaterial")
     entries = material.get("tlogEntries") if isinstance(material, dict) else None
@@ -269,47 +269,40 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--oidc-issuer", required=True)
     args = parser.parse_args(argv)
     try:
-        # Freeze all four inputs once. Structural validation, payload hashing,
-        # Cosign verification and Rekor-time parsing then share those exact bytes.
-        with tempfile.TemporaryDirectory(prefix="exact5-custody-input-") as temporary:
-            snapshot_dir = Path(temporary)
-            inputs = {
-                "manifest": (args.manifest, "manifest.json"),
-                "receipt": (args.receipt, "receipt.json"),
-                "payload": (args.payload, "payload.bin"),
-                "bundle": (args.bundle, "bundle.json"),
-            }
-            snapshots: dict[str, Path] = {}
-            for label, (source_path, filename) in inputs.items():
-                raw = _read_regular_file(source_path, label)
-                snapshot = snapshot_dir / filename
-                snapshot.write_bytes(raw)
-                snapshot.chmod(0o400)
-                snapshots[label] = snapshot
-
-            manifest = _load_json(snapshots["manifest"])
-            receipt = _load_json(snapshots["receipt"])
-            manifest_bytes = snapshots["manifest"].read_bytes()
-            report = validate_receipt(
-                manifest, receipt, snapshots["payload"],
-                manifest_bytes=manifest_bytes,
-                expected_custodian_identity=args.custodian_identity,
-            )
-            integrated_at = verify_signature(
-                snapshots["receipt"], snapshots["bundle"],
-                args.custodian_identity, args.oidc_issuer,
-            )
-            received = _utc(report["received_at_utc"], "received_at_utc")
-            close = _utc(report["official_close_at_utc"], "official_close_at_utc")
-            if integrated_at < received - dt.timedelta(minutes=2):
-                raise CustodyError("Rekor timestamp materially predates the custodian receipt time")
-            if integrated_at >= close:
-                raise CustodyError("custodian receipt signature entered transparency log at/after official close")
-            report["status"] = "CUSTODY_ACCEPTED"
-            report["signature"] = "COSIGN_VERIFIED"
-            report["rekor_integrated_at_utc"] = integrated_at.isoformat().replace("+00:00", "Z")
-            print(json.dumps(report, sort_keys=True, indent=2))
-            return 0
+        # Capture each untrusted input once. The same in-memory receipt and
+        # bundle bytes feed structural validation, Cosign and Rekor parsing.
+        inputs = {
+            "manifest": args.manifest,
+            "receipt": args.receipt,
+            "payload": args.payload,
+            "bundle": args.bundle,
+        }
+        captured = {
+            label: _read_regular_file(path, label)
+            for label, path in inputs.items()
+        }
+        manifest = _loads_json(captured["manifest"], "captured manifest")
+        receipt = _loads_json(captured["receipt"], "captured receipt")
+        report = validate_receipt(
+            manifest, receipt, captured["payload"],
+            manifest_bytes=captured["manifest"],
+            expected_custodian_identity=args.custodian_identity,
+        )
+        integrated_at = verify_signature(
+            captured["receipt"], captured["bundle"],
+            args.custodian_identity, args.oidc_issuer,
+        )
+        received = _utc(report["received_at_utc"], "received_at_utc")
+        close = _utc(report["official_close_at_utc"], "official_close_at_utc")
+        if integrated_at < received - dt.timedelta(minutes=2):
+            raise CustodyError("Rekor timestamp materially predates the custodian receipt time")
+        if integrated_at >= close:
+            raise CustodyError("custodian receipt signature entered transparency log at/after official close")
+        report["status"] = "CUSTODY_ACCEPTED"
+        report["signature"] = "COSIGN_VERIFIED"
+        report["rekor_integrated_at_utc"] = integrated_at.isoformat().replace("+00:00", "Z")
+        print(json.dumps(report, sort_keys=True, indent=2))
+        return 0
     except (CustodyError, OSError) as exc:
         print(f"BLOCKED_PROVENANCE: {exc}", file=sys.stderr)
         return 2
