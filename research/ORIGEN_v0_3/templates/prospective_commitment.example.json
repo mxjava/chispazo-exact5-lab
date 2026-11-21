@@ -12,5 +12,6 @@
   "timezone": "America/Mexico_City",
   "schedule_source_url": "https://www.loterianacional.gob.mx/",
   "schedule_source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-  "status": "TEMPLATE_ONLY"
+  "status": "TEMPLATE_ONLY",
+  "schedule_source_archive_path": "data/schedule-evidence/DO_NOT_USE_OFFICIAL_SCHEDULE_ARCHIVE.html"
 }
