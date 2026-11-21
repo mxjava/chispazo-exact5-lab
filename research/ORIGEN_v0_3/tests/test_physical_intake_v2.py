@@ -52,6 +52,19 @@ VERIFIED = dict(
 
 
 class PhysicalIntakeV2Tests(unittest.TestCase):
+    def test_custom_mapping_row_cannot_spoof_scalar_lookup(self):
+        class SpoofedRow(dict):
+            def __getitem__(self, key):
+                if key == "mass_value":
+                    return "4.700"
+                return super().__getitem__(key)
+
+        rows = rows_for_target()
+        rows[0]["mass_value"] = object()
+        rows[0] = SpoofedRow(rows[0])
+        with self.assertRaises(ValueError):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
+
     def test_mass_object_cannot_spoof_numeric_text_through_str(self):
         class SpoofedNumeric:
             def __str__(self):
