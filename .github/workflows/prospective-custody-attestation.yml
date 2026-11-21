@@ -1,0 +1,221 @@
+name: Originator-side commitment attestation (NOT independent custody)
+
+on:
+  push:
+    branches:
+      - fix/origen-v03-integrity-guards-20261120
+    paths:
+      - 'data/prospective-commitments/*.json'
+  workflow_dispatch:
+    inputs:
+      manifest_path:
+        description: Public commitment manifest path (hashes only)
+        required: true
+        type: string
+      expected_contest_id:
+        description: Official Classic contest ID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  originator_attestation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate manifest and pre-close window
+        id: validate
+        shell: bash
+        env:
+          INPUT_MANIFEST_PATH: ${{ inputs.manifest_path }}
+          INPUT_CONTEST_ID: ${{ inputs.expected_contest_id }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import datetime as dt, json, os, pathlib, re, subprocess
+          if os.environ["GITHUB_EVENT_NAME"] == "push":
+              before = os.environ.get("GITHUB_EVENT_BEFORE", "")
+              head = os.environ["GITHUB_SHA"]
+              if before and not re.fullmatch(r"0{40}", before):
+                  changed = subprocess.check_output(
+                      ["git", "diff", "--name-only", before, head, "--"],
+                      text=True
+                  ).splitlines()
+              else:
+                  changed = subprocess.check_output(
+                      ["git", "diff-tree", "--root", "--no-commit-id", "--name-only", "-r", head],
+                      text=True
+                  ).splitlines()
+              paths = [x for x in changed if re.fullmatch(r"data/prospective-commitments/[^/]+\.json", x)]
+              if len(paths) != 1:
+                  raise SystemExit("push must change exactly one prospective commitment manifest")
+              manifest_path = paths[0]
+              expected_id = ""
+          else:
+              manifest_path = os.environ["INPUT_MANIFEST_PATH"]
+              expected_id = os.environ["INPUT_CONTEST_ID"]
+          p = pathlib.Path(manifest_path)
+          if (p.is_absolute() or ".." in p.parts or not p.is_file()
+                  or not manifest_path.startswith("data/prospective-commitments/")
+                  or p.suffix != ".json"):
+              raise SystemExit("manifest path must be a committed JSON file under data/prospective-commitments/")
+          def require_regular_git_file(path, label):
+              entries = subprocess.check_output(
+                  ["git", "ls-tree", "-z", "HEAD", "--", str(path)]
+              ).split(b"\0")
+              matches = []
+              for entry in entries:
+                  if not entry:
+                      continue
+                  metadata, tab, tracked_path = entry.partition(b"\t")
+                  if tab and tracked_path.decode("utf-8") == str(path):
+                      matches.append(metadata.split()[0])
+              if len(matches) != 1 or matches[0] not in (b"100644", b"100755"):
+                  raise SystemExit(f"{label} must be a regular committed Git blob; symlinks and non-regular objects are refused")
+          require_regular_git_file(p, "manifest")
+          def unique_object(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise ValueError(f"duplicate JSON key: {key}")
+                  result[key] = value
+              return result
+          try:
+              obj = json.loads(p.read_text(encoding="utf-8"), object_pairs_hook=unique_object)
+          except (json.JSONDecodeError, ValueError) as exc:
+              raise SystemExit(f"invalid manifest JSON: {exc}")
+          required = {
+              "schema_version", "contest_id", "modality", "candidate_id",
+              "source_commit_sha", "input_history_sha256", "input_max_contest_id",
+              "payload_sha256", "generated_at_utc", "scheduled_close_at_utc",
+              "timezone", "status", "schedule_source_url", "schedule_source_sha256",
+              "schedule_source_archive_path"
+          }
+          missing = sorted(required - obj.keys())
+          extra = sorted(obj.keys() - required)
+          if missing or extra:
+              raise SystemExit(f"manifest key mismatch; missing={missing}, extra={extra}")
+          if obj["schema_version"] != "1.0":
+              raise SystemExit("unsupported schema_version; expected 1.0")
+          if isinstance(obj["contest_id"], bool) or not isinstance(obj["contest_id"], int) or obj["contest_id"] <= 0:
+              raise SystemExit("contest_id must be a positive integer")
+          if expected_id and str(obj["contest_id"]) != expected_id:
+              raise SystemExit("contest_id does not match workflow input")
+          if not isinstance(obj["candidate_id"], str) or not obj["candidate_id"].strip():
+              raise SystemExit("candidate_id must be a non-empty string")
+          if not isinstance(obj["timezone"], str) or not obj["timezone"].strip():
+              raise SystemExit("timezone must be a non-empty IANA timezone")
+          try:
+              from zoneinfo import ZoneInfo
+              ZoneInfo(obj["timezone"])
+          except Exception as exc:
+              raise SystemExit(f"invalid IANA timezone: {exc}")
+          from urllib.parse import urlparse
+          schedule_url = urlparse(str(obj["schedule_source_url"]))
+          if schedule_url.scheme != "https" or not schedule_url.hostname or not (
+              schedule_url.hostname == "gob.mx" or schedule_url.hostname.endswith(".gob.mx")
+          ):
+              raise SystemExit("schedule_source_url must use an official gob.mx HTTPS host")
+          if not re.fullmatch(r"[0-9a-f]{64}", str(obj["schedule_source_sha256"])):
+              raise SystemExit("invalid schedule_source_sha256")
+          archive_rel = pathlib.PurePosixPath(str(obj["schedule_source_archive_path"]))
+          if archive_rel.is_absolute() or ".." in archive_rel.parts or not str(archive_rel).startswith("data/schedule-evidence/"):
+              raise SystemExit("schedule_source_archive_path must be inside data/schedule-evidence/")
+          archive_path = pathlib.Path(str(archive_rel))
+          if not archive_path.is_file():
+              raise SystemExit("official schedule evidence archive is missing from the committed repository")
+          require_regular_git_file(archive_path, "official schedule evidence archive")
+          import hashlib
+          archive_digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+          if archive_digest != obj["schedule_source_sha256"]:
+              raise SystemExit("official schedule evidence archive SHA-256 mismatch")
+          if obj["modality"] != "CLASSIC" or obj["status"] != "READY_FOR_ATTESTATION":
+              raise SystemExit("manifest must be CLASSIC and READY_FOR_ATTESTATION")
+          for key in ("input_history_sha256", "payload_sha256"):
+              if not re.fullmatch(r"[0-9a-f]{64}", str(obj[key])):
+                  raise SystemExit(f"invalid SHA-256: {key}")
+          if not re.fullmatch(r"[0-9a-f]{40}", str(obj["source_commit_sha"])):
+              raise SystemExit("invalid source_commit_sha")
+          def parse(value):
+              parsed = dt.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+              if parsed.tzinfo is None:
+                  raise SystemExit("timestamps must be timezone-aware")
+              return parsed.astimezone(dt.timezone.utc)
+          generated_raw = dt.datetime.fromisoformat(str(obj["generated_at_utc"]).replace("Z", "+00:00"))
+          close_raw = dt.datetime.fromisoformat(str(obj["scheduled_close_at_utc"]).replace("Z", "+00:00"))
+          generated = parse(obj["generated_at_utc"])
+          close = parse(obj["scheduled_close_at_utc"])
+          if generated_raw.utcoffset() != dt.timedelta(0):
+              raise SystemExit("generated_at_utc must be expressed in UTC")
+          if close_raw.utcoffset() != dt.timedelta(0):
+              raise SystemExit("scheduled_close_at_utc must be expressed in UTC (Z or +00:00)")
+          now = dt.datetime.now(dt.timezone.utc)
+          if generated > now + dt.timedelta(minutes=2):
+              raise SystemExit("generated_at_utc is in the future")
+          if now >= close or generated >= close:
+              raise SystemExit("REFUSED: attestation must occur before official sales close")
+          if isinstance(obj["input_max_contest_id"], bool) or not isinstance(obj["input_max_contest_id"], int) or obj["input_max_contest_id"] < 0:
+              raise SystemExit("input_max_contest_id must be a non-negative integer")
+          if obj["input_max_contest_id"] >= obj["contest_id"]:
+              raise SystemExit("history cutoff must precede target contest")
+          if p.stem != str(obj["contest_id"]):
+              raise SystemExit("manifest filename must match contest_id")
+          if not isinstance(obj["input_history_sha256"], str) or not isinstance(obj["payload_sha256"], str):
+              raise SystemExit("hash fields must be strings")
+          if not isinstance(obj["source_commit_sha"], str):
+              raise SystemExit("source_commit_sha must be a string")
+          subprocess.check_call(["git", "cat-file", "-e", obj["source_commit_sha"] + "^{commit}"])
+          subprocess.check_call(["git", "merge-base", "--is-ancestor", obj["source_commit_sha"], os.environ["GITHUB_SHA"]])
+          source_time = dt.datetime.fromisoformat(subprocess.check_output(
+              ["git", "show", "-s", "--format=%cI", obj["source_commit_sha"]], text=True
+          ).strip()).astimezone(dt.timezone.utc)
+          if source_time > generated:
+              raise SystemExit("source commit must exist no later than generated_at_utc")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write("manifest_path=" + str(p) + "\n")
+              out.write("contest_id=" + str(obj["contest_id"]) + "\n")
+          print("ORIGINATOR_BUILD_ATTESTATION_ONLY — NOT INDEPENDENT CUSTODY — contest", obj["contest_id"])
+          PY
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.9.0
+
+      - name: Sign originator manifest with repository-controlled GitHub OIDC (NOT a custodian signature)
+        env:
+          MANIFEST_PATH: ${{ steps.validate.outputs.manifest_path }}
+        run: |
+          set -euo pipefail
+          cosign sign-blob --yes --bundle originator-attestation.bundle.json "$MANIFEST_PATH"
+
+      - name: Verify signature and transparency-log bundle
+        env:
+          MANIFEST_PATH: ${{ steps.validate.outputs.manifest_path }}
+        run: |
+          set -euo pipefail
+          cosign verify-blob \
+            --bundle originator-attestation.bundle.json \
+            --certificate-identity 'https://github.com/mxjava/chispazo-exact5-lab/.github/workflows/prospective-custody-attestation.yml@refs/heads/fix/origen-v03-integrity-guards-20261120' \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            "$MANIFEST_PATH"
+
+      - name: Retain originator-side verification materials (90 days; NOT independent retention)
+        uses: actions/upload-artifact@v4
+        with:
+          name: originator-commitment-${{ steps.validate.outputs.contest_id }}
+          path: |
+            ${{ steps.validate.outputs.manifest_path }}
+            originator-attestation.bundle.json
+          if-no-files-found: error
+          retention-days: 90
+
+# SECURITY BOUNDARY: This workflow's OIDC identity is controlled by the generator repository.
+# Its output is an ORIGINATOR_BUILD_ATTESTATION only. It MUST NOT be treated as
+# CUSTODY_ACCEPTED, SEALED, PHYSICAL_EVIDENCE_VERIFIED, or EDGE_SUPPORTED.

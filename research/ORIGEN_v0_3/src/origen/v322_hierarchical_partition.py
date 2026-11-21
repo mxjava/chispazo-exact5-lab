@@ -36,7 +36,8 @@ TREE_ORDERS = (
 
 def candidate_features(combo: tuple[int, ...]) -> dict:
     n = tuple(sorted(combo))
-    if len(n) != 5 or len(set(n)) != 5 or any(x < 1 or x > 28 for x in n):
+    if (len(n) != 5 or any(not isinstance(x, int) or isinstance(x, bool) for x in n)
+            or len(set(n)) != 5 or any(x < 1 or x > 28 for x in n)):
         raise ValueError("invalid_five_of_28_set")
     gaps = tuple(n[i + 1] - n[i] for i in range(4))
     total = sum(n)
@@ -133,7 +134,8 @@ class HierarchicalPartitionModel:
     """Equal-weight mixture of three exact, hierarchical partition PMFs."""
 
     def __init__(self, alpha: float = ALPHA):
-        if not isinstance(alpha, (int, float)) or not math.isfinite(alpha) or alpha <= 0:
+        if (not isinstance(alpha, (int, float)) or isinstance(alpha, bool)
+                or not math.isfinite(alpha) or alpha <= 0):
             raise ValueError("alpha_must_be_finite_positive")
         self.alpha = float(alpha)
         self.combinations = list(combinations(range(1, 29), 5))
@@ -149,6 +151,8 @@ class HierarchicalPartitionModel:
         self.draws_seen = 0
 
     def update(self, draw: list[int] | tuple[int, ...]) -> None:
+        if len(draw) != 5 or any(not isinstance(x, int) or isinstance(x, bool) for x in draw):
+            raise ValueError("invalid_training_draw")
         combo = tuple(sorted(draw))
         if combo not in self.combo_index:
             raise ValueError("invalid_training_draw")
@@ -172,6 +176,8 @@ class HierarchicalPartitionModel:
         return mixture
 
     def score(self, target: list[int] | tuple[int, ...], top_k: tuple[int, ...] = TOP_K) -> dict:
+        if len(target) != 5 or any(not isinstance(x, int) or isinstance(x, bool) for x in target):
+            raise ValueError("invalid_target_draw")
         combo = tuple(sorted(target))
         if combo not in self.combo_index:
             raise ValueError("invalid_target_draw")

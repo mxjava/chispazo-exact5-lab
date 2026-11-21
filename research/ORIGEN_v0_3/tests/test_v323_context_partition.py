@@ -1,13 +1,30 @@
 import unittest
+from origen.v323_context_partition import median
 
 from origen.v323_context_partition import context_regime, WINDOW, REGIMES
 from origen.v322_hierarchical_partition import HierarchicalPartitionModel
 
 
 class TestV323ContextPartition(unittest.TestCase):
+    def test_even_sample_median_uses_midpoint(self):
+        self.assertEqual(median([-2.0, 1.0, 3.0, 10.0]), 2.0)
+
     def test_context_requires_exact_prior_window(self):
         with self.assertRaises(ValueError):
             context_regime([[1, 2, 3, 4, 5]] * (WINDOW - 1))
+
+    def test_context_rejects_malformed_draws(self):
+        valid = [[1, 2, 3, 4, 5]] * WINDOW
+        for bad in ([True, 2, 3, 4, 5], [1, 1, 2, 3, 4],
+                    [1, 2, 3, 4, 29], [1, 2, 3, 4]):
+            draws = list(valid)
+            draws[0] = bad
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                context_regime(draws)
+
+    def test_context_rejects_non_sequence(self):
+        with self.assertRaises(ValueError):
+            context_regime(None)
 
     def test_low_repeat_context(self):
         # Disjoint consecutive five-sets force zero overlap.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.2 custody receipt binding (2026-11-20)
+- Found a provenance gap: the external receipt signed selected manifest fields but did not commit to the complete manifest bytes, leaving history cutoff/hash, environment metadata and other manifest fields mutable without invalidating the receipt.
+- Bumped the independent receipt schema to 1.1 and require `manifest_sha256`, computed over the exact raw manifest bytes received by the custodian.
+- The verifier now rejects a manifest object that differs from its captured bytes and rejects any receipt whose signed manifest digest does not match those exact bytes.
+- Added regression tests for post-receipt mutation of `input_history_sha256` and for a parsed manifest object that does not match its captured bytes.
+- A second TOCTOU review found that the CLI re-opened private temporary snapshots between structural validation and Cosign. It now captures all four inputs once in memory and passes the same receipt bytes to structural validation/Cosign and the same bundle bytes to Cosign/Rekor parsing; regression coverage mutates the original source paths during the Cosign call.
+- No real receipt or custody event was created; this is a verifier-contract change only. External custodian, signature, trusted timestamp, independent retention, two witnessed dry-runs and physical evidence remain outstanding.
+- V294, challenger, canonical history and `main` remain untouched.
+
+
 ## 0.3.0
 - Added chronological and expanding-window evaluation splits.
 - Added paired prequential log-score summaries and exact sign testing.
@@ -60,3 +70,15 @@
 - 146 tests passed; full fixed-era replay and artifact upload succeeded (run 44447156133).
 - Era A n=6,075; era B n=1,648; global max z=4.3320; null q95=6.8491; Monte Carlo p=0.1820. `NO_ERA_DIFFERENCE_DETECTED`.
 - No causal equipment attribution or predictive signal.
+
+## 2026-11-20 — Custody verifier contract and source refresh
+
+- The independent receipt verifier now validates the complete manifest v1.0 key set and semantic constraints: positive Classic contest ID, prior history cutoff, 40/64-character source and history digests, valid IANA timezone, HTTPS gob.mx schedule source, safe data/schedule-evidence/ archive path, and generation strictly before close.
+- The verifier now requires the exact archived schedule-evidence bytes (--schedule-evidence) and checks their SHA-256 against the manifest. It validates the candidate payload as exactly 30 unique canonical LF lines, each containing five distinct ascending values from 01 through 28.
+- Receipt chronology is strict: generation < independent receipt < official close. Structural validation remains separate from Cosign/Rekor signature verification and does not establish legal custodian independence or source authenticity by itself.
+- V324/V325/V326 historical audits are now workflow_dispatch only. Unrelated research-branch pushes no longer replay these closed retrospective analyses.
+- Added status-only official-source overlay 2026-11-20_225251_source_refresh_status_only.json: 12385 = 03 13 20 22 23 (De las Tres); 12386 is scheduled Classic at 21:00 but remains blank in official Home/Resultados at the observation; the official mask index remains at 19-Nov. The commercializer dedicated extract remains stale at 12384.
+- No canonical append, no use of append_verified_result.py, no V294/challenger change, no main write, and no promotion. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
+- Physical-evidence request expanded from the current Normateca listing for SGVO-PRO-05 rev.39 (published 20-Mar-2026): adds the Chispazo-specific CLSBR140/CLIER195/CLSKR170/CLSAR110 reports, both draw summaries, weekly signed-record media and delivery trail, CS-12 access logs, CS-18 risk reports, SEGOB commission/attendance, OIC act transmittal, and the signed participation-file custody chain. The documented Smartballs/Ping Pong weight limits are treated as procedure criteria only, not observed measurements.
+- The current SGVO-PRO-05 rev.39 definition of Tira de Pesaje requires four signatory roles (weighing responsible person, Operations representative, General Directorate representative, SEGOB inspector); the request now names all four and adds CS-09 incident logs and CS-14 change-of-guard records.
