@@ -69,6 +69,55 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "STRUCTURAL_PRE_CLOSE_ONLY",
         )
 
+    def test_printed_number_object_cannot_spoof_integer_through_str(self):
+        class SpoofedScalar:
+            def __str__(self):
+                return "1"
+
+        rows = rows_for_target()
+        rows[0]["printed_number"] = SpoofedScalar()
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("INVALID_PRINTED_NUMBER", reasons)
+        self.assertIn("INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", reasons)
+        self.assertNotEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
+    def test_hash_object_cannot_spoof_sha256_through_str(self):
+        class SpoofedDigest:
+            def __str__(self):
+                return "b" * 64
+
+        rows = rows_for_target()
+        rows[0]["source_document_sha256"] = SpoofedDigest()
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("INVALID_SOURCE_SHA256", reasons)
+        self.assertIn("EVIDENCE_DOCUMENT_SET_CONFLICT", reasons)
+        self.assertNotEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
+    def test_mass_unit_object_cannot_spoof_gram_unit_through_str(self):
+        class SpoofedUnit:
+            def __str__(self):
+                return "g"
+
+        rows = rows_for_target()
+        rows[0]["mass_unit"] = SpoofedUnit()
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "UNSUPPORTED_MASS_UNIT",
+            result["targets"]["12301"]["reasons"],
+        )
+        self.assertNotEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
     def test_timestamp_string_subclass_cannot_spoof_valid_time(self):
         class SpoofedTimestamp(str):
             def strip(self, *args, **kwargs):
