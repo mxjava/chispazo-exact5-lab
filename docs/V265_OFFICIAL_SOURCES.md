@@ -1,7 +1,7 @@
 # V265 — Fuentes oficiales y trazabilidad
 
 ## Procedimiento vigente de Sorteos Electrónicos
-- Normateca Lotería Nacional, `PROCEDIMIENTO SORTEOS ELECTRÓNICOS`, SGVO-PRO-05, revisión 39, DN-07 versión 09, publicado el 20-03-2026.
+- Normateca Lotería Nacional, `PROCEDIMIENTO SORTEOS ELECTRÓNICOS`, SGVO-PRO-05, revisión 39, DN-07 versión 09, cuya ficha de Normateca muestra actualización al 20-03-2026; el PDF conserva fecha de emisión original octubre de 2003.
 - URL canónica: https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
 - Hechos relevantes:
   - inspección de equipo CS-02 antes del cierre;
