@@ -9,6 +9,7 @@ from __future__ import annotations
 import csv
 import math
 from collections import defaultdict
+from collections.abc import Set as AbstractSet
 from datetime import datetime, timezone
 from pathlib import Path
 import re
@@ -27,6 +28,18 @@ V2_REQUIRED_COLUMNS = (
     "custody_received_at", "custodian_id", "custodian_role",
     "custody_receipt_ref", "custody_receipt_sha256", "trusted_timestamp_ref",
 )
+
+
+def _declared_reference_set(value: Any, field: str) -> set[str]:
+    """Validate caller declarations as exact set containers, never as substring inputs."""
+    if value is None:
+        return set()
+    if type(value) not in (set, frozenset):
+        raise ValueError(f"{field} must be a set or frozenset of non-empty strings")
+    if any(not isinstance(ref, str) or not ref.strip() for ref in value):
+        raise ValueError(f"{field} must contain only non-empty strings")
+    return set(value)
+
 
 def _parse_time(value: Any, field: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
@@ -55,17 +68,19 @@ def evaluate_temporal_eligibility(
     signer, timestamp, custodian, or external continuity. Never treat membership in
     these sets as an authenticated verification receipt. An empty/omitted set fails closed.
     """
+    custody = _declared_reference_set(declared_custody_refs, "declared_custody_refs")
+    timestamps = _declared_reference_set(declared_timestamp_refs, "declared_timestamp_refs")
+    sources = _declared_reference_set(declared_source_refs, "declared_source_refs")
+    continuity = _declared_reference_set(
+        declared_continuity_targets, "declared_continuity_targets"
+    )
+
     materialized = list(rows)
     if not materialized:
         return {"status": "EMPTY", "targets": {}, "row_count": 0}
     missing = sorted(set(V2_REQUIRED_COLUMNS) - set(materialized[0]))
     if missing:
         raise ValueError("missing required columns: " + ", ".join(missing))
-
-    custody = declared_custody_refs or set()
-    timestamps = declared_timestamp_refs or set()
-    sources = declared_source_refs or set()
-    continuity = declared_continuity_targets or set()
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for row in materialized:
         target = str(row.get("target_contest_id", "")).strip()
