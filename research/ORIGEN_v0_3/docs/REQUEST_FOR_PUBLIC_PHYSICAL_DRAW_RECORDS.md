@@ -47,3 +47,36 @@ Como referencia para localizar los documentos, Lotería Nacional publica el proc
 - Solicitudes de Acceso a la Información: https://www.loterianacional.gob.mx/Transparencia/SolicitudesAccesoInformacion
 - Unidad de Transparencia y datos de contacto: https://www.loterianacional.gob.mx/Transparencia/UnidadTransparencia
 - Proceso para ejercer el derecho de acceso a la información: https://www.loterianacional.gob.mx/documentos/sipot/sipot_sr/derap/gavc/ACCESO_INFORMACI%C3%93N.pdf
+
+## Ampliación de la solicitud conforme a la versión vigente de SGVO-PRO-05
+
+La Normateca de Normas Sustantivas identifica el **Procedimiento Sorteos Electrónicos SGVO-PRO-05**, revisión 39, con publicación de **20 de marzo de 2026**, como documento vigente. Su matriz documental marca expresamente para CHISPAZO los siguientes registros: Relación de Ganadores (CLSBR140), Información Básica (CLIER195), Resultados Obtenidos (CLSKR170), Máscara Ganadora (CLSAR110), Números Ganadores CS-11, Sumario de Sorteo (cierre de venta), Sumario de Sorteo y Tira de Pesaje.
+
+Para evitar una respuesta parcial, añadir a la búsqueda por cada Clásico:
+
+9. El **Sumario de Sorteo (cierre de venta)** y el **Sumario de Sorteo**, en su formato nativo y con los identificadores de concurso, fecha y hora.
+10. El reporte **Relación de Ganadores CLSBR140** y su firma electrónica; el reporte **Información Básica CLIER195**; el reporte **Resultados Obtenidos CLSKR170**; y la **Máscara Ganadora CLSAR110**.
+11. El oficio de entrega y el soporte semanal (lunes a domingo) que contiene los reportes y la firma electrónica de la Relación de Ganadores; el procedimiento indica que ese soporte se adjunta a las actas para resguardo. Solicito el medio digital original o una copia íntegra verificable, junto con su inventario y constancia de recepción.
+12. El formato **CS-12 Registro de asistencia a la sala de sorteos durante el evento**, así como las bitácoras de acceso por limpieza o mantenimiento que correspondan al set, taller y cabina de grabación.
+13. Los oficios de comisión del Inspector de SEGOB y de los representantes de Lotería Nacional y TI; constancia de asistencia, suplencias y, en su caso, designación de inspector sustituto.
+14. El soporte de la firma electrónica del archivo de participaciones previo al sorteo, identificación del dispositivo de almacenamiento entregado al Inspector de SEGOB, constancia de depósito en caja de seguridad y registros de acceso del Órgano Interno de Control, en la medida en que existan y sean localizables por sorteo.
+15. El correo u oficio de remisión del Acta firmada y escaneada al Órgano Interno de Control; si el Acta se firmó después del evento, la bitácora que justifica la demora y la fecha de firma definitiva.
+16. Cualquier formato **CS-18 Comunicación de Riesgo** asociado al sorteo, equipo, báscula, esfera, cierre de venta o sistema, y la respuesta o acción correctiva correspondiente.
+
+### Parámetros de pesaje que deben poder contrastarse
+
+SGVO-PRO-05 revisión 39 establece que el pesaje se realiza **para cada sorteo** y distingue:
+
+- Smartballs: 4.25 g a 5.25 g; diferencia entre la esfera de menor y mayor peso no mayor a 0.30 g.
+- Ping Pong: 2.30 g a 3.00 g; diferencia entre la esfera de menor y mayor peso no mayor a 0.15 g.
+
+Por ello, la tira solicitada debe permitir recuperar los pesos individuales, tipo de esfera, estuche/conjunto, fecha y hora, identificación de la báscula y firmas o rúbricas; no basta una tabla de promedios ni una declaración general de cumplimiento. Los umbrales son criterios documentales del procedimiento, no mediciones observadas de ningún sorteo específico.
+
+### Alcance y límite de la fuente
+
+La versión vigente del procedimiento acredita qué controles y registros deberían existir o integrarse al expediente operativo; **no acredita que esos documentos se hayan producido, conservado o entregado para un sorteo concreto**. La existencia, integridad y correspondencia por concurso sólo se podrá confirmar con los originales o copias institucionales, sus metadatos y la cadena de resguardo.
+
+Fuente vigente:
+- Normateca — Normas Sustantivas: https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2
+- SGVO-PRO-05 revisión 39, publicado el 20/03/2026: https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
+
