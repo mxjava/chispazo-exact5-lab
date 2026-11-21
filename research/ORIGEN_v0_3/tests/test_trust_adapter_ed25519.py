@@ -71,8 +71,10 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
     def test_noncanonical_signature_base64_pad_bits_are_rejected(self):
         encoded = self.envelope["signature_b64"]
         alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-        index = alphabet.index(encoded[-2])
-        alternate = encoded[:-2] + alphabet[index + 1] + "="
+        # A 64-byte Ed25519 signature ends with two '=' padding bytes;
+        # the final data symbol is therefore at -3 (not -2).
+        index = alphabet.index(encoded[-3])
+        alternate = encoded[:-3] + alphabet[index + 1] + "=="
         self.assertNotEqual(alternate, encoded)
         self.assertEqual(
             base64.b64decode(alternate, validate=True),
