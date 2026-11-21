@@ -63,7 +63,7 @@ def _parse_time(value: Any, field: str) -> datetime:
     # Require one unambiguous extended ISO-8601 representation. fromisoformat()
     # accepts looser forms (space separators, compact offsets, omitted seconds).
     if type(value) is not str or not re.fullmatch(
-        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?(?:Z|[+-][0-9]{2}:[0-9]{2})",
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|[+-][0-9]{2}:[0-9]{2})",
         value,
     ):
         raise ValueError(f"{field}: missing or non-canonical timestamp")
