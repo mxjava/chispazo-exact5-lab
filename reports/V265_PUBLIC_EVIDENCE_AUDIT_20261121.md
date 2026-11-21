@@ -46,7 +46,7 @@ El artículo 8 del Reglamento, reformado en la publicación de SEGOB/SIDOF de 20
 
 - **CS-02:** inspección del equipo antes de cada sorteo. El procedimiento público no enumera campos ni identifica la máquina/serie por concurso.
 - **Tira de pesaje:** peso individual de cada esfera, pesada en orden numérico; firmas y anexo al Acta. No se localizó una tira pública por concurso ni se especifican timestamps en el texto publicado.
-- **CS-11:** fecha, nombre/número de sorteo, hora, estuche seleccionado, resultados y firmas. No define ID de máquina, RFID, pesos ni timestamp individual de extracción.
+- **CS-11:** el plan de calidad enumera fecha, número de sorteo, número de estuche, esferas frente a números anotados y nombres de participantes; el paso 13.5 exige firmas. No define ID de máquina, RFID, pesos ni timestamp individual de extracción.
 - **Acta / CS-09:** recoge incidencias que se apartan del procedimiento y afectan el resultado; el Acta y anexos se escanean al OIC y se resguardan.
 - **Video:** la política 30 de SGVO-PRO-05 exige contratar grabación desde el pesaje hasta la celebración del sorteo, como testigo documental; la versión editada (sólo el sorteo), en DVD/CD/USB, forma parte del Acta. Las cámaras registran los números al aparecer en exhibidores. Hay transmisiones públicas de algunos sorteos, pero no se localizaron originales por concurso ni timestamps estructurados por esfera. El video es anexo probatorio del Acta, no resultado oficial independiente.
 - **Firma electrónica:** protege archivos de participaciones y cancelaciones después del cierre; se entrega al Inspector y queda bajo custodia del OIC. No mide el mecanismo físico.
