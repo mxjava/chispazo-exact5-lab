@@ -45,6 +45,13 @@ def _declared_reference_set(value: Any, field: str) -> set[str]:
     return set(value)
 
 
+def _canonical_identifier(value: Any) -> str:
+    """Return only exact, non-empty built-in text identifiers; invalid values become empty."""
+    if type(value) is not str or not value or value != value.strip():
+        return ""
+    return value
+
+
 def _parse_time(value: Any, field: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field}: missing timestamp")
@@ -87,9 +94,9 @@ def evaluate_temporal_eligibility(
         raise ValueError("missing required columns: " + ", ".join(missing))
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for row in materialized:
-        target = str(row.get("target_contest_id", "")).strip()
+        target = _canonical_identifier(row.get("target_contest_id"))
         if not target:
-            raise ValueError("target_contest_id: missing")
+            raise ValueError("target_contest_id: missing or non-canonical")
         grouped[target].append(row)
 
     results: dict[str, dict[str, Any]] = {}
@@ -131,22 +138,22 @@ def evaluate_temporal_eligibility(
                 target_draws.add(target_draw)
                 assignments.add(assignment)
                 source_closes.add(source_close)
-                sphere_types.add(str(row["sphere_type"]).strip())
-                machine_models.add(str(row["machine_model"]).strip())
-                scales.add(str(row["scale_id"]).strip())
-                source_refs.add(str(row["source_document_ref"]).strip())
+                sphere_types.add(_canonical_identifier(row["sphere_type"]))
+                machine_models.add(_canonical_identifier(row["machine_model"]))
+                scales.add(_canonical_identifier(row["scale_id"]))
+                source_refs.add(_canonical_identifier(row["source_document_ref"]))
                 source_hashes.add(str(row["source_document_sha256"]).strip().lower())
-                custody_refs.add(str(row["custody_receipt_ref"]).strip())
+                custody_refs.add(_canonical_identifier(row["custody_receipt_ref"]))
                 custody_hashes.add(str(row["custody_receipt_sha256"]).strip().lower())
                 calibration_hashes.add(str(row["calibration_certificate_sha256"]).strip().lower())
-                signature_refs.add(str(row["source_signature_ref"]).strip())
-                signer_ids.add(str(row["source_signer_id"]).strip())
-                timestamp_refs.add(str(row["trusted_timestamp_ref"]).strip())
-                source_contests.add(str(row["source_contest_id"]).strip())
-                modalities.add(str(row["modality"]).strip().upper())
-                sphere_ids.add(str(row["sphere_id"]).strip())
-                set_ids.add(str(row["sphere_set_id"]).strip())
-                machine_ids.add(str(row["machine_id"]).strip())
+                signature_refs.add(_canonical_identifier(row["source_signature_ref"]))
+                signer_ids.add(_canonical_identifier(row["source_signer_id"]))
+                timestamp_refs.add(_canonical_identifier(row["trusted_timestamp_ref"]))
+                source_contests.add(_canonical_identifier(row["source_contest_id"]))
+                modalities.add(_canonical_identifier(row["modality"]).upper())
+                sphere_ids.add(_canonical_identifier(row["sphere_id"]))
+                set_ids.add(_canonical_identifier(row["sphere_set_id"]))
+                machine_ids.add(_canonical_identifier(row["machine_id"]))
                 try:
                     printed_numbers.add(int(str(row["printed_number"]).strip()))
                 except ValueError:
@@ -194,15 +201,15 @@ def evaluate_temporal_eligibility(
                     reasons.add("UNSUPPORTED_MASS_UNIT")
                 if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["calibration_certificate_sha256"]).strip()):
                     reasons.add("INVALID_CALIBRATION_SHA256")
-                if not str(row["source_signature_ref"]).strip() or not str(row["source_signer_id"]).strip():
+                if not _canonical_identifier(row["source_signature_ref"]) or not _canonical_identifier(row["source_signer_id"]):
                     reasons.add("SOURCE_SIGNATURE_MISSING")
-                if not str(row["custodian_id"]).strip() or not str(row["custodian_role"]).strip():
+                if not _canonical_identifier(row["custodian_id"]) or not _canonical_identifier(row["custodian_role"]):
                     reasons.add("CUSTODIAN_IDENTITY_MISSING")
-                if not str(row["custody_receipt_ref"]).strip():
+                if not _canonical_identifier(row["custody_receipt_ref"]):
                     reasons.add("CUSTODY_RECEIPT_MISSING")
-                if not str(row["trusted_timestamp_ref"]).strip():
+                if not _canonical_identifier(row["trusted_timestamp_ref"]):
                     reasons.add("TRUSTED_TIMESTAMP_MISSING")
-                if not str(row["source_document_ref"]).strip():
+                if not _canonical_identifier(row["source_document_ref"]):
                     reasons.add("PRIMARY_SOURCE_MISSING")
             except (ValueError, TypeError, KeyError):
                 reasons.add("INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE")
@@ -232,11 +239,11 @@ def evaluate_temporal_eligibility(
             reasons.add("PHYSICAL_SET_OR_MACHINE_CONFLICT")
         if modalities != {"CLASSIC"}:
             reasons.add("MODALITY_NOT_VERIFIED_CLASSIC")
-        if not all(str(row.get("custody_receipt_ref", "")) in custody for row in group):
+        if not all(_canonical_identifier(row.get("custody_receipt_ref")) in custody for row in group):
             reasons.add("CUSTODY_NOT_INDEPENDENTLY_VERIFIED")
-        if not all(str(row.get("trusted_timestamp_ref", "")) in timestamps for row in group):
+        if not all(_canonical_identifier(row.get("trusted_timestamp_ref")) in timestamps for row in group):
             reasons.add("TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED")
-        if not all(str(row.get("source_document_ref", "")) in sources for row in group):
+        if not all(_canonical_identifier(row.get("source_document_ref")) in sources for row in group):
             reasons.add("SOURCE_NOT_INDEPENDENTLY_VERIFIED")
         if target not in continuity:
             reasons.add("PHYSICAL_CONTINUITY_NOT_VERIFIED")

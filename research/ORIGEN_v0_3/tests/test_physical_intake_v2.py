@@ -226,6 +226,49 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "BLOCKED_CONTINUITY",
         )
 
+    def test_none_values_are_not_stringified_into_valid_provenance_refs(self):
+        cases = (
+            ("source_document_ref", "declared_source_refs", "PRIMARY_SOURCE_MISSING"),
+            ("custody_receipt_ref", "declared_custody_refs", "CUSTODY_RECEIPT_MISSING"),
+            ("trusted_timestamp_ref", "declared_timestamp_refs", "TRUSTED_TIMESTAMP_MISSING"),
+        )
+        for field, declaration, expected_reason in cases:
+            with self.subTest(field=field):
+                rows = rows_for_target()
+                for row in rows:
+                    row[field] = None
+                declarations = dict(VERIFIED)
+                declarations[declaration] = {"None"}
+                result = evaluate_temporal_eligibility(rows, **declarations)
+                reasons = result["targets"]["12301"]["reasons"]
+                self.assertIn(expected_reason, reasons)
+                self.assertNotEqual(
+                    result["targets"]["12301"]["predictive_eligibility"],
+                    "STRUCTURAL_PRE_CLOSE_ONLY",
+                )
+
+    def test_none_sphere_and_source_contest_ids_are_rejected(self):
+        rows = rows_for_target()
+        rows[0]["sphere_id"] = None
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET",
+            result["targets"]["12301"]["reasons"],
+        )
+
+        rows = rows_for_target()
+        for row in rows:
+            row["source_contest_id"] = None
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn("SOURCE_CONTEST_CONFLICT", result["targets"]["12301"]["reasons"])
+
+    def test_none_target_contest_id_is_rejected(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["target_contest_id"] = None
+        with self.assertRaises(ValueError):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
+
     def test_non_classic_modality_is_not_eligible(self):
         rows = rows_for_target()
         rows[0]["modality"] = "DE LAS TRES"
