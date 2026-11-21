@@ -253,14 +253,26 @@ def verify_record_chain(
     expected_final_hash: str | None = None,
 ) -> tuple[bool, str]:
     """Verify ordered ledger; optional external head anchor detects tail truncation."""
+    if type(records) not in (list, tuple):
+        return False, "records must be an exact built-in list or tuple"
+    if type(portfolios_by_target) is not dict:
+        return False, "portfolios_by_target must be an exact built-in dict"
+    if any(type(target) is not int or type(raw) is not bytes
+           for target, raw in portfolios_by_target.items()):
+        return False, "portfolio map must contain exact integer keys and exact bytes values"
+    if expected_final_hash is not None:
+        try:
+            _require_sha(expected_final_hash, "expected_final_hash")
+        except ValueError as exc:
+            return False, str(exc)
     previous = GENESIS
     seen: set[int] = set()
     last_target = 0
     for index, record in enumerate(records):
-        if not isinstance(record, dict):
-            return False, f"record {index} is not an object"
+        if type(record) is not dict:
+            return False, f"record {index} must be an exact built-in dict"
         target = record.get("target_contest_id")
-        if not isinstance(target, int) or isinstance(target, bool) or target <= last_target:
+        if type(target) is not int or target <= last_target:
             return False, f"record {index} target is duplicate, invalid, or out of order"
         if target in seen:
             return False, f"duplicate target {target}"
