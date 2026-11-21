@@ -69,7 +69,7 @@ Subsequent to the tested head above, the branch received further changes:
 - Corrected the originator workflow so it signs, verifies and archives the same file name, `originator-attestation.bundle.json`.
 - Added adversarial tests for tampering, duplicate JSON keys, identity collision, pre-close ordering and missing Rekor timestamp.
 
-These latest hardening commits are not covered by the successful CI runs listed above; a fresh CI run is required before calling this code validated.
+The verifier hardening and adversarial tests were subsequently included in a fresh successful CI run at commit `8e7581083e7e0651e2492bbf2a08ec553b61abfd`: [CI run 44850774102](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44850774102), **485 passed, 2 skipped, 28 subtests passed**. ORIGEN isolated validation also passed at that commit: [run 44850774097](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/44850774097), **271 tests passed**. The later commits `35ab84b` and `0ad5df0` only update documentation/reporting; no verifier code changed after the tested commit.
 
 ## Certification decision
 
