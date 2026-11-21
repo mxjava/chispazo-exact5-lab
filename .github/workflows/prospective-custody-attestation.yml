@@ -54,8 +54,10 @@ jobs:
               manifest_path = os.environ["INPUT_MANIFEST_PATH"]
               expected_id = os.environ["INPUT_CONTEST_ID"]
           p = pathlib.Path(manifest_path)
-          if p.is_absolute() or ".." in p.parts or not p.is_file():
-              raise SystemExit("manifest path must be a committed repository file")
+          if (p.is_absolute() or ".." in p.parts or not p.is_file()
+                  or not manifest_path.startswith("data/prospective-commitments/")
+                  or p.suffix != ".json"):
+              raise SystemExit("manifest path must be a committed JSON file under data/prospective-commitments/")
           def unique_object(pairs):
               result = {}
               for key, value in pairs:
