@@ -53,6 +53,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(result["identity_status"], "PINNED_KEY_ONLY")
         self.assertEqual(result["trusted_time_status"], "NOT_ESTABLISHED_BY_THIS_MODULE")
         self.assertEqual(result["custody_status"], "NOT_ESTABLISHED_BY_THIS_MODULE")
+        self.assertEqual(result["replay_status"], "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER")
 
 
     def test_signature_is_bound_to_exact_original_bytes(self):
@@ -102,6 +103,22 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
         roots = {"custody-key-01": dict(self.roots["custody-key-01"], enabled=False)}
         self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
+
+
+    def test_trust_root_rejects_unknown_fields(self):
+        roots = {"custody-key-01": dict(self.roots["custody-key-01"], operator_override=True)}
+        self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
+
+    def test_trust_root_flags_must_be_booleans(self):
+        roots = {"custody-key-01": dict(self.roots["custody-key-01"], revoked="false")}
+        self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
+
+    def test_trust_roots_must_be_mapping(self):
+        result = verify_attestation(
+            self.envelope, trust_roots=None, expected_role="CUSTODIAN",
+            expected_subject_sha256=self.subject, verification_time_utc="2026-11-21T11:00:00Z",
+        )
+        self.assertEqual(result["status"], "BLOCKED")
 
     def test_wrong_subject_is_rejected(self):
         self.assertEqual(self.verify(subject="e" * 64)["status"], "BLOCKED")
