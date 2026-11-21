@@ -250,7 +250,8 @@ def evaluate_temporal_eligibility(
             "row_count": len(group),
         }
     return {
-        "status": "ELIGIBILITY_REVIEWED",
+        "status": "STRUCTURAL_REVIEW_ONLY",
+        "authentication_status": "NOT_AUTHENTICATED_BY_THIS_MODULE",
         "targets": results,
         "row_count": len(materialized),
         "scope_warning": (
