@@ -36,7 +36,7 @@ La norma vigente confirma:
 - CS-02 antes del cierre.
 - Pesaje individual en cada sorteo; Smartballs: 4.25–5.25 g y rango máximo 0.30 g; Ping Pong: 2.30–3.00 g y rango máximo 0.15 g.
 - Tira firmada y anexada al acta.
-- CS-11 posterior a la extracción; captura datos del sorteo y números ganadores, cotejados contra exhibidores. El procedimiento público no expone el formulario completo, por lo que no se afirma que contenga ID de estuche, RFID individual, orden o timestamps.
+- CS-11 posterior a la extracción; la revisión 39 publica como campos mínimos fecha, nombre/número de sorteo, hora del sorteo, estuche seleccionado, resultados y firmas de elaboración/verificación/certificación/representante DG. La hora es del evento, no por esfera; no se publica campo de RFID individual, orden ni timestamp de cada extracción.
 - Calibración de básculas al menos anual; mantenimiento preventivo/correctivo según calendario anual.
 - Incidencias en acta y Bitácora de Concursos y Sorteos (CS-09) cuando afectan resultados.
 - Grabación desde el pesaje hasta la celebración; la grabación editada forma parte del acta.
