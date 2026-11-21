@@ -65,6 +65,8 @@ def verify_attestation(
             raise ValueError("all attestation fields must be exact built-in strings")
         if type(trust_roots) is not dict:
             raise ValueError("trust_roots must be a mapping controlled outside the evidence bundle")
+        if any(type(root_key) is not str for root_key in trust_roots):
+            raise ValueError("trust-root identifiers must be exact built-in strings")
         if type(expected_role) is not str or not expected_role:
             raise ValueError("expected_role must be a non-empty string")
         if type(expected_subject_sha256) is not str or not _HEX64.fullmatch(expected_subject_sha256):
@@ -88,6 +90,8 @@ def verify_attestation(
         root = trust_roots.get(key_id)
         if type(root) is not dict:
             raise ValueError("key_id is not present in pinned trust roots")
+        if any(type(field) is not str for field in root):
+            raise ValueError("trust-root field names must be exact built-in strings")
         allowed_root_fields = {"public_key_b64", "roles", "enabled", "revoked"}
         if set(root) != allowed_root_fields:
             raise ValueError(
