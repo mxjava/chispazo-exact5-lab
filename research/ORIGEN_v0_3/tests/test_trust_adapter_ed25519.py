@@ -154,6 +154,30 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         roots = {"custody-key-01": dict(self.roots["custody-key-01"], revoked="false")}
         self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
 
+    def test_trust_root_identifier_string_subclass_is_rejected(self):
+        class SpoofedKeyId(str):
+            def __hash__(self):
+                return hash("custody-key-01")
+
+            def __eq__(self, other):
+                return other == "custody-key-01"
+
+        roots = {SpoofedKeyId("attacker-key"): self.roots["custody-key-01"]}
+        self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
+
+    def test_trust_root_field_name_string_subclass_is_rejected(self):
+        class SpoofedField(str):
+            def __hash__(self):
+                return hash("enabled")
+
+            def __eq__(self, other):
+                return other == "enabled"
+
+        root = dict(self.roots["custody-key-01"])
+        root[SpoofedField("attacker-field")] = root.pop("enabled")
+        roots = {"custody-key-01": root}
+        self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
+
     def test_trust_roots_must_be_mapping(self):
         result = verify_attestation(
             self.envelope, trust_roots=None, expected_role="CUSTODIAN",
