@@ -15,8 +15,10 @@ import stat
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
+from urllib.parse import urlparse
+from zoneinfo import ZoneInfo
 
 
 class CustodyError(ValueError):
@@ -29,6 +31,12 @@ RECEIPT_KEYS = {
     "received_at_utc", "official_close_at_utc", "originator_identity",
     "custodian_identity", "retention_uri", "retention_object_version",
     "independent_retrieval_test",
+}
+MANIFEST_KEYS = {
+    "schema_version", "contest_id", "modality", "candidate_id", "source_commit_sha",
+    "input_history_sha256", "input_max_contest_id", "payload_sha256",
+    "generated_at_utc", "scheduled_close_at_utc", "timezone", "status",
+    "schedule_source_url", "schedule_source_sha256", "schedule_source_archive_path",
 }
 
 
@@ -83,6 +91,88 @@ def _utc(value: Any, field: str) -> dt.datetime:
     return parsed.astimezone(dt.timezone.utc)
 
 
+def _validate_manifest(manifest: dict[str, Any]) -> tuple[dt.datetime, dt.datetime]:
+    missing = sorted(MANIFEST_KEYS - manifest.keys())
+    extra = sorted(manifest.keys() - MANIFEST_KEYS)
+    if missing or extra:
+        raise CustodyError(f"manifest key mismatch; missing={missing}, extra={extra}")
+    if manifest["schema_version"] != "1.0":
+        raise CustodyError("unsupported manifest schema_version; expected 1.0")
+    contest_id = manifest["contest_id"]
+    if isinstance(contest_id, bool) or not isinstance(contest_id, int) or contest_id <= 0:
+        raise CustodyError("manifest contest_id must be a positive integer")
+    if manifest["modality"] != "CLASSIC":
+        raise CustodyError("manifest modality must be CLASSIC")
+    if not isinstance(manifest["candidate_id"], str) or not manifest["candidate_id"].strip():
+        raise CustodyError("manifest candidate_id must be non-empty")
+    if not isinstance(manifest["source_commit_sha"], str) or not re.fullmatch(r"[0-9a-f]{40}", manifest["source_commit_sha"]):
+        raise CustodyError("manifest source_commit_sha must be a lowercase 40-hex SHA")
+    for field in ("input_history_sha256", "payload_sha256", "schedule_source_sha256"):
+        value = manifest[field]
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+            raise CustodyError(f"manifest {field} must be a lowercase 64-hex SHA-256")
+    cutoff = manifest["input_max_contest_id"]
+    if isinstance(cutoff, bool) or not isinstance(cutoff, int) or cutoff < 0 or cutoff >= contest_id:
+        raise CustodyError("manifest input_max_contest_id must be a non-negative integer strictly before contest_id")
+    timezone_name = manifest["timezone"]
+    if not isinstance(timezone_name, str) or not timezone_name.strip():
+        raise CustodyError("manifest timezone must be a non-empty IANA timezone")
+    try:
+        ZoneInfo(timezone_name)
+    except Exception as exc:
+        raise CustodyError(f"manifest timezone is not a valid IANA timezone: {exc}") from exc
+    schedule_url = manifest["schedule_source_url"]
+    if not isinstance(schedule_url, str):
+        raise CustodyError("manifest schedule_source_url must be a string")
+    parsed_url = urlparse(schedule_url)
+    if parsed_url.scheme != "https" or not parsed_url.hostname or not (
+        parsed_url.hostname == "gob.mx" or parsed_url.hostname.endswith(".gob.mx")
+    ):
+        raise CustodyError("manifest schedule_source_url must use an official gob.mx HTTPS host")
+    archive = manifest["schedule_source_archive_path"]
+    if not isinstance(archive, str) or "\\" in archive:
+        raise CustodyError("manifest schedule_source_archive_path must be a safe repository-relative POSIX path")
+    archive_path = PurePosixPath(archive)
+    if archive_path.is_absolute() or ".." in archive_path.parts or not archive.startswith("data/schedule-evidence/"):
+        raise CustodyError("manifest schedule_source_archive_path must be inside data/schedule-evidence/")
+    if manifest["status"] != "READY_FOR_ATTESTATION":
+        raise CustodyError("manifest status must be READY_FOR_ATTESTATION")
+    generated = _utc(manifest["generated_at_utc"], "manifest.generated_at_utc")
+    close = _utc(manifest["scheduled_close_at_utc"], "manifest.scheduled_close_at_utc")
+    if generated >= close:
+        raise CustodyError("manifest generation must precede official close")
+    return generated, close
+
+
+def _validate_portfolio_payload(raw: bytes) -> None:
+    if not isinstance(raw, bytes):
+        raise CustodyError("payload must be supplied as exact bytes")
+    if not raw or not raw.endswith(b"\\n") or b"\\r" in raw:
+        raise CustodyError("portfolio payload must be non-empty canonical LF bytes ending with one LF")
+    try:
+        text = raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise CustodyError("portfolio payload must be valid UTF-8") from exc
+    lines = text[:-1].split("\\n")
+    if len(lines) != 30:
+        raise CustodyError("portfolio payload must contain exactly 30 lines")
+    pattern = re.compile(
+        r"(?:0[1-9]|1\\d|2[0-8])-(?:0[1-9]|1\\d|2[0-8])-"
+        r"(?:0[1-9]|1\\d|2[0-8])-(?:0[1-9]|1\\d|2[0-8])-"
+        r"(?:0[1-9]|1\\d|2[0-8])"
+    )
+    seen: set[str] = set()
+    for index, line in enumerate(lines, start=1):
+        if not pattern.fullmatch(line):
+            raise CustodyError(f"portfolio line {index} must contain five two-digit values from 01 through 28")
+        values = [int(part) for part in line.split("-")]
+        if values != sorted(values) or len(set(values)) != 5:
+            raise CustodyError(f"portfolio line {index} must contain five distinct ascending values")
+        if line in seen:
+            raise CustodyError("portfolio lines must be unique")
+        seen.add(line)
+
+
 def _read_regular_file(path: Path, label: str) -> bytes:
     """Read one regular, non-symlink input into an immutable byte snapshot."""
     if path.is_symlink():
@@ -111,6 +201,7 @@ def validate_receipt(
     payload_bytes: bytes,
     *,
     manifest_bytes: bytes,
+    schedule_evidence_bytes: bytes,
     expected_custodian_identity: str,
     now: dt.datetime | None = None,
 ) -> dict[str, Any]:
@@ -123,6 +214,12 @@ def validate_receipt(
     parsed_manifest = _loads_json(manifest_bytes, "captured manifest")
     if _canonical_json_bytes(parsed_manifest) != _canonical_json_bytes(manifest):
         raise CustodyError("manifest object does not match the exact captured manifest bytes")
+    generated, manifest_close = _validate_manifest(parsed_manifest)
+    if not isinstance(schedule_evidence_bytes, bytes):
+        raise CustodyError("schedule_evidence_bytes must be the exact captured official schedule archive bytes")
+    schedule_digest = hashlib.sha256(schedule_evidence_bytes).hexdigest()
+    if schedule_digest != parsed_manifest["schedule_source_sha256"]:
+        raise CustodyError("official schedule evidence bytes do not match manifest schedule_source_sha256")
     manifest_digest = hashlib.sha256(manifest_bytes).hexdigest()
     missing = sorted(RECEIPT_KEYS - receipt.keys())
     extra = sorted(receipt.keys() - RECEIPT_KEYS)
@@ -151,6 +248,7 @@ def validate_receipt(
     if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
         raise CustodyError("payload_sha256 must be a lowercase 64-hex SHA-256")
     raw = payload_bytes
+    _validate_portfolio_payload(raw)
     actual = hashlib.sha256(raw).hexdigest()
     if actual != digest:
         raise CustodyError("payload bytes do not match the receipt SHA-256")
@@ -175,15 +273,13 @@ def validate_receipt(
         raise CustodyError("independent retrieval test must be explicitly true")
     received = _utc(receipt["received_at_utc"], "received_at_utc")
     close = _utc(receipt["official_close_at_utc"], "official_close_at_utc")
-    generated = _utc(manifest.get("generated_at_utc"), "manifest.generated_at_utc")
-    manifest_close = _utc(manifest.get("scheduled_close_at_utc"), "manifest.scheduled_close_at_utc")
     if close != manifest_close:
         raise CustodyError("receipt official close does not match manifest")
     current = now or dt.datetime.now(dt.timezone.utc)
     if current.tzinfo is None:
         raise CustodyError("verification clock must be timezone-aware")
-    if received < generated:
-        raise CustodyError("custodian receipt predates manifest generation")
+    if received <= generated:
+        raise CustodyError("custodian receipt must strictly follow manifest generation")
     if received >= close:
         raise CustodyError("custodian receipt was issued at/after official close")
     if received > current.astimezone(dt.timezone.utc) + dt.timedelta(minutes=2):
@@ -194,6 +290,8 @@ def validate_receipt(
         "manifest_sha256": manifest_digest,
         "payload_sha256": actual,
         "payload_size_bytes": len(raw),
+        "schedule_source_sha256": schedule_digest,
+        "schedule_evidence_size_bytes": len(schedule_evidence_bytes),
         "custodian_identity": custodian,
         "received_at_utc": received.isoformat().replace("+00:00", "Z"),
         "official_close_at_utc": close.isoformat().replace("+00:00", "Z"),
@@ -264,6 +362,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--receipt", type=Path, required=True)
     parser.add_argument("--payload", type=Path, required=True)
+    parser.add_argument("--schedule-evidence", type=Path, required=True)
     parser.add_argument("--bundle", type=Path, required=True)
     parser.add_argument("--custodian-identity", required=True)
     parser.add_argument("--oidc-issuer", required=True)
@@ -275,6 +374,7 @@ def main(argv: list[str] | None = None) -> int:
             "manifest": args.manifest,
             "receipt": args.receipt,
             "payload": args.payload,
+            "schedule_evidence": args.schedule_evidence,
             "bundle": args.bundle,
         }
         captured = {
@@ -286,6 +386,7 @@ def main(argv: list[str] | None = None) -> int:
         report = validate_receipt(
             manifest, receipt, captured["payload"],
             manifest_bytes=captured["manifest"],
+            schedule_evidence_bytes=captured["schedule_evidence"],
             expected_custodian_identity=args.custodian_identity,
         )
         integrated_at = verify_signature(
