@@ -7,7 +7,7 @@ import unittest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from origen.trust_adapter import canonical_payload, verify_attestation
+from origen.trust_adapter import canonical_payload, verify_attestation, verify_artifact_bytes
 
 
 class Ed25519TrustAdapterTests(unittest.TestCase):
@@ -53,6 +53,31 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(result["identity_status"], "PINNED_KEY_ONLY")
         self.assertEqual(result["trusted_time_status"], "NOT_ESTABLISHED_BY_THIS_MODULE")
         self.assertEqual(result["custody_status"], "NOT_ESTABLISHED_BY_THIS_MODULE")
+
+
+    def test_signature_is_bound_to_exact_original_bytes(self):
+        raw = b"exact sealed portfolio bytes"
+        result = verify_artifact_bytes(
+            self.envelope, raw, trust_roots=self.roots,
+            expected_role="CUSTODIAN", verification_time_utc="2026-11-21T11:00:00Z",
+        )
+        self.assertEqual(result["status"], "SIGNATURE_VALID")
+        self.assertEqual(result["byte_integrity_status"], "MATCHED")
+        self.assertEqual(result["artifact_byte_length"], len(raw))
+
+    def test_one_byte_change_in_original_artifact_is_rejected(self):
+        result = verify_artifact_bytes(
+            self.envelope, b"exact sealed portfolio byteS", trust_roots=self.roots,
+            expected_role="CUSTODIAN", verification_time_utc="2026-11-21T11:00:00Z",
+        )
+        self.assertEqual(result["status"], "BLOCKED")
+
+    def test_artifact_must_be_raw_bytes(self):
+        result = verify_artifact_bytes(
+            self.envelope, "exact sealed portfolio bytes", trust_roots=self.roots,
+            expected_role="CUSTODIAN", verification_time_utc="2026-11-21T11:00:00Z",
+        )
+        self.assertEqual(result["status"], "BLOCKED")
 
     def test_tampered_payload_is_rejected(self):
         altered = dict(self.envelope, subject_sha256="f" * 64)
