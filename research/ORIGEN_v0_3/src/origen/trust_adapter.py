@@ -59,6 +59,12 @@ def verify_attestation(
     try:
         if not isinstance(envelope, Mapping) or set(envelope) != _FIELDS | {"signature_b64"}:
             raise ValueError("attestation fields do not match exact schema")
+        if not isinstance(trust_roots, Mapping):
+            raise ValueError("trust_roots must be a mapping controlled outside the evidence bundle")
+        if not isinstance(expected_role, str) or not expected_role:
+            raise ValueError("expected_role must be a non-empty string")
+        if not isinstance(expected_subject_sha256, str) or not _HEX64.fullmatch(expected_subject_sha256):
+            raise ValueError("expected_subject_sha256 must be 64 lowercase hexadecimal characters")
         if envelope["schema_version"] != "exact5.attestation.ed25519.v1":
             raise ValueError("unsupported attestation schema")
         key_id, role = envelope["key_id"], envelope["role"]
@@ -78,6 +84,13 @@ def verify_attestation(
         root = trust_roots.get(key_id)
         if not isinstance(root, Mapping):
             raise ValueError("key_id is not present in pinned trust roots")
+        allowed_root_fields = {"public_key_b64", "roles", "enabled", "revoked"}
+        if set(root) - allowed_root_fields or not {"public_key_b64", "roles"}.issubset(root):
+            raise ValueError("pinned trust root fields do not match policy schema")
+        if ("enabled" in root and not isinstance(root["enabled"], bool)) or (
+            "revoked" in root and not isinstance(root["revoked"], bool)
+        ):
+            raise ValueError("pinned trust root enabled/revoked flags must be booleans")
         roles = root.get("roles")
         if (not isinstance(roles, list)
                 or any(not isinstance(item, str) or not item for item in roles)):
@@ -122,9 +135,11 @@ def verify_attestation(
             "trusted_time_status": "NOT_ESTABLISHED_BY_THIS_MODULE",
             "revocation_status": "NOT_CHECKED",
             "custody_status": "NOT_ESTABLISHED_BY_THIS_MODULE",
+            "replay_status": "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER",
         }
-    except (TypeError, ValueError, KeyError, OverflowError) as exc:
-        return {"status": "BLOCKED", "reason": str(exc)}
+    except Exception as exc:
+        # Fail closed for malformed external inputs; never let parser/type errors escape.
+        return {"status": "BLOCKED", "reason": f"invalid attestation or trust policy: {type(exc).__name__}: {exc}"}
 
 
 def verify_artifact_bytes(
