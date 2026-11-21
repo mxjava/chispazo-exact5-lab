@@ -318,11 +318,24 @@ def write_record_exclusive(path: str | Path, record: dict[str, Any]) -> None:
         raise
 
 
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if type(key) is not str:
+            raise ValueError("record JSON keys must be exact built-in strings")
+        if key in result:
+            raise ValueError(f"duplicate JSON object key: {key}")
+        result[key] = value
+    return result
+
+
 def read_record(path: str | Path) -> dict[str, Any]:
     raw = Path(path).read_bytes()
     if not raw.endswith(b"\n"):
         raise ValueError("record file must end with LF")
-    value = json.loads(raw.decode("utf-8"))
-    if not isinstance(value, dict):
-        raise ValueError("record JSON must be an object")
+    value = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_json_object)
+    if type(value) is not dict:
+        raise ValueError("record JSON must be an exact built-in object")
+    if raw != canonical_json_bytes(value) + b"\n":
+        raise ValueError("record file must use canonical JSON encoding")
     return value
