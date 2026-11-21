@@ -52,6 +52,23 @@ VERIFIED = dict(
 
 
 class PhysicalIntakeV2Tests(unittest.TestCase):
+    def test_mass_object_cannot_spoof_numeric_text_through_str(self):
+        class SpoofedNumeric:
+            def __str__(self):
+                return "4.700"
+
+        rows = rows_for_target()
+        rows[0]["mass_value"] = SpoofedNumeric()
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "INVALID_MASS_OR_RESOLUTION",
+            result["targets"]["12301"]["reasons"],
+        )
+        self.assertNotEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
     def test_timestamp_string_subclass_cannot_spoof_valid_time(self):
         class SpoofedTimestamp(str):
             def strip(self, *args, **kwargs):
