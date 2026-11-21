@@ -16,6 +16,7 @@ def fixture(tmp_path: Path):
     manifest = {
         "contest_id": 12399, "modality": "CLASSIC", "candidate_id": "candidate-A",
         "source_commit_sha": "a" * 40, "payload_sha256": digest,
+        "generated_at_utc": "2026-12-01T21:59:00Z",
         "scheduled_close_at_utc": close,
     }
     receipt = {
@@ -71,3 +72,41 @@ def test_rejects_duplicate_json_keys(tmp_path):
     path.write_text('{"contest_id": 1, "contest_id": 2}', encoding="utf-8")
     with pytest.raises(CustodyError, match="duplicate JSON key"):
         _load_json(path)
+
+
+
+def test_rejects_receipt_predating_manifest_generation(tmp_path):
+    manifest, receipt, payload, now = fixture(tmp_path)
+    receipt["received_at_utc"] = "2026-12-01T21:58:00Z"
+    with pytest.raises(CustodyError, match="predates manifest generation"):
+        validate_receipt(manifest, receipt, payload,
+                         expected_custodian_identity=receipt["custodian_identity"], now=now)
+
+
+def test_signature_verification_requires_rekor_integrated_timestamp(tmp_path, monkeypatch):
+    import subprocess
+    from src.validation.independent_custody import verify_signature
+
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, "", ""))
+    receipt_path = tmp_path / "receipt.json"
+    bundle_path = tmp_path / "bundle.json"
+    bundle_path.write_text(json.dumps({
+        "verificationMaterial": {
+            "tlogEntries": [{"integratedTime": 1796162520}]
+        }
+    }), encoding="utf-8")
+    timestamp = verify_signature(receipt_path, bundle_path, "trusted-identity", "trusted-issuer")
+    assert timestamp.tzinfo == dt.timezone.utc
+    assert timestamp.year == 2026
+
+
+def test_signature_verification_rejects_bundle_without_rekor_timestamp(tmp_path, monkeypatch):
+    import subprocess
+    from src.validation.independent_custody import verify_signature
+
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, "", ""))
+    receipt_path = tmp_path / "receipt.json"
+    bundle_path = tmp_path / "bundle.json"
+    bundle_path.write_text('{"verificationMaterial": {"tlogEntries": []}}', encoding="utf-8")
+    with pytest.raises(CustodyError, match="no transparency-log timestamp"):
+        verify_signature(receipt_path, bundle_path, "trusted-identity", "trusted-issuer")
