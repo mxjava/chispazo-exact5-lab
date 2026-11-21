@@ -147,19 +147,19 @@ def _validate_manifest(manifest: dict[str, Any]) -> tuple[dt.datetime, dt.dateti
 def _validate_portfolio_payload(raw: bytes) -> None:
     if not isinstance(raw, bytes):
         raise CustodyError("payload must be supplied as exact bytes")
-    if not raw or not raw.endswith(b"\\n") or b"\\r" in raw:
+    if not raw or not raw.endswith(b"\n") or b"\r" in raw:
         raise CustodyError("portfolio payload must be non-empty canonical LF bytes ending with one LF")
     try:
         text = raw.decode("utf-8", errors="strict")
     except UnicodeDecodeError as exc:
         raise CustodyError("portfolio payload must be valid UTF-8") from exc
-    lines = text[:-1].split("\\n")
+    lines = text[:-1].split("\n")
     if len(lines) != 30:
         raise CustodyError("portfolio payload must contain exactly 30 lines")
     pattern = re.compile(
-        r"(?:0[1-9]|1\\d|2[0-8])-(?:0[1-9]|1\\d|2[0-8])-"
-        r"(?:0[1-9]|1\\d|2[0-8])-(?:0[1-9]|1\\d|2[0-8])-"
-        r"(?:0[1-9]|1\\d|2[0-8])"
+        r"(?:0[1-9]|1\d|2[0-8])-(?:0[1-9]|1\d|2[0-8])-"
+        r"(?:0[1-9]|1\d|2[0-8])-(?:0[1-9]|1\d|2[0-8])-"
+        r"(?:0[1-9]|1\d|2[0-8])"
     )
     seen: set[str] = set()
     for index, line in enumerate(lines, start=1):
