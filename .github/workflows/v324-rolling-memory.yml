@@ -1,8 +1,6 @@
 name: v324 rolling-memory ablation
 on:
-  push:
-    branches:
-      - fix/origen-v03-integrity-guards-20261120
+  # Frozen retrospective audit: run manually only; unrelated pushes must not replay closed work.
   workflow_dispatch:
 jobs:
   replay:
