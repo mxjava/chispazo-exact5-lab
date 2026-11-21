@@ -1,51 +1,105 @@
 {
-  "schema": "exact5.official_overlay.status_only.v1",
-  "observed_date": "2026-11-21",
-  "purpose": "Official result refresh only; not a canonical-history append, prediction, or independent custody record.",
-  "classification": "STATUS_ONLY_OFFICIAL_PUBLICATION",
+  "schema": "exact5.official_overlay.status_only.v2",
+  "observed_at_local": "2026-11-21T11:53:30-06:00",
+  "purpose": "Status-only refresh from public official Lotería Nacional endpoints. No prediction, no pre-close snapshot, no canonical-history append.",
+  "classification": "OFFICIAL_NUMBERS_PROVISIONAL_MODALITY_DERIVED",
+  "correction": {
+    "supersedes_previous_overlay_assertion": true,
+    "reason": "The 2026-11-20 PDF prints contest numbers and IDs but the extracted text does not explicitly label the two Chispazo rows as De las Tres or Clásico. Modality must remain PROVISIONAL_DERIVED from the official daily schedule and contest order, not described as a PDF label."
+  },
+  "official_schedule": {
+    "product_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "published_slots": [
+      {
+        "time_local": "15:00",
+        "product_modality": "DE_LAS_TRES"
+      },
+      {
+        "time_local": "21:00",
+        "product_modality": "CLASICO"
+      }
+    ]
+  },
   "draws": [
     {
       "contest_id": 12385,
       "date": "2026-11-20",
-      "modality": "DE_LAS_TRES",
-      "modality_basis": "Official Loteria Nacional results PDF labels this draw as Chispazo De las tres.",
-      "numbers": [3, 13, 20, 22, 23],
-      "source_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf"
+      "numbers": [
+        3,
+        13,
+        20,
+        22,
+        23
+      ],
+      "number_status": "OFFICIAL_PUBLIC_RESULT",
+      "modality_classification": "PROVISIONAL_DERIVED",
+      "modality_basis": "The official daily schedule defines the 15:00 slot as De las Tres; the two consecutive contests are shown in the official 20-Nov daily PDF in order. The PDF text itself does not explicitly label this row's modality.",
+      "source_urls": [
+        "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+        "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf?v=20112026221431"
+      ],
+      "source_pdf_lines": "numbers at lines 12; contest ID at lines 86-88"
     },
     {
       "contest_id": 12386,
       "date": "2026-11-20",
-      "modality": "CLASICO",
-      "modality_basis": "Official Loteria Nacional results PDF labels this draw as Chispazo Clasico.",
-      "numbers": [2, 4, 9, 18, 24],
-      "source_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf"
+      "numbers": [
+        2,
+        4,
+        9,
+        18,
+        24
+      ],
+      "number_status": "OFFICIAL_PUBLIC_RESULT",
+      "modality_classification": "PROVISIONAL_DERIVED",
+      "modality_basis": "The official daily schedule defines the 21:00 slot as Clásico; the two consecutive contests are shown in the official 20-Nov daily PDF in order. The PDF text itself does not explicitly label this row's modality.",
+      "source_urls": [
+        "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+        "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf?v=20112026221431"
+      ],
+      "source_pdf_lines": "numbers at lines 13; contest ID at lines 89-90"
     }
   ],
-  "next_advertised_chispazo": {
+  "next_advertised_draw": {
     "contest_id": 12387,
     "date": "2026-11-21",
     "advertised_time_local": "15:00",
-    "modality": "UNCONFIRMED",
-    "note": "The official home page advertises contest 12387 at 15:00; this overlay does not infer modality or numbers."
+    "advertisement_source": "https://www.loterianacional.gob.mx/home/index",
+    "modality_classification": "UNCONFIRMED",
+    "schedule_expectation_only": "DE_LAS_TRES",
+    "result_published_at_observation": false,
+    "note": "The home index advertises 12387 at 15:00. No result was visible at the observation time; do not infer its winning numbers or a later Clásico contest ID."
   },
-  "source_crosscheck": {
-    "official_results_page": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
-    "official_home_page": "https://www.loterianacional.gob.mx/",
-    "official_mask_index_or_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf",
-    "publication_consistency": "The official results page and the 2026-11-20 results PDF agree on contests 12385 and 12386."
+  "endpoint_discrepancies": {
+    "dedicated_chispazo_results_page": "Latest result 12386 and last-15 table includes 12385.",
+    "home_results_page": "The Home/Resultados extraction still shows 12386 blank; treat as stale relative to the dedicated Chispazo endpoint.",
+    "mask_index": "Lists RESULTADOS 2026-11-20.",
+    "mask_pdf": "One-page PDF confirms both contest IDs and both winning combinations; it does not explicitly print the modality labels in the extracted text."
   },
   "integrity_limits": {
     "original_pdf_bytes_captured": false,
-    "source_sha256": null,
+    "source_sha256": "NOT_CAPTURED",
     "independent_custody": false,
-    "signed_preclose_snapshot": false
+    "signed_preclose_snapshot": false,
+    "source_timestamp_provenance": false
   },
-  "firewall": {
-    "append_to_canonical_history": false,
-    "modify_main": false,
-    "modify_v294": false,
-    "retrospective_reconstruction_of_preclose_scores": false,
-    "claim_predictive_edge": false,
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "challenger_changed": false,
+    "v294_changed": false,
+    "main_modified": false,
     "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "sources": {
+    "dedicated_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "home_results": "https://www.loterianacional.gob.mx/Home/Resultados",
+    "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "daily_mask_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf?v=20112026221431",
+    "home_schedule": "https://www.loterianacional.gob.mx/home/index",
+    "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
   }
 }
