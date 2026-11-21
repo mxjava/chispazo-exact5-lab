@@ -33,6 +33,50 @@ def canonical_payload(envelope: Mapping[str, Any]) -> bytes:
     ).encode("utf-8")
 
 
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Build JSON objects without silently collapsing duplicate member names."""
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if type(key) is not str:
+            raise ValueError("attestation JSON object keys must be exact strings")
+        if key in result:
+            raise ValueError(f"duplicate JSON object key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"non-finite JSON number is not permitted: {value}")
+
+
+def parse_attestation_json(raw: bytes) -> dict[str, Any]:
+    """Parse one canonical UTF-8 attestation object, rejecting duplicate keys."""
+    if type(raw) is not bytes:
+        raise ValueError("attestation JSON must be exact built-in bytes")
+    try:
+        value = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_unique_json_object,
+            parse_constant=_reject_json_constant,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise ValueError(f"invalid attestation JSON: {exc}") from exc
+    if type(value) is not dict:
+        raise ValueError("attestation JSON must be an exact built-in object")
+    try:
+        canonical = json.dumps(
+            value, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False, allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise ValueError("attestation JSON cannot be canonically encoded") from exc
+    if raw != canonical:
+        raise ValueError(
+            "attestation JSON must use canonical UTF-8 JSON encoding without whitespace or trailing LF"
+        )
+    return value
+
+
 def _utc(value: Any, field: str) -> datetime:
     if type(value) is not str or not re.fullmatch(
         r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|\+00:00)",
@@ -166,6 +210,31 @@ def verify_attestation(
     except Exception as exc:
         # Fail closed for malformed external inputs; never let parser/type errors escape.
         return {"status": "BLOCKED", "reason": f"invalid attestation or trust policy: {type(exc).__name__}: {exc}"}
+
+
+def verify_attestation_json(
+    raw: bytes,
+    *,
+    trust_roots: Mapping[str, Mapping[str, Any]],
+    expected_role: str,
+    expected_subject_sha256: str,
+    verification_time_utc: str,
+) -> dict[str, Any]:
+    """Strictly parse original envelope bytes, then verify its detached signature."""
+    try:
+        envelope = parse_attestation_json(raw)
+    except Exception as exc:
+        return {
+            "status": "BLOCKED",
+            "reason": f"invalid attestation JSON: {type(exc).__name__}: {exc}",
+        }
+    return verify_attestation(
+        envelope,
+        trust_roots=trust_roots,
+        expected_role=expected_role,
+        expected_subject_sha256=expected_subject_sha256,
+        verification_time_utc=verification_time_utc,
+    )
 
 
 def verify_artifact_bytes(
