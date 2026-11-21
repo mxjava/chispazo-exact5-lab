@@ -30,7 +30,7 @@
 
 La ficha de Normateca separa Sorteos Electrónicos y Sorteos Tradicionales: https://loterianacional.gob.mx/Normateca/Sustantivas?id=2
 
-Corrección de secuencia: en SGVO-PRO-05 revisión 39, la inspección CS-02 y la confirmación del número de sorteo/estuche aparecen antes del cierre; después se verifica el estado cerrado de SICAL y se realiza el pesaje y colocación de esferas. Por tanto, las mediciones de la Tira de Pesaje no se consideran disponibles para una predicción pre-cierre bajo esta secuencia. No usar como norma vigente un documento antiguo de proyecto DN-07 v05 que describía un pesaje preferentemente antes del cierre.
+Corrección de secuencia: en SGVO-PRO-05 revisión 39, la inspección CS-02 y la confirmación del número de sorteo/estuche aparecen antes del cierre; después se verifica el estado cerrado de SICAL y se realiza el pesaje y colocación de esferas. Por tanto, las mediciones de la Tira de Pesaje no se consideran disponibles para una predicción pre-cierre bajo esta secuencia. No usar como norma vigente el documento de proyecto **SGM-PRO-06 “Preparación de Sorteos”, DN-07 v05, revisión 21** (https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/PROYECTO/SUSTANTIVAS/sgm_p0_6_21.pdf): éste decía que Chispazo se pesara preferentemente antes del cierre de 21:15 y listaba colores amarillo/azul y otros rangos, pero está en carpeta PROYECTO y “preferentemente” no prueba el timestamp de cada evento.
 
 La norma vigente confirma:
 - CS-02 antes del cierre.
