@@ -19,14 +19,15 @@ independent retrieval, and carries a separately verifiable Sigstore bundle.
 - Explicit trust configuration supplied out-of-band: exact certificate identity
   and OIDC issuer for the independent custodian.
 
-## Receipt schema 1.0
+## Receipt schema 1.1
 
 Required keys (no extras, duplicate JSON keys refused):
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "receipt_type": "INDEPENDENT_CUSTODY_RECEIPT",
+  "manifest_sha256": "64 lowercase hex characters: SHA-256 of the exact manifest bytes received by the custodian",
   "contest_id": 12399,
   "modality": "CLASSIC",
   "candidate_id": "candidate-A",
@@ -44,6 +45,15 @@ Required keys (no extras, duplicate JSON keys refused):
 ```
 
 The values above are illustrative only; never use them as a real event.
+
+The custodian must hash the **exact raw manifest bytes** it received and place
+that digest in the signed `manifest_sha256` field. The verifier compares this
+digest with the captured manifest bytes before accepting any receipt fields.
+This binds every manifest field—including history cutoff/hash, candidate
+metadata, source commit, payload digest, generation time, and official close—
+to the custodian's signature. Reformatting or changing even one manifest byte
+after receipt invalidates the signature-bound digest. Receipt schema 1.0 is
+superseded; only schema 1.1 is accepted by the current verifier.
 
 ## Invocation
 
