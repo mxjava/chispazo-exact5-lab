@@ -101,6 +101,31 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "STRUCTURAL_PRE_CLOSE_ONLY",
         )
 
+    def test_all_digest_fields_reject_objects_that_stringify_to_sha256(self):
+        class SpoofedDigest:
+            def __init__(self, rendered):
+                self.rendered = rendered
+
+            def __str__(self):
+                return self.rendered
+
+        cases = (
+            ("custody_receipt_sha256", "c" * 64, "INVALID_CUSTODY_RECEIPT_SHA256"),
+            ("calibration_certificate_sha256", "a" * 64, "INVALID_CALIBRATION_SHA256"),
+        )
+        for field, rendered, expected_reason in cases:
+            with self.subTest(field=field):
+                rows = rows_for_target()
+                rows[0][field] = SpoofedDigest(rendered)
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                reasons = result["targets"]["12301"]["reasons"]
+                self.assertIn(expected_reason, reasons)
+                self.assertIn("EVIDENCE_DOCUMENT_SET_CONFLICT", reasons)
+                self.assertNotEqual(
+                    result["targets"]["12301"]["predictive_eligibility"],
+                    "STRUCTURAL_PRE_CLOSE_ONLY",
+                )
+
     def test_mass_unit_object_cannot_spoof_gram_unit_through_str(self):
         class SpoofedUnit:
             def __str__(self):
