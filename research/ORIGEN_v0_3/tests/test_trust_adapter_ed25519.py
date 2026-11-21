@@ -40,8 +40,8 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
     def verify(self, envelope=None, roots=None, role="CUSTODIAN", subject=None,
                now="2026-11-21T11:00:00Z"):
         return verify_attestation(
-            envelope or self.envelope,
-            trust_roots=roots or self.roots,
+            self.envelope if envelope is None else envelope,
+            trust_roots=self.roots if roots is None else roots,
             expected_role=role,
             expected_subject_sha256=subject or self.subject,
             verification_time_utc=now,
