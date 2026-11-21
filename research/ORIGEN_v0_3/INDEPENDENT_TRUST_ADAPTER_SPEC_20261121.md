@@ -1,6 +1,6 @@
 # ORIGEN v0.3 — Independent Trust Adapter Specification
 
-Status: RESEARCH SPECIFICATION / NOT IMPLEMENTED  
+Status: PARTIAL IMPLEMENTATION — SIGNATURE AND BYTE-BINDING UNIT ONLY; FULL TRUST ADAPTER NOT IMPLEMENTED  
 Date: 2026-11-21  
 Parent baseline: `eb08acdb6a50ab3b5159348864f52bba075b480b`  
 Scope: bridge structural intake/custody validation to independently authenticated evidence.
@@ -9,7 +9,7 @@ Scope: bridge structural intake/custody validation to independently authenticate
 
 ORIGEN may classify a contest as prospectively eligible only when every provenance assertion is verified against independently controlled trust roots and original evidence bytes. A self-consistent CSV, caller-supplied reference set, URL, timestamp string, or re-hashed seal is not authentication.
 
-This specification does not claim that any physical evidence has been received, that any signature infrastructure exists, or that the adapter is implemented. Until implementation and independent review, the system state remains `BLOCKED_PROVENANCE / RESEARCH_ONLY_NO_EDGE`.
+A research-only Ed25519 verifier now exists at `src/origen/trust_adapter.py`. It verifies detached signatures against caller-supplied pinned-key material, explicit role lists, enabled/revoked flags, validity intervals and the SHA-256 of exact original bytes. Unit tests cover signature tampering, byte substitution, malformed roles and disabled/revoked roots. This is only a partial cryptographic primitive: trust-root provisioning, identity proof, authoritative revocation feeds, trusted timestamps, external ledger/custody, receipt issuance, end-to-end eligibility integration and independent review remain unimplemented. No physical evidence or real institutional trust roots have been received. System state remains `BLOCKED_PROVENANCE / RESEARCH_ONLY_NO_EDGE`.
 
 ## 2. Required trust boundary
 
@@ -113,10 +113,10 @@ No classification in this document authorizes betting or production use. V294 re
 
 ## 8. Implementation sequence and acceptance gates
 
-A. Define typed receipt schema and strict parser.  
-B. Implement byte-level source verifier and signature verification.  
-C. Implement trusted-time and external-ledger verification.  
-D. Implement identity/role/separation-of-duties policy.  
+A. Define typed receipt schema and strict parser — NOT STARTED.  
+B. Implement byte-level source verifier and signature verification — PARTIAL: Ed25519 detached-signature and exact-byte SHA-256 binding primitive exists; manifest schema and controlled intake integration remain.  
+C. Implement trusted-time and external-ledger verification — NOT STARTED.  
+D. Implement identity/role/separation-of-duties policy — PARTIAL: role allow-list and key enabled/revoked flags are checked; identity proof, authoritative revocation and separation-of-duties remain.  
 E. Bind preregistration, target list, code and candidate commitments.  
 F. Bind both pre-close Exact5 seals.  
 G. Remove public/caller control of authenticated reference sets.  
