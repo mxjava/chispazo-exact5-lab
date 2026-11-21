@@ -120,6 +120,26 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "BLOCKED")
 
+    def test_malformed_signature_base64_is_rejected(self):
+        altered = dict(self.envelope, signature_b64="not base64!")
+        self.assertEqual(self.verify(envelope=altered)["status"], "BLOCKED")
+
+    def test_wrong_signature_length_is_rejected(self):
+        altered = dict(self.envelope, signature_b64=base64.b64encode(b"short").decode("ascii"))
+        self.assertEqual(self.verify(envelope=altered)["status"], "BLOCKED")
+
+    def test_malformed_public_key_is_rejected(self):
+        roots = {"custody-key-01": dict(self.roots["custody-key-01"], public_key_b64=base64.b64encode(b"short").decode("ascii"))}
+        self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
+
+    def test_reversed_validity_interval_is_rejected(self):
+        altered = dict(self.envelope, issued_at_utc="2026-11-21T12:00:00Z",
+                       expires_at_utc="2026-11-21T10:00:00Z")
+        altered["signature_b64"] = base64.b64encode(
+            self.private.sign(canonical_payload(altered))
+        ).decode("ascii")
+        self.assertEqual(self.verify(envelope=altered)["status"], "BLOCKED")
+
     def test_wrong_subject_is_rejected(self):
         self.assertEqual(self.verify(subject="e" * 64)["status"], "BLOCKED")
 
