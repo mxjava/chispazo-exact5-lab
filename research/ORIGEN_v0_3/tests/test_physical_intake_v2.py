@@ -577,5 +577,42 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                     "STRUCTURAL_PRE_CLOSE_ONLY",
                 )
 
+
+    def test_timestamps_require_canonical_extended_iso8601_and_offset(self):
+        invalid_values = (
+            "2026-11-20 21:00:00-06:00",
+            "2026-11-20T21:00-06:00",
+            "2026-11-20T21:00:00-0600",
+            "2026-11-20T21:00:00",
+            "2026-11-20T21:00:00-06:00 ",
+        )
+        for value in invalid_values:
+            with self.subTest(value=value):
+                rows = rows_for_target()
+                for row in rows:
+                    row["source_signed_at"] = value
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                reasons = result["targets"]["12301"]["reasons"]
+                self.assertIn("INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", reasons)
+                self.assertNotEqual(
+                    result["targets"]["12301"]["predictive_eligibility"],
+                    "STRUCTURAL_PRE_CLOSE_ONLY",
+                )
+
+    def test_sha256_fields_reject_surrounding_whitespace(self):
+        rows = rows_for_target()
+        rows[0]["source_document_sha256"] = " " + ("b" * 64) + " "
+        rows[0]["custody_receipt_sha256"] = " " + ("c" * 64) + " "
+        rows[0]["calibration_certificate_sha256"] = " " + ("a" * 64) + " "
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("INVALID_SOURCE_SHA256", reasons)
+        self.assertIn("INVALID_CUSTODY_RECEIPT_SHA256", reasons)
+        self.assertIn("INVALID_CALIBRATION_SHA256", reasons)
+        self.assertNotEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
 if __name__ == "__main__":
     unittest.main()
