@@ -14,6 +14,14 @@ def z(v):
     v=np.asarray(v,float); s=v.std()
     return (v-v.mean())/(s if s>1e-12 else 1.0)
 
+def stable_descending_order(scores):
+    """Deterministic descending ranking; ties resolve by ascending universe index."""
+    values = np.asarray(scores, dtype=float)
+    if values.ndim != 1 or not np.isfinite(values).all():
+        raise ValueError("scores must be a finite one-dimensional array")
+    return np.lexsort((np.arange(values.size, dtype=np.int64), -values))
+
+
 def e5(weights):
     e=np.zeros(6,float); e[0]=1.0
     for w in weights:
@@ -25,6 +33,23 @@ def p_set(signal,beta,actual):
     Z=e5(w)
     idx=np.asarray(actual,dtype=int)-1
     return float(np.prod(w[idx])/Z)
+
+
+def subset_pmf(signal, beta, combos):
+    """Exact unordered 5-subset PMF under weighted sampling without replacement."""
+    s = np.asarray(signal, dtype=float)
+    c = np.asarray(combos, dtype=int)
+    if s.shape != (28,) or not np.isfinite(s).all():
+        raise ValueError("signal must be a finite vector of length 28")
+    if c.ndim != 2 or c.shape[1] != 5:
+        raise ValueError("combos must have shape (n, 5)")
+    if np.any(c < 1) or np.any(c > 28) or np.any(np.diff(c, axis=1) <= 0):
+        raise ValueError("each combination must contain 5 strictly increasing values in [1, 28]")
+    w = np.exp(float(beta) * z(s))
+    normalizer = e5(w)
+    if not np.isfinite(normalizer) or normalizer <= 0:
+        raise ValueError("invalid subset normalizer")
+    return np.prod(w[c - 1], axis=1) / normalizer
 
 def signals(draws, t):
     # all t past draws, each 0-based numbers
@@ -72,6 +97,7 @@ def main(hist_path,outdir,warmup=800):
         for b in BETAS: names.append(f'{base}_b{b:.2f}')
     logpost=np.full(len(names), -math.log(len(names)),float)
     rows=[]
+    expert_rows=[]
     cum_mix=0.0; cum_best_fixed=None
     expert_cum=np.zeros(len(names),float)
     for t in range(max(warmup,2),len(df)):
@@ -87,6 +113,7 @@ def main(hist_path,outdir,warmup=800):
         llr=math.log(pmix)+LOGU
         cum_mix+=llr
         expert_llr=np.log(ps)+LOGU
+        expert_rows.extend({'CONCURSO': int(df.loc[t,'CONCURSO']), 'expert': names[i], 'log_lift': float(expert_llr[i])} for i in range(len(names)))
         expert_cum+=expert_llr
         topidx=np.argsort(post)[-5:][::-1]
         rows.append({'CONCURSO':int(df.loc[t,'CONCURSO']),'mix_p':pmix,'log_lift':llr,'cum_log_e':cum_mix,'e_value_cap':float(math.exp(min(50,cum_mix))), 'top_expert':names[topidx[0]],'top_weight':float(post[topidx[0]]),'best_expert_so_far':names[int(np.argmax(expert_cum))],'best_expert_cum_loge':float(expert_cum.max())})
@@ -94,6 +121,7 @@ def main(hist_path,outdir,warmup=800):
         logpost += np.log(np.maximum(ps,1e-300))
         mm=np.max(logpost); logpost-=mm+math.log(np.exp(logpost-mm).sum())
     rd=pd.DataFrame(rows); rd.to_csv(outdir/'v264_prequential.csv',index=False)
+    pd.DataFrame(expert_rows).to_csv(outdir/'v264_expert_log_likelihoods.csv', index=False)
     # final prospective PMF for next target
     t=len(df); sig=signals(draws,t)
     m=np.max(logpost); post=np.exp(logpost-m); post/=post.sum()
@@ -103,15 +131,12 @@ def main(hist_path,outdir,warmup=800):
     k=1
     expert_meta=[]
     for base in [f'freq{w}' for w in WINDOWS]+[f'ewma{h}' for h in EWM_HL]+['hotgap','duegap','transition']:
-        zz=z(sig[base])
         for b in BETAS:
-            w=np.exp(b*zz); Z=e5(w)
-            lp=np.log(w)[combos-1].sum(axis=1)-math.log(Z)
-            pp=np.exp(lp)
+            pp=subset_pmf(sig[base], b, combos)
             pmf += post[k]*pp
             expert_meta.append((names[k],float(post[k])))
             k+=1
-    order=np.argsort(-pmf)
+    order=stable_descending_order(pmf)
     top=order[:30]
     out=pd.DataFrame({'rank':np.arange(1,31),'combo':['-'.join(f'{x:02d}' for x in combos[i]) for i in top],'p_exact5':pmf[top],'lift_vs_uniform':pmf[top]*U})
     out.to_csv(outdir/f'v264_top30_target_{int(df.CONCURSO.max())+1}.csv',index=False)

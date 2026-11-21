@@ -1,0 +1,28 @@
+{
+  "n_targets": 10087,
+  "contest_min": 2163,
+  "contest_max": 12249,
+  "n_experts": 28,
+  "block_length": 30,
+  "bootstrap_resamples": 5000,
+  "seed": 20261120,
+  "method": "joint circular moving-block bootstrap; centered under null; single-step maxT one-sided FWER adjustment; simultaneous two-sided 95% max-absolute-t interval",
+  "maxT_95_abs_critical": 2.4608223404740297,
+  "results": [
+    {"candidate":"static_full_bayes","mean_log_lift":-0.00033034643701548546,"se_descriptive":0.00021692416033021982,"maxT_one_sided_p_adjusted":0.9996000799840032,"simultaneous_95_ci_low":-0.0008641582569446606,"simultaneous_95_ci_high":0.0002034653829136897},
+    {"candidate":"rolling_w100_eta0.25","mean_log_lift":-0.013307579019170993,"se_descriptive":0.0017257094695856863,"maxT_one_sided_p_adjusted":1.0,"simultaneous_95_ci_low":-0.017554243435095037,"simultaneous_95_ci_high":-0.009060914603246949},
+    {"candidate":"rolling_w100_eta0.5","mean_log_lift":-0.010726251263783444,"se_descriptive":0.0015808399737577226,"maxT_one_sided_p_adjusted":1.0,"simultaneous_95_ci_low":-0.014616417587920826,"simultaneous_95_ci_high":-0.0068360849396460616},
+    {"candidate":"rolling_w100_eta1","mean_log_lift":-0.009987279660544501,"se_descriptive":0.001539144841718722,"maxT_one_sided_p_adjusted":1.0,"simultaneous_95_ci_low":-0.01377484167227071,"simultaneous_95_ci_high":-0.00619971764881829},
+    {"candidate":"rolling_w250_eta0.25","mean_log_lift":-0.0057892707577849225,"se_descriptive":0.0010961083688580144,"maxT_one_sided_p_adjusted":1.0,"simultaneous_95_ci_low":-0.008486598719451273,"simultaneous_95_ci_high":-0.0030919427961185724},
+    {"candidate":"rolling_w250_eta0.5","mean_log_lift":-0.003115591073241928,"se_descriptive":0.000816379470353437,"maxT_one_sided_p_adjusted":1.0,"simultaneous_95_ci_low":-0.005124555912192526,"simultaneous_95_ci_high":-0.0011066262342913306},
+    {"candidate":"rolling_w250_eta1","mean_log_lift":-0.002497985624941582,"se_descriptive":0.0007420937258854015,"maxT_one_sided_p_adjusted":1.0,"simultaneous_95_ci_low":-0.004324146444325988,"simultaneous_95_ci_high":-0.0006718248055571751},
+    {"candidate":"rolling_w500_eta0.25","mean_log_lift":-0.0012432234550440152,"se_descriptive":0.0004696380805474369,"maxT_one_sided_p_adjusted":1.0,"simultaneous_95_ci_low":-0.00239891933559249,"simultaneous_95_ci_high":-0.000087527575534455},
+    {"candidate":"rolling_w500_eta0.5","mean_log_lift":-0.0005912194995968182,"se_descriptive":0.0002915571904369221,"maxT_one_sided_p_adjusted":1.0,"simultaneous_95_ci_low":-0.001308689947349837,"simultaneous_95_ci_high":0.00012625094815620086},
+    {"candidate":"rolling_w500_eta1","mean_log_lift":-0.00042239249447998523,"se_descriptive":0.00022361713759219248,"maxT_one_sided_p_adjusted":1.0,"simultaneous_95_ci_low":-0.0009726745423797074,"simultaneous_95_ci_high":0.00012788955341973697}
+  ],
+  "limitations": [
+    "Canonical sequence includes unresolved official modality assignment; not certified Clásico-only.",
+    "Candidate family covers V323 static and rolling expert mixtures only; does not include V294.",
+    "Bootstrap inference is dependence-aware diagnostic, not prospective anytime-valid e-process."
+  ]
+}

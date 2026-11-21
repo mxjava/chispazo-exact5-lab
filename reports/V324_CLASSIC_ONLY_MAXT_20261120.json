@@ -1,0 +1,119 @@
+{
+  "schema": "V324_CLASSIC_ONLY_MAXT_V1",
+  "classification": "INFERRED_FROM_DAILY_PAIR_ORDER_NOT_ROW_LEVEL_OFFICIAL_TAG",
+  "workflow_run": 44757654571,
+  "workflow_head": "4327ce8c4ffa1c8ee4b5eb48a7f8000f85fd7dad",
+  "artifact_id": 14640390339,
+  "artifact_sha256": "9599071f2f7aea5c6440a7d493c246e97af34216da6f8bcbfefefdf8d7d9868d",
+  "filtered_history_sha256": "0b801bf1ea7692d6e684bed72024fad1e2777cee064adb85dce4d90122f25436",
+  "expert_scores_sha256": "8742e4d792047f4d343ea4a3e83c3d4ffbdf76a776ead43a8c363a73fa223d5d",
+  "maxT_json_sha256": "2757da3f8cafe36bffb1e362a23c402f1d70a4ddc5f69d3dbaf3372f2b311cc6",
+  "historical": {
+    "total_rows": 10887,
+    "legacy_unclassified_rows": 4560,
+    "first_paired_contest": 5923,
+    "first_paired_date": "2017-09-25",
+    "post_transition_rows": 6327,
+    "classic_history_rows": 3163,
+    "classic_min_contest": 5924,
+    "classic_max_contest": 12248,
+    "final_odd_unpaired_excluded": 12249
+  },
+  "evaluation": {
+    "targets": 2363,
+    "contest_min": 7524,
+    "contest_max": 12248,
+    "experts": 28,
+    "warmup": 800,
+    "block_length": 30,
+    "resamples": 5000,
+    "seed": 20261120,
+    "maxT_95_abs_critical": 2.5096479068497857
+  },
+  "v264": {
+    "mean_log_lift": -0.0014101584892830176,
+    "cumulative_log_e": -3.332204510175771,
+    "e_value": 0.035714285714265465,
+    "posterior_uniform": 1,
+    "top30_mass_lift": 0.9999999999999997
+  },
+  "results": [
+    [
+      "static_full_bayes",
+      -0.001410158,
+      0.9966,
+      -0.004040375,
+      0.001220058
+    ],
+    [
+      "rolling_w100_eta0.25",
+      -0.016011799,
+      1,
+      -0.024503127,
+      -0.007520472
+    ],
+    [
+      "rolling_w100_eta0.5",
+      -0.01224266,
+      1,
+      -0.019840907,
+      -0.004644412
+    ],
+    [
+      "rolling_w100_eta1",
+      -0.009208676,
+      1,
+      -0.016414736,
+      -0.002002617
+    ],
+    [
+      "rolling_w250_eta0.25",
+      -0.00767569,
+      1,
+      -0.013309431,
+      -0.002041949
+    ],
+    [
+      "rolling_w250_eta0.5",
+      -0.004686675,
+      1,
+      -0.008869631,
+      -0.00050372
+    ],
+    [
+      "rolling_w250_eta1",
+      -0.00353989,
+      1,
+      -0.007201153,
+      0.000121373
+    ],
+    [
+      "rolling_w500_eta0.25",
+      -0.003021233,
+      1,
+      -0.005979248,
+      -0.000063217
+    ],
+    [
+      "rolling_w500_eta0.5",
+      -0.00186614,
+      0.9996,
+      -0.004372604,
+      0.000640325
+    ],
+    [
+      "rolling_w500_eta1",
+      -0.001410504,
+      0.9996,
+      -0.004040721,
+      0.001219712
+    ]
+  ],
+  "decision": "RESEARCH_ONLY_NO_EDGE",
+  "limitations": [
+    "The canonical history has no official modality column; selected Clásico membership is inferred from uninterrupted paired numbering and official 2026 schedule/result anchors.",
+    "Historical single-draw era contests 1363-5922 excluded as unclassified.",
+    "Retrospective maxT bootstrap is not prospective evidence or an anytime-valid e-process.",
+    "No 5/5 capability or betting edge demonstrated."
+  ]
+}
