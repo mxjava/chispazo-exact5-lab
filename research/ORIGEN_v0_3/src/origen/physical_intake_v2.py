@@ -56,10 +56,10 @@ def _parse_time(value: Any, field: str) -> datetime:
 def evaluate_temporal_eligibility(
     rows: Iterable[Mapping[str, Any]],
     *,
-    declared_custody_refs: set[str] | None = None,
-    declared_timestamp_refs: set[str] | None = None,
-    declared_source_refs: set[str] | None = None,
-    declared_continuity_targets: set[str] | None = None,
+    declared_custody_refs: AbstractSet[str] | None = None,
+    declared_timestamp_refs: AbstractSet[str] | None = None,
+    declared_source_refs: AbstractSet[str] | None = None,
+    declared_continuity_targets: AbstractSet[str] | None = None,
 ) -> dict[str, Any]:
     """Classify each target independently; missing external attestations fail closed.
 
