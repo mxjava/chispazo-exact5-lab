@@ -78,3 +78,14 @@ def test_audit_rejects_fractional_event_order():
         assert "positive integers" in str(exc)
     else:
         raise AssertionError("fractional event order should be rejected")
+
+
+def test_policy_requires_video_from_weighing_through_draw_and_acta_attachment():
+    doc = _document()
+    result = MODULE.audit(doc)
+    assert doc["video_recording_policy"]["required"] is True
+    assert doc["video_recording_policy"]["scope"] == "from sphere weighing through the electronic draw"
+    assert doc["video_recording_policy"]["acta_attachment"] is True
+    assert result["video_recording_policy_documented"] is True
+    assert result["video_edited_copy_is_acta_attachment"] is True
+    assert result["public_original_recording_located"] is False

@@ -22,6 +22,8 @@ La documentación pública acredita inspección CS-02, confirmación previa del 
 
 ## 2. Cronología contra el cierre de ventas
 
+El artículo 8 del Reglamento, reformado en la publicación de SEGOB/SIDOF de 2012, identifica el Acta como resultado oficial de Chispazo; la web y la mascarilla son informativas. El video no sustituye el Acta. SGVO-PRO-05 sí exige una grabación documental desde el pesaje hasta el sorteo y que la versión editada del sorteo se anexe al Acta.
+
 | Variable / documento | Momento según SGVO-PRO-05 | Prospectivo para el mismo sorteo |
 |---|---|---|
 | CS-02, inspección de equipo | Antes de cada sorteo y antes del paso de cierre | Potencial; el formato, sus campos y timestamps por concurso no están publicados. |
@@ -31,7 +33,7 @@ La documentación pública acredita inspección CS-02, confirmación previa del 
 | Sustitución de estuche | Después del cierre si falla el pesaje; se repite el pesaje | El estuche final puede diferir del planeado antes del cierre. |
 | Carga progresiva | Después del pesaje y antes del sorteo | Orden de carga, no orden de extracción. |
 | Firmas electrónicas de participaciones/cancelaciones | Después del cierre y antes del sorteo | Custodia/integridad del archivo de ventas; no es dato físico. |
-| Video de cámaras | Durante la extracción | Retrospectivo; no hay timestamps por esfera publicados. |
+| Video de cámaras | Durante la extracción; grabación contratada desde el pesaje hasta el sorteo | Retrospectivo; no hay originales por concurso ni timestamps por esfera publicados. |
 | CS-11 y Acta | Después de la extracción | Retrospectivo; no es entrada del mismo sorteo. |
 | Incidencias / CS-09 | Se documentan después del suceso si afecta el resultado | Retrospectivo para ese sorteo; podría informar sorteos futuros si se resuelve antes del próximo cierre. |
 | Mantenimiento/calibración | Calendario anual; básculas calibradas al menos una vez al año | Sólo para futuros sorteos si se publican fechas, activo, certificado y vigencia antes del cierre. |
@@ -46,7 +48,7 @@ La documentación pública acredita inspección CS-02, confirmación previa del 
 - **Tira de pesaje:** peso individual de cada esfera, pesada en orden numérico; firmas y anexo al Acta. No se localizó una tira pública por concurso ni se especifican timestamps en el texto publicado.
 - **CS-11:** fecha, nombre/número de sorteo, hora, estuche seleccionado, resultados y firmas. No define ID de máquina, RFID, pesos ni timestamp individual de extracción.
 - **Acta / CS-09:** recoge incidencias que se apartan del procedimiento y afectan el resultado; el Acta y anexos se escanean al OIC y se resguardan.
-- **Video:** cámaras registran los números cuando aparecen en exhibidores. Hay transmisiones públicas de algunos sorteos, pero no equivalen al original de sala ni a un registro estructurado por esfera.
+- **Video:** la política 30 de SGVO-PRO-05 exige contratar grabación desde el pesaje hasta la celebración del sorteo, como testigo documental; la versión editada (sólo el sorteo), en DVD/CD/USB, forma parte del Acta. Las cámaras registran los números al aparecer en exhibidores. Hay transmisiones públicas de algunos sorteos, pero no se localizaron originales por concurso ni timestamps estructurados por esfera. El video es anexo probatorio del Acta, no resultado oficial independiente.
 - **Firma electrónica:** protege archivos de participaciones y cancelaciones después del cierre; se entrega al Inspector y queda bajo custodia del OIC. No mide el mecanismo físico.
 - **Mantenimiento/calibración:** mantenimiento preventivo/correctivo según calendario anual; calibración de básculas al menos anual. No se localizaron bitácoras, IDs de básculas ni certificados por equipo.
 - **SGVO-MAN-02:** SGVO-PRO-05 lo cita para preparar/operar equipos. No aparece en el índice público de normas vigentes consultado; se encontró sólo una entrada en el registro histórico de proyectos normativos (23-02-2026 a 04-03-2026). No pude verificar la versión vigente ni los campos completos de CS-02.
@@ -67,7 +69,7 @@ Archivo: `src/v265/CHISPAZO_V265_PHYSICAL_METADATA_EVALUATOR.py` (Git blob SHA-1
 4. Soporta mínimo de 100 filas prequential OOS y ajuste Holm sobre un p-family, pero no incluye el **anytime e-value** exigido por el proyecto. `actionable_for_betting` puede activarse sin ese gate; no debe interpretarse como autorización de apuesta.
 5. Es una asociación condicionada por máquina/estuche, no una prueba de sesgo físico. Para estudiar mecanismo se requieren pesos por esfera, IDs verificables, calibración, RFID, orden de extracción y timestamps trazables.
 
-El `V265_PHYSICAL_REGIME_SCANNER` usa resultados históricos como proxies, no mediciones físicas; `RESEARCH_ONLY_METADATA_REQUIRED` sigue siendo el estado correcto. No se repitieron sus análisis cerrados. El branch base no tenía pruebas específicas del evaluador V265; las siete pruebas añadidas validan sólo el auditor documental independiente.
+El `V265_PHYSICAL_REGIME_SCANNER` usa resultados históricos como proxies, no mediciones físicas; `RESEARCH_ONLY_METADATA_REQUIRED` sigue siendo el estado correcto. No se repitieron sus análisis cerrados. El branch base no tenía pruebas específicas del evaluador V265; las ocho pruebas añadidas validan sólo el auditor documental independiente.
 
 ## 5. Análisis reproducible nuevo
 
@@ -78,7 +80,7 @@ Se añadió un auditor de cronología documental, sin crear registros ficticios:
 - `reports/V265_PUBLIC_EVIDENCE_AUDIT_20261121.json`
 - `tests/test_v265_public_evidence_audit.py`
 
-Valida el orden de 2.1, 3.1, 4.1, 5.1, 5.6, 11.1 y 13.1, separa etapas pre-cierre/post-cierre y bloquea la conclusión si no hay datos físicos por concurso. **7 pruebas locales aprobadas.** No estima sesgo, efecto mecánico ni log-lift.
+Valida el orden de 2.1, 3.1, 4.1, 5.1, 5.6, 11.1 y 13.1, separa etapas pre-cierre/post-cierre y bloquea la conclusión si no hay datos físicos por concurso. **8 pruebas locales aprobadas.** No estima sesgo, efecto mecánico ni log-lift.
 
 ## 6. Bloqueos y evidencia que falta
 
@@ -88,7 +90,7 @@ Por concurso, con fuente, hora y vínculo verificable:
 2. CS-11 y Acta firmada, con estuche planeado y final.
 3. Tira original con los 28 pesos, tipo de esfera, báscula/ID, unidad, timestamp y firmas.
 4. RFID: tag IDs, lector, resultado de lectura, timestamp y fallas.
-5. Video original de sala/exportación íntegra y secuencia de extracción bola por bola.
+5. Video original desde el pesaje hasta el sorteo y versión editada anexa al Acta, con timestamps/identificación de evento y secuencia de extracción bola por bola.
 6. CS-09, bitácora, incidencias y sustituciones/repeticiones.
 7. Calendario/órdenes de mantenimiento y certificados de calibración.
 8. Definición oficial del momento de fijación del estuche final y aclaración de la secuencia “urna” vs pesaje/carga.
