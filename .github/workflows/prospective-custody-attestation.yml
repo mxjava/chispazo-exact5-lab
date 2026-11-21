@@ -1,4 +1,4 @@
-name: Prospective custody attestation
+name: Originator-side commitment attestation (NOT independent custody)
 
 on:
   push:
@@ -22,7 +22,7 @@ permissions:
   id-token: write
 
 jobs:
-  attest:
+  originator_attestation:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -182,18 +182,18 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
               out.write("manifest_path=" + str(p) + "\n")
               out.write("contest_id=" + str(obj["contest_id"]) + "\n")
-          print("Validated pre-close manifest for contest", obj["contest_id"])
+          print("ORIGINATOR_BUILD_ATTESTATION_ONLY — NOT INDEPENDENT CUSTODY — contest", obj["contest_id"])
           PY
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.9.0
 
-      - name: Sign manifest with GitHub OIDC and submit to Rekor
+      - name: Sign originator manifest with repository-controlled GitHub OIDC (NOT a custodian signature)
         env:
           MANIFEST_PATH: ${{ steps.validate.outputs.manifest_path }}
         run: |
           set -euo pipefail
-          cosign sign-blob --yes --bundle custody-bundle.json "$MANIFEST_PATH"
+          cosign sign-blob --yes --bundle originator-attestation.bundle.json "$MANIFEST_PATH"
 
       - name: Verify signature and transparency-log bundle
         env:
@@ -206,12 +206,16 @@ jobs:
             --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
             "$MANIFEST_PATH"
 
-      - name: Retain verification materials
+      - name: Retain originator-side verification materials (90 days; NOT independent retention)
         uses: actions/upload-artifact@v4
         with:
-          name: prospective-custody-${{ steps.validate.outputs.contest_id }}
+          name: originator-commitment-${{ steps.validate.outputs.contest_id }}
           path: |
             ${{ steps.validate.outputs.manifest_path }}
             custody-bundle.json
           if-no-files-found: error
           retention-days: 90
+
+# SECURITY BOUNDARY: This workflow's OIDC identity is controlled by the generator repository.
+# Its output is an ORIGINATOR_BUILD_ATTESTATION only. It MUST NOT be treated as
+# CUSTODY_ACCEPTED, SEALED, PHYSICAL_EVIDENCE_VERIFIED, or EDGE_SUPPORTED.
