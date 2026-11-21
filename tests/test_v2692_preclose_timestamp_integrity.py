@@ -14,12 +14,19 @@ def make_inputs(tmp_path, *, available=True, known_offset_hours=-1, omit_known=F
     n = 40
     contests = list(range(2001, 2001 + n))
     draws = [tuple(sorted(((i * 5 + j) % 28) + 1 for j in range(5))) for i in range(n)]
-    history = pd.DataFrame({"CONCURSO": contests, **{f"R{k+1}": [draw[k] for draw in draws] for k in range(5)}})
-    close = pd.date_range("2026-01-01 18:00:00", periods=n, freq="D")
+    history = pd.DataFrame({"CONCURSO": contests,
+        "SLOT": ["21:00"] * n, **{f"R{k+1}": [draw[k] for draw in draws] for k in range(5)}})
+    close = pd.date_range("2026-01-01 18:00:00", periods=n, freq="D", tz="America/Mexico_City")
     known = close + pd.Timedelta(hours=known_offset_hours)
     metadata = pd.DataFrame({
         "CONCURSO": contests,
-        "sphere_set_id": ["S1"] * n,
+        "SLOT": ["21:00"] * n,
+        "planned_sphere_set_id_preclose": ["S1"] * n,
+        "final_sphere_set_id_postweigh": ["S1"] * n,
+        "final_sphere_set_known_time_utc": (close + pd.Timedelta(hours=1)).tz_convert("UTC").astype(str),
+        "source_document": ["official-metadata.pdf"] * n,
+        "source_url": ["https://example.org/official-metadata.pdf"] * n,
+        "source_sha256": ["a" * 64] * n,
         "machine_id": ["M1"] * n,
         "available_before_close": [available] * n,
         "close_time_local": close.astype(str),
@@ -47,7 +54,7 @@ def test_valid_preclose_timestamps_pass(tmp_path):
     proc, out = run(tmp_path)
     assert proc.returncode == 0, proc.stderr
     report = json.loads((out / "v265_physical_eval_report.json").read_text())
-    assert report["model_version"] == "V269.2-preclose-timestamp-integrity"
+    assert report["model_version"] == "V265.1-physical-preclose-provenance-gate"
     assert report["all_metadata_available_before_close"] is True
 
 

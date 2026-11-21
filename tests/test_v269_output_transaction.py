@@ -23,13 +23,20 @@ def inputs(tmp_path, duplicate_metadata=False, duplicate_history=False, bad_draw
     contests = list(range(1000, 1140))
     history = pd.DataFrame({
         "CONCURSO": contests,
+        "SLOT": ["21:00"] * 140,
         "R1": [1.0] * 140, "R2": [2.0] * 140, "R3": [3.0] * 140,
         "R4": [4.0] * 140, "R5": [5.0] * 140,
     })
-    closes = pd.date_range("2026-01-01 18:00:00", periods=140, freq="D")
+    closes = pd.date_range("2026-01-01 18:00:00", periods=140, freq="D", tz="America/Mexico_City")
     metadata = pd.DataFrame({
         "CONCURSO": contests,
-        "sphere_set_id": ["S1"] * 140,
+        "SLOT": ["21:00"] * 140,
+        "planned_sphere_set_id_preclose": ["S1"] * 140,
+        "final_sphere_set_id_postweigh": ["S1"] * 140,
+        "final_sphere_set_known_time_utc": (closes + pd.Timedelta(hours=1)).tz_convert("UTC").astype(str),
+        "source_document": ["official-metadata.pdf"] * 140,
+        "source_url": ["https://example.org/official-metadata.pdf"] * 140,
+        "source_sha256": ["a" * 64] * 140,
         "machine_id": ["M1"] * 140,
         "available_before_close": [availability] * 140,
         "close_time_local": closes.astype(str),
@@ -101,7 +108,20 @@ def test_incomplete_metadata_coverage_fails_closed(tmp_path):
 def test_extra_metadata_contests_fail_closed(tmp_path):
     hp, mp = inputs(tmp_path)
     metadata = pd.read_csv(mp)
-    metadata.loc[len(metadata)] = [99999, "S1", "M1", True, "2026-06-01 18:00:00", "2026-06-01 17:00:00"]
+    metadata.loc[len(metadata)] = {
+        "CONCURSO": 99999,
+        "SLOT": "21:00",
+        "planned_sphere_set_id_preclose": "S1",
+        "final_sphere_set_id_postweigh": "S1",
+        "final_sphere_set_known_time_utc": "2026-06-01T23:00:00Z",
+        "machine_id": "M1",
+        "available_before_close": True,
+        "close_time_local": "2026-06-01T18:00:00-06:00",
+        "metadata_known_time_local": "2026-06-01T17:00:00-06:00",
+        "source_document": "official-metadata.pdf",
+        "source_url": "https://example.org/official-metadata.pdf",
+        "source_sha256": "a" * 64,
+    }
     metadata.to_csv(mp, index=False)
     out = tmp_path / "out-extra-metadata"
     proc = subprocess.run([
@@ -316,7 +336,7 @@ def test_report_binds_results_to_input_hashes_and_parameters(tmp_path):
     proc, out = invoke(tmp_path)
     assert proc.returncode == 0, proc.stderr
     report = json.loads((out / "v265_physical_eval_report.json").read_text())
-    assert report["model_version"] == "V269.2-preclose-timestamp-integrity"
+    assert report["model_version"] == "V265.1-physical-preclose-provenance-gate"
     assert len(report["input_sha256"]["history"]) == 64
     assert len(report["input_sha256"]["metadata"]) == 64
     assert report["input_sha256"]["p_family"] is None

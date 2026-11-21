@@ -143,7 +143,7 @@ def parse_availability(value, contest):
 
 
 def parse_local_timestamp(value, contest, field):
-    """Parse a timestamp, interpreting naive values as Mexico City local time."""
+    """Parse an explicitly timezone-aware timestamp; never infer timezone provenance."""
 
     _ensure_data_deps()
     if pd.isna(value) or not str(value).strip():
@@ -153,12 +153,11 @@ def parse_local_timestamp(value, contest, field):
         if pd.isna(ts):
             raise ValueError("NaT")
         if ts.tzinfo is None:
-            ts = ts.tz_localize(LOCAL_TZ, ambiguous="raise", nonexistent="raise")
-        else:
-            ts = ts.tz_convert(LOCAL_TZ)
+            raise ValueError("timezone offset is required; naive timestamps cannot establish provenance")
+        ts = ts.tz_convert(LOCAL_TZ)
         return ts
     except Exception as exc:
-        raise ValueError(f"contest {contest}: invalid {field} timestamp {value!r}") from exc
+        raise ValueError(f"contest {contest}: invalid {field} timestamp {value!r}: {exc}") from exc
 
 
 def validate_preclose_metadata(metadata):
@@ -183,6 +182,82 @@ def validate_preclose_metadata(metadata):
             f"unavailable_contests={unavailable[:5]}"
         )
     return parsed
+
+
+def validate_postclose_final_metadata(metadata):
+    """Keep the actual post-weigh set separate and timestamp it at/after sales close."""
+    for row in metadata.itertuples(index=False):
+        contest = int(getattr(row, "CONCURSO"))
+        close = parse_local_timestamp(getattr(row, "close_time_local"), contest, "close_time_local")
+        final_known = parse_local_timestamp(
+            getattr(row, "final_sphere_set_known_time_utc"), contest, "final_sphere_set_known_time_utc"
+        )
+        if final_known < close:
+            raise ValueError(
+                f"contest {contest}: final_sphere_set_known_time_utc must be at or after close"
+            )
+    return True
+
+
+def validate_classic_slot(metadata):
+    """Fail closed unless every row is explicitly identified as the 21:00 Classic draw."""
+    if "SLOT" not in metadata.columns:
+        raise ValueError("metadata missing SLOT; Classic modality cannot be established")
+    allowed = {"21:00", "21:00:00", "CLASICO", "CLÁSICO", "CLASSIC"}
+    values = metadata["SLOT"].astype("string").str.strip().str.upper()
+    invalid = values.isna() | ~values.isin(allowed)
+    if invalid.any():
+        contests = metadata.loc[invalid, "CONCURSO"].astype(int).tolist()[:5]
+        raise ValueError(
+            "physical evaluator accepts Classic 21:00 rows only; "
+            f"invalid_SLOT_contests={contests}"
+        )
+    return True
+
+
+def validate_source_provenance(metadata):
+    """Require a traceable source reference and a syntactically valid SHA-256 per row."""
+    required = {"source_document", "source_url", "source_sha256"}
+    missing = sorted(required - set(metadata.columns))
+    if missing:
+        raise ValueError(f"metadata missing provenance columns: {missing}")
+    for row in metadata.itertuples(index=False):
+        contest = int(getattr(row, "CONCURSO"))
+        document = str(getattr(row, "source_document")).strip()
+        url = str(getattr(row, "source_url")).strip()
+        digest = str(getattr(row, "source_sha256")).strip().lower()
+        if not document:
+            raise ValueError(f"contest {contest}: source_document is required")
+        if not url.startswith(("https://", "http://")):
+            raise ValueError(f"contest {contest}: source_url must be an http(s) URL")
+        if len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest):
+            raise ValueError(f"contest {contest}: source_sha256 must be 64 hexadecimal characters")
+    return True
+
+
+def betting_gate_status(*, research_edge, n_oos, mean_log_lift, holm_adjusted_p):
+    """This evaluator cannot authorize betting: external Exact5/custody gates are not ingested."""
+    blockers = []
+    if not research_edge:
+        blockers.append("physical_research_edge_not_established")
+    if n_oos < 100:
+        blockers.append("minimum_100_untouched_classic_oos_not_met")
+    if mean_log_lift <= 0:
+        blockers.append("positive_predeclared_lift_not_established")
+    if holm_adjusted_p is None or holm_adjusted_p >= 0.05:
+        blockers.append("holm_adjusted_p_below_0_05_not_established")
+    blockers.extend([
+        "exact5_anytime_evalue_not_ingested_or_verified",
+        "two_live_exact5_score_outputs_not_ingested_or_verified",
+        "independent_preclose_custody_not_ingested_or_verified",
+        "clean_hash_manifest_not_independently_verified",
+    ])
+    return {
+        "actionable_for_betting": False,
+        "status": "BLOCKED_EXTERNAL_EXACT5_AND_CUSTODY_GATES",
+        "blockers": blockers,
+    }
+
 
 def main():
     ap=argparse.ArgumentParser(description='V265 evaluator: physical metadata, chronological prequential only')
@@ -215,7 +290,7 @@ def main():
     h=pd.read_csv(args.history)
     m=pd.read_csv(args.metadata)
     req_h=['CONCURSO','R1','R2','R3','R4','R5']
-    req_m=['CONCURSO','sphere_set_id','machine_id','available_before_close','close_time_local','metadata_known_time_local']
+    req_m=['CONCURSO','SLOT','planned_sphere_set_id_preclose','final_sphere_set_id_postweigh','final_sphere_set_known_time_utc','machine_id','available_before_close','close_time_local','metadata_known_time_local','source_document','source_url','source_sha256']
     for c in req_h:
         if c not in h: raise ValueError(f'history missing {c}')
     for c in req_m:
@@ -244,8 +319,11 @@ def main():
     ]
     # The boolean flag alone is not proof: require source-known time < close time
     # for every row, including burn-in, before any physical label enters the state.
+    validate_classic_slot(m)
     validate_preclose_metadata(m)
-    for col in ('sphere_set_id', 'machine_id'):
+    validate_source_provenance(m)
+    validate_postclose_final_metadata(m)
+    for col in ('planned_sphere_set_id_preclose', 'final_sphere_set_id_postweigh', 'machine_id'):
         cleaned = m[col].astype('string').str.strip()
         if cleaned.isna().any() or cleaned.eq('').any():
             raise ValueError(f'metadata {col} must be present and non-empty for every row')
@@ -258,7 +336,9 @@ def main():
     rows=[]
     for i,r in x.iterrows():
         y=validate_draw_numbers(r, r['CONCURSO'])
-        sid=str(r['sphere_set_id']); mid=str(r['machine_id'])
+        # Only the pre-close planned set may enter the predictor. The final set is
+        # post-weigh/post-close metadata and is retained solely for audit.
+        sid=str(r['planned_sphere_set_id_preclose']); final_sid=str(r['final_sphere_set_id_postweigh']); mid=str(r['machine_id'])
         if i>=args.burn:
             pg=shrunk_prob(global_c,global_t,1000.0)
             ps=shrunk_prob(set_c[sid],set_t[sid],args.prior_set)
@@ -270,7 +350,7 @@ def main():
             lp=logprob_conditional5(p,y)
             logu=-math.log(math.comb(N,K))
             rows.append({'CONCURSO':int(r.CONCURSO),'log_lift':lp-logu,
-                         'sphere_set_id':sid,'machine_id':mid,
+                         'planned_sphere_set_id_preclose':sid,'final_sphere_set_id_postweigh':final_sid,'machine_id':mid,
                          'available_before_close':parse_availability(r['available_before_close'], r['CONCURSO'])})
         global_t+=1; set_t[sid]+=1; mach_t[mid]+=1
         for n in y:
@@ -285,7 +365,8 @@ def main():
     # A single unadjusted p-value is never enough to promote after model search.
     sample_ok = len(d) >= 100
     research_edge=bool(sample_ok and mean>0 and adjusted_p is not None and adjusted_p < 0.05)
-    actionable=bool(research_edge and all_preclose and len(x) == len(h) and len(x) == len(m))
+    betting_gate = betting_gate_status(research_edge=research_edge, n_oos=len(d), mean_log_lift=mean, holm_adjusted_p=adjusted_p)
+    actionable = betting_gate['actionable_for_betting']
     if not sample_ok:
         decision='RESEARCH_ONLY_INSUFFICIENT_OOS_N'
     elif mean <= 0:
@@ -304,7 +385,7 @@ def main():
             for chunk in iter(lambda: fh.read(1024*1024), b''):
                 digest.update(chunk)
         return digest.hexdigest()
-    rep={'model_version':'V269.2-preclose-timestamp-integrity',
+    rep={'model_version':'V265.1-physical-preclose-provenance-gate',
          'input_sha256':{'history':sha256_file(args.history),'metadata':sha256_file(args.metadata),
                          'p_family':sha256_file(args.p_family) if args.p_family else None},
          'parameters':{'burn':args.burn,'prior_set':args.prior_set,'prior_machine':args.prior_machine,
@@ -314,12 +395,12 @@ def main():
          'multiplicity_controlled': adjusted_p is not None,
          'holm_adjusted_p': adjusted_p, 'p_family_size': family_size,
          'minimum_oos_n':100, 'all_metadata_available_before_close':all_preclose,
-         'research_edge':research_edge,'actionable_for_betting':actionable,
+         'research_edge':research_edge,'actionable_for_betting':actionable,'betting_gate':betting_gate,
          'decision': decision,
          'history_rows':len(h),'metadata_rows':len(m),'joined_rows':len(x),
          'metadata_coverage_fraction_of_history':float(len(x)/len(h)) if len(h) else 0.0,
          'preclose_fraction_of_scored_rows':float(d.available_before_close.mean()),
-         'production_rule':'Do not score or promote unless every physical metadata row is available before close by both flag and timestamp, with >=100 prequential OOS rows, positive mean log-lift, and Holm-adjusted p < 0.05 across the predeclared candidate family.'}
+         'production_rule':'This evaluator is research-only. It never authorizes betting. A separate Exact5 gate must independently verify >=100 untouched chronological Classic OOS rows, predeclared positive lift, Holm p<0.05, anytime e-value>=20, two live Exact5 score outputs, clean hashes, and independently custodied pre-close snapshots.'}
     # Stage both artifacts only after all input and multiplicity checks pass.
     # The report is published last and serves as the completion marker.
     try:
