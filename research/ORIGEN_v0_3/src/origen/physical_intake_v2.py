@@ -9,7 +9,6 @@ from __future__ import annotations
 import csv
 import math
 from collections import defaultdict
-from collections.abc import Set as AbstractSet
 from datetime import datetime, timezone
 from pathlib import Path
 import re
@@ -56,10 +55,10 @@ def _parse_time(value: Any, field: str) -> datetime:
 def evaluate_temporal_eligibility(
     rows: Iterable[Mapping[str, Any]],
     *,
-    declared_custody_refs: AbstractSet[str] | None = None,
-    declared_timestamp_refs: AbstractSet[str] | None = None,
-    declared_source_refs: AbstractSet[str] | None = None,
-    declared_continuity_targets: AbstractSet[str] | None = None,
+    declared_custody_refs: set[str] | frozenset[str] | None = None,
+    declared_timestamp_refs: set[str] | frozenset[str] | None = None,
+    declared_source_refs: set[str] | frozenset[str] | None = None,
+    declared_continuity_targets: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """Classify each target independently; missing external attestations fail closed.
 
