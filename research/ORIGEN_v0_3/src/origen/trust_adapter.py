@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+import hashlib
 import re
 from datetime import datetime, timezone
 from typing import Any, Mapping
@@ -125,7 +126,7 @@ def verify_attestation(
     except (TypeError, ValueError, KeyError, OverflowError) as exc:
         return {"status": "BLOCKED", "reason": str(exc)}
 
- 
+
 def verify_artifact_bytes(
     envelope: Mapping[str, Any],
     artifact_bytes: bytes,
