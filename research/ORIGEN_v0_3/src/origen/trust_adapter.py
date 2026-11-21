@@ -89,19 +89,19 @@ def verify_attestation(
         if type(root) is not dict:
             raise ValueError("key_id is not present in pinned trust roots")
         allowed_root_fields = {"public_key_b64", "roles", "enabled", "revoked"}
-        if set(root) - allowed_root_fields or not {"public_key_b64", "roles"}.issubset(root):
-            raise ValueError("pinned trust root fields do not match policy schema")
-        if ("enabled" in root and not isinstance(root["enabled"], bool)) or (
-            "revoked" in root and not isinstance(root["revoked"], bool)
-        ):
-            raise ValueError("pinned trust root enabled/revoked flags must be booleans")
+        if set(root) != allowed_root_fields:
+            raise ValueError(
+                "pinned trust root must explicitly define public_key_b64, roles, enabled, and revoked"
+            )
+        if type(root["enabled"]) is not bool or type(root["revoked"]) is not bool:
+            raise ValueError("pinned trust root enabled/revoked flags must be exact booleans")
         roles = root.get("roles")
         if (type(roles) is not list
                 or any(type(item) is not str or not item for item in roles)):
             raise ValueError("pinned trust root roles must be an explicit string list")
         if role not in roles:
             raise ValueError("pinned key is not authorized for requested role")
-        if root.get("revoked") is True or root.get("enabled", True) is not True:
+        if root["revoked"] is True or root["enabled"] is not True:
             raise ValueError("pinned key is revoked or disabled by trust policy")
 
         try:
