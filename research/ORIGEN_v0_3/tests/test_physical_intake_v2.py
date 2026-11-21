@@ -52,10 +52,10 @@ VERIFIED = dict(
 
 
 class PhysicalIntakeV2Tests(unittest.TestCase):
-    def test_complete_independently_verified_preclose_evidence_is_eligible(self):
+    def test_structural_preclose_does_not_claim_independent_authentication(self):
         result = evaluate_temporal_eligibility(rows_for_target(), **VERIFIED)
         target = result["targets"]["12301"]
-        self.assertEqual(target["predictive_eligibility"], "ELIGIBLE_PRE_CLOSE")
+        self.assertEqual(target["predictive_eligibility"], "STRUCTURAL_PRE_CLOSE_ONLY")
         self.assertEqual(target["reasons"], [])
 
     def test_measurement_before_close_but_receipt_after_target_close_is_ineligible(self):
@@ -75,7 +75,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertEqual(
             result["targets"]["12301"]["predictive_eligibility"],
-            "ELIGIBLE_PRE_CLOSE",
+            "STRUCTURAL_PRE_CLOSE_ONLY",
         )
 
     def test_missing_external_custody_and_clock_attestations_fail_closed(self):
@@ -196,7 +196,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertEqual(
             result["targets"]["12301"]["predictive_eligibility"],
-            "ELIGIBLE_PRE_CLOSE",
+            "STRUCTURAL_PRE_CLOSE_ONLY",
         )
 
     def test_source_signature_must_follow_measurement_and_precede_source_draw(self):
