@@ -5,6 +5,7 @@
 - Bumped the independent receipt schema to 1.1 and require `manifest_sha256`, computed over the exact raw manifest bytes received by the custodian.
 - The verifier now rejects a manifest object that differs from its captured bytes and rejects any receipt whose signed manifest digest does not match those exact bytes.
 - Added regression tests for post-receipt mutation of `input_history_sha256` and for a parsed manifest object that does not match its captured bytes.
+- A second TOCTOU review found that the CLI re-opened private temporary snapshots between structural validation and Cosign. It now captures all four inputs once in memory and passes the same receipt bytes to structural validation/Cosign and the same bundle bytes to Cosign/Rekor parsing; regression coverage mutates the original source paths during the Cosign call.
 - No real receipt or custody event was created; this is a verifier-contract change only. External custodian, signature, trusted timestamp, independent retention, two witnessed dry-runs and physical evidence remain outstanding.
 - V294, challenger, canonical history and `main` remain untouched.
 
