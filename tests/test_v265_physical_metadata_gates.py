@@ -72,3 +72,27 @@ def test_statistical_candidate_never_authorizes_betting_without_external_gates()
     assert gate["status"] == "BLOCKED_EXTERNAL_EXACT5_AND_CUSTODY_GATES"
     assert "exact5_anytime_evalue_not_ingested_or_verified" in gate["blockers"]
     assert "independent_preclose_custody_not_ingested_or_verified" in gate["blockers"]
+
+
+def test_classic_slot_accepts_only_classic_2100_rows():
+    from src.v265.CHISPAZO_V265_PHYSICAL_METADATA_EVALUATOR import validate_classic_slot
+
+    frame = pd.DataFrame({"CONCURSO": [12387, 12388], "SLOT": ["21:00", "CLÁSICO"]})
+    assert validate_classic_slot(frame) is True
+
+
+@pytest.mark.parametrize("slot", ["15:00", "DE LAS TRES", "", None])
+def test_classic_slot_rejects_non_classic_or_missing_modality(slot):
+    from src.v265.CHISPAZO_V265_PHYSICAL_METADATA_EVALUATOR import validate_classic_slot
+
+    frame = pd.DataFrame({"CONCURSO": [12387], "SLOT": [slot]})
+    with pytest.raises(ValueError, match="Classic 21:00 rows only"):
+        validate_classic_slot(frame)
+
+
+def test_classic_slot_rejects_missing_slot_column():
+    from src.v265.CHISPAZO_V265_PHYSICAL_METADATA_EVALUATOR import validate_classic_slot
+
+    frame = pd.DataFrame({"CONCURSO": [12387]})
+    with pytest.raises(ValueError, match="missing SLOT"):
+        validate_classic_slot(frame)
