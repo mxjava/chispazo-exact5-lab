@@ -14,6 +14,7 @@ independent retrieval, and carries a separately verifiable Sigstore bundle.
 
 - Original commitment manifest (existing project schema).
 - Exact payload bytes delivered to the custodian.
+- Exact archived official schedule-evidence bytes referenced by the manifest.
 - Custodian-issued receipt JSON matching the schema below.
 - Sigstore bundle for the receipt, signed by the custodian identity.
 - Explicit trust configuration supplied out-of-band: exact certificate identity
@@ -48,14 +49,12 @@ The values above are illustrative only; never use them as a real event.
 
 The custodian must hash the **exact raw manifest bytes** it received and place
 that digest in the signed `manifest_sha256` field.
-The CLI captures manifest, receipt, payload and bundle bytes once in memory; the same
+The CLI captures manifest, receipt, payload, official schedule-evidence archive and bundle bytes once in memory; the same
 receipt bytes are supplied to structural validation and Cosign, and the same bundle
 bytes are supplied to Cosign and Rekor-time parsing. Temporary files are only the
 Cosign CLI transport and are checked against the captured bytes after verification. The verifier compares this
 digest with the captured manifest bytes before accepting any receipt fields.
-This binds every manifest field—including history cutoff/hash, candidate
-metadata, source commit, payload digest, generation time, and official close—
-to the custodian's signature. Reformatting or changing even one manifest byte
+The verifier now validates the exact manifest schema and semantics (positive contest ID, CLASSIC modality, source commit/hash formats, history cutoff strictly before target, IANA timezone, official gob.mx HTTPS schedule URL, safe archive path, and generation strictly before close). It also checks that the supplied schedule-evidence archive bytes match `schedule_source_sha256`, and that the payload is exactly 30 unique canonical LF lines of five distinct ascending values from 01 through 28. This binds every manifest field—including history cutoff/hash, candidate metadata, source commit, payload digest, schedule evidence digest, generation time, and official close—to the custodian's signature. Reformatting or changing even one manifest byte
 after receipt invalidates the signature-bound digest. Receipt schema 1.0 is
 superseded; only schema 1.1 is accepted by the current verifier.
 
@@ -66,6 +65,7 @@ python -m src.validation.independent_custody `
   --manifest PATH_TO_COMMITMENT.json `
   --receipt PATH_TO_CUSTODIAN_RECEIPT.json `
   --payload PATH_TO_EXACT_PAYLOAD.bin `
+  --schedule-evidence PATH_TO_OFFICIAL_SCHEDULE_ARCHIVE `
   --bundle PATH_TO_RECEIPT_BUNDLE.json `
   --custodian-identity "EXACT_TRUSTED_CERTIFICATE_IDENTITY" `
   --oidc-issuer "EXACT_TRUSTED_OIDC_ISSUER"
@@ -106,8 +106,7 @@ The repository-controlled workflow is separately named and labelled
 `ORIGINATOR_BUILD_ATTESTATION_ONLY`. Its GitHub OIDC identity is not the
 custodian identity and its artifact retention is not independent custody.
 
-This still does not prove the legal independence of the custodian or the
-immutability/recoverability of the external retention location. Those require
+The archive hash check proves byte identity against the manifest, not that the archive is a semantically correct or authentic official schedule. The independent reviewer must still inspect the archived source and confirm that it actually supports the target, modality, date, timezone and close time. This also does not prove the legal independence of the custodian or the immutability/recoverability of the external retention location. Those require
 independent contract/review and witnessed retrieval. The Boolean
 `independent_retrieval_test` is a custodian assertion, not a substitute for
 the witnessed test report and external audit evidence.
