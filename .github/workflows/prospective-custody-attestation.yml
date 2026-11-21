@@ -22,7 +22,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: prospective-custody-\${{ inputs.expected_contest_id }}
+  group: prospective-custody-${{ inputs.expected_contest_id }}
   cancel-in-progress: false
 
 jobs:
@@ -37,10 +37,103 @@ jobs:
         id: validate
         shell: bash
         env:
-          MANIFEST_PATH: \${{ inputs.manifest_path }}
-          EXPECTED_CONTEST_ID: \${{ inputs.expected_contest_id }}
+          INPUT_MANIFEST_PATH: ${{ inputs.manifest_path }}
+          INPUT_CONTEST_ID: ${{ inputs.expected_contest_id }}
         run: |
           set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            mapfile -t changed < <(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" | grep '^data/prospective-commitments/.*\.json
+          import datetime as dt, json, os, pathlib, re
+          p = pathlib.Path(os.environ["MANIFEST_PATH"])
+          if p.is_absolute() or ".." in p.parts or not p.is_file():
+              raise SystemExit("manifest_path must be a committed repository file path")
+          obj = json.loads(p.read_text(encoding="utf-8"))
+          required = {
+              "schema_version", "contest_id", "modality", "candidate_id",
+              "source_commit_sha", "input_history_sha256", "input_max_contest_id",
+              "payload_sha256", "generated_at_utc", "scheduled_close_at_utc",
+              "timezone", "status"
+          }
+          missing = sorted(required - obj.keys())
+          if missing:
+              raise SystemExit(f"missing fields: {missing}")
+          expected = os.environ.get("EXPECTED_CONTEST_ID", "")
+          if expected and str(obj["contest_id"]) != expected:
+              raise SystemExit("contest_id does not match workflow input")
+          if obj["modality"] != "CLASSIC" or obj["status"] != "READY_FOR_ATTESTATION":
+              raise SystemExit("manifest must be CLASSIC and READY_FOR_ATTESTATION")
+          for k in ("input_history_sha256", "payload_sha256"):
+              if not re.fullmatch(r"[0-9a-f]{64}", str(obj[k])):
+                  raise SystemExit(f"invalid SHA-256 field: {k}")
+          if not re.fullmatch(r"[0-9a-f]{40}", str(obj["source_commit_sha"])):
+              raise SystemExit("invalid source_commit_sha")
+          def parse(s):
+              x = dt.datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+              if x.tzinfo is None:
+                  raise SystemExit("timestamps must be timezone-aware UTC values")
+              return x.astimezone(dt.timezone.utc)
+          generated = parse(obj["generated_at_utc"])
+          close = parse(obj["scheduled_close_at_utc"])
+          now = dt.datetime.now(dt.timezone.utc)
+          if generated > now + dt.timedelta(minutes=2):
+              raise SystemExit("generated_at_utc is in the future")
+          if now >= close:
+              raise SystemExit("REFUSED: official sales close has passed")
+          if generated >= close:
+              raise SystemExit("REFUSED: commitment generation is not pre-close")
+          if int(obj["input_max_contest_id"]) >= int(obj["contest_id"]):
+              raise SystemExit("history cutoff must precede target contest")
+          print(f"Manifest accepted for contest {obj['contest_id']}; sales close is still in the future.")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("manifest_path=" + str(p) + "\\n")
+              output.write("contest_id=" + str(obj["contest_id"]) + "\\n")
+          PY
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.9.0
+
+      - name: Sign manifest with GitHub OIDC identity and submit to Rekor
+        shell: bash
+        env:
+          MANIFEST_PATH: ${{ steps.validate.outputs.manifest_path }}
+        run: |
+          set -euo pipefail
+          cosign version
+          cosign sign-blob --yes --bundle custody-bundle.json "$MANIFEST_PATH"
+
+      - name: Verify keyless signature and transparency-log bundle
+        shell: bash
+        env:
+          MANIFEST_PATH: ${{ steps.validate.outputs.manifest_path }}
+        run: |
+          set -euo pipefail
+          cosign verify-blob \
+            --bundle custody-bundle.json \
+            --certificate-identity-regexp '^https://github.com/mxjava/chispazo-exact5-lab/.github/workflows/prospective-custody-attestation.yml@refs/heads/.+$' \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            "$MANIFEST_PATH"
+
+      - name: Retain public verification bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: prospective-custody-${{ steps.validate.outputs.contest_id }}
+          path: |
+            ${{ steps.validate.outputs.manifest_path }}
+            custody-bundle.json
+          if-no-files-found: error
+          retention-days: 90
+ || true)
+            if [ "${#changed[@]}" -ne 1 ]; then
+              echo "A push must change exactly one commitment manifest" >&2
+              exit 1
+            fi
+            MANIFEST_PATH="${changed[0]}"
+            EXPECTED_CONTEST_ID=""
+          else
+            MANIFEST_PATH="$INPUT_MANIFEST_PATH"
+            EXPECTED_CONTEST_ID="$INPUT_CONTEST_ID"
+          fi
+          export MANIFEST_PATH EXPECTED_CONTEST_ID
           python - <<'PY'
           import datetime as dt, json, os, pathlib, re
           p = pathlib.Path(os.environ["MANIFEST_PATH"])
@@ -93,7 +186,7 @@ jobs:
       - name: Sign manifest with GitHub OIDC identity and submit to Rekor
         shell: bash
         env:
-          MANIFEST_PATH: \${{ steps.validate.outputs.manifest_path }}
+          MANIFEST_PATH: ${{ steps.validate.outputs.manifest_path }}
         run: |
           set -euo pipefail
           cosign version
@@ -102,7 +195,7 @@ jobs:
       - name: Verify keyless signature and transparency-log bundle
         shell: bash
         env:
-          MANIFEST_PATH: \${{ steps.validate.outputs.manifest_path }}
+          MANIFEST_PATH: ${{ steps.validate.outputs.manifest_path }}
         run: |
           set -euo pipefail
           cosign verify-blob \
@@ -114,9 +207,9 @@ jobs:
       - name: Retain public verification bundle
         uses: actions/upload-artifact@v4
         with:
-          name: prospective-custody-\${{ inputs.expected_contest_id }}
+          name: prospective-custody-${{ inputs.expected_contest_id }}
           path: |
-            \${{ steps.validate.outputs.manifest_path }}
+            ${{ steps.validate.outputs.manifest_path }}
             custody-bundle.json
           if-no-files-found: error
           retention-days: 90
