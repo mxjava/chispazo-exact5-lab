@@ -18,7 +18,7 @@ def fixture(tmp_path: Path):
     payload = tmp_path / "payload.bin"
     payload.write_bytes(payload_bytes)
     digest = hashlib.sha256(payload_bytes).hexdigest()
-    schedule_evidence_bytes = b"official schedule archive fixture\\n"
+    schedule_evidence_bytes = b"official schedule archive fixture"
     schedule_digest = hashlib.sha256(schedule_evidence_bytes).hexdigest()
     close = "2026-12-01T23:00:00Z"
     manifest = {
