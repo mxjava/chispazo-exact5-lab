@@ -9,9 +9,12 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import os
 import re
+import stat
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -58,6 +61,28 @@ def _utc(value: Any, field: str) -> dt.datetime:
     if parsed.tzinfo is None or parsed.utcoffset() != dt.timedelta(0):
         raise CustodyError(f"{field} must be timezone-aware UTC")
     return parsed.astimezone(dt.timezone.utc)
+
+
+def _read_regular_file(path: Path, label: str) -> bytes:
+    """Read one regular, non-symlink input into an immutable byte snapshot."""
+    if path.is_symlink():
+        raise CustodyError(f"{label} must not be a symlink")
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise CustodyError(f"cannot open {label} as a regular file: {exc}") from exc
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise CustodyError(f"{label} must be a regular file")
+        with os.fdopen(descriptor, "rb") as handle:
+            descriptor = -1
+            return handle.read()
+    except OSError as exc:
+        raise CustodyError(f"cannot read {label}: {exc}") from exc
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
 
 
 def validate_receipt(
@@ -146,23 +171,39 @@ def verify_signature(
 ) -> dt.datetime:
     if not identity.strip() or not issuer.strip():
         raise CustodyError("trusted custodian identity and OIDC issuer must be configured explicitly")
-    command = [
-        "cosign", "verify-blob", "--bundle", str(bundle_path),
-        "--certificate-identity", identity,
-        "--certificate-oidc-issuer", issuer,
-        str(receipt_path),
-    ]
-    try:
-        subprocess.run(command, check=True, capture_output=True, text=True)
-    except FileNotFoundError as exc:
-        raise CustodyError("cosign is required but was not found") from exc
-    except subprocess.CalledProcessError as exc:
-        detail = (exc.stderr or exc.stdout or "signature verification failed").strip()
-        raise CustodyError(f"custodian signature verification failed: {detail}") from exc
 
-    # The custodian's received_at_utc is a signed claim, not a trusted timestamp.
-    # Require the Rekor integrated timestamp from the exact Cosign-verified bundle.
-    bundle = _load_json(bundle_path)
+    # Cosign and the timestamp parser must consume the exact same receipt and
+    # bundle bytes. Never verify one path and then parse that mutable path again.
+    receipt_bytes = _read_regular_file(receipt_path, "custody receipt")
+    bundle_bytes = _read_regular_file(bundle_path, "Sigstore bundle")
+    with tempfile.TemporaryDirectory(prefix="exact5-custody-verify-") as temporary:
+        snapshot_dir = Path(temporary)
+        receipt_snapshot = snapshot_dir / "receipt.json"
+        bundle_snapshot = snapshot_dir / "bundle.json"
+        receipt_snapshot.write_bytes(receipt_bytes)
+        bundle_snapshot.write_bytes(bundle_bytes)
+        receipt_snapshot.chmod(0o400)
+        bundle_snapshot.chmod(0o400)
+        command = [
+            "cosign", "verify-blob", "--bundle", str(bundle_snapshot),
+            "--certificate-identity", identity,
+            "--certificate-oidc-issuer", issuer,
+            str(receipt_snapshot),
+        ]
+        try:
+            subprocess.run(command, check=True, capture_output=True, text=True)
+        except FileNotFoundError as exc:
+            raise CustodyError("cosign is required but was not found") from exc
+        except subprocess.CalledProcessError as exc:
+            detail = (exc.stderr or exc.stdout or "signature verification failed").strip()
+            raise CustodyError(f"custodian signature verification failed: {detail}") from exc
+
+        # Refuse even an unexpected mutation of the private snapshots during
+        # verification. Parse the captured bundle bytes, not the source path.
+        if receipt_snapshot.read_bytes() != receipt_bytes or bundle_snapshot.read_bytes() != bundle_bytes:
+            raise CustodyError("receipt or Sigstore bundle changed during signature verification")
+        bundle = _load_json(bundle_snapshot)
+
     material = bundle.get("verificationMaterial")
     entries = material.get("tlogEntries") if isinstance(material, dict) else None
     if not isinstance(entries, list) or not entries:
@@ -193,27 +234,46 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--oidc-issuer", required=True)
     args = parser.parse_args(argv)
     try:
-        manifest = _load_json(args.manifest)
-        receipt = _load_json(args.receipt)
-        report = validate_receipt(
-            manifest, receipt, args.payload,
-            expected_custodian_identity=args.custodian_identity,
-        )
-        integrated_at = verify_signature(
-            args.receipt, args.bundle, args.custodian_identity, args.oidc_issuer
-        )
-        received = _utc(report["received_at_utc"], "received_at_utc")
-        close = _utc(report["official_close_at_utc"], "official_close_at_utc")
-        if integrated_at < received - dt.timedelta(minutes=2):
-            raise CustodyError("Rekor timestamp materially predates the custodian receipt time")
-        if integrated_at >= close:
-            raise CustodyError("custodian receipt signature entered transparency log at/after official close")
-        report["status"] = "CUSTODY_ACCEPTED"
-        report["signature"] = "COSIGN_VERIFIED"
-        report["rekor_integrated_at_utc"] = integrated_at.isoformat().replace("+00:00", "Z")
-        print(json.dumps(report, sort_keys=True, indent=2))
-        return 0
-    except CustodyError as exc:
+        # Freeze all four inputs once. Structural validation, payload hashing,
+        # Cosign verification and Rekor-time parsing then share those exact bytes.
+        with tempfile.TemporaryDirectory(prefix="exact5-custody-input-") as temporary:
+            snapshot_dir = Path(temporary)
+            inputs = {
+                "manifest": (args.manifest, "manifest.json"),
+                "receipt": (args.receipt, "receipt.json"),
+                "payload": (args.payload, "payload.bin"),
+                "bundle": (args.bundle, "bundle.json"),
+            }
+            snapshots: dict[str, Path] = {}
+            for label, (source_path, filename) in inputs.items():
+                raw = _read_regular_file(source_path, label)
+                snapshot = snapshot_dir / filename
+                snapshot.write_bytes(raw)
+                snapshot.chmod(0o400)
+                snapshots[label] = snapshot
+
+            manifest = _load_json(snapshots["manifest"])
+            receipt = _load_json(snapshots["receipt"])
+            report = validate_receipt(
+                manifest, receipt, snapshots["payload"],
+                expected_custodian_identity=args.custodian_identity,
+            )
+            integrated_at = verify_signature(
+                snapshots["receipt"], snapshots["bundle"],
+                args.custodian_identity, args.oidc_issuer,
+            )
+            received = _utc(report["received_at_utc"], "received_at_utc")
+            close = _utc(report["official_close_at_utc"], "official_close_at_utc")
+            if integrated_at < received - dt.timedelta(minutes=2):
+                raise CustodyError("Rekor timestamp materially predates the custodian receipt time")
+            if integrated_at >= close:
+                raise CustodyError("custodian receipt signature entered transparency log at/after official close")
+            report["status"] = "CUSTODY_ACCEPTED"
+            report["signature"] = "COSIGN_VERIFIED"
+            report["rekor_integrated_at_utc"] = integrated_at.isoformat().replace("+00:00", "Z")
+            print(json.dumps(report, sort_keys=True, indent=2))
+            return 0
+    except (CustodyError, OSError) as exc:
         print(f"BLOCKED_PROVENANCE: {exc}", file=sys.stderr)
         return 2
 
