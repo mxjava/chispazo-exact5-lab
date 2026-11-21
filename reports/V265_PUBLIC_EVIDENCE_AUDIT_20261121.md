@@ -59,17 +59,17 @@ El Informe de Gestión Gubernamental 2018–2024, p.43, afirma que se entregaron
 
 El informe señala que una propuesta de 2024 de 8 máquinas, 2 sistemas RFID y 4 balanzas/impresoras no estaba autorizada al cierre de junio de 2024; no determina el inventario de 2026. No se hallaron tag IDs, logs RFID, hora/lector de lectura ni asignación de máquina/estuche por concurso. RFID acredita capacidad de identificación, no que exista telemetría pública por sorteo.
 
-## 4. Evaluador V265: alcance y defectos de gate
+## 4. Evaluador V265.1: alcance y defectos de gate
 
-Archivo: `src/v265/CHISPAZO_V265_PHYSICAL_METADATA_EVALUATOR.py` (Git blob SHA-1 `ca83e4af6ccd12f68ff0a725969561254b0be866`).
+Archivo: `src/v265/CHISPAZO_V265_PHYSICAL_METADATA_EVALUATOR.py` (Git blob SHA-1 `0010b5f07c6cbfcb78201180fbe758d68e61b031`).
 
-1. Sólo usa `sphere_set_id` y `machine_id` como variables de régimen. No ingiere pesos por esfera, RFID, orden/timestamps de extracción, incidencias, mantenimiento ni calibración.
-2. Exige cobertura exacta de concursos, `available_before_close=True` y `metadata_known_time_local < close_time_local`. Es una barrera útil, pero un solo timestamp genérico cubre todos los campos; no valida su procedencia ni la hora de selección del estuche final.
-3. No separa `planned_sphere_set_id_preclose` de `final_sphere_set_id_postweigh`. Esto importa porque el estuche puede cambiar tras el cierre.
-4. Soporta mínimo de 100 filas prequential OOS y ajuste Holm sobre un p-family, pero no incluye el **anytime e-value** exigido por el proyecto. `actionable_for_betting` puede activarse sin ese gate; no debe interpretarse como autorización de apuesta.
-5. Es una asociación condicionada por máquina/estuche, no una prueba de sesgo físico. Para estudiar mecanismo se requieren pesos por esfera, IDs verificables, calibración, RFID, orden de extracción y timestamps trazables.
+1. Usa `planned_sphere_set_id_preclose` y `machine_id` como variables de régimen. `final_sphere_set_id_postweigh` y su hora se conservan sólo para auditoría; no entran al predictor. No ingiere pesos por esfera, RFID, orden/timestamps de extracción, incidencias, mantenimiento ni calibración.
+2. Exige cobertura exacta de concursos, `available_before_close=True`, `metadata_known_time_local < close_time_local`, URL de fuente y sintaxis SHA-256. El timestamp sigue siendo genérico y aportado por el registro: no se autentica independientemente ni demuestra disponibilidad campo por campo. La sintaxis de SHA-256 no prueba que se hayan capturado los bytes originales.
+3. Añade un guard explícito de modalidad: cada fila de metadata debe identificar `SLOT=21:00` (o una etiqueta Clásico permitida). Falta de SLOT, De las Tres y valores desconocidos bloquean el evaluador. No se usa la secuencia de IDs para clasificar silenciosamente.
+4. Soporta mínimo de 100 filas prequential OOS y ajuste Holm sobre un p-family. No ingiere el **anytime e-value** del proyecto ni custodia independiente. Para evitar falsa autorización, `actionable_for_betting` está ahora fijado a `false` y el evaluador siempre emite bloqueos externos. Sigue siendo investigación, no un gate de producción.
+5. Es una asociación condicionada por máquina/estuche planeado, no una prueba de sesgo físico. Para estudiar mecanismo se requieren pesos por esfera, IDs verificables, calibración, RFID, orden de extracción y timestamps trazables.
 
-El `V265_PHYSICAL_REGIME_SCANNER` usa resultados históricos como proxies, no mediciones físicas; `RESEARCH_ONLY_METADATA_REQUIRED` sigue siendo el estado correcto. No se repitieron sus análisis cerrados. El branch base no tenía pruebas específicas del evaluador V265; las ocho pruebas añadidas validan sólo el auditor documental independiente.
+El `V265_PHYSICAL_REGIME_SCANNER` usa resultados históricos como proxies, no mediciones físicas. No se repitieron análisis cerrados. La validación de esta rama, tras corregir fixtures que omitían SLOT en metadata, terminó en CI run `44932594545`: `compileall` aprobado, **278 pruebas aprobadas, 2 omitidas, 0 fallidas**.
 
 ## 5. Análisis reproducible nuevo
 
