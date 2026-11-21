@@ -21,7 +21,7 @@ Official references:
 2. Create a public commitment manifest containing only hashes and non-sensitive metadata. Do not include the combinations, plaintext ticket, or a reversible encoding.
 3. Commit the manifest to the research branch before sales close. The manifest records the generation time, target, modality, candidate commit, history cutoff/hash, portfolio SHA-256, and authoritative scheduled close.
 4. Push the single manifest to data/prospective-commitments/<contest-id>.json on the research branch while the sales-close time is still in the future. The push event starts the workflow; workflow_dispatch is also available when the workflow is enabled on the default branch.
-5. The workflow validates strict JSON (including duplicate-key rejection), schema version, positive integer contest ID, exact CLASSIC/status values, SHA-256 formats, IANA timezone, HTTPS schedule-source reference and its digest, source-commit existence/ancestry, history cutoff, chronology, and that the current time is before close. It then signs the manifest with GitHub Actions OIDC using Cosign. Cosign submits the signed entry to Rekor and produces a bundle.
+5. The workflow checks out full Git history (required to verify older source commits), validates strict JSON (including duplicate-key rejection), schema version, positive integer contest ID, exact CLASSIC/status values, SHA-256 formats, IANA timezone, HTTPS official schedule-source reference, and the SHA-256 of the archived schedule evidence committed under `data/schedule-evidence/`; it also checks source-commit existence/ancestry, history cutoff, chronology, and that the current time is before close. It then signs the manifest with GitHub Actions OIDC using Cosign. Cosign submits the signed entry to Rekor and produces a bundle.
 6. The workflow verifies the bundle against the expected GitHub workflow identity and OIDC issuer, then retains the manifest and bundle as an artifact.
 7. An independent reviewer downloads the manifest and bundle, verifies the signature/transparency-log proof, checks Rekor's integrated time against the official sales-close source, and independently hashes the private payload when it is released after close.
 8. For stronger redundancy, submit the same manifest hash to OpenTimestamps and retain the .ots proof; later verify it after Bitcoin anchoring completes.
@@ -41,7 +41,7 @@ Official references:
 - [ ] Official target contest and sales-close timestamp verified from Lotería Nacional source and preserved.
 - [ ] Candidate, configuration, score, and failure rules frozen before the target.
 - [ ] Manifest and private payload created before close; payload hash independently recomputed.
-- [ ] Manifest includes `schedule_source_url` and `schedule_source_sha256`; reviewer validates the archived official schedule evidence against that digest.
+- [ ] Manifest includes `schedule_source_url`, `schedule_source_sha256`, and `schedule_source_archive_path`; the archive exists under `data/schedule-evidence/` and its bytes match the digest.
 - [ ] Manifest uses schema version `1.0`, positive integer `contest_id`, unique JSON keys, and the exact workflow branch identity.
 - [ ] Workflow run completed before close.
 - [ ] Cosign keyless verification succeeds for the exact workflow identity and GitHub OIDC issuer.
