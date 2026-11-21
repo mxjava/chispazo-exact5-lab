@@ -1,0 +1,41 @@
+name: v325 top-30 portfolio hit audit
+on:
+  push:
+    branches:
+      - fix/origen-v03-integrity-guards-20261120
+  workflow_dispatch:
+jobs:
+  portfolio-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      PYTHONPATH: src:research/ORIGEN_v0_3/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: Verify immutable canonical history
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          p = Path("data/history/Chispazo_through_12249.csv")
+          digest = hashlib.sha256(p.read_bytes()).hexdigest()
+          expected = "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a"
+          assert digest == expected, (digest, expected)
+          print("canonical SHA256 PASS:", digest)
+          PY
+      - name: Generate frozen top-30 portfolios and measure hits
+        run: |
+          python -m origen.v325_portfolio_hit_audit --history data/history/Chispazo_through_12249.csv --out artifacts/v325 --mode expanding --expected-sha256 5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a
+          for window in 400 800 1600; do
+            python -m origen.v325_portfolio_hit_audit --history data/history/Chispazo_through_12249.csv --out artifacts/v325 --mode rolling --window-classic "$window" --expected-sha256 5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exact5-v325-top30-portfolio-hit-audit
+          path: artifacts/v325/
+          if-no-files-found: error
