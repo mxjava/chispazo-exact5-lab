@@ -1,0 +1,63 @@
+# Exact5 — External cryptographic attestation path (Sigstore/Rekor)
+
+Date: 2026-11-20
+Status: IMPLEMENTED AS A WORKFLOW DESIGN; NOT YET EXECUTED OR CERTIFIED
+Branch: fix/origen-v03-integrity-guards-20261120
+
+## Objective
+
+Create independently verifiable evidence that a public commitment manifest existed before the official sales close, without exposing the 30-line prediction portfolio. The proposed mechanism signs the manifest using a short-lived keyless identity from GitHub Actions OIDC and submits the signed artifact to Sigstore's public Rekor transparency log. The returned bundle contains signature/transparency-log verification material.
+
+Official references:
+- Sigstore Rekor overview: https://docs.sigstore.dev/logging/overview/
+- Sigstore signing and verification CLI: https://docs.sigstore.dev/logging/cli/
+- Rekor API schema (entry, integratedTime, signedEntryTimestamp, inclusion proof): https://github.com/sigstore/rekor/blob/main/openapi.yaml
+- OpenTimestamps timestamp proof: https://opentimestamps.org/
+- RFC 3161 trusted timestamp protocol: https://www.rfc-editor.org/rfc/rfc3161
+
+## Architecture
+
+1. Generate the portfolio and preserve its exact bytes privately.
+2. Create a public commitment manifest containing only hashes and non-sensitive metadata. Do not include the combinations, plaintext ticket, or a reversible encoding.
+3. Commit the manifest to the research branch before sales close. The manifest records the generation time, target, modality, candidate commit, history cutoff/hash, portfolio SHA-256, and authoritative scheduled close.
+4. Dispatch .github/workflows/prospective-custody-attestation.yml while the sales-close time is still in the future.
+5. The workflow validates target, modality, hashes, chronology, and that the current time is before close. It then signs the manifest with GitHub Actions OIDC using Cosign. Cosign submits the signed entry to Rekor and produces a bundle.
+6. The workflow verifies the bundle against the expected GitHub workflow identity and OIDC issuer, then retains the manifest and bundle as an artifact.
+7. An independent reviewer downloads the manifest and bundle, verifies the signature/transparency-log proof, checks Rekor's integrated time against the official sales-close source, and independently hashes the private payload when it is released after close.
+8. For stronger redundancy, submit the same manifest hash to OpenTimestamps and retain the .ots proof; later verify it after Bitcoin anchoring completes.
+
+## Important limits
+
+- Rekor provides a public append-only transparency log, signed log metadata, and inclusion proofs. Its integrated time is evidence of log inclusion, not a legal finding about the lottery schedule and not a human witness.
+- The GitHub OIDC certificate identifies the workflow/repository identity. It does not establish that the repository owner is independent of the prediction generator.
+- A workflow artifact with finite retention is not permanent custody. Keep a separate copy of the bundle, manifest, and encrypted portfolio in storage controlled by a genuinely independent reviewer.
+- OpenTimestamps proofs may be pending until a calendar aggregates the request into a Bitcoin transaction; do not treat a pending proof as a completed blockchain timestamp.
+- RFC 3161 is another valid route only when using a TSA whose policy, certificate chain, and validation status are checked. A timestamp token proves existence at a time; it does not prove content truth or independence of the generator.
+- No service can retrospectively timestamp a past draw as pre-close. The workflow deliberately refuses to attest after the recorded close.
+- This workflow does not certify predictive edge, does not start the 100-draw evaluation counter by itself, and does not replace the need for independent result auditing.
+
+## Acceptance criteria for first real target
+
+- [ ] Official target contest and sales-close timestamp verified from Lotería Nacional source and preserved.
+- [ ] Candidate, configuration, score, and failure rules frozen before the target.
+- [ ] Manifest and private payload created before close; payload hash independently recomputed.
+- [ ] Workflow run completed before close.
+- [ ] Cosign keyless verification succeeds for the exact workflow identity and GitHub OIDC issuer.
+- [ ] Rekor entry, integrated time, signed entry timestamp, and inclusion proof are independently retrievable and validate.
+- [ ] Rekor integrated time is strictly earlier than official sales close.
+- [ ] Independent reviewer stores the payload and proofs separately and signs a receipt.
+- [ ] Optional OpenTimestamps proof reaches a verifiable anchored state.
+- [ ] No late, failed, or missing target is omitted from the ledger.
+
+## Classification
+
+Until a real pre-close workflow run and independent reviewer receipt exist: BLOCKED_PROVENANCE.
+After successful Rekor attestation but before independent external retention/review: CRYPTOGRAPHIC_COMMITMENT_VERIFIED / INDEPENDENT_CUSTODY_PENDING.
+Only after all acceptance criteria: PROSPECTIVE_CUSTODY_CERTIFIED for that specific target. This is a custody certification only, never an edge/prediction certification.
+
+## Protected invariants
+
+- V294 remains frozen.
+- Canonical historical CSV remains byte-for-byte unchanged.
+- No writes to main, no merge, no promotion.
+- No retroactive pre-close claims.
