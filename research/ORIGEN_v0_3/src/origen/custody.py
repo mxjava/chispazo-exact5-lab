@@ -49,7 +49,7 @@ def _require_sha(value: Any, field: str) -> None:
 
 def parse_utc(value: str, field: str) -> datetime:
     if type(value) is not str or not re.fullmatch(
-        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?(?:Z|\\+00:00)",
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|\+00:00)",
         value,
     ):
         raise ValueError(f"{field} must be canonical extended ISO-8601 UTC text")
