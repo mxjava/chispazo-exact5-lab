@@ -90,7 +90,7 @@ El informe no publica:
 
 En el primer semestre de 2024 se propuso adquirir 8 máquinas y 2 sistemas RFID, pero el informe dice que el proyecto no fue autorizado al cierre de junio de 2024. Esto no demuestra cuál es el inventario posterior; se requiere el inventario vigente.
 
-Fuente: https://pronosticos.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf (p. 43, líneas 1936–1966 del texto indexado).
+Fuente: https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf (p. 43, líneas 1936–1966 del texto indexado).
 
 ## 5. Manual SGVO-MAN-02: bloqueo documental
 
