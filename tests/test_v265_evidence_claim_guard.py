@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,3 +41,9 @@ def test_v265_multiplicity_is_optional_and_anytime_gate_is_absent():
     assert report["holm_adjustment_present"] is True
     assert report["p_family_optional"] is True
     assert report["anytime_evalue_gate_implemented"] is False
+
+
+def test_checked_in_contract_report_matches_reproducible_audit():
+    report = MODULE.build_report()
+    checked_in = ROOT / "reports" / "V265_EVALUATOR_CONTRACT_AUDIT_20261122.json"
+    assert json.loads(checked_in.read_text(encoding="utf-8")) == report
