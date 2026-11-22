@@ -103,6 +103,13 @@ def verify_receipt_attestation(
         raise ValueError("trust-policy key validity interval is inverted")
     if not (valid_from <= verified_at <= valid_until):
         raise ValueError("receipt issuer key is outside its policy validity interval")
+    signed_at = datetime.fromisoformat(
+        receipt.attestation.signed_at_utc.replace("Z", "+00:00")
+    ).astimezone(timezone.utc)
+    if not (valid_from <= signed_at <= valid_until):
+        raise ValueError("receipt attestation signing time is outside key validity interval")
+    if signed_at > verified_at:
+        raise ValueError("receipt attestation signing time is after verification time")
     if receipt.attestation.algorithm != "ed25519":
         raise ValueError("root verifier currently supports Ed25519 only")
     if len(key_record.public_key_bytes) != 32:
