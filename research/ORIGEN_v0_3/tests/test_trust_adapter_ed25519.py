@@ -247,6 +247,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         result = verify_artifact_bytes(
             self.envelope, b"exact sealed portfolio byteS", trust_roots=self.roots,
             expected_role="CUSTODIAN", verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"],
         )
         self.assertEqual(result["status"], "BLOCKED")
 
@@ -254,6 +255,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         result = verify_artifact_bytes(
             self.envelope, "exact sealed portfolio bytes", trust_roots=self.roots,
             expected_role="CUSTODIAN", verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"],
         )
         self.assertEqual(result["status"], "BLOCKED")
 
