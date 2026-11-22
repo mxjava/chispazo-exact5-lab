@@ -377,8 +377,10 @@ def evaluate_temporal_eligibility(
                     # must not move a measurement across a published mass threshold.
                     if type(mass_raw) is not str or type(resolution_raw) is not str:
                         raise ValueError("non-canonical mass or resolution")
-                    mass_text = mass_raw.strip()
-                    resolution_text = resolution_raw.strip()
+                    # Numeric cells are canonical tokens: trimming would silently
+                    # normalize malformed source bytes before the evidence gate.
+                    mass_text = mass_raw
+                    resolution_text = resolution_raw
                     if (
                         not _DECIMAL_TEXT.fullmatch(mass_text)
                         or not _DECIMAL_TEXT.fullmatch(resolution_text)
@@ -396,7 +398,7 @@ def evaluate_temporal_eligibility(
                 except (InvalidOperation, ValueError, TypeError):
                     reasons.add("INVALID_MASS_OR_RESOLUTION")
                 mass_unit_raw = row["mass_unit"]
-                if type(mass_unit_raw) is not str or mass_unit_raw.strip().lower() != "g":
+                if type(mass_unit_raw) is not str or mass_unit_raw != "g":
                     reasons.add("UNSUPPORTED_MASS_UNIT")
                 if not re.fullmatch(r"[0-9a-fA-F]{64}", calibration_hash):
                     reasons.add("INVALID_CALIBRATION_SHA256")
