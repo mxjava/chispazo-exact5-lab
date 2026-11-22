@@ -67,5 +67,16 @@
   "evidence_class": "ASSOCIATION_SCREEN_ONLY",
   "physical_bias_evidence": false,
   "actionable_for_betting": false,
+  "guard": {
+    "evidence_class": "ASSOCIATION_SCREEN_ONLY",
+    "physical_bias_evidence": false,
+    "actionable_for_betting": false,
+    "anytime_evalue_gate_implemented": false,
+    "per_sphere_weights_consumed": false,
+    "per_sphere_rfid_mapping_consumed": false,
+    "extraction_order_consumed": false,
+    "per_extraction_timestamps_consumed": false,
+    "source_provenance_required": false
+  },
   "interpretation": "V265 is a machine/sphere-set association screen. It does not consume authenticated per-sphere measurements, RFID-to-ball identity, extraction order/timestamps, or source provenance; it has no anytime e-value gate. It cannot establish physical bias or authorize a prospective action."
 }
