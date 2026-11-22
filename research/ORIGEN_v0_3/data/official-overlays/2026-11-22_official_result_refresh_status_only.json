@@ -1,0 +1,113 @@
+{
+  "schema": "exact5.official_overlay.status_only.v3",
+  "observed_at_local": "2026-11-22T15:55:26-06:00",
+  "purpose": "Status-only official endpoint refresh. No pre-close capture, no physical evidence authentication, no canonical-history append, and no scoring.",
+  "classification": "OFFICIAL_ENDPOINT_DISCREPANCY_MASK_NOT_YET_PUBLISHED",
+  "official_schedule": {
+    "product_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "slots": [
+      {
+        "time_local": "15:00",
+        "modality": "DE_LAS_TRES"
+      },
+      {
+        "time_local": "21:00",
+        "modality": "CLASICO"
+      }
+    ],
+    "basis": "The official Chispazo product page explicitly maps 15:00 to De las Tres and 21:00 to Clásico."
+  },
+  "observations": {
+    "dedicated_chispazo_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "opened_observation": "The page still identifies contest 12388 dated 2026-11-21 as latest, with 01 07 12 21 26; it does not show contest 12389.",
+      "status": "STALE_OR_NOT_YET_REFRESHED_FOR_2026-11-22"
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_document": "RESULTADOS 2026-11-21",
+      "next_document_2026_11_22_listed": false,
+      "status": "NO_2026-11-22_MASK_VISIBLE_AT_OBSERVATION"
+    },
+    "home_schedule": {
+      "url": "https://comercializadores.loterianacional.gob.mx/",
+      "next_chispazo_card": {
+        "contest_id": 12390,
+        "date": "2026-11-22",
+        "time_local": "21:00",
+        "modality": "CLASICO",
+        "modality_basis": "Official product schedule maps the 21:00 slot to Clásico.",
+        "result_published_at_observation": false
+      }
+    },
+    "search_index_only_result_snippet": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados/?cluster=1&view=cG5sUmVzdWxHYW5hR2F0bw%3D%3D",
+      "surfaced_claim_for_contest_12389": [
+        1,
+        15,
+        17,
+        22,
+        25
+      ],
+      "status": "NOT_ACCEPTED_AS_VERIFIED_RESULT",
+      "reason": "The indexed snippet is inconsistent with the opened dedicated Chispazo results page, which remains at contest 12388, and the official mask index, which lists no 2026-11-22 document. Treat as a potentially stale/index-only claim; do not append, score, or use for prospective evidence."
+    }
+  },
+  "draws": [],
+  "integrity_limits": {
+    "original_2026_11_22_mask_bytes_captured": false,
+    "source_pdf_sha256": "NOT_CAPTURED",
+    "official_act_obtained": false,
+    "signed_participation_file_obtained": false,
+    "physical_sphere_measurements_obtained": false,
+    "independent_custody": false,
+    "trusted_source_timestamp": false,
+    "signed_preclose_snapshot": false
+  },
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "challenger_changed": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "sources": {
+    "dedicated_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "home_schedule": "https://comercializadores.loterianacional.gob.mx/",
+    "home_results_index": "https://www.loterianacional.gob.mx/Home/Resultados/?cluster=1&view=cG5sUmVzdWxHYW5hR2F0bw%3D%3D"
+  },
+  "official_physical_control_procedure": {
+    "document": "SGVO-PRO-05 — Procedimiento Sorteos Electrónicos",
+    "revision": 39,
+    "publication_date": "2026-03-20",
+    "url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+    "requirements": {
+      "sphere_weighing": "Weighing is required for every draw.",
+      "smartballs": {
+        "minimum_g": 4.25,
+        "maximum_g": 5.25,
+        "maximum_spread_g": 0.3
+      },
+      "ping_pong": {
+        "minimum_g": 2.3,
+        "maximum_g": 3,
+        "maximum_spread_g": 0.15
+      },
+      "participation_file": "The electronic signature of the participation file is recorded on storage media before the draw and deposited in a secured box accessible only to the Internal Control body.",
+      "act_and_attachments": "The draw act must identify place/date/time and officials/SEGOB inspector; attachments include CS-11 winning numbers and the weighing strip.",
+      "delayed_signature_exception": "If printing the act is impossible, it may be signed the next business day, no later than five business days, only if results are not compromised."
+    },
+    "source_pages": {
+      "sphere_weight_and_controls": 5,
+      "act_and_required_attachments": 7,
+      "delayed_act_signature": 8
+    },
+    "status": "OFFICIAL_PROCEDURAL_BASELINE_CONFIRMED_BUT_2026-11-22_PRIMARY_RECORDS_NOT_OBTAINED"
+  }
+}

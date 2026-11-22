@@ -7,7 +7,7 @@ verified against primary records by an independent process.
 from __future__ import annotations
 
 import csv
-import math
+from decimal import Decimal, InvalidOperation
 from collections import defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -44,6 +44,11 @@ MAX_V2_CSV_RECORD_BYTES = (
 )
 CHISPAZO_LOCAL_TIMEZONE = ZoneInfo("America/Mexico_City")
 CLASSIC_DRAW_SLOT = (21, 0)
+_DECIMAL_TEXT = re.compile(r"(?:0|[1-9][0-9]{0,2})(?:\.[0-9]{1,6})?\Z")
+SPHERE_MASS_SPECS = {
+    "SMARTBALLS": (Decimal("4.25"), Decimal("5.25"), Decimal("0.30")),
+    "PING PONG": (Decimal("2.30"), Decimal("3.00"), Decimal("0.15")),
+}
 
 
 def _bounded_utf8_text_bytes(value: str, limit: int) -> int:
@@ -257,6 +262,7 @@ def evaluate_temporal_eligibility(
         signature_refs: set[str] = set()
         signer_ids: set[str] = set()
         timestamp_refs: set[str] = set()
+        mass_values: list[Decimal] = []
         for row in group:
             try:
                 close = _parse_time(row["target_draw_close_at"], "target_draw_close_at")
@@ -276,7 +282,7 @@ def evaluate_temporal_eligibility(
                 target_draws.add(target_draw)
                 assignments.add(assignment)
                 source_closes.add(source_close)
-                sphere_types.add(_canonical_identifier(row["sphere_type"]))
+                sphere_types.add(_canonical_identifier(row["sphere_type"]).upper())
                 machine_models.add(_canonical_identifier(row["machine_model"]))
                 scales.add(_canonical_identifier(row["scale_id"]))
                 source_refs.add(_canonical_identifier(row["source_document_ref"]))
@@ -367,18 +373,32 @@ def evaluate_temporal_eligibility(
                 try:
                     mass_raw = row["mass_value"]
                     resolution_raw = row["measurement_resolution"]
-                    # CSV scalar fields must be exact text. Do not let attacker-
-                    # controlled __str__ implementations normalize arbitrary objects.
+                    # Parse bounded canonical decimal text exactly; float rounding
+                    # must not move a measurement across a published mass threshold.
                     if type(mass_raw) is not str or type(resolution_raw) is not str:
                         raise ValueError("non-canonical mass or resolution")
-                    mass = float(mass_raw.strip())
-                    resolution = float(resolution_raw.strip())
-                    if not math.isfinite(mass) or mass <= 0 or not math.isfinite(resolution) or resolution <= 0:
+                    # Numeric cells are canonical tokens: trimming would silently
+                    # normalize malformed source bytes before the evidence gate.
+                    mass_text = mass_raw
+                    resolution_text = resolution_raw
+                    if (
+                        not _DECIMAL_TEXT.fullmatch(mass_text)
+                        or not _DECIMAL_TEXT.fullmatch(resolution_text)
+                    ):
+                        raise ValueError("mass and resolution must be canonical decimal text")
+                    mass = Decimal(mass_text)
+                    resolution = Decimal(resolution_text)
+                    if (
+                        not mass.is_finite() or mass <= 0
+                        or not resolution.is_finite() or resolution <= 0
+                    ):
                         reasons.add("INVALID_MASS_OR_RESOLUTION")
-                except (ValueError, TypeError):
+                    else:
+                        mass_values.append(mass)
+                except (InvalidOperation, ValueError, TypeError):
                     reasons.add("INVALID_MASS_OR_RESOLUTION")
                 mass_unit_raw = row["mass_unit"]
-                if type(mass_unit_raw) is not str or mass_unit_raw.strip().lower() != "g":
+                if type(mass_unit_raw) is not str or mass_unit_raw != "g":
                     reasons.add("UNSUPPORTED_MASS_UNIT")
                 if not re.fullmatch(r"[0-9a-fA-F]{64}", calibration_hash):
                     reasons.add("INVALID_CALIBRATION_SHA256")
@@ -402,6 +422,22 @@ def evaluate_temporal_eligibility(
             reasons.add("SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT")
         if len(sphere_types) != 1 or "" in sphere_types or len(machine_models) != 1 or "" in machine_models or len(scales) != 1 or "" in scales:
             reasons.add("METROLOGY_CONFIGURATION_CONFLICT")
+        if len(sphere_types) == 1 and "" not in sphere_types:
+            sphere_type = next(iter(sphere_types))
+            mass_spec = SPHERE_MASS_SPECS.get(sphere_type)
+            if mass_spec is None:
+                reasons.add("UNSUPPORTED_SPHERE_TYPE")
+            elif len(mass_values) != len(group):
+                reasons.add("MASS_MEASUREMENTS_INCOMPLETE")
+            else:
+                minimum_mass, maximum_mass, maximum_spread = mass_spec
+                if any(
+                    mass < minimum_mass or mass > maximum_mass
+                    for mass in mass_values
+                ):
+                    reasons.add("SPHERE_MASS_OUT_OF_RANGE")
+                if max(mass_values) - min(mass_values) > maximum_spread:
+                    reasons.add("SPHERE_MASS_SPREAD_EXCEEDED")
         if any(len(values) != 1 or "" in values for values in (
             source_refs, source_hashes, custody_refs, custody_hashes,
             calibration_hashes, signature_refs, signer_ids, timestamp_refs

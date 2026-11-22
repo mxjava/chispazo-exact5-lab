@@ -1,6 +1,6 @@
 # Chispazo — Official procedure and provenance baseline
 
-**Observation:** 2026-11-22 11:53:43 America/Mexico_City  
+**Observation:** 2026-11-22 15:10:09 America/Mexico_City  
 **Classification:** RESEARCH / PUBLIC-RESULT STATUS ONLY / NOT PHYSICAL EVIDENCE  
 **Scope:** Chispazo Clásico (21:00) versus Chispazo de las Tres (15:00)
 
@@ -56,13 +56,13 @@ A separate, currently published Lotería Nacional procedure adds operational con
 Official source: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf  
 Current Normateca listing: https://loterianacional.gob.mx/Normateca/Sustantivas?id=2
 
-## 3. Official schedule and 21-Nov-2026 observation
+## 3. Official schedule and 22-Nov-2026 refresh
 
 The current product page states:
 - Chispazo de las Tres: **15:00** local time.
 - Chispazo Clásico: **21:00** local time.
 
-At the observation time:
+At the 15:03:04 local refresh:
 
 | Contest | Date / scheduled time | Modality basis | Public result status |
 |---|---|---|---|
@@ -71,11 +71,11 @@ At the observation time:
 | 12389 | 22-Nov-2026 / 15:00 | De las Tres by matching the official 15:00 product schedule | Home index advertises the upcoming contest; at 11:53:43 it had not yet reached the scheduled time and no result was published |
 | 22-Nov-2026 / 21:00 | Clásico scheduled slot | Clásico by the official 21:00 product schedule | Future draw at observation; contest ID and result not inferred |
 
-The official results page and mask index expose the 21-Nov results; the results page lists 12388 as latest, and the mask index lists 21-Nov as its latest available daily mask. The linked 21-Nov official PDF visually labels 12387 under the “Chispazo De las tres” logo and 12388 under the “Chispazo Clásico” logo, so those two modality labels are explicit on the mask itself, not merely inferred from schedule. The home index advertises 12389 for 22-Nov at 15:00. At 11:53:43 on 22-Nov, that slot was still in the future; the 21:00 Classic slot was also in the future. Therefore:
+At 15:03:04 local, the official results page still lists 12388 as latest and the mask index lists 21-Nov as its latest available daily mask. The official homepage had advertised contest 12389 for 22-Nov at 15:00. The official product page maps 15:00 to De las Tres and 21:00 to Clásico. The 15:00 slot had passed, but no 12389 result was visible in the dedicated results page at observation. The linked 21-Nov official PDF visually labels 12387 under the “Chispazo De las tres” logo and 12388 under the “Chispazo Clásico” logo, so those two modality labels are explicit on the mask itself, not merely inferred from schedule. The home index advertises 12389 for 22-Nov at 15:00. At 15:03:04 on 22-Nov, the 15:00 De las Tres slot had passed without a result visible in the dedicated results page; the 21:00 Classic slot remained in the future. Therefore:
 - 12387 is the 15:00 De las Tres result: **01 05 11 18 19**.
 - 12388 is the 21:00 Clásico result: **01 07 12 21 26**.
-- 12389 is the scheduled 15:00 De las Tres contest, not a Clásico result.
-- Do not infer a 22-Nov 21:00 Clásico contest ID or winning numbers before publication.
+- 12389 is the advertised 15:00 De las Tres contest, not a Clásico result; its outcome was still not published at the 15:10:09 follow-up.
+- Do not infer a 22-Nov 21:00 Clásico contest ID or winning numbers before publication. The missing 12389 result at 15:03:04 is a publication-latency observation only.
 
 ## 4. Evidence classification
 
@@ -100,6 +100,20 @@ For each separately identified draw (12387 De las Tres and 12388 Clásico), requ
 7. Original source bytes, byte lengths and SHA-256 digests computed at intake, plus independent timestamp and receipt evidence.
 
 Keep result outcome records separate from physical-measurement records. A published combination cannot prove the physical state, identity, weight or calibration of the spheres that produced it.
+
+### Additional retrieval hooks from the published SGVO-PRO-05 revision 39
+
+The public procedure PDF identifies **SGVO-PRO-05, revisión 39**; its change-control table dates revision 39 to **March 2026**. Its Plan de Calidad supplies concrete record identifiers for a draw-specific request:
+
+- **CS-02**: daily inspection of draw equipment before each draw; the quality plan says a nonconforming component or scale is replaced.
+- **Tira de pesaje**: the quality plan requires checking each sphere against the applicable mass range and maximum lightest-to-heaviest spread. The record must be obtained with the sphere-case identity and all 28 measurements, not reconstructed from the published winning numbers.
+- **CS-11**: the glossary says it records date, draw name/number/time, selected case, results, and names/signatures of the preparer, verifier, certifier and General Directorate representative. The quality plan also requires comparing the drawn spheres with the numbers entered on CS-11.
+- **Policy 10 timing windows**: for De las Tres, inspector appointment 15:00, tolerance 15:05 and escalation limit 16:00; for nocturnal draws, 21:00, 21:05 and 22:00. The procedure describes a replacement-inspector path if needed. These are procedural windows, not proof that a specific inspector attended.
+- **Policy 15 delayed-act exception**: if an act cannot be printed, it may be signed the next business day, with a maximum of five business days, only if results are not compromised; the Sales/Operations representative must record the issue in the Bitácora. Therefore an unsigned act immediately after a draw is a pending retrieval item, not by itself proof of noncompliance.
+
+These controls improve the evidence request but do not provide any draw-specific CS-02, weighing strip, CS-11, inspector commission, act, or custody record. Obtain originals or certified copies and verify their issuing authority, signatures, timestamps, and chain of custody. Do not infer sphere type, measurements, attendance or equipment identity from the public mask.
+
+Official published procedure: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
 
 ## 6. ORIGEN handling
 

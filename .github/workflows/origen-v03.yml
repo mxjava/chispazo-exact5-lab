@@ -10,6 +10,7 @@ on:
       - ".github/workflows/origen-v03.yml"
   pull_request:
     paths:
+      - "requirements.txt"
       - "research/ORIGEN_v0_3/src/**"
       - "research/ORIGEN_v0_3/tests/**"
       - "research/ORIGEN_v0_3/pyproject.toml"
