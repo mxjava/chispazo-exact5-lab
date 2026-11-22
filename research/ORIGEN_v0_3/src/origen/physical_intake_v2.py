@@ -255,13 +255,18 @@ def evaluate_temporal_eligibility(
                     except ValueError:
                         reasons.add("INVALID_DRAW_DATE")
                     else:
-                        source_close_datetime = datetime.fromisoformat(source_close_raw.replace("Z", "+00:00"))
-                        source_draw_datetime = datetime.fromisoformat(
-                            source_draw_raw.replace("Z", "+00:00")
-                        ).astimezone(source_close_datetime.tzinfo)
+                        # draw_date is the official Mexico City calendar date, not
+                        # the calendar date implied by whichever offset a source used.
+                        # A 21:00 local Classic draw is 03:00Z on the following UTC day.
+                        source_close_local_date = source_close.astimezone(
+                            CHISPAZO_LOCAL_TIMEZONE
+                        ).date()
+                        source_draw_local_date = source_draw.astimezone(
+                            CHISPAZO_LOCAL_TIMEZONE
+                        ).date()
                         if (
-                            draw_date != source_close_datetime.date().isoformat()
-                            or draw_date != source_draw_datetime.date().isoformat()
+                            draw_date != source_close_local_date.isoformat()
+                            or draw_date != source_draw_local_date.isoformat()
                         ):
                             reasons.add("DRAW_DATE_SOURCE_DRAW_MISMATCH")
                 modalities.add(_canonical_identifier(row["modality"]).upper())
