@@ -809,7 +809,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                         [row[column] for column in V2_REQUIRED_COLUMNS]
                     )
                     stream.write(
-                        buffer.getvalue().rstrip("\\r\\n") + ',"unterminated\\r\\n'
+                        buffer.getvalue().rstrip("\r\n") + ',"unterminated\r\n'
                     )
             with self.assertRaisesRegex(
                 ValueError,
