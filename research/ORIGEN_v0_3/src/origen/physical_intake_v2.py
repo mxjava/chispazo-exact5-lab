@@ -35,6 +35,13 @@ MAX_V2_INTAKE_ROWS = 28_000
 # Bound UTF-8 payload bytes, not Unicode code points, at the untrusted intake boundary.
 MAX_V2_ROW_TEXT_BYTES = 32_768
 MAX_V2_INTAKE_TEXT_BYTES = 64_000_000
+# Bound the CSV parser before it materializes an untrusted physical record.
+# A CSV-escaped record can at most double payload bytes for quote escaping, plus
+# delimiters, field wrappers, and the line terminator for the fixed V2 schema.
+MAX_V2_CSV_HEADER_BYTES = 4096
+MAX_V2_CSV_RECORD_BYTES = (
+    2 * MAX_V2_ROW_TEXT_BYTES + 4 * len(V2_REQUIRED_COLUMNS) + 4
+)
 CHISPAZO_LOCAL_TIMEZONE = ZoneInfo("America/Mexico_City")
 CLASSIC_DRAW_SLOT = (21, 0)
 
@@ -473,14 +480,33 @@ def evaluate_temporal_eligibility(
 
 
 def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[str, Any]:
-    with Path(path).open("r", encoding="utf-8-sig", newline="") as stream:
-        reader = csv.DictReader(stream, strict=True)
-        try:
-            headers = reader.fieldnames
-        except csv.Error as exc:
-            raise ValueError("CSV header syntax is invalid") from exc
-        if headers is None:
+    """Read bounded, single-physical-line CSV records before structural intake.
+
+    The V2 schema contains scalar fields only. Multiline CSV cells are rejected;
+    the byte stream is bounded before csv.reader can allocate an oversized header
+    or a row with an attacker-controlled number of columns.
+    """
+    with Path(path).open("rb") as stream:
+        raw_header = stream.readline(MAX_V2_CSV_HEADER_BYTES + 1)
+        if not raw_header:
             raise ValueError("CSV has no header")
+        if len(raw_header) > MAX_V2_CSV_HEADER_BYTES:
+            raise ValueError(
+                f"CSV header exceeds maximum {MAX_V2_CSV_HEADER_BYTES} bytes"
+            )
+        if (
+            (raw_header.endswith(b"\\r\\n") and b"\\r" in raw_header[:-2])
+            or (not raw_header.endswith(b"\\r\\n") and b"\\r" in raw_header)
+        ):
+            raise ValueError("CSV header contains an embedded or unsupported carriage return")
+        try:
+            header_line = raw_header.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise ValueError("CSV header is not valid UTF-8") from exc
+        try:
+            headers = next(csv.reader([header_line], strict=True))
+        except (csv.Error, StopIteration) as exc:
+            raise ValueError("CSV header syntax is invalid") from exc
         if any(
             type(name) is not str or not name or name != name.strip()
             for name in headers
@@ -488,6 +514,10 @@ def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[st
             raise ValueError("CSV headers must be non-empty canonical strings")
         if len(headers) != len(set(headers)):
             raise ValueError("CSV headers must be unique; duplicate column names are ambiguous")
+        if len(headers) > len(V2_REQUIRED_COLUMNS):
+            raise ValueError(
+                f"CSV header has too many columns: {len(headers)}"
+            )
         required = set(V2_REQUIRED_COLUMNS)
         missing = sorted(required - set(headers))
         if missing:
@@ -495,4 +525,37 @@ def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[st
         unexpected = sorted(set(headers) - required)
         if unexpected:
             raise ValueError("unexpected columns: " + ", ".join(unexpected))
-        return evaluate_temporal_eligibility(reader, **verification)
+
+        def rows() -> Iterable[dict[str, Any]]:
+            while True:
+                raw_line = stream.readline(MAX_V2_CSV_RECORD_BYTES + 1)
+                if not raw_line:
+                    return
+                if len(raw_line) > MAX_V2_CSV_RECORD_BYTES:
+                    raise csv.Error(
+                        f"CSV record exceeds maximum {MAX_V2_CSV_RECORD_BYTES} bytes"
+                    )
+                if (
+                    (raw_line.endswith(b"\\r\\n") and b"\\r" in raw_line[:-2])
+                    or (not raw_line.endswith(b"\\r\\n") and b"\\r" in raw_line)
+                ):
+                    raise csv.Error(
+                        "CSV record contains an embedded or unsupported carriage return"
+                    )
+                try:
+                    line = raw_line.decode("utf-8")
+                except UnicodeDecodeError as exc:
+                    raise csv.Error("CSV record is not valid UTF-8") from exc
+                try:
+                    values = next(csv.reader([line], strict=True))
+                except StopIteration:
+                    continue
+                if not values:
+                    continue
+                if len(values) > len(headers):
+                    raise csv.Error("CSV record has more fields than its header")
+                if len(values) < len(headers):
+                    values.extend([None] * (len(headers) - len(values)))
+                yield dict(zip(headers, values))
+
+        return evaluate_temporal_eligibility(rows(), **verification)
