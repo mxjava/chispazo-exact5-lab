@@ -28,6 +28,10 @@ V2_REQUIRED_COLUMNS = (
     "custody_receipt_ref", "custody_receipt_sha256", "trusted_timestamp_ref",
 )
 
+# One invocation can hold at most 1,000 complete 28-sphere target sets.
+# Larger feeds must be partitioned at complete-target boundaries by the caller.
+MAX_V2_INTAKE_ROWS = 28_000
+
 
 def _declared_reference_set(value: Any, field: str) -> set[str]:
     """Accept only exact built-in strings in canonical set containers."""
@@ -113,23 +117,28 @@ def evaluate_temporal_eligibility(
         declared_continuity_targets, "declared_continuity_targets"
     )
 
-    materialized = list(rows)
-    if not materialized:
-        return {"status": "EMPTY", "targets": {}, "row_count": 0}
-    # DictReader yields exact dicts. Reject custom Mapping/dict subclasses because
-    # their get(), __getitem__(), or iteration methods can present inconsistent data.
-    if any(
-        type(row) is not dict or any(type(key) is not str for key in row)
-        for row in materialized
-    ):
-        raise ValueError("rows must be exact built-in dict objects with built-in string keys")
+    # Consume the iterable incrementally: list(rows) before validation allowed an
+    # untrusted CSV/generator to allocate unbounded memory before the fail-closed gate.
     required_columns = set(V2_REQUIRED_COLUMNS)
-    for row_number, row in enumerate(materialized, start=1):
+    materialized: list[Mapping[str, Any]] = []
+    for row_number, row in enumerate(rows, start=1):
+        if row_number > MAX_V2_INTAKE_ROWS:
+            raise ValueError(
+                f"intake exceeds maximum {MAX_V2_INTAKE_ROWS} rows; "
+                "partition only at complete target-contest boundaries"
+            )
+        # DictReader yields exact dicts. Reject custom Mapping/dict subclasses because
+        # their get(), __getitem__(), or iteration methods can present inconsistent data.
+        if type(row) is not dict or any(type(key) is not str for key in row):
+            raise ValueError("rows must be exact built-in dict objects with built-in string keys")
         missing = sorted(required_columns - set(row))
         if missing:
             raise ValueError(
                 f"row {row_number} missing required columns: " + ", ".join(missing)
             )
+        materialized.append(row)
+    if not materialized:
+        return {"status": "EMPTY", "targets": {}, "row_count": 0}
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for row in materialized:
         target = _canonical_identifier(row.get("target_contest_id"))
