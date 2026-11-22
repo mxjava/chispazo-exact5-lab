@@ -467,6 +467,14 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         # Both paths must be normalized to a controlled ValueError.
         with self.assertRaises(ValueError):
             parse_attestation_json(deeply_nested)
+        result = verify_attestation_json(
+            deeply_nested, trust_roots=self.roots, expected_role="CUSTODIAN",
+            expected_subject_sha256=self.subject,
+            verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"],
+        )
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("invalid attestation JSON", result["reason"])
 
 
 if __name__ == "__main__":
