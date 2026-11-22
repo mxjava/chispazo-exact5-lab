@@ -120,6 +120,31 @@ class TestTrustVerifierV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "validity interval is inverted"):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
+    def test_signed_at_outside_key_validity_is_rejected(self):
+        raw, public_bytes = signed_receipt()
+        trust = TrustPolicy(
+            policy_version="policy-2026-11",
+            issuer_keys=(
+                TrustedIssuerKey(
+                    issuer_id="independent-verifier",
+                    key_id="verifier-key-1",
+                    public_key_bytes=public_bytes,
+                    valid_from_utc=datetime(2026, 11, 23, 3, 30, tzinfo=timezone.utc),
+                    valid_until_utc=VALID_UNTIL,
+                ),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "signing time is outside"):
+            verify_receipt_attestation(raw, trust, verification_time=NOW)
+
+    def test_signed_at_after_verification_time_is_rejected(self):
+        raw, public_bytes = signed_receipt()
+        earlier = datetime(2026, 11, 23, 3, 0, tzinfo=timezone.utc)
+        with self.assertRaisesRegex(ValueError, "after verification time"):
+            verify_receipt_attestation(
+                raw, policy(public_bytes), verification_time=earlier
+            )
+
     def test_policy_version_mismatch_is_rejected(self):
         raw, public_bytes = signed_receipt()
         trust = TrustPolicy(policy_version="wrong-policy", issuer_keys=policy(public_bytes).issuer_keys)
