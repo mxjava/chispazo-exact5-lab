@@ -32,11 +32,17 @@ def _policy_identifier(value: object, field: str) -> str:
 def _policy_utc_datetime(value: object, field: str) -> datetime:
     if type(value) is not datetime:
         raise ValueError(f"{field} must be an exact datetime")
-    if value.tzinfo is None or value.utcoffset() is None:
+    if value.tzinfo is None:
+        raise ValueError(f"{field} must be timezone-aware")
+    try:
+        offset = value.utcoffset()
+    except Exception as exc:
+        raise ValueError(f"{field} timezone offset is invalid") from exc
+    if offset is None:
         raise ValueError(f"{field} must be timezone-aware")
     try:
         return value.astimezone(timezone.utc)
-    except (OverflowError, ValueError) as exc:
+    except Exception as exc:
         raise ValueError(f"{field} cannot be normalized to UTC") from exc
 
 
