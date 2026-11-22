@@ -44,7 +44,7 @@ MAX_V2_CSV_RECORD_BYTES = (
 )
 CHISPAZO_LOCAL_TIMEZONE = ZoneInfo("America/Mexico_City")
 CLASSIC_DRAW_SLOT = (21, 0)
-_DECIMAL_TEXT = re.compile(r"(?:0|[1-9][0-9]{0,2})(?:\\.[0-9]{1,6})?\\Z")
+_DECIMAL_TEXT = re.compile(r"(?:0|[1-9][0-9]{0,2})(?:\.[0-9]{1,6})?\Z")
 SPHERE_MASS_SPECS = {
     "SMARTBALLS": (Decimal("4.25"), Decimal("5.25"), Decimal("0.30")),
     "PING PONG": (Decimal("2.30"), Decimal("3.00"), Decimal("0.15")),
