@@ -145,6 +145,10 @@ def _reject_json_constant(value: str) -> None:
     raise ValueError(f"non-standard JSON constant is not accepted: {value}")
 
 
+def _reject_json_float(value: str) -> None:
+    raise ValueError("floating-point JSON numbers are not accepted in trust receipts")
+
+
 def _object(value: object, fields: set[str], label: str) -> dict[str, object]:
     if type(value) is not dict:
         raise ValueError(f"{label} must be a JSON object")
@@ -378,6 +382,7 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
             text,
             object_pairs_hook=_unique_object,
             parse_constant=_reject_json_constant,
+            parse_float=_reject_json_float,
         )
     except (json.JSONDecodeError, RecursionError) as exc:
         raise ValueError("trust receipt is not valid bounded JSON") from exc
