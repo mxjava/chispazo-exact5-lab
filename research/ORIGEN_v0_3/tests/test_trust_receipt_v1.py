@@ -208,6 +208,12 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "generator and custodian"):
             parse_unverified_receipt(encode(document))
 
+    def test_custodian_cannot_also_be_a_signer(self):
+        document = valid_document()
+        document["custodians"][0]["subject_id"] = document["signers"][0]["subject_id"]
+        with self.assertRaisesRegex(ValueError, "signer and custodian claims must be separate"):
+            parse_unverified_receipt(encode(document))
+
     def test_artifact_cannot_claim_another_contest(self):
         document = valid_document()
         document["artifacts"][0]["contest_id"] = "12390"
