@@ -375,6 +375,18 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "BLOCKED_CONTINUITY",
         )
 
+    def test_draw_date_accepts_utc_draw_timestamp_for_same_source_local_date(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["source_draw_at"] = "2026-11-21T03:00:00Z"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertNotIn("DRAW_DATE_SOURCE_DRAW_MISMATCH", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
     def test_draw_date_requires_canonical_valid_iso_calendar_date(self):
         for invalid_date in ("2026-1-20", "2026-02-30", "2026-11-20 ", "", None):
             with self.subTest(invalid_date=invalid_date):
