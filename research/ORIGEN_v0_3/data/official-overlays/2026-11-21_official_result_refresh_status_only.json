@@ -1,6 +1,6 @@
 {
   "schema": "exact5.official_overlay.status_only.v3",
-  "observed_at_local": "2026-11-22T01:54:01-06:00",
+  "observed_at_local": "2026-11-22T02:53:58-06:00",
   "purpose": "Status-only refresh from public official Lotería Nacional endpoints. No prediction, no pre-close snapshot, no canonical-history append.",
   "classification": "OFFICIAL_RESULTS_PUBLISHED_MODALITY_BASIS_MIXED",
   "correction": {
@@ -850,6 +850,76 @@
       "interpretation": "At 01:54 local, the dedicated results page still publishes 12388 dated 21-Nov and the official home index advertises 12389 for 22-Nov at 15:00. The product schedule maps 15:00 to De las Tres and 21:00 to Clásico. The 21-Nov mask visually labels 12387 as De las Tres and 12388 as Clásico. No 22-Nov result or mask is published in the inspected endpoints. This is public result/schedule evidence only, not a pre-close seal or physical custody evidence.",
       "integrity_limits": {
         "original_2026_11_21_mask_bytes_captured": false,
+        "source_sha256": "NOT_CAPTURED",
+        "independent_custody": false,
+        "signed_preclose_snapshot": false,
+        "trusted_source_timestamp": false,
+        "official_act_obtained": false,
+        "signed_participation_file_obtained": false,
+        "physical_sphere_measurements_obtained": false,
+        "calibration_certificate_obtained": false
+      },
+      "eligibility": {
+        "snapshot_preclose": false,
+        "oos_eligible": false,
+        "score_computed": false,
+        "canonical_history_appended": false,
+        "canonical_append_verified": false,
+        "challenger_changed": false,
+        "v294_changed": false,
+        "main_modified": false,
+        "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+      }
+    },
+    {
+      "observed_at_local": "2026-11-22T02:53:58-06:00",
+      "observation_scope": "Pre-15:00 official refresh on 22-Nov; verify the still-published 21-Nov results separately from the upcoming 15:00 De las Tres slot and the distinct 21:00 Classic schedule.",
+      "dedicated_results_page": {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+        "latest_published_contest_id": 12388,
+        "latest_published_date": "2026-11-21",
+        "latest_published_numbers": [
+          1,
+          7,
+          12,
+          21,
+          26
+        ],
+        "previous_same_day_de_las_tres": {
+          "contest_id": 12387,
+          "numbers": [
+            1,
+            5,
+            11,
+            18,
+            19
+          ]
+        },
+        "result_for_2026_11_22_contest_12389_visible": false
+      },
+      "home_index_schedule_card": {
+        "url": "https://www.loterianacional.gob.mx/home/index",
+        "scheduled_date": "2026-11-22",
+        "scheduled_time_local": "15:00",
+        "advertised_contest_id": 12389,
+        "numbers": null,
+        "status": "SCHEDULED_NOT_YET_PUBLISHED"
+      },
+      "official_product_schedule": {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "de_las_tres_time_local": "15:00",
+        "clasico_time_local": "21:00"
+      },
+      "mask_index": {
+        "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+        "latest_listed_mask_date": "2026-11-21",
+        "mask_for_2026_11_22_listed": false,
+        "previous_day_mask_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-21.pdf?v=21112026220313"
+      },
+      "interpretation": "At 02:53:58 local, the dedicated results page still publishes contest 12388 (01 07 12 21 26) dated 21-Nov, with 12387 (01 05 11 18 19) as the prior same-day result. The official home index advertises contest 12389 for 22-Nov at 15:00, which the official product page maps to De las Tres. The separate 21:00 slot is Clásico; no 22-Nov Clásico contest ID or result is inferred. No 12389 result or 22-Nov daily mask is published in the inspected endpoints. This is public status/schedule evidence only, not proof that a scheduled draw did or did not occur, not physical evidence, and not a pre-close seal.",
+      "integrity_limits": {
+        "original_2026_11_21_mask_bytes_captured": false,
+        "original_2026_11_22_mask_bytes_captured": false,
         "source_sha256": "NOT_CAPTURED",
         "independent_custody": false,
         "signed_preclose_snapshot": false,
