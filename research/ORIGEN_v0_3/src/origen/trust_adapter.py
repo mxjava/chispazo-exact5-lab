@@ -284,7 +284,7 @@ def verify_attestation(
         except InvalidSignature as exc:
             raise ValueError("Ed25519 signature verification failed") from exc
 
-        replay_status = "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER"
+        replay_status = "NOT_CHECKED_NO_NONCE_LEDGER"
         if nonce_ledger is not None:
             consumed = nonce_ledger.consume_once(
                 nonce=nonce,
@@ -294,7 +294,7 @@ def verify_attestation(
                 raise ValueError("nonce ledger must return an exact built-in bool")
             if not consumed:
                 raise ValueError("attestation nonce has already been consumed")
-            replay_status = "CONSUMED_BY_INJECTED_DURABLE_NONCE_LEDGER"
+            replay_status = "CONSUMED_BY_INJECTED_NONCE_LEDGER_UNATTESTED"
 
         return {
             "status": "SIGNATURE_VALID",
