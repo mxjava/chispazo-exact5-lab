@@ -1,0 +1,53 @@
+ANEXO A LA SOLICITUD DE ACCESO A LA INFORMACIÓN — CHISPAZO CLÁSICO
+Fecha de preparación: 2026-11-22
+Alcance: exclusivamente Chispazo Clásico (Sorteo Electrónico), no sorteos tradicionales ni bolas de madera.
+
+Solicito que la respuesta indique unidad responsable, existencia, formato, periodo de conservación, fecha de creación, fecha/hora de captura y fecha/hora en que cada registro estuvo disponible para el personal. Cuando un documento no exista, no se genere o se haya depurado, solicito que se informe expresamente y se cite el instrumento archivístico o de disposición aplicable. Solicito versiones públicas cuando existan datos protegidos.
+
+1. SGVO-MAN-02
+   a) Confirmar la versión controlada y vigente del Manual de Apoyo para la Operación de Sorteos y Equipos Electrónicos, su nivel de revisión, fecha de aprobación/publicación y clasificación.
+   b) Explicar por qué SGVO-PRO-05 revisión 39 lo referencia para CS-02 y operación de equipos, mientras la Normateca Vigente consultada no lo lista y la entrada localizada en Proyectos Normativos corresponde a un PDF marcado “RESERVADO”.
+   c) Entregar la versión pública aplicable o, si se clasifica, el fundamento y la versión pública de las partes no reservadas.
+
+2. Secuencia cierre–urna–pesaje
+   a) Aclarar la secuencia física exacta: el artículo 9, fracción I, del Reglamento Chispazo menciona introducir 28 esferas en una urna antes del cierre; SGVO-PRO-05 ubica el pesaje individual y la colocación en alimentadores después del cierre.
+   b) Precisar qué significa “urna” en el Reglamento, cuándo se introducen las esferas, cuándo se pesa cada una y cuándo se cargan los alimentadores.
+   c) Precisar si el cierre SICAL se repite cuando un peso no cumple y se cambia de estuche, conforme al retorno de la actividad 5.3 a la 4.1; entregar el flujo y timestamps reales del procedimiento aplicable.
+
+3. Registros por concurso, desde 2022-03-10 hasta la fecha de respuesta
+   a) CS-02 original y anexos de inspección para cada Chispazo Clásico.
+   b) Tiras de Pesaje completas con peso individual de cada esfera, número, tipo (Smartballs/Ping Pong), orden de pesaje, estuche, báscula, operador, firmas y hora de cada operación.
+   c) CS-11 y Acta completa con anexos físicos y digitales.
+   d) CS-09, CS-12, CS-18 y bitácoras de acceso, limpieza y mantenimiento relacionadas con el set/equipo.
+   e) Sumario de cierre SICAL, fecha/hora de cierre, eventuales re-cierres, CDC y constancias de sustitución de estuche.
+
+4. RFID e inventario
+   a) Inventario actual de máquinas (fabricante, modelo, serie, activo fijo, fecha de alta/baja, estado y ubicación).
+   b) Inventario de esferas y estuches usados en Chispazo, con identificador físico y número de inventario.
+   c) Identificadores RFID individuales de cada esfera, lector/antena, fecha/hora de cada lectura, ID de lector, resultado de lectura y mapeo RFID ↔ número de esfera.
+   d) Identificador RFID de máquina y, si existe, identificador RFID independiente del estuche.
+   e) Registro de asignación máquina–estuche–concurso y cambios de estuche, con timestamps.
+   f) Aclarar la inconsistencia del Informe de Gestión 2018–2024: 10 juegos para cada uno de siete productos, pero total reportado de 60 juegos.
+
+5. Calibración y mantenimiento
+   a) Certificados de calibración de básculas, vigencia, número de serie, incertidumbre, tolerancia y fechas.
+   b) Calendario anual y órdenes de mantenimiento preventivo/correctivo de máquinas, alimentadores, básculas, RFID, cámaras y set.
+   c) Refacciones, ajustes, cambios de configuración y pruebas posteriores al mantenimiento, con fecha/hora y equipo/serie.
+
+6. Videograbaciones
+   a) Máster audiovisual continuo y sin editar desde el inicio del pesaje hasta el final del sorteo, por concurso.
+   b) Metadatos originales, zona horaria, timecode, sincronización de relojes de cámara y registro de exportación/copia.
+   c) Cadena de custodia, hashes de cada archivo, política de retención y ubicación archivística.
+   d) Copia editada anexada al Acta, identificando exactamente qué intervalos fueron excluidos del máster.
+
+7. Incidencias, firmas y custodia digital
+   a) Registros de incidencias, riesgos, suspensiones, retrasos, sustituciones, errores de captura o reimpresión, y comunicaciones con PSICAL.
+   b) Archivos de participaciones y cancelaciones con firma electrónica, algoritmo/valor de firma, timestamp, hash, certificado, dispositivo de almacenamiento y constancia de depósito/consulta.
+   c) Firmas electrónicas de CS-11/Actas y anexos, si existen; distinguirlas de la firma del archivo de participaciones.
+   d) Registro de quién accedió a cada archivo, cuándo, y qué versión se entregó a SEGOB/OIC.
+
+8. Diccionario de datos y oportunidad temporal
+   Para cada variable, proporcionar nombre del campo, tipo, unidad, identificador de concurso, fuente primaria, responsable, fecha/hora de generación, captura, validación, disponibilidad interna y publicación. Indicar expresamente si el valor estuvo disponible antes del cierre definitivo de ventas. No basta una marca retrospectiva “pre-cierre” sin evidencia temporal.
+
+9. Alcance de búsqueda
+   Confirmar que la búsqueda se hizo en los archivos de la Gerencia de Operación de Concursos, Juegos y Sorteos, Subgerencia de Operación de Concursos, Juegos y Sorteos Electrónicos e Instantáneos, Dirección de Tecnologías de la Información y Telecomunicaciones, Órgano Interno de Control y unidad responsable de grabación/servicio audiovisual.
