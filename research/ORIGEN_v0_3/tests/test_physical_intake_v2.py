@@ -72,6 +72,30 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         )
         self.assertNotIn("INVALID_PRINTED_NUMBER", result["targets"]["12301"]["reasons"])
 
+    def test_iterator_failure_after_partial_intake_is_controlled_rejection(self):
+        rows = rows_for_target()
+
+        def interrupted_rows():
+            yield rows[0]
+            raise RuntimeError("synthetic source stream interruption")
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"intake iterable failed after row 1",
+        ):
+            evaluate_temporal_eligibility(interrupted_rows(), **VERIFIED)
+
+    def test_iterable_initialization_failure_is_controlled_rejection(self):
+        class UnreadableRows:
+            def __iter__(self):
+                raise RuntimeError("synthetic iterator initialization failure")
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"intake rows are not a readable iterable",
+        ):
+            evaluate_temporal_eligibility(UnreadableRows(), **VERIFIED)
+
     def test_every_row_must_include_all_required_columns(self):
         rows = rows_for_target()
         del rows[1]["source_document_sha256"]
