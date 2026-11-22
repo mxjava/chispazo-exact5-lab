@@ -882,7 +882,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
     def test_csv_unterminated_quote_is_rejected_instead_of_silently_accepted(self):
         rows = rows_for_target()
-        headers = list(V2_REQUIRED_COLUMNS) + ["optional_notes"]
+        headers = list(V2_REQUIRED_COLUMNS)
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "unterminated-quote.csv"
             with path.open("w", encoding="utf-8", newline="") as stream:
