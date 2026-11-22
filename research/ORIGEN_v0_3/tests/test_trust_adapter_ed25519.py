@@ -447,5 +447,18 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertIn("invalid or non-canonical base64", result["reason"])
 
 
+    def test_nested_duplicate_keys_and_nonfinite_json_constants_are_rejected(self):
+        invalid_documents = (
+            (b'{"outer":{"value":1,"value":2}}', "duplicate JSON object key"),
+            (b'{"value":NaN}', "non-finite JSON number"),
+            (b'{"value":Infinity}', "non-finite JSON number"),
+            (b'{"value":-Infinity}', "non-finite JSON number"),
+        )
+        for raw, expected_reason in invalid_documents:
+            with self.subTest(raw=raw):
+                with self.assertRaisesRegex(ValueError, expected_reason):
+                    parse_attestation_json(raw)
+
+
 if __name__ == "__main__":
     unittest.main()
