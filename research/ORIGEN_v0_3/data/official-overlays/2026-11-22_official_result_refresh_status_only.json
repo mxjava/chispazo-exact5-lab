@@ -81,5 +81,33 @@
     "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
     "home_schedule": "https://comercializadores.loterianacional.gob.mx/",
     "home_results_index": "https://www.loterianacional.gob.mx/Home/Resultados/?cluster=1&view=cG5sUmVzdWxHYW5hR2F0bw%3D%3D"
+  },
+  "official_physical_control_procedure": {
+    "document": "SGVO-PRO-05 — Procedimiento Sorteos Electrónicos",
+    "revision": 39,
+    "publication_date": "2026-03-20",
+    "url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+    "requirements": {
+      "sphere_weighing": "Weighing is required for every draw.",
+      "smartballs": {
+        "minimum_g": 4.25,
+        "maximum_g": 5.25,
+        "maximum_spread_g": 0.3
+      },
+      "ping_pong": {
+        "minimum_g": 2.3,
+        "maximum_g": 3,
+        "maximum_spread_g": 0.15
+      },
+      "participation_file": "The electronic signature of the participation file is recorded on storage media before the draw and deposited in a secured box accessible only to the Internal Control body.",
+      "act_and_attachments": "The draw act must identify place/date/time and officials/SEGOB inspector; attachments include CS-11 winning numbers and the weighing strip.",
+      "delayed_signature_exception": "If printing the act is impossible, it may be signed the next business day, no later than five business days, only if results are not compromised."
+    },
+    "source_pages": {
+      "sphere_weight_and_controls": 5,
+      "act_and_required_attachments": 7,
+      "delayed_act_signature": 8
+    },
+    "status": "OFFICIAL_PROCEDURAL_BASELINE_CONFIRMED_BUT_2026-11-22_PRIMARY_RECORDS_NOT_OBTAINED"
   }
 }
