@@ -514,10 +514,6 @@ def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[st
             raise ValueError("CSV headers must be non-empty canonical strings")
         if len(headers) != len(set(headers)):
             raise ValueError("CSV headers must be unique; duplicate column names are ambiguous")
-        if len(headers) > len(V2_REQUIRED_COLUMNS):
-            raise ValueError(
-                f"CSV header has too many columns: {len(headers)}"
-            )
         required = set(V2_REQUIRED_COLUMNS)
         missing = sorted(required - set(headers))
         if missing:
