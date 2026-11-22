@@ -103,6 +103,23 @@ class TestTrustVerifierV1(unittest.TestCase):
                 raw, policy(public_bytes), verification_time=too_early
             )
 
+    def test_inverted_key_validity_interval_is_rejected(self):
+        raw, public_bytes = signed_receipt()
+        malformed = TrustPolicy(
+            policy_version="policy-2026-11",
+            issuer_keys=(
+                TrustedIssuerKey(
+                    issuer_id="independent-verifier",
+                    key_id="verifier-key-1",
+                    public_key_bytes=public_bytes,
+                    valid_from_utc=VALID_UNTIL,
+                    valid_until_utc=VALID_FROM,
+                ),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "validity interval is inverted"):
+            verify_receipt_attestation(raw, malformed, verification_time=NOW)
+
     def test_policy_version_mismatch_is_rejected(self):
         raw, public_bytes = signed_receipt()
         trust = TrustPolicy(policy_version="wrong-policy", issuer_keys=policy(public_bytes).issuer_keys)
