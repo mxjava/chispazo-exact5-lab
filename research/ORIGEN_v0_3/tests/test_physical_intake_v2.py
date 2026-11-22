@@ -353,6 +353,41 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "BLOCKED_CONTINUITY",
         )
 
+    def test_contest_id_alias_must_match_source_contest_id(self):
+        rows = rows_for_target()
+        rows[0]["contest_id"] = "12302"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("CONTEST_ID_ALIAS_MISMATCH", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
+    def test_draw_date_must_match_source_close_and_draw_dates(self):
+        rows = rows_for_target()
+        rows[0]["draw_date"] = "2026-11-21"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("DRAW_DATE_SOURCE_DRAW_MISMATCH", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
+    def test_draw_date_requires_canonical_valid_iso_calendar_date(self):
+        for invalid_date in ("2026-1-20", "2026-02-30", "2026-11-20 ", "", None):
+            with self.subTest(invalid_date=invalid_date):
+                rows = rows_for_target()
+                rows[0]["draw_date"] = invalid_date
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                reasons = result["targets"]["12301"]["reasons"]
+                self.assertIn("INVALID_DRAW_DATE", reasons)
+                self.assertEqual(
+                    result["targets"]["12301"]["predictive_eligibility"],
+                    "BLOCKED_CONTINUITY",
+                )
+
     def test_none_values_are_not_stringified_into_valid_provenance_refs(self):
         cases = (
             ("source_document_ref", "declared_source_refs", "PRIMARY_SOURCE_MISSING"),
