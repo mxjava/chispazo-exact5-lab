@@ -320,6 +320,28 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "BLOCKED_CONTINUITY",
         )
 
+    def test_utc_normalization_overflow_fails_closed(self):
+        # A syntactically valid offset can normalize outside datetime's year range.
+        # This must become a provenance block, not escape as OverflowError.
+        cases = (
+            "0001-01-01T00:00:00+23:59",
+            "9999-12-31T23:59:59-23:59",
+        )
+        for timestamp in cases:
+            with self.subTest(timestamp=timestamp):
+                rows = rows_for_target()
+                rows[0]["target_draw_close_at"] = timestamp
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                target = result["targets"]["12301"]
+                self.assertIn(
+                    "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE",
+                    target["reasons"],
+                )
+                self.assertEqual(
+                    target["predictive_eligibility"],
+                    "BLOCKED_PROVENANCE",
+                )
+
     def test_naive_timestamp_blocks_provenance(self):
         rows = rows_for_target()
         rows[0]["evidence_available_at"] = "2026-11-20T18:00:00"
