@@ -406,7 +406,11 @@ def evaluate_temporal_eligibility(
 
 def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[str, Any]:
     with Path(path).open("r", encoding="utf-8-sig", newline="") as stream:
-        reader = csv.DictReader(stream)
+        reader = csv.DictReader(stream, strict=True)
+        try:
+            headers = reader.fieldnames
+        except csv.Error as exc:
+            raise ValueError("CSV header syntax is invalid") from exc
         if reader.fieldnames is None:
             raise ValueError("CSV has no header")
         headers = reader.fieldnames
