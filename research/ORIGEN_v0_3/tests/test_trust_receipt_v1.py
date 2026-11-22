@@ -243,6 +243,16 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "non-standard JSON constant"):
             parse_unverified_receipt(raw)
 
+    def test_finite_and_overflowing_json_floats_are_rejected_at_decode_boundary(self):
+        for token in (b"1024.0", b"1e999999"):
+            with self.subTest(token=token):
+                raw = encode(valid_document()).replace(b'"byte_length":1024', b'"byte_length":' + token)
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "floating-point JSON numbers are not accepted",
+                ):
+                    parse_unverified_receipt(raw)
+
     def test_non_utf8_input_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "valid UTF-8"):
             parse_unverified_receipt(b"\xff")
