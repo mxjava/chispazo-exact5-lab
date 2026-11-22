@@ -62,6 +62,14 @@ data_rows = [r for r in rows[1:] if any(cell.strip() for cell in r)]
 def norm(value: str) -> str:
     return re.sub(r"[^a-z0-9]", "", value.lower())
 
+
+def post_baseline_ids_are_contiguous(draw_ids, baseline_last: int = 12249) -> bool:
+    """Check continuity from the first post-baseline draw through the observed maximum."""
+    observed = sorted(set(draw_ids))
+    if not observed:
+        return True
+    return observed == list(range(baseline_last + 1, observed[-1] + 1))
+
 normalized = [norm(x) for x in header]
 aliases = {
     "draw_id": {"concurso", "sorteo", "numerodesorteo", "nosorteo", "draw", "drawid"},
@@ -150,7 +158,7 @@ reconciliation = {
     "official_post_baseline_draw_count": len(post_baseline_ids),
     "official_post_baseline_draw_id_min": min(post_baseline_ids) if post_baseline_ids else None,
     "official_post_baseline_draw_id_max": max(post_baseline_ids) if post_baseline_ids else None,
-    "official_post_baseline_ids_contiguous": post_baseline_ids == list(range(12250, 12387)),
+    "official_post_baseline_ids_contiguous": post_baseline_ids_are_contiguous(post_baseline_ids),
     "official_new_draw_id_min": min(official_new_ids) if official_new_ids else None,
     "official_new_draw_id_max": max(official_new_ids) if official_new_ids else None,
     "official_id_gaps": official_gaps[:100],
