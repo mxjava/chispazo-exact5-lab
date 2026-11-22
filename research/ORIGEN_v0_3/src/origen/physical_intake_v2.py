@@ -43,15 +43,17 @@ def _parse_time(value: Any, field: str) -> datetime:
 def evaluate_temporal_eligibility(
     rows: Iterable[Mapping[str, Any]],
     *,
-    verified_custody_refs: set[str] | None = None,
-    verified_timestamp_refs: set[str] | None = None,
-    verified_source_refs: set[str] | None = None,
-    verified_continuity_targets: set[str] | None = None,
+    declared_custody_refs: set[str] | None = None,
+    declared_timestamp_refs: set[str] | None = None,
+    declared_source_refs: set[str] | None = None,
+    declared_continuity_targets: set[str] | None = None,
 ) -> dict[str, Any]:
     """Classify each target independently; missing external attestations fail closed.
 
-    The verification sets must be populated by an independent verifier, not from
-    caller-supplied booleans in the CSV. An empty/omitted set means unverified.
+    The `declared_*` sets are caller-supplied reference declarations used only for
+    structural membership checks. This function cannot authenticate their origin,
+    signer, timestamp, custodian, or external continuity. Never treat membership in
+    these sets as an authenticated verification receipt. An empty/omitted set fails closed.
     """
     materialized = list(rows)
     if not materialized:
@@ -60,10 +62,10 @@ def evaluate_temporal_eligibility(
     if missing:
         raise ValueError("missing required columns: " + ", ".join(missing))
 
-    custody = verified_custody_refs or set()
-    timestamps = verified_timestamp_refs or set()
-    sources = verified_source_refs or set()
-    continuity = verified_continuity_targets or set()
+    custody = declared_custody_refs or set()
+    timestamps = declared_timestamp_refs or set()
+    sources = declared_source_refs or set()
+    continuity = declared_continuity_targets or set()
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for row in materialized:
         target = str(row.get("target_contest_id", "")).strip()
@@ -242,7 +244,7 @@ def evaluate_temporal_eligibility(
         elif reasons:
             classification = "BLOCKED_PROVENANCE"
         else:
-            classification = "ELIGIBLE_PRE_CLOSE"
+            classification = "STRUCTURAL_PRE_CLOSE_ONLY"
         results[target] = {
             "predictive_eligibility": classification,
             "reasons": sorted(reasons),
@@ -250,13 +252,15 @@ def evaluate_temporal_eligibility(
             "row_count": len(group),
         }
     return {
-        "status": "ELIGIBILITY_REVIEWED",
+        "status": "STRUCTURAL_REVIEW_ONLY",
+        "authentication_status": "NOT_AUTHENTICATED_BY_THIS_MODULE",
         "targets": results,
         "row_count": len(materialized),
         "scope_warning": (
-            "Temporal gate only. ELIGIBLE_PRE_CLOSE means external attestations were "
-            "declared verified by the independent verifier; it is not a physical-bias "
-            "finding or a predictive-edge claim."
+            "Structural temporal gate only. STRUCTURAL_PRE_CLOSE_ONLY means declared "
+            "chronology and caller-provided reference membership passed; this module "
+            "does not authenticate those references. It is not authenticated provenance, "
+            "a physical-bias finding, or a predictive-edge claim."
         ),
     }
 

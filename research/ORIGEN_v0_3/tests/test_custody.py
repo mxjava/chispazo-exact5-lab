@@ -7,7 +7,8 @@ from pathlib import Path
 
 from origen.custody import (
     GENESIS, build_seal_record, read_record, sha256_bytes,
-    verify_seal_record, verify_record_chain, write_record_exclusive,
+    parse_utc, validate_portfolio, verify_seal_record, verify_record_chain,
+    write_record_exclusive,
 )
 
 
@@ -232,6 +233,129 @@ class CustodyTests(unittest.TestCase):
         raw = portfolio_bytes().replace(b"02-", b"29-", 1)
         with self.assertRaises(ValueError):
             self.make_record(portfolio=raw)
+
+
+    def test_parse_utc_rejects_string_subclass_spoofing(self):
+        class SpoofedText(str):
+            def strip(self, *args, **kwargs):
+                return "2026-11-20T17:00:00Z"
+
+            def replace(self, *args, **kwargs):
+                return "2026-11-20T17:00:00+00:00"
+
+        with self.assertRaisesRegex(ValueError, "exact built-in"):
+            parse_utc(SpoofedText("not-a-time"), "generated_at_utc")
+
+    def test_verify_rejects_dict_subclass_before_overridden_get(self):
+        record, raw = self.make_record()
+
+        class SpoofedRecord(dict):
+            def get(self, key, default=None):
+                if key == "schema_version":
+                    return "exact5.custody.v1"
+                return super().get(key, default)
+
+        ok, reason = verify_seal_record(SpoofedRecord(record), raw)
+        self.assertFalse(ok)
+        self.assertIn("exact built-in dict", reason)
+
+    def test_portfolio_rejects_bytes_subclass(self):
+        raw = portfolio_bytes()
+
+        class SpoofedBytes(bytes):
+            def endswith(self, suffix, *args):
+                return True
+
+            def decode(self, *args, **kwargs):
+                return "01-02-03-04-05\\n" * 30
+
+        with self.assertRaisesRegex(TypeError, "exact built-in bytes"):
+            validate_portfolio(SpoofedBytes(raw))
+
+    def test_builder_rejects_integer_subclass_for_target_id(self):
+        class SpoofedInt(int):
+            def __le__(self, other):
+                return False
+
+        with self.assertRaisesRegex(ValueError, "exact positive integer"):
+            self.make_record(target_contest_id=SpoofedInt(12250))
+
+    def test_chain_rejects_dict_subclass_before_reading_target(self):
+        record, raw = self.make_record()
+
+        class SpoofedRecord(dict):
+            def get(self, key, default=None):
+                if key == "target_contest_id":
+                    return 12250
+                return super().get(key, default)
+
+        ok, reason = verify_record_chain(
+            [SpoofedRecord(record)], {12250: raw}
+        )
+        self.assertFalse(ok)
+        self.assertIn("exact built-in dict", reason)
+
+    def test_chain_rejects_custom_portfolio_mapping(self):
+        record, raw = self.make_record()
+
+        class SpoofedMapping(dict):
+            pass
+
+        ok, reason = verify_record_chain(
+            [record], SpoofedMapping({12250: raw})
+        )
+        self.assertFalse(ok)
+        self.assertIn("exact built-in dict", reason)
+
+    def test_digest_fields_reject_string_subclasses(self):
+        class SpoofedDigest(str):
+            def __str__(self):
+                return "f" * 64
+
+        with self.assertRaisesRegex(ValueError, "exact built-in text"):
+            self.make_record(candidate_spec_sha256=SpoofedDigest("f" * 64))
+
+
+    def test_parse_utc_rejects_noncanonical_iso8601_forms(self):
+        invalid_values = (
+            "2026-11-20 17:00:00Z",
+            "2026-11-20T17:00Z",
+            "2026-11-20T17:00:00+0000",
+            "2026-11-20T17:00:00Z ",
+        )
+        for value in invalid_values:
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "canonical extended ISO-8601"):
+                    parse_utc(value, "generated_at_utc")
+
+    def test_verify_rejects_string_subclass_chain_anchor(self):
+        record, raw = self.make_record()
+
+        class SpoofedDigest(str):
+            def __eq__(self, other):
+                return True
+
+        ok, reason = verify_seal_record(
+            record, raw, expected_previous=SpoofedDigest("not-a-digest")
+        )
+        self.assertFalse(ok)
+        self.assertIn("exact built-in text", reason)
+
+
+    def test_read_record_rejects_duplicate_json_object_keys(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "duplicate.json"
+            path.write_bytes(b'{"schema_version":"bad","schema_version":"exact5.custody.v1"}\n')
+            with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
+                read_record(path)
+
+    def test_read_record_rejects_noncanonical_json_encoding(self):
+        record, _ = self.make_record()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "noncanonical.json"
+            path.write_text(json.dumps(record) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "canonical JSON encoding"):
+                read_record(path)
 
 if __name__ == "__main__":
     unittest.main()
