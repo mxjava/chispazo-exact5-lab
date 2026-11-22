@@ -1,6 +1,6 @@
 {
   "schema": "exact5.official_overlay.status_only.v3",
-  "observed_at_local": "2026-11-22T16:54:18-06:00",
+  "observed_at_local": "2026-11-22T17:57:26-06:00",
   "purpose": "Status-only official endpoint refresh. The dedicated result page now publishes contest 12389; modality is schedule-consistent but not confirmed by a same-day mask. No pre-close capture, physical evidence authentication, canonical-history append, or scoring.",
   "classification": "OFFICIAL_RESULT_PUBLISHED_SCHEDULE_CONSISTENT_MASK_NOT_YET_PUBLISHED",
   "official_schedule": {
@@ -182,5 +182,37 @@
       "delayed_act_signature": 8
     },
     "status": "OFFICIAL_PROCEDURAL_BASELINE_CONFIRMED_BUT_2026-11-22_PRIMARY_RECORDS_NOT_OBTAINED"
+  },
+  "latest_observation": {
+    "observed_at_local": "2026-11-22T17:57:26-06:00",
+    "dedicated_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observation": "The official page displays contest 12389, date 2026-11-22, winning numbers 01 15 17 22 25."
+    },
+    "home_index": {
+      "url": "https://www.loterianacional.gob.mx/home/index",
+      "observation": "The opened page displays a 22-Nov 21:00 card with Sorteo 12390. Its extracted 15:00 card shows Sorteo 36979 and is not unambiguously labelled as Chispazo in the extracted block; do not use that card to claim direct 15:00 confirmation for contest 12389.",
+      "chispazo_classic_21_00": {
+        "contest_id": 12390,
+        "modality": "CLASICO",
+        "basis": "Home index 21:00 card plus official Chispazo product schedule."
+      },
+      "contest_12389_slot_status": "SCHEDULE_INFERRED_DE_LAS_TRES_NOT_SAME_DAY_MASK_CONFIRMED"
+    },
+    "official_product_schedule": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "de_las_tres_local": "15:00",
+      "clasico_local": "21:00"
+    },
+    "mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_document": "RESULTADOS 2026-11-21",
+      "same_day_2026_11_22_mask_visible": false
+    },
+    "interpretation": "Do not promote contest 12389 to MASK_CONFIRMED. The official result is published, but the current homepage extraction does not directly map 12389 to the 15:00 card. Keep schedule/sequence inference explicitly labelled and do not append to canonical history.",
+    "source_bytes": {
+      "official_2026_11_22_mask_sha256": "NOT_CAPTURED",
+      "official_2026_11_22_mask_bytes_stored": false
+    }
   }
 }
