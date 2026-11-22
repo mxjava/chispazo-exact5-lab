@@ -9,7 +9,7 @@ from __future__ import annotations
 import csv
 import math
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
@@ -148,8 +148,10 @@ def evaluate_temporal_eligibility(
                 available = _parse_time(row["evidence_available_at"], "evidence_available_at")
                 received = _parse_time(row["custody_received_at"], "custody_received_at")
                 measurement = _parse_time(row["measurement_at"], "measurement_at")
-                source_close = _parse_time(row["draw_close_at"], "draw_close_at")
-                source_draw = _parse_time(row["source_draw_at"], "source_draw_at")
+                source_close_raw = row["draw_close_at"]
+                source_close = _parse_time(source_close_raw, "draw_close_at")
+                source_draw_raw = row["source_draw_at"]
+                source_draw = _parse_time(source_draw_raw, "source_draw_at")
                 target_draw = _parse_time(row["target_draw_at"], "target_draw_at")
                 assignment = _parse_time(row["set_assigned_at"], "set_assigned_at")
                 signed = _parse_time(row["source_signed_at"], "source_signed_at")
@@ -173,7 +175,21 @@ def evaluate_temporal_eligibility(
                 signature_refs.add(_canonical_identifier(row["source_signature_ref"]))
                 signer_ids.add(_canonical_identifier(row["source_signer_id"]))
                 timestamp_refs.add(_canonical_identifier(row["trusted_timestamp_ref"]))
-                source_contests.add(_canonical_identifier(row["source_contest_id"]))
+                source_contest = _canonical_identifier(row["source_contest_id"])
+                source_contests.add(source_contest)
+                if not source_contest or _canonical_identifier(row["contest_id"]) != source_contest:
+                    reasons.add("CONTEST_ID_ALIAS_MISMATCH")
+                draw_date = row["draw_date"]
+                if type(draw_date) is not str or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", draw_date):
+                    reasons.add("INVALID_DRAW_DATE")
+                else:
+                    try:
+                        date.fromisoformat(draw_date)
+                    except ValueError:
+                        reasons.add("INVALID_DRAW_DATE")
+                    else:
+                        if draw_date != source_close_raw[:10] or draw_date != source_draw_raw[:10]:
+                            reasons.add("DRAW_DATE_SOURCE_DRAW_MISMATCH")
                 modalities.add(_canonical_identifier(row["modality"]).upper())
                 sphere_ids.add(_canonical_identifier(row["sphere_id"]))
                 set_ids.add(_canonical_identifier(row["sphere_set_id"]))
@@ -303,7 +319,8 @@ def evaluate_temporal_eligibility(
             "SOURCE_SIGNED_AFTER_SOURCE_DRAW", "BROKEN_SOURCE_SIGNATURE_TEMPORAL_ORDER",
             "BROKEN_EVIDENCE_AVAILABILITY_ORDER", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
             "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
-            "EVIDENCE_DOCUMENT_SET_CONFLICT"
+            "EVIDENCE_DOCUMENT_SET_CONFLICT", "CONTEST_ID_ALIAS_MISMATCH",
+            "INVALID_DRAW_DATE", "DRAW_DATE_SOURCE_DRAW_MISMATCH"
         )):
             classification = "BLOCKED_CONTINUITY"
         elif reasons:
