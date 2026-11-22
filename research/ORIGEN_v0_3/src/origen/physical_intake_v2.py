@@ -136,7 +136,10 @@ def evaluate_temporal_eligibility(
             raise ValueError(
                 f"row {row_number} missing required columns: " + ", ".join(missing)
             )
-        materialized.append(row)
+        # Snapshot each accepted row now. Retaining caller-owned dict references
+        # lets a lazy iterable mutate earlier rows after yielding them but before
+        # classification, making the evaluated evidence differ from intake-time data.
+        materialized.append(row.copy())
     if not materialized:
         return {"status": "EMPTY", "targets": {}, "row_count": 0}
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
