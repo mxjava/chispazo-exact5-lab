@@ -123,9 +123,13 @@ def evaluate_temporal_eligibility(
         for row in materialized
     ):
         raise ValueError("rows must be exact built-in dict objects with built-in string keys")
-    missing = sorted(set(V2_REQUIRED_COLUMNS) - set(materialized[0]))
-    if missing:
-        raise ValueError("missing required columns: " + ", ".join(missing))
+    required_columns = set(V2_REQUIRED_COLUMNS)
+    for row_number, row in enumerate(materialized, start=1):
+        missing = sorted(required_columns - set(row))
+        if missing:
+            raise ValueError(
+                f"row {row_number} missing required columns: " + ", ".join(missing)
+            )
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for row in materialized:
         target = _canonical_identifier(row.get("target_contest_id"))
