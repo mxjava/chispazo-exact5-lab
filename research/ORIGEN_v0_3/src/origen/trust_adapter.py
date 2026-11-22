@@ -66,7 +66,7 @@ def parse_attestation_json(raw: bytes) -> dict[str, Any]:
             object_pairs_hook=_unique_json_object,
             parse_constant=_reject_json_constant,
         )
-    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError) as exc:
         raise ValueError(f"invalid attestation JSON: {exc}") from exc
     if type(value) is not dict:
         raise ValueError("attestation JSON must be an exact built-in object")
