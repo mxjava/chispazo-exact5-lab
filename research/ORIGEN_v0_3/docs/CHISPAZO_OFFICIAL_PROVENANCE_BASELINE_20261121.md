@@ -1,6 +1,6 @@
 # Chispazo — Official procedure and provenance baseline
 
-**Observation:** 2026-11-21 19:57:54 America/Mexico_City  
+**Observation:** 2026-11-22 11:53:43 America/Mexico_City  
 **Classification:** RESEARCH / PUBLIC-RESULT STATUS ONLY / NOT PHYSICAL EVIDENCE  
 **Scope:** Chispazo Clásico (21:00) versus Chispazo de las Tres (15:00)
 
@@ -32,7 +32,27 @@ The compiled regulation makes several distinctions that ORIGEN must preserve:
 - **Article 15:** after the ceremony and identification of winning combinations, an act records the background, results and any incident; the SEGOB inspector and the named officials participate and sign it.
 - **Article 15 bis:** a narrow force-majeure exception exists for inspector absence where a notary cannot be engaged; the designated institutional representative then performs the inspector's functions and delivers the act to the authority within three business days.
 
-The text says the 28 spheres must be similar in their characteristics. It does **not** provide a quantitative Chispazo sphere-mass tolerance or a full calibration/measurement protocol in the cited provisions. Do not import tolerances from another lottery or another draw's regulation.
+The text says the 28 spheres must be similar in their characteristics. The cited regulation itself does **not** provide a quantitative Chispazo sphere-mass tolerance or a full calibration/measurement protocol. Do not import tolerances from another lottery or another draw's regulation.
+
+### Current operational procedure — SGVO-PRO-05, revision 39
+
+A separate, currently published Lotería Nacional procedure adds operational controls for electronic draws:
+
+- The public Normateca lists **PROCEDIMIENTO SORTEOS ELECTRÓNICOS (SGVO-PRO-05)**, revision **39**, last updated **20-Mar-2026**. The PDF itself identifies publication on 20-Mar-2026.
+- Policy 6 requires weighing the spheres for **each draw**. It specifies:
+  - **Smartballs:** each sphere 4.25–5.25 g; maximum difference between the lightest and heaviest sphere 0.30 g.
+  - **Ping Pong:** each sphere 2.30–3.00 g; maximum difference 0.15 g.
+  - If a case fails, another sphere case is selected and weighed again.
+- Policy 7 names the SEGOB inspector, a General Directorate representative and a Sales/Operations representative as responsible for checking the sale close, weighing, loading, draw and entry of winning numbers; IT also checks the sale close, draw and result entry.
+- Policy 8 says the electronic signature of the participation file is recorded to storage **before the draw**; the IT representative hands the device to the SEGOB inspector, who deposits it in a safe accessible only to the Internal Control Body.
+- Policy 11 requires an act with place/date/time, names, roles and signatures of the commissioned officials and SEGOB inspector, plus incidents. Its Chispazo attachment matrix includes the sales-close summary, CS-11 winning numbers, draw summary and weighing strip.
+- Policy 12 describes weekly DVD delivery of the reports and electronic signature of the winners report, under an official letter, for attachment to the acts.
+- Policies 19 and 21 describe restricted draw-room access, a CS-12 attendance record and authorized access roles, including Internal Control Body staff retrieving information from the safe.
+
+**Important scope limit:** these are procedural requirements and nominal acceptance ranges, not evidence of which sphere type was used in a particular Chispazo draw or the actual measured values for that draw. The original signed weighing strip, sphere-set identity, instrument/calibration data, act and custody records are still required. The procedure does not itself supply those draw-specific artifacts.
+
+Official source: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf  
+Current Normateca listing: https://loterianacional.gob.mx/Normateca/Sustantivas?id=2
 
 ## 3. Official schedule and 21-Nov-2026 observation
 
@@ -44,22 +64,24 @@ At the observation time:
 
 | Contest | Date / scheduled time | Modality basis | Public result status |
 |---|---|---|---|
-| 12387 | 21-Nov-2026 / 15:00 | De las Tres by matching the official 15:00 product schedule | Dedicated results page published **01 05 11 18 19** |
-| 12388 | 21-Nov-2026 / 21:00 | Clásico by matching the official 21:00 product schedule | Home index advertised the contest; no winning numbers were visible in the inspected result sources at 19:57:54 |
+| 12387 | 21-Nov-2026 / 15:00 | De las Tres by matching the official 15:00 product schedule | Dedicated results page publishes **01 05 11 18 19** |
+| 12388 | 21-Nov-2026 / 21:00 | Clásico by matching the official 21:00 product schedule | Dedicated results page publishes **01 07 12 21 26** |
+| 12389 | 22-Nov-2026 / 15:00 | De las Tres by matching the official 15:00 product schedule | Home index advertises the upcoming contest; at 11:53:43 it had not yet reached the scheduled time and no result was published |
+| 22-Nov-2026 / 21:00 | Clásico scheduled slot | Clásico by the official 21:00 product schedule | Future draw at observation; contest ID and result not inferred |
 
-The 21-Nov result-mask index still listed 20-Nov as its latest available daily mask at observation. Therefore:
-- 12387 is a public result classified by schedule, not by 21-Nov mask inspection.
-- 12388 is a scheduled Classic contest, not a result.
-- Do not treat 12387 as the 21:00 Classic draw.
-- Do not infer or fabricate any 12388 winning numbers.
+The official results page and mask index now expose the 21-Nov results; the results page lists 12388 as latest, and the mask index lists 21-Nov as its latest available daily mask. The home index advertises 12389 for 22-Nov at 15:00. At 11:53:43 on 22-Nov, that slot was still in the future; the 21:00 Classic slot was also in the future. Therefore:
+- 12387 is the 15:00 De las Tres result: **01 05 11 18 19**.
+- 12388 is the 21:00 Clásico result: **01 07 12 21 26**.
+- 12389 is the scheduled 15:00 De las Tres contest, not a Clásico result.
+- Do not infer a 22-Nov 21:00 Clásico contest ID or winning numbers before publication.
 
 ## 4. Evidence classification
 
 The public results page, home index and mask index are discovery/publication sources. Under Article 8, they are not substitutes for the official act.
 
-No 21-Nov official act, inspector-signed act, signed participation-file copy, safe-access record, original sphere-weight log, calibration certificate, sphere-set identity, equipment identity, maintenance log, or independently timestamped custody receipt was obtained in this observation.
+No 21-Nov official act, inspector-signed act, signed participation-file copy, safe-access record, original sphere-weight log, calibration certificate, sphere-set identity, equipment identity, maintenance log, or independently timestamped custody receipt was obtained in this observation. The newly re-read SGVO-PRO-05 defines the records and custody steps to request, but does not provide the underlying draw-specific evidence.
 
-No original 21-Nov daily-mask PDF bytes were captured in this run. No SHA-256 is asserted for that PDF or for the live pages. The source URLs above are locators, not immutable evidence objects.
+No original 21-Nov daily-mask PDF bytes were captured in this run. No SHA-256 is asserted for that PDF, the SGVO-PRO-05 PDF, or the live pages. The source URLs are locators, not immutable evidence objects. The public procedure, result page and mask index are not substitutes for the signed act, original pre-draw participation file or measured sphere records.
 
 Consequently, this observation supplies **no authenticated physical evidence** and no prospective evidence eligible for scoring. Do not append either contest to canonical history through this note; do not set pre-close, OOS, custody, score, or eligibility flags to true.
 
