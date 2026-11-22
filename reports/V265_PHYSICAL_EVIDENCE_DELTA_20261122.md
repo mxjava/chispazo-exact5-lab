@@ -23,6 +23,9 @@ Fuente:
 - https://loterianacional.gob.mx/Normateca/Sustantivas?id=2
 - https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
 
+La página oficial de SEGOB describe que su área de Inspección y Vigilancia da fe, legalidad y transparencia a sorteos realizados por instituciones como Lotería Nacional. Esto confirma la función de testigo del Inspector que SGVO-PRO-05 asigna a la ceremonia, sin convertir a Lotería Nacional en un permisionario ordinario de sorteos.
+Fuente: https://www.juegosysorteos.gob.mx/es/Juegos_y_Sorteos/inspecciones_lotenal_pronosticos (actualizada 12-08-2026).
+
 ### Secuencia del procedimiento (hojas 12–16, 24–25 y glosario)
 
 1. **Inspección de equipo:** antes de cada sorteo se llena CS-02. Si el equipo o báscula no cumple, se sustituye.
