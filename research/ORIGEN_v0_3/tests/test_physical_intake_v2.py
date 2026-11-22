@@ -55,6 +55,15 @@ VERIFIED = dict(
 
 
 class PhysicalIntakeV2Tests(unittest.TestCase):
+    def test_every_row_must_include_all_required_columns(self):
+        rows = rows_for_target()
+        del rows[1]["source_document_sha256"]
+        with self.assertRaisesRegex(
+            ValueError,
+            r"row 2 missing required columns: source_document_sha256",
+        ):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
+
     def test_custom_mapping_row_cannot_spoof_scalar_lookup(self):
         class SpoofedRow(dict):
             def __getitem__(self, key):
