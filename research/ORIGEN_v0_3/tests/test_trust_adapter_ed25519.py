@@ -43,7 +43,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         ).decode("ascii")
 
     def verify(self, envelope=None, roots=None, role="CUSTODIAN", subject=None,
-               now="2026-11-21T11:00:00Z", expected_nonce=None):
+               now="2026-11-21T11:00:00Z", expected_nonce=None, nonce_ledger=None):
         selected = self.envelope if envelope is None else envelope
         challenge = selected["nonce"] if expected_nonce is None else expected_nonce
         return verify_attestation(
@@ -53,6 +53,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
             expected_subject_sha256=subject or self.subject,
             verification_time_utc=now,
             expected_nonce=challenge,
+            nonce_ledger=nonce_ledger,
         )
 
     def test_noncanonical_public_key_base64_pad_bits_are_rejected(self):
@@ -595,6 +596,72 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
                 result = self.verify(role=role)
                 self.assertEqual(result["status"], "BLOCKED")
                 self.assertIn("canonical uppercase role identifier", result["reason"])
+
+
+    def test_durable_nonce_ledger_consumes_only_after_signature_verification(self):
+        class Ledger:
+            def __init__(self):
+                self.calls = []
+
+            def consume_once(self, **kwargs):
+                self.calls.append(kwargs)
+                return True
+
+        ledger = Ledger()
+        result = self.verify(nonce_ledger=ledger)
+        self.assertEqual(result["status"], "SIGNATURE_VALID")
+        self.assertEqual(
+            result["replay_status"],
+            "CONSUMED_BY_INJECTED_DURABLE_NONCE_LEDGER",
+        )
+        self.assertEqual(ledger.calls, [{
+            "nonce": self.envelope["nonce"],
+            "subject_sha256": self.subject,
+            "key_id": "custody-key-01",
+            "expires_at_utc": self.envelope["expires_at_utc"],
+        }])
+
+    def test_durable_nonce_ledger_rejects_replay(self):
+        class ReplayedLedger:
+            def consume_once(self, **kwargs):
+                return False
+
+        result = self.verify(nonce_ledger=ReplayedLedger())
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("already been consumed", result["reason"])
+
+    def test_durable_nonce_ledger_backend_failure_fails_closed(self):
+        class UnavailableLedger:
+            def consume_once(self, **kwargs):
+                raise RuntimeError("ledger unavailable")
+
+        result = self.verify(nonce_ledger=UnavailableLedger())
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("ledger unavailable", result["reason"])
+
+    def test_durable_nonce_ledger_rejects_non_boolean_result(self):
+        class InvalidLedger:
+            def consume_once(self, **kwargs):
+                return 1
+
+        result = self.verify(nonce_ledger=InvalidLedger())
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("exact built-in bool", result["reason"])
+
+    def test_invalid_signature_never_consumes_nonce(self):
+        class Ledger:
+            def __init__(self):
+                self.calls = 0
+
+            def consume_once(self, **kwargs):
+                self.calls += 1
+                return True
+
+        ledger = Ledger()
+        altered = dict(self.envelope, subject_sha256="f" * 64)
+        result = self.verify(envelope=altered, nonce_ledger=ledger)
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertEqual(ledger.calls, 0)
 
 
 if __name__ == "__main__":
