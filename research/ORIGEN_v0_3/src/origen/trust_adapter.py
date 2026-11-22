@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from typing import Any, Mapping
 
 _HEX64 = re.compile(r"[0-9a-f]{64}")
+_NONCE = re.compile(r"[A-Za-z0-9_-]{16,128}")
 _FIELDS = {
     "schema_version", "key_id", "role", "subject_sha256",
     "issued_at_utc", "expires_at_utc", "nonce",
@@ -146,8 +147,10 @@ def verify_attestation(
         if subject != expected_subject_sha256 or not _HEX64.fullmatch(expected_subject_sha256):
             raise ValueError("attestation subject hash mismatch")
         nonce = envelope["nonce"]
-        if type(nonce) is not str or len(nonce) < 16:
-            raise ValueError("nonce must contain at least 16 characters")
+        if type(nonce) is not str or not _NONCE.fullmatch(nonce):
+            raise ValueError(
+                "nonce must be 16-128 ASCII URL-safe characters (letters, digits, '_' or '-')"
+            )
 
         root = trust_roots.get(key_id)
         if type(root) is not dict:
