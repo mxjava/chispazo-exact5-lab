@@ -163,6 +163,11 @@ def evaluate_temporal_eligibility(
             raise ValueError(
                 f"row {row_number} missing required columns: " + ", ".join(missing)
             )
+        unexpected = sorted(set(row) - required_columns)
+        if unexpected:
+            raise ValueError(
+                f"row {row_number} has unexpected columns: " + ", ".join(unexpected)
+            )
         # Snapshot each accepted row now. Retaining caller-owned dict references
         # lets a lazy iterable mutate earlier rows after yielding them but before
         # classification, making the evaluated evidence differ from intake-time data.
@@ -433,7 +438,11 @@ def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[st
             raise ValueError("CSV headers must be non-empty canonical strings")
         if len(headers) != len(set(headers)):
             raise ValueError("CSV headers must be unique; duplicate column names are ambiguous")
-        missing = sorted(set(V2_REQUIRED_COLUMNS) - set(headers))
+        required = set(V2_REQUIRED_COLUMNS)
+        missing = sorted(required - set(headers))
         if missing:
             raise ValueError("missing required columns: " + ", ".join(missing))
+        unexpected = sorted(set(headers) - required)
+        if unexpected:
+            raise ValueError("unexpected columns: " + ", ".join(unexpected))
         return evaluate_temporal_eligibility(reader, **verification)
