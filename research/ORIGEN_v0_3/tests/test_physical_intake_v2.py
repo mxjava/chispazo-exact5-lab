@@ -535,6 +535,22 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "BLOCKED_CONTINUITY",
         )
 
+
+    def test_utc_2100_is_not_misread_as_classic_local_2100(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["target_draw_close_at"] = "2026-11-21T14:00:00-06:00"
+            # 21:00 UTC is 15:00 in America/Mexico_City, i.e. De las Tres.
+            row["target_draw_at"] = "2026-11-21T21:00:00Z"
+            row["mapping_valid_to"] = "2026-11-21T15:30:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("CLASSIC_SCHEDULE_TIME_MISMATCH", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
     def test_none_values_are_not_stringified_into_valid_provenance_refs(self):
         cases = (
             ("source_document_ref", "declared_source_refs", "PRIMARY_SOURCE_MISSING"),
