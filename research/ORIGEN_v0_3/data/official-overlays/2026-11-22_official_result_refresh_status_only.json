@@ -75,8 +75,9 @@
             19
           ],
           "modality": "DE_LAS_TRES",
-          "modality_status": "SCHEDULE_MATCHED_NOT_PRINTED_AS_TIME_IN_PDF",
-          "expected_slot_local": "15:00"
+          "modality_status": "MASK_VISUALLY_CONFIRMED",
+          "expected_slot_local": "15:00",
+          "modality_basis": "The official 2026-11-21 mask visually prints the Chispazo De las tres logo beside contest 12387 and the Chispazo Clásico logo beside contest 12388. The official product page separately maps these modalities to 15:00 and 21:00."
         },
         {
           "contest_id": 12388,
@@ -88,14 +89,23 @@
             26
           ],
           "modality": "CLASICO",
-          "modality_status": "SCHEDULE_MATCHED_NOT_PRINTED_AS_TIME_IN_PDF",
-          "expected_slot_local": "21:00"
+          "modality_status": "MASK_VISUALLY_CONFIRMED",
+          "expected_slot_local": "21:00",
+          "modality_basis": "The official 2026-11-21 mask visually prints the Chispazo De las tres logo beside contest 12387 and the Chispazo Clásico logo beside contest 12388. The official product page separately maps these modalities to 15:00 and 21:00."
         }
       ],
       "modality_basis": "The PDF contains contests 12387 and 12388 for 21-Nov-2026. The official Chispazo product page states two daily slots: De las Tres at 15:00 and Clásico at 21:00. Contest ordering and the two-draw daily schedule support the slot mapping; the PDF itself does not print the draw times.",
-      "provenance_limit": "Official public results mask, not the signed draw act, signed participation file, weighing strip, equipment record, independent custody receipt, or trusted timestamp.",
+      "provenance_limit": "Official public results mask with modality logos visually confirmed. It is not the signed draw act, signed participation file, weighing strip, equipment record, independent custody receipt, or trusted timestamp.",
       "source_pdf_sha256": "NOT_CAPTURED",
-      "original_pdf_bytes_stored_in_repository": false
+      "original_pdf_bytes_stored_in_repository": false,
+      "visual_inspection": {
+        "page": 1,
+        "contest_12387_label": "Chispazo De las tres",
+        "contest_12388_label": "Chispazo Clásico",
+        "source_page_image_reviewed": true,
+        "clock_times_printed_in_pdf": false,
+        "clock_times_source": "Official Chispazo product schedule: De las Tres 15:00; Clásico 21:00."
+      }
     }
   },
   "draws": [
