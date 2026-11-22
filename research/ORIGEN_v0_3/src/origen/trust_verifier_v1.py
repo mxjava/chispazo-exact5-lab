@@ -7,7 +7,9 @@ proofs, ledger inclusion, custody, or the truth of any claim in the receipt.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -15,6 +17,70 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from origen.trust_receipt_v1 import UnverifiedTrustReceipt, parse_unverified_receipt
+
+
+MAX_POLICY_ISSUER_KEYS = 256
+_POLICY_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
+
+
+def _policy_identifier(value: object, field: str) -> str:
+    if type(value) is not str or not _POLICY_IDENTIFIER.fullmatch(value):
+        raise ValueError(f"{field} must be a canonical policy identifier")
+    return value
+
+
+def _policy_utc_datetime(value: object, field: str) -> datetime:
+    if type(value) is not datetime:
+        raise ValueError(f"{field} must be an exact datetime")
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError(f"{field} must be timezone-aware")
+    try:
+        return value.astimezone(timezone.utc)
+    except (OverflowError, ValueError) as exc:
+        raise ValueError(f"{field} cannot be normalized to UTC") from exc
+
+
+def _snapshot_trust_policy(policy: object):
+    """Validate and snapshot mutable/untrusted policy containers before use."""
+    if type(policy) is not TrustPolicy:
+        raise ValueError("policy must be an exact TrustPolicy instance")
+    version = _policy_identifier(policy.policy_version, "policy_version")
+    if type(policy.issuer_keys) is not tuple:
+        raise ValueError("policy issuer_keys must be an exact tuple")
+    if not 1 <= len(policy.issuer_keys) <= MAX_POLICY_ISSUER_KEYS:
+        raise ValueError(
+            f"policy issuer_keys must contain 1..{MAX_POLICY_ISSUER_KEYS} entries"
+        )
+
+    entries = []
+    seen_pairs = set()
+    for index, item in enumerate(policy.issuer_keys):
+        if type(item) is not TrustedIssuerKey:
+            raise ValueError(f"policy issuer_keys[{index}] must be an exact TrustedIssuerKey")
+        issuer_id = _policy_identifier(item.issuer_id, f"issuer_keys[{index}].issuer_id")
+        key_id = _policy_identifier(item.key_id, f"issuer_keys[{index}].key_id")
+        if type(item.public_key_bytes) is not bytes or len(item.public_key_bytes) != 32:
+            raise ValueError(
+                f"issuer_keys[{index}].public_key_bytes must be exactly 32 immutable bytes"
+            )
+        if type(item.revoked) is not bool:
+            raise ValueError(f"issuer_keys[{index}].revoked must be an exact boolean")
+        valid_from = _policy_utc_datetime(
+            item.valid_from_utc, f"issuer_keys[{index}].valid_from_utc"
+        )
+        valid_until = _policy_utc_datetime(
+            item.valid_until_utc, f"issuer_keys[{index}].valid_until_utc"
+        )
+        if valid_from > valid_until:
+            raise ValueError(f"issuer_keys[{index}] validity interval is inverted")
+        pair = (issuer_id, key_id)
+        if pair in seen_pairs:
+            raise ValueError("policy contains duplicate issuer/key identifiers")
+        seen_pairs.add(pair)
+        entries.append(
+            (issuer_id, key_id, item.public_key_bytes, valid_from, valid_until, item.revoked)
+        )
+    return version, tuple(entries)
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +116,8 @@ class CryptographicallyVerifiedReceipt:
 
 def canonical_attestation_payload(raw: bytes) -> bytes:
     """Canonical JSON of all receipt claims except the self-referential attestation."""
+    if type(raw) is not bytes:
+        raise TypeError("trust receipt input must be exact bytes")
     parsed = parse_unverified_receipt(raw)
     del parsed  # Parsing first enforces the strict schema and duplicate-key rules.
     document = json.loads(raw.decode("utf-8"))
@@ -65,42 +133,31 @@ def verify_receipt_attestation(
     *,
     verification_time: datetime,
 ) -> CryptographicallyVerifiedReceipt:
-    """Verify the receipt's root Ed25519 signature against externally supplied trust.
+    """Verify the receipt's root Ed25519 signature against an external policy.
 
-    The caller must provision policy keys independently of the receipt. The
-    verification time is explicit so callers cannot mistake an untrusted local
-    clock for a trusted timestamp.
+    The policy is snapshotted and strictly type-checked before matching. The
+    verification time is explicit but remains caller-supplied, not trusted time.
     """
+    if type(raw) is not bytes:
+        raise TypeError("trust receipt input must be exact bytes")
+    policy_version, issuer_keys = _snapshot_trust_policy(policy)
     receipt = parse_unverified_receipt(raw)
     if receipt.declared_status != "AUTHENTICATED":
         raise ValueError("receipt declaration is REJECTED, not eligible for verification")
-    if receipt.policy_version != policy.policy_version:
+    if receipt.policy_version != policy_version:
         raise ValueError("receipt policy_version does not match externally supplied policy")
-    if verification_time.tzinfo is None or verification_time.utcoffset() is None:
-        raise ValueError("verification_time must be timezone-aware")
-    verified_at = verification_time.astimezone(timezone.utc)
+    verified_at = _policy_utc_datetime(verification_time, "verification_time")
 
     matches = [
-        item for item in policy.issuer_keys
-        if item.issuer_id == receipt.attestation.issuer_id
-        and item.key_id == receipt.attestation.key_id
+        item for item in issuer_keys
+        if item[0] == receipt.attestation.issuer_id
+        and item[1] == receipt.attestation.key_id
     ]
     if len(matches) != 1:
         raise ValueError("receipt issuer/key is unknown or ambiguous in trust policy")
-    key_record = matches[0]
-    if key_record.revoked:
+    issuer_id, key_id, public_key_bytes, valid_from, valid_until, revoked = matches[0]
+    if revoked:
         raise ValueError("receipt issuer key is revoked")
-    if (
-        key_record.valid_from_utc.tzinfo is None
-        or key_record.valid_from_utc.utcoffset() is None
-        or key_record.valid_until_utc.tzinfo is None
-        or key_record.valid_until_utc.utcoffset() is None
-    ):
-        raise ValueError("trust-policy key validity bounds must be timezone-aware")
-    valid_from = key_record.valid_from_utc.astimezone(timezone.utc)
-    valid_until = key_record.valid_until_utc.astimezone(timezone.utc)
-    if valid_from > valid_until:
-        raise ValueError("trust-policy key validity interval is inverted")
     if not (valid_from <= verified_at <= valid_until):
         raise ValueError("receipt issuer key is outside its policy validity interval")
     signed_at = datetime.fromisoformat(
@@ -112,24 +169,18 @@ def verify_receipt_attestation(
         raise ValueError("receipt attestation signing time is after verification time")
     if receipt.attestation.algorithm != "ed25519":
         raise ValueError("root verifier currently supports Ed25519 only")
-    if len(key_record.public_key_bytes) != 32:
-        raise ValueError("Ed25519 trust-policy public key must be exactly 32 bytes")
 
     signature = base64.b64decode(receipt.attestation.signature_b64, validate=True)
     payload = canonical_attestation_payload(raw)
     try:
-        Ed25519PublicKey.from_public_bytes(key_record.public_key_bytes).verify(
-            signature, payload
-        )
+        Ed25519PublicKey.from_public_bytes(public_key_bytes).verify(signature, payload)
     except (InvalidSignature, ValueError) as exc:
         raise ValueError("receipt root attestation signature verification failed") from exc
 
-    import hashlib
-
     return CryptographicallyVerifiedReceipt(
         receipt=receipt,
-        verified_issuer_id=key_record.issuer_id,
-        verified_key_id=key_record.key_id,
+        verified_issuer_id=issuer_id,
+        verified_key_id=key_id,
         verified_at_utc=verified_at,
         signed_payload_sha256=hashlib.sha256(payload).hexdigest(),
     )

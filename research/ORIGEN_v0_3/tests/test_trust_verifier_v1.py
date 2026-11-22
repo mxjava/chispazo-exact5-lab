@@ -145,6 +145,126 @@ class TestTrustVerifierV1(unittest.TestCase):
                 raw, policy(public_bytes), verification_time=earlier
             )
 
+    def test_policy_rejects_list_instead_of_exact_tuple(self):
+        raw, public_bytes = signed_receipt()
+        valid = policy(public_bytes)
+        malformed = TrustPolicy(
+            policy_version=valid.policy_version,
+            issuer_keys=list(valid.issuer_keys),
+        )
+        with self.assertRaisesRegex(ValueError, "exact tuple"):
+            verify_receipt_attestation(raw, malformed, verification_time=NOW)
+
+    def test_policy_rejects_mutable_public_key_bytes(self):
+        raw, public_bytes = signed_receipt()
+        malformed_key = TrustedIssuerKey(
+            issuer_id="independent-verifier",
+            key_id="verifier-key-1",
+            public_key_bytes=bytearray(public_bytes),
+            valid_from_utc=VALID_FROM,
+            valid_until_utc=VALID_UNTIL,
+        )
+        malformed = TrustPolicy("policy-2026-11", (malformed_key,))
+        with self.assertRaisesRegex(ValueError, "32 immutable bytes"):
+            verify_receipt_attestation(raw, malformed, verification_time=NOW)
+
+    def test_policy_rejects_non_boolean_revocation_flag(self):
+        raw, public_bytes = signed_receipt()
+        malformed_key = TrustedIssuerKey(
+            issuer_id="independent-verifier",
+            key_id="verifier-key-1",
+            public_key_bytes=public_bytes,
+            valid_from_utc=VALID_FROM,
+            valid_until_utc=VALID_UNTIL,
+            revoked=1,
+        )
+        malformed = TrustPolicy("policy-2026-11", (malformed_key,))
+        with self.assertRaisesRegex(ValueError, "exact boolean"):
+            verify_receipt_attestation(raw, malformed, verification_time=NOW)
+
+    def test_policy_rejects_duplicate_issuer_key_pairs(self):
+        raw, public_bytes = signed_receipt()
+        key = policy(public_bytes).issuer_keys[0]
+        malformed = TrustPolicy("policy-2026-11", (key, key))
+        with self.assertRaisesRegex(ValueError, "duplicate issuer/key"):
+            verify_receipt_attestation(raw, malformed, verification_time=NOW)
+
+    def test_policy_rejects_noncanonical_issuer_identifier(self):
+        raw, public_bytes = signed_receipt()
+        malformed_key = TrustedIssuerKey(
+            issuer_id=" independent-verifier",
+            key_id="verifier-key-1",
+            public_key_bytes=public_bytes,
+            valid_from_utc=VALID_FROM,
+            valid_until_utc=VALID_UNTIL,
+        )
+        malformed = TrustPolicy("policy-2026-11", (malformed_key,))
+        with self.assertRaisesRegex(ValueError, "canonical policy identifier"):
+            verify_receipt_attestation(raw, malformed, verification_time=NOW)
+
+    def test_policy_rejects_naive_validity_bound(self):
+        raw, public_bytes = signed_receipt()
+        malformed_key = TrustedIssuerKey(
+            issuer_id="independent-verifier",
+            key_id="verifier-key-1",
+            public_key_bytes=public_bytes,
+            valid_from_utc=datetime(2026, 1, 1),
+            valid_until_utc=VALID_UNTIL,
+        )
+        malformed = TrustPolicy("policy-2026-11", (malformed_key,))
+        with self.assertRaisesRegex(ValueError, "timezone-aware"):
+            verify_receipt_attestation(raw, malformed, verification_time=NOW)
+
+    def test_policy_issuer_key_collection_is_bounded(self):
+        raw, public_bytes = signed_receipt()
+        malformed = TrustPolicy(
+            "policy-2026-11",
+            tuple(
+                TrustedIssuerKey(
+                    issuer_id=f"issuer-{index}",
+                    key_id=f"key-{index}",
+                    public_key_bytes=public_bytes,
+                    valid_from_utc=VALID_FROM,
+                    valid_until_utc=VALID_UNTIL,
+                )
+                for index in range(257)
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, r"1..256 entries"):
+            verify_receipt_attestation(raw, malformed, verification_time=NOW)
+
+    def test_policy_subclass_is_rejected(self):
+        raw, public_bytes = signed_receipt()
+
+        class PolicySubclass(TrustPolicy):
+            pass
+
+        valid = policy(public_bytes)
+        malformed = PolicySubclass(valid.policy_version, valid.issuer_keys)
+        with self.assertRaisesRegex(ValueError, "exact TrustPolicy"):
+            verify_receipt_attestation(raw, malformed, verification_time=NOW)
+
+    def test_bytes_subclass_receipt_is_rejected(self):
+        raw, public_bytes = signed_receipt()
+
+        class ReceiptBytes(bytes):
+            pass
+
+        with self.assertRaisesRegex(TypeError, "exact bytes"):
+            verify_receipt_attestation(
+                ReceiptBytes(raw), policy(public_bytes), verification_time=NOW
+            )
+
+    def test_datetime_subclass_verification_clock_is_rejected(self):
+        raw, public_bytes = signed_receipt()
+
+        class ClockSubclass(datetime):
+            pass
+
+        clock = ClockSubclass(2026, 11, 23, 4, 0, tzinfo=timezone.utc)
+        with self.assertRaisesRegex(ValueError, "exact datetime"):
+            verify_receipt_attestation(raw, policy(public_bytes), verification_time=clock)
+
     def test_policy_version_mismatch_is_rejected(self):
         raw, public_bytes = signed_receipt()
         trust = TrustPolicy(policy_version="wrong-policy", issuer_keys=policy(public_bytes).issuer_keys)
