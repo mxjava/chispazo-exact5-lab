@@ -921,7 +921,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_csv_oversized_header_is_rejected_before_column_materialization(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "oversized-header.csv"
-            path.write_bytes(b"x," * (MAX_V2_CSV_HEADER_BYTES // 2) + b"x\\n")
+            path.write_bytes(b"x," * (MAX_V2_CSV_HEADER_BYTES // 2) + b"x\n")
             with self.assertRaisesRegex(
                 ValueError,
                 rf"CSV header exceeds maximum {MAX_V2_CSV_HEADER_BYTES} bytes",
@@ -931,9 +931,9 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_csv_oversized_record_is_rejected_before_field_materialization(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "oversized-record.csv"
-            header = ",".join(V2_REQUIRED_COLUMNS).encode("utf-8") + b"\\n"
+            header = ",".join(V2_REQUIRED_COLUMNS).encode("utf-8") + b"\n"
             path.write_bytes(
-                header + b"x" * (MAX_V2_CSV_RECORD_BYTES + 1) + b"\\n"
+                header + b"x" * (MAX_V2_CSV_RECORD_BYTES + 1) + b"\n"
             )
             with self.assertRaisesRegex(
                 ValueError,
@@ -971,9 +971,9 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "multiline-field.csv"
             with path.open("wb") as stream:
-                stream.write(",".join(V2_REQUIRED_COLUMNS).encode("utf-8") + b"\\n")
-                stream.write(b'"untrusted\\n')
-                stream.write(b'value",\\n')
+                stream.write(",".join(V2_REQUIRED_COLUMNS).encode("utf-8") + b"\n")
+                stream.write(b'"untrusted\n')
+                stream.write(b'value",\n')
             with self.assertRaisesRegex(
                 ValueError,
                 r"intake iterable failed after row 0",
