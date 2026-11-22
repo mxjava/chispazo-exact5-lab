@@ -253,6 +253,21 @@ class TestTrustReceiptV1(unittest.TestCase):
                 ):
                     parse_unverified_receipt(raw)
 
+    def test_signed_64_bit_json_integer_boundary_is_enforced_at_decode(self):
+        maximum = (1 << 63) - 1
+        document = valid_document()
+        document["artifacts"][0]["byte_length"] = maximum
+        parsed = parse_unverified_receipt(encode(document))
+        self.assertEqual(parsed.artifacts[0].byte_length, maximum)
+
+        for token in (b"9223372036854775808", b"-9223372036854775809", b"9" * 5000):
+            with self.subTest(token_length=len(token)):
+                raw = encode(valid_document()).replace(
+                    b'"byte_length":1024', b'"byte_length":' + token
+                )
+                with self.assertRaisesRegex(ValueError, "signed 64-bit range"):
+                    parse_unverified_receipt(raw)
+
     def test_non_utf8_input_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "valid UTF-8"):
             parse_unverified_receipt(b"\xff")

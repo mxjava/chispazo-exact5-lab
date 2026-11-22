@@ -16,6 +16,8 @@ from dataclasses import dataclass
 from datetime import datetime
 
 MAX_TRUST_RECEIPT_BYTES = 262_144
+# Receipt integer claims are bounded to the portable signed 64-bit range.
+MAX_TRUST_RECEIPT_INTEGER = (1 << 63) - 1
 SCHEMA_VERSION = "origen.trust-receipt.v1"
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -147,6 +149,16 @@ def _reject_json_constant(value: str) -> None:
 
 def _reject_json_float(value: str) -> None:
     raise ValueError("floating-point JSON numbers are not accepted in trust receipts")
+
+
+def _parse_json_integer(value: str) -> int:
+    """Parse only portable signed-64-bit JSON integers at the decode boundary."""
+    negative = value.startswith("-")
+    digits = value[1:] if negative else value
+    limit = "9223372036854775808" if negative else "9223372036854775807"
+    if len(digits) > len(limit) or (len(digits) == len(limit) and digits > limit):
+        raise ValueError("JSON integer exceeds signed 64-bit range")
+    return int(value)
 
 
 def _object(value: object, fields: set[str], label: str) -> dict[str, object]:
@@ -383,6 +395,7 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
             object_pairs_hook=_unique_object,
             parse_constant=_reject_json_constant,
             parse_float=_reject_json_float,
+            parse_int=_parse_json_integer,
         )
     except (json.JSONDecodeError, RecursionError) as exc:
         raise ValueError("trust receipt is not valid bounded JSON") from exc
