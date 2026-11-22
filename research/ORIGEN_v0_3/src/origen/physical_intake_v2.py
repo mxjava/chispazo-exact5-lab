@@ -495,8 +495,8 @@ def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[st
                 f"CSV header exceeds maximum {MAX_V2_CSV_HEADER_BYTES} bytes"
             )
         if (
-            (raw_header.endswith(b"\\r\\n") and b"\\r" in raw_header[:-2])
-            or (not raw_header.endswith(b"\\r\\n") and b"\\r" in raw_header)
+            (raw_header.endswith(b"\r\n") and b"\r" in raw_header[:-2])
+            or (not raw_header.endswith(b"\r\n") and b"\r" in raw_header)
         ):
             raise ValueError("CSV header contains an embedded or unsupported carriage return")
         try:
@@ -536,8 +536,8 @@ def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[st
                         f"CSV record exceeds maximum {MAX_V2_CSV_RECORD_BYTES} bytes"
                     )
                 if (
-                    (raw_line.endswith(b"\\r\\n") and b"\\r" in raw_line[:-2])
-                    or (not raw_line.endswith(b"\\r\\n") and b"\\r" in raw_line)
+                    (raw_line.endswith(b"\r\n") and b"\r" in raw_line[:-2])
+                    or (not raw_line.endswith(b"\r\n") and b"\r" in raw_line)
                 ):
                     raise csv.Error(
                         "CSV record contains an embedded or unsupported carriage return"
