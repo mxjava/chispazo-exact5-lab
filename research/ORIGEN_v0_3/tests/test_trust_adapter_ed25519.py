@@ -362,6 +362,31 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         ).decode("ascii")
         self.assertEqual(self.verify(envelope=altered)["status"], "BLOCKED")
 
+    def test_nonce_rejects_whitespace_control_unicode_and_oversized_values(self):
+        invalid_nonces = (
+            "                ",
+            "nonce with spaces",
+            "nonce\nvalue_123456",
+            "nonce-é-value-123",
+            "n" * 129,
+        )
+        for nonce in invalid_nonces:
+            with self.subTest(nonce=repr(nonce)):
+                altered = dict(self.envelope, nonce=nonce)
+                altered["signature_b64"] = base64.b64encode(
+                    self.private.sign(canonical_payload(altered))
+                ).decode("ascii")
+                result = self.verify(envelope=altered)
+                self.assertEqual(result["status"], "BLOCKED")
+                self.assertIn("nonce must be 16-128 ASCII URL-safe characters", result["reason"])
+
+    def test_nonce_accepts_url_safe_ascii(self):
+        altered = dict(self.envelope, nonce="nonce_value-1234567890")
+        altered["signature_b64"] = base64.b64encode(
+            self.private.sign(canonical_payload(altered))
+        ).decode("ascii")
+        self.assertEqual(self.verify(envelope=altered)["status"], "SIGNATURE_VALID")
+
 
 if __name__ == "__main__":
     unittest.main()
