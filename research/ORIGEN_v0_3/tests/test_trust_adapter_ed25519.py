@@ -574,7 +574,12 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
                 }
                 result = self.verify(roots=roots)
                 self.assertEqual(result["status"], "BLOCKED")
-                self.assertIn("canonical uppercase role identifiers", result["reason"])
+                expected_reason = (
+                    "pinned trust root roles must be unique"
+                    if len(set(roles)) != len(roles)
+                    else "canonical uppercase role identifiers"
+                )
+                self.assertIn(expected_reason, result["reason"])
 
     def test_trust_root_key_ids_must_be_bounded_canonical_ascii(self):
         roots = {
