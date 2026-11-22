@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import io
 import tempfile
 import unittest
 from pathlib import Path
@@ -792,6 +793,30 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             result["targets"]["12301"]["predictive_eligibility"],
             "STRUCTURAL_PRE_CLOSE_ONLY",
         )
+
+
+    def test_csv_unterminated_quote_is_rejected_instead_of_silently_accepted(self):
+        rows = rows_for_target()
+        headers = list(V2_REQUIRED_COLUMNS) + ["optional_notes"]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "unterminated-quote.csv"
+            with path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.writer(stream)
+                writer.writerow(headers)
+                for row in rows:
+                    buffer = io.StringIO(newline="")
+                    csv.writer(buffer).writerow(
+                        [row[column] for column in V2_REQUIRED_COLUMNS]
+                    )
+                    stream.write(
+                        buffer.getvalue().rstrip("\\r\\n") + ',"unterminated\\r\\n'
+                    )
+            with self.assertRaisesRegex(
+                ValueError,
+                r"intake iterable failed after row 0",
+            ) as raised:
+                evaluate_temporal_csv(path, **VERIFIED)
+            self.assertIsInstance(raised.exception.__cause__, csv.Error)
 
 if __name__ == "__main__":
     unittest.main()
