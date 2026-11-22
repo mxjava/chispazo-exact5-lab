@@ -18,6 +18,8 @@
    https://www.loterianacional.gob.mx/home/index
 6. Secretaría de Gobernación, SIDOF, *Acuerdo por el que se reforman diversos artículos ... Chispazo ...*, published 1 March 2012; its Article Sixth expressly reforms Chispazo Article 8 and repeats the official-act versus informational-publication distinction:
    https://sidof.segob.gob.mx/notas/docFuente/5236917
+7. Lotería Nacional, official daily mask PDF for 21-Nov-2026 (page visibly labels both Chispazo modalities):
+   https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-21.pdf?v=21112026220313
 
 The regulation copy is an official Lotería Nacional publication, and the directly published SEGOB/SIDOF agreement independently confirms the Article 8 amendment dated 1 March 2012. The compiled regulation states its last reform was published 7 March 2012. This note does not independently establish whether later administrative instruments modify any operational detail; legal applicability must be confirmed with Lotería Nacional / SEGOB before relying on it as current legal advice.
 
@@ -69,7 +71,7 @@ At the observation time:
 | 12389 | 22-Nov-2026 / 15:00 | De las Tres by matching the official 15:00 product schedule | Home index advertises the upcoming contest; at 11:53:43 it had not yet reached the scheduled time and no result was published |
 | 22-Nov-2026 / 21:00 | Clásico scheduled slot | Clásico by the official 21:00 product schedule | Future draw at observation; contest ID and result not inferred |
 
-The official results page and mask index now expose the 21-Nov results; the results page lists 12388 as latest, and the mask index lists 21-Nov as its latest available daily mask. The home index advertises 12389 for 22-Nov at 15:00. At 11:53:43 on 22-Nov, that slot was still in the future; the 21:00 Classic slot was also in the future. Therefore:
+The official results page and mask index expose the 21-Nov results; the results page lists 12388 as latest, and the mask index lists 21-Nov as its latest available daily mask. The linked 21-Nov official PDF visually labels 12387 under the “Chispazo De las tres” logo and 12388 under the “Chispazo Clásico” logo, so those two modality labels are explicit on the mask itself, not merely inferred from schedule. The home index advertises 12389 for 22-Nov at 15:00. At 11:53:43 on 22-Nov, that slot was still in the future; the 21:00 Classic slot was also in the future. Therefore:
 - 12387 is the 15:00 De las Tres result: **01 05 11 18 19**.
 - 12388 is the 21:00 Clásico result: **01 07 12 21 26**.
 - 12389 is the scheduled 15:00 De las Tres contest, not a Clásico result.
