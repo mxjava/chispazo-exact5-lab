@@ -1,6 +1,6 @@
 {
   "schema": "exact5.official_overlay.status_only.v3",
-  "observed_at_local": "2026-11-21T22:57:41-06:00",
+  "observed_at_local": "2026-11-22T00:54:40-06:00",
   "purpose": "Status-only refresh from public official Lotería Nacional endpoints. No prediction, no pre-close snapshot, no canonical-history append.",
   "classification": "OFFICIAL_RESULTS_PUBLISHED_MODALITY_BASIS_MIXED",
   "correction": {
@@ -67,7 +67,7 @@
       "contest_id": 12387,
       "date": "2026-11-21",
       "modality": "DE_LAS_TRES",
-      "modality_classification": "OFFICIAL_SCHEDULE_MATCHED_NOT_MASK_VISUAL",
+      "modality_classification": "OFFICIAL_EXPLICIT",
       "numbers": [
         1,
         5,
@@ -76,13 +76,16 @@
         19
       ],
       "number_status": "OFFICIAL_PUBLIC_RESULT",
-      "modality_basis": "The dedicated Chispazo results page publishes contest 12387 dated 21-Nov-2026; the official home index advertises the same contest for 15:00; the official Chispazo product page maps 15:00 to De las Tres and 21:00 to Clásico. The 21-Nov daily mask was not listed at observation, so this modality is schedule-matched rather than visually confirmed from the mask.",
+      "modality_basis": "The official 2026-11-21 daily mask visually labels contest 12387 with the Chispazo De las tres logo; the official results page independently publishes the same contest and numbers.",
       "source_urls": [
         "https://www.loterianacional.gob.mx/Chispazo/Resultados",
-        "https://www.loterianacional.gob.mx/home/index",
+        "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-21.pdf?v=21112026220313",
         "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
       ],
-      "source_pdf_visual_check": false
+      "source_pdf_visual_check": true,
+      "source_pdf_page": 1,
+      "original_pdf_bytes_captured": false,
+      "source_pdf_sha256": "NOT_CAPTURED"
     },
     {
       "contest_id": 12388,
@@ -126,10 +129,10 @@
     "eligibility": "NOT_ELIGIBLE_FOR_SCORING_OR_PROSPECTIVE_EVIDENCE"
   },
   "endpoint_discrepancies": {
-    "dedicated_chispazo_results_page": "Publishes 12388 (01 07 12 21 26) and 12387 (01 05 11 18 19), both dated 21/11/2026.",
+    "dedicated_chispazo_results_page": "Current official page publishes 12388 (01 07 12 21 26) and 12387 (01 05 11 18 19), both dated 21/11/2026.",
     "home_results_page": "The opened general results endpoint was stale through 12386 in the prior observation; use the dedicated Chispazo results page and daily mask for the 21-Nov results.",
     "mask_index": "Lists RESULTADOS 2026-11-21 as latest, with the official one-page PDF linked below.",
-    "mask_pdf": "The 21-Nov official one-page PDF visually labels contest 12387 with the Chispazo De las Tres logo and contest 12388 with the Chispazo Clásico logo. The numbers in both blocks agree with the dedicated results page."
+    "mask_pdf": "The 21-Nov official one-page PDF visually labels contest 12387 with the Chispazo De las tres logo and contest 12388 with the Chispazo Clásico logo. Both number sets agree with the dedicated Chispazo results page. Original PDF bytes were not captured in this run."
   },
   "integrity_limits": {
     "original_pdf_bytes_captured": false,
@@ -673,6 +676,91 @@
         "independent_custody": false,
         "signed_preclose_snapshot": false,
         "source_timestamp_provenance": false
+      },
+      "eligibility": {
+        "snapshot_preclose": false,
+        "oos_eligible": false,
+        "score_computed": false,
+        "canonical_history_appended": false,
+        "canonical_append_verified": false,
+        "challenger_changed": false,
+        "v294_changed": false,
+        "main_modified": false,
+        "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+      }
+    },
+    {
+      "observed_at_local": "2026-11-22T00:54:40-06:00",
+      "observation_scope": "Recheck after publication of the 21-Nov daily mask; visually verify the two distinct Chispazo modalities and compare against the dedicated official results page.",
+      "dedicated_results_page": {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+        "published_draws": [
+          {
+            "contest_id": 12387,
+            "date": "2026-11-21",
+            "modality": "DE_LAS_TRES",
+            "numbers": [
+              1,
+              5,
+              11,
+              18,
+              19
+            ]
+          },
+          {
+            "contest_id": 12388,
+            "date": "2026-11-21",
+            "modality": "CLASICO",
+            "numbers": [
+              1,
+              7,
+              12,
+              21,
+              26
+            ]
+          }
+        ],
+        "result_page_and_mask_numbers_agree": true
+      },
+      "official_schedule": {
+        "product_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "de_las_tres_time_local": "15:00",
+        "clasico_time_local": "21:00"
+      },
+      "mask_index": {
+        "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+        "latest_listed_mask_date": "2026-11-21",
+        "mask_for_2026_11_21_listed": true
+      },
+      "mask_pdf": {
+        "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-21.pdf?v=21112026220313",
+        "page_count": 1,
+        "page": 1,
+        "visual_check": true,
+        "observations": [
+          "The Chispazo De las tres logo appears beside contest 12387 and numbers 01 05 11 18 19.",
+          "The Chispazo Clásico logo appears beside contest 12388 and numbers 01 07 12 21 26."
+        ],
+        "original_pdf_bytes_captured": false,
+        "source_sha256": "NOT_CAPTURED"
+      },
+      "next_advertised_draw": {
+        "contest_id": 12389,
+        "date": "2026-11-22",
+        "time_local": "15:00",
+        "modality": "DE_LAS_TRES",
+        "status": "SCHEDULED_NOT_YET_PUBLISHED_AT_OBSERVATION"
+      },
+      "interpretation": "The 21-Nov daily mask resolves the modality of both same-day results visually: 12387 is De las tres (15:00) and 12388 is Clásico (21:00). This is post-draw public result evidence, not a pre-close snapshot or physical custody record.",
+      "integrity_limits": {
+        "original_pdf_bytes_captured": false,
+        "source_sha256": "NOT_CAPTURED",
+        "independent_custody": false,
+        "signed_preclose_snapshot": false,
+        "trusted_source_timestamp": false,
+        "official_act_obtained": false,
+        "signed_participation_file_obtained": false,
+        "physical_sphere_measurements_obtained": false
       },
       "eligibility": {
         "snapshot_preclose": false,
