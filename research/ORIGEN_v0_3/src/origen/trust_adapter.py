@@ -27,15 +27,16 @@ MAX_ATTESTATION_JSON_BYTES = 16_384
 class NonceLedger(Protocol):
     """External atomic, durable, shared one-time nonce-consumption service.
 
-    Implementations MUST atomically reserve (nonce, subject_sha256, key_id)
-    across concurrent workers and persist the reservation until expiry. A
+    Implementations MUST atomically reserve the nonce itself within the
+    deployment's challenge namespace across concurrent workers. Subject hash
+    and key ID MUST NOT be part of the uniqueness key: a repeated nonce remains
+    a replay even if a caller changes the subject or signer. Persist the
+    reservation for at least as long as any verifier can accept the challenge;
+    expiry is retention metadata, not permission to reuse a nonce. A
     process-local set or best-effort cache does not satisfy this contract.
     """
 
-    def consume_once(
-        self, *, nonce: str, subject_sha256: str, key_id: str,
-        expires_at_utc: str,
-    ) -> bool:
+    def consume_once(self, *, nonce: str, expires_at_utc: str) -> bool:
         """Return True only for the first durable consumption; False on replay.
 
         Backend errors MUST raise. The verifier fails closed on errors or on
@@ -287,8 +288,6 @@ def verify_attestation(
         if nonce_ledger is not None:
             consumed = nonce_ledger.consume_once(
                 nonce=nonce,
-                subject_sha256=subject,
-                key_id=key_id,
                 expires_at_utc=envelope["expires_at_utc"],
             )
             if type(consumed) is not bool:
