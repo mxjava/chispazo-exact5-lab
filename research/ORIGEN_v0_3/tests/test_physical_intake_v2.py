@@ -1090,7 +1090,9 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         )
 
     def test_mass_and_resolution_require_bounded_decimal_text(self):
-        for invalid_mass in ("NaN", "Infinity", "4.7e0", "-4.700", "04.700"):
+        for invalid_mass in (
+            "NaN", "Infinity", "4.7e0", "-4.700", "04.700", " 4.700", "4.700 ",
+        ):
             with self.subTest(invalid_mass=invalid_mass):
                 rows = rows_for_target()
                 rows[0]["mass_value"] = invalid_mass
@@ -1099,13 +1101,26 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                     "INVALID_MASS_OR_RESOLUTION",
                     result["targets"]["12301"]["reasons"],
                 )
-        rows = rows_for_target()
-        rows[0]["measurement_resolution"] = "0"
-        result = evaluate_temporal_eligibility(rows, **VERIFIED)
-        self.assertIn(
-            "INVALID_MASS_OR_RESOLUTION",
-            result["targets"]["12301"]["reasons"],
-        )
+        for invalid_resolution in ("0", " 0.001", "0.001 "):
+            with self.subTest(invalid_resolution=invalid_resolution):
+                rows = rows_for_target()
+                rows[0]["measurement_resolution"] = invalid_resolution
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                self.assertIn(
+                    "INVALID_MASS_OR_RESOLUTION",
+                    result["targets"]["12301"]["reasons"],
+                )
+
+    def test_mass_unit_requires_exact_canonical_gram_symbol(self):
+        for invalid_unit in ("G", " g", "g ", "grams"):
+            with self.subTest(invalid_unit=invalid_unit):
+                rows = rows_for_target()
+                rows[0]["mass_unit"] = invalid_unit
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                self.assertIn(
+                    "UNSUPPORTED_MASS_UNIT",
+                    result["targets"]["12301"]["reasons"],
+                )
 
     def test_all_28_mass_measurements_are_required(self):
         rows = rows_for_target()
