@@ -668,6 +668,30 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                     "STRUCTURAL_PRE_CLOSE_ONLY",
                 )
 
+    def test_unknown_negative_zero_timezone_offset_is_rejected(self):
+        timestamp_fields = (
+            "draw_close_at", "target_draw_close_at", "target_draw_at",
+            "set_assigned_at", "measurement_at", "calibration_valid_from",
+            "calibration_valid_to", "mapping_valid_from", "mapping_valid_to",
+            "source_draw_at", "source_signed_at", "evidence_available_at",
+            "custody_received_at",
+        )
+        for field in timestamp_fields:
+            with self.subTest(field=field):
+                rows = rows_for_target()
+                for row in rows:
+                    row[field] = row[field][:-6] + "-00:00"
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                reasons = result["targets"]["12301"]["reasons"]
+                self.assertIn(
+                    "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE",
+                    reasons,
+                )
+                self.assertNotEqual(
+                    result["targets"]["12301"]["predictive_eligibility"],
+                    "STRUCTURAL_PRE_CLOSE_ONLY",
+                )
+
     def test_sha256_fields_reject_surrounding_whitespace(self):
         rows = rows_for_target()
         rows[0]["source_document_sha256"] = " " + ("b" * 64) + " "
