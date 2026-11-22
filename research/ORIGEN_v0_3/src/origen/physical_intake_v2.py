@@ -13,6 +13,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
+from zoneinfo import ZoneInfo
 
 V2_REQUIRED_COLUMNS = (
     "source_contest_id", "target_contest_id", "contest_id", "draw_date",
@@ -31,6 +32,8 @@ V2_REQUIRED_COLUMNS = (
 # One invocation can hold at most 1,000 complete 28-sphere target sets.
 # Larger feeds must be partitioned at complete-target boundaries by the caller.
 MAX_V2_INTAKE_ROWS = 28_000
+CHISPAZO_LOCAL_TIMEZONE = ZoneInfo("America/Mexico_City")
+CLASSIC_DRAW_SLOT = (21, 0)
 
 
 def _declared_reference_set(value: Any, field: str) -> set[str]:
@@ -93,6 +96,13 @@ def _parse_time(value: Any, field: str) -> datetime:
     if result.tzinfo is None or result.utcoffset() is None:
         raise ValueError(f"{field}: timezone offset required")
     return result.astimezone(timezone.utc)
+
+
+
+def _is_classic_draw_slot(value: datetime) -> bool:
+    """Check the official 21:00 Classic slot in Mexico City local time."""
+    local = value.astimezone(CHISPAZO_LOCAL_TIMEZONE)
+    return (local.hour, local.minute) == CLASSIC_DRAW_SLOT
 
 
 def evaluate_temporal_eligibility(
@@ -201,6 +211,8 @@ def evaluate_temporal_eligibility(
                 source_draw_raw = row["source_draw_at"]
                 source_draw = _parse_time(source_draw_raw, "source_draw_at")
                 target_draw = _parse_time(row["target_draw_at"], "target_draw_at")
+                if not _is_classic_draw_slot(source_draw) or not _is_classic_draw_slot(target_draw):
+                    reasons.add("CLASSIC_SCHEDULE_TIME_MISMATCH")
                 assignment = _parse_time(row["set_assigned_at"], "set_assigned_at")
                 signed = _parse_time(row["source_signed_at"], "source_signed_at")
                 closes.add(close)
@@ -377,7 +389,8 @@ def evaluate_temporal_eligibility(
             "BROKEN_EVIDENCE_AVAILABILITY_ORDER", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
             "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
             "EVIDENCE_DOCUMENT_SET_CONFLICT", "CONTEST_ID_ALIAS_MISMATCH",
-            "CONTEST_ID_ORDER_INVALID", "INVALID_DRAW_DATE", "DRAW_DATE_SOURCE_DRAW_MISMATCH"
+            "CONTEST_ID_ORDER_INVALID", "INVALID_DRAW_DATE", "DRAW_DATE_SOURCE_DRAW_MISMATCH",
+            "CLASSIC_SCHEDULE_TIME_MISMATCH"
         )):
             classification = "BLOCKED_CONTINUITY"
         elif reasons:
