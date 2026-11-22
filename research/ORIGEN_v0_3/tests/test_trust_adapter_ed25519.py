@@ -537,5 +537,60 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertIn("invalid attestation JSON", result["reason"])
 
 
+    def test_trust_root_count_is_bounded(self):
+        from origen.trust_adapter import MAX_TRUST_ROOTS
+
+        roots = {f"key-{index}": {} for index in range(MAX_TRUST_ROOTS + 1)}
+        result = self.verify(roots=roots)
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("exceeds maximum", result["reason"])
+
+    def test_trust_root_role_count_is_bounded(self):
+        from origen.trust_adapter import MAX_ROOT_ROLES
+
+        roles = ["CUSTODIAN"] + [f"ROLE_{index}" for index in range(MAX_ROOT_ROLES)]
+        roots = {
+            "custody-key-01": dict(
+                self.roots["custody-key-01"], roles=roles
+            )
+        }
+        result = self.verify(roots=roots)
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("1..32 canonical uppercase role identifiers", result["reason"])
+
+    def test_trust_root_roles_must_be_unique_canonical_identifiers(self):
+        invalid_roles = (
+            ["CUSTODIAN", "CUSTODIAN"],
+            ["CUSTODIAN", "lowercase"],
+            ["CUSTODIAN", "ROLE WITH SPACE"],
+            ["CUSTODIAN", "R" * 65],
+        )
+        for roles in invalid_roles:
+            with self.subTest(roles=roles):
+                roots = {
+                    "custody-key-01": dict(
+                        self.roots["custody-key-01"], roles=roles
+                    )
+                }
+                result = self.verify(roots=roots)
+                self.assertEqual(result["status"], "BLOCKED")
+                self.assertIn("canonical uppercase role identifiers", result["reason"])
+
+    def test_trust_root_key_ids_must_be_bounded_canonical_ascii(self):
+        roots = {
+            "K" * 129: self.roots["custody-key-01"],
+        }
+        result = self.verify(roots=roots)
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("canonical ASCII key IDs", result["reason"])
+
+    def test_expected_role_must_be_canonical_uppercase_identifier(self):
+        for role in ("custodian", "ROLE WITH SPACE", "R" * 65):
+            with self.subTest(role=role):
+                result = self.verify(role=role)
+                self.assertEqual(result["status"], "BLOCKED")
+                self.assertIn("canonical uppercase role identifier", result["reason"])
+
+
 if __name__ == "__main__":
     unittest.main()
