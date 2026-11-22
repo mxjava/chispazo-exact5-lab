@@ -106,6 +106,21 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         ):
             evaluate_temporal_eligibility(rows, **VERIFIED)
 
+    def test_draw_date_uses_mexico_city_date_for_utc_timestamps(self):
+        rows = rows_for_target()
+        # 20:45 and 21:00 on 20-Nov in Mexico City are 02:45Z and
+        # 03:00Z on 21-Nov. The official draw_date remains 20-Nov locally.
+        for row in rows:
+            row["draw_close_at"] = "2026-11-21T02:45:00Z"
+            row["source_draw_at"] = "2026-11-21T03:00:00Z"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        target = result["targets"]["12301"]
+        self.assertNotIn("DRAW_DATE_SOURCE_DRAW_MISMATCH", target["reasons"])
+        self.assertEqual(
+            target["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
     def test_intake_row_limit_stops_unbounded_iterable_before_exhaustion(self):
         row = rows_for_target()[0]
 
