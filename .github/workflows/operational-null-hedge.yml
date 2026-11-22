@@ -1,0 +1,70 @@
+name: Exact5 operational lab — V263 null hedge
+
+on:
+  push:
+    branches:
+      - research/operational-lab-run-20261121
+    paths:
+      - "scripts/run_operational_null_hedge.py"
+      - ".github/workflows/operational-null-hedge.yml"
+      - "src/v263/**"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Contest label only (not a sealed prediction)"
+        required: true
+        default: "12388"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exact5-operational-null-hedge
+  cancel-in-progress: false
+
+jobs:
+  run-v263-null-hedge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install runtime dependencies
+        run: python -m pip install --upgrade pip numpy pandas
+      - name: Compile V263
+        run: python -m compileall -q src/v263 scripts/run_operational_null_hedge.py
+      - name: Execute existing V263 fail-closed path
+        run: |
+          TARGET="${{ github.event.inputs.target || '12388' }}"
+          python scripts/run_operational_null_hedge.py \
+            --target "$TARGET" \
+            --out-dir outputs/operational-null-hedge \
+            --seed 777 \
+            --iterations 30000 \
+            --restarts 4
+      - name: Validate artifact contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("outputs/operational-null-hedge")
+          reports=list(p.glob("operational_run_target_*.json"))
+          portfolios=list(p.glob("v263_DEGRADED_NULL_HEDGE_30_target_*.csv"))
+          assert len(reports)==1 and len(portfolios)==1
+          report=json.loads(reports[0].read_text())
+          assert report["state"]=="RESEARCH_ONLY_NULL_HEDGE_NOT_A_PREDICTION"
+          assert report["lines"]==30
+          assert report["source_history_used"] is False
+          assert report["production_authorized"] is False
+          assert len(portfolios[0].read_text().splitlines())==31
+          print(json.dumps(report,indent=2))
+          PY
+      - name: Upload immutable run outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: exact5-operational-null-hedge-${{ github.run_id }}
+          path: outputs/operational-null-hedge/
+          if-no-files-found: error
+          retention-days: 90
