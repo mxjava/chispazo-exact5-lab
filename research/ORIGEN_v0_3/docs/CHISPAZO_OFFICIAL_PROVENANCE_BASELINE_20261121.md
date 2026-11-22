@@ -16,8 +16,10 @@
    https://www.loterianacional.gob.mx/Mascarillas/Mascarillas
 5. Lotería Nacional, home index:
    https://www.loterianacional.gob.mx/home/index
+6. Secretaría de Gobernación, SIDOF, *Acuerdo por el que se reforman diversos artículos ... Chispazo ...*, published 1 March 2012; its Article Sixth expressly reforms Chispazo Article 8 and repeats the official-act versus informational-publication distinction:
+   https://sidof.segob.gob.mx/notas/docFuente/5236917
 
-The regulation copy is an official Lotería Nacional publication, but its stated last reform is 2012. This note does not independently establish whether later administrative instruments modify any operational detail; legal applicability must be confirmed with Lotería Nacional / SEGOB before relying on it as current legal advice.
+The regulation copy is an official Lotería Nacional publication, and the directly published SEGOB/SIDOF agreement independently confirms the Article 8 amendment dated 1 March 2012. The compiled regulation states its last reform was published 7 March 2012. This note does not independently establish whether later administrative instruments modify any operational detail; legal applicability must be confirmed with Lotería Nacional / SEGOB before relying on it as current legal advice.
 
 ## 2. Regulatory facts relevant to provenance
 
