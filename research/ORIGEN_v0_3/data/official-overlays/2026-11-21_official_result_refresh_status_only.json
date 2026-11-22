@@ -1,6 +1,6 @@
 {
   "schema": "exact5.official_overlay.status_only.v3",
-  "observed_at_local": "2026-11-21T20:51:47-06:00",
+  "observed_at_local": "2026-11-21T21:51:13-06:00",
   "purpose": "Status-only refresh from public official Lotería Nacional endpoints. No prediction, no pre-close snapshot, no canonical-history append.",
   "classification": "OFFICIAL_RESULTS_PUBLISHED_MODALITY_BASIS_MIXED",
   "correction": {
@@ -467,6 +467,95 @@
         "visible_latest_link": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf?v=20112026221431"
       },
       "interpretation": "Contest 12387 remains the public 15:00 De las Tres result by schedule match. Contest 12388 is explicitly advertised for 21:00 and is classified as the scheduled Clásico slot by the official product schedule, but at 20:51:47 no 12388 result is published. The mask index still lists 20-Nov as latest. This is a pre-slot status observation only, not a draw result, physical evidence, or a pre-close prediction seal.",
+      "integrity_limits": {
+        "original_2026_11_21_mask_bytes_captured": false,
+        "source_sha256": "NOT_CAPTURED",
+        "official_act_obtained": false,
+        "signed_participation_file_obtained": false,
+        "physical_sphere_measurements_obtained": false,
+        "independent_custody": false,
+        "signed_preclose_snapshot": false,
+        "source_timestamp_provenance": false
+      },
+      "eligibility": {
+        "snapshot_preclose": false,
+        "oos_eligible": false,
+        "score_computed": false,
+        "canonical_history_appended": false,
+        "canonical_append_verified": false,
+        "challenger_changed": false,
+        "v294_changed": false,
+        "main_modified": false,
+        "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+      }
+    },
+    {
+      "observed_at_local": "2026-11-21T21:51:13-06:00",
+      "observation_scope": "Post-21:00 public status refresh for the scheduled Classic slot; distinguish public result pages from physical evidence and do not infer a result from the schedule.",
+      "dedicated_results_page": {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+        "latest_published_contest_id": 12387,
+        "latest_published_date": "2026-11-21",
+        "latest_published_numbers": [
+          1,
+          5,
+          11,
+          18,
+          19
+        ],
+        "contest_12388_result_visible": false,
+        "interpretation": "The dedicated Chispazo results page still displays contest 12387 (01 05 11 18 19); it does not display winning numbers for 12388."
+      },
+      "home_index_schedule_card": {
+        "url": "https://www.loterianacional.gob.mx/",
+        "product_tile": "Ilumina tu suerte",
+        "scheduled_date": "2026-11-21",
+        "scheduled_time_local": "21:00",
+        "advertised_contest_id": 12388,
+        "numbers": null,
+        "status": "SCHEDULED_CONTEST_NO_RESULT_ON_RESULTS_PAGE"
+      },
+      "home_results_page": {
+        "url": "https://www.loterianacional.gob.mx/Home/Resultados/?cluster=1&view=cG5sUmVzdWxQcm9nb2w%3D",
+        "latest_displayed_chispazo_contest_id": 12386,
+        "displayed_rows": [
+          {
+            "contest_id": 12385,
+            "date": "2026-11-20",
+            "numbers": [
+              3,
+              13,
+              20,
+              22,
+              23
+            ]
+          },
+          {
+            "contest_id": 12386,
+            "date": "2026-11-20",
+            "numbers": [
+              2,
+              4,
+              9,
+              18,
+              24
+            ]
+          }
+        ],
+        "interpretation": "The opened general results endpoint is stale relative to the dedicated Chispazo page: it displays 12385 and 12386 only, not 12387 or 12388. Do not use this endpoint to infer the 21-Nov Classic result."
+      },
+      "official_product_schedule": {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+        "de_las_tres_time_local": "15:00",
+        "clasico_time_local": "21:00"
+      },
+      "mask_index": {
+        "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+        "latest_listed_mask_date": "2026-11-20",
+        "mask_for_2026_11_21_listed": false,
+        "visible_latest_link": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-20.pdf?v=20112026221431"
+      },
+      "interpretation": "Contest 12387 remains the published 15:00 De las Tres result by official schedule mapping. Contest 12388 is the advertised 21:00 slot and therefore the scheduled Classic draw, but no winning numbers for 12388 are visible on the dedicated results page at this observation. The general results endpoint is stale through 12386 and the mask index still lists 20-Nov only. This is a post-slot public status observation, not proof that the draw did not occur, not an official act, not physical evidence, and not a pre-close prediction seal.",
       "integrity_limits": {
         "original_2026_11_21_mask_bytes_captured": false,
         "source_sha256": "NOT_CAPTURED",
