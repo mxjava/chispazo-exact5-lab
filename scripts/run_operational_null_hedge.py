@@ -12,9 +12,12 @@ import argparse
 import hashlib
 import itertools
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.v263.CHISPAZO_V263_INTEGRITY_ISLAND_DRO import V263Config, run
 
