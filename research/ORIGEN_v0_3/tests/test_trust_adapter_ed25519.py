@@ -415,6 +415,37 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(result["nonce_challenge_status"], "MATCHED_CALLER_SUPPLIED_CHALLENGE")
         self.assertEqual(result["replay_status"], "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER")
 
+    def test_attestation_json_size_limit_is_enforced_before_parsing(self):
+        from origen.trust_adapter import MAX_ATTESTATION_JSON_BYTES
+
+        oversized = b" " * (MAX_ATTESTATION_JSON_BYTES + 1)
+        with self.assertRaisesRegex(ValueError, "exceeds maximum size"):
+            parse_attestation_json(oversized)
+        result = verify_attestation_json(
+            oversized, trust_roots=self.roots, expected_role="CUSTODIAN",
+            expected_subject_sha256=self.subject,
+            verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"],
+        )
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("exceeds maximum size", result["reason"])
+
+    def test_oversized_signature_is_rejected_before_base64_decode(self):
+        altered = dict(self.envelope, signature_b64="A" * 1_000_000)
+        result = self.verify(envelope=altered)
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("invalid or non-canonical base64", result["reason"])
+
+    def test_oversized_public_key_is_rejected_before_base64_decode(self):
+        roots = {
+            "custody-key-01": dict(
+                self.roots["custody-key-01"], public_key_b64="A" * 1_000_000
+            )
+        }
+        result = self.verify(roots=roots)
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("invalid or non-canonical base64", result["reason"])
+
 
 if __name__ == "__main__":
     unittest.main()
