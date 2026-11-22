@@ -13,6 +13,7 @@ Solicito que la respuesta indique unidad responsable, existencia, formato, perio
    a) Aclarar la secuencia física exacta: el artículo 9, fracción I, del Reglamento Chispazo menciona introducir 28 esferas en una urna antes del cierre; SGVO-PRO-05 ubica el pesaje individual y la colocación en alimentadores después del cierre.
    b) Precisar qué significa “urna” en el Reglamento, cuándo se introducen las esferas, cuándo se pesa cada una y cuándo se cargan los alimentadores.
    c) Precisar si el cierre SICAL se repite cuando un peso no cumple y se cambia de estuche, conforme al retorno de la actividad 5.3 a la 4.1; entregar el flujo y timestamps reales del procedimiento aplicable.
+   d) Aclarar/corregir la referencia cruzada: la Política 6 contiene los rangos de peso, pero la actividad 5.2 y el Plan de Calidad, actividad 2, remiten a la Política 8, que en el mismo SGVO-PRO-05 regula la firma electrónica del archivo de participaciones.
 
 3. Registros por concurso, desde 2022-03-10 hasta la fecha de respuesta
    a) CS-02 original y anexos de inspección para cada Chispazo Clásico.
