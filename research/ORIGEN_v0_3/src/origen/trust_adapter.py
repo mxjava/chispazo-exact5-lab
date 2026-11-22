@@ -323,6 +323,7 @@ def verify_attestation_json(
     expected_subject_sha256: str,
     verification_time_utc: str,
     expected_nonce: str,
+    nonce_ledger: NonceLedger | None = None,
 ) -> dict[str, Any]:
     """Strictly parse original envelope bytes, then verify its detached signature."""
     try:
@@ -339,6 +340,7 @@ def verify_attestation_json(
         expected_subject_sha256=expected_subject_sha256,
         verification_time_utc=verification_time_utc,
         expected_nonce=expected_nonce,
+        nonce_ledger=nonce_ledger,
     )
 
 
@@ -350,6 +352,7 @@ def verify_artifact_bytes(
     expected_role: str,
     verification_time_utc: str,
     expected_nonce: str,
+    nonce_ledger: NonceLedger | None = None,
 ) -> dict[str, Any]:
     """Verify signature and bind it to the exact original artifact bytes."""
     if type(artifact_bytes) is not bytes:
@@ -362,6 +365,7 @@ def verify_artifact_bytes(
         expected_subject_sha256=digest,
         verification_time_utc=verification_time_utc,
         expected_nonce=expected_nonce,
+        nonce_ledger=nonce_ledger,
     )
     if result.get("status") != "SIGNATURE_VALID":
         return result
