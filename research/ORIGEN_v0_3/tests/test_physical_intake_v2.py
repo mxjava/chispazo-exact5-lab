@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 from origen.physical_intake_v2 import (
-    V2_REQUIRED_COLUMNS, evaluate_temporal_csv, evaluate_temporal_eligibility,
+    MAX_V2_INTAKE_ROWS, V2_REQUIRED_COLUMNS, evaluate_temporal_csv, evaluate_temporal_eligibility,
 )
 
 
@@ -63,6 +63,20 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             r"row 2 missing required columns: source_document_sha256",
         ):
             evaluate_temporal_eligibility(rows, **VERIFIED)
+
+    def test_intake_row_limit_stops_unbounded_iterable_before_exhaustion(self):
+        row = rows_for_target()[0]
+
+        def unbounded_rows():
+            for _ in range(MAX_V2_INTAKE_ROWS + 1):
+                yield row
+            raise AssertionError("intake consumed beyond its configured row limit")
+
+        with self.assertRaisesRegex(
+            ValueError,
+            rf"intake exceeds maximum {MAX_V2_INTAKE_ROWS} rows",
+        ):
+            evaluate_temporal_eligibility(unbounded_rows(), **VERIFIED)
 
     def test_custom_mapping_row_cannot_spoof_scalar_lookup(self):
         class SpoofedRow(dict):
