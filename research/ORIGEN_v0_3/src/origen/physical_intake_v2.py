@@ -285,7 +285,7 @@ def evaluate_temporal_eligibility(
                     reasons.add("TRUSTED_TIMESTAMP_MISSING")
                 if not _canonical_identifier(row["source_document_ref"]):
                     reasons.add("PRIMARY_SOURCE_MISSING")
-            except (ValueError, TypeError, KeyError):
+            except (ValueError, TypeError, KeyError, OverflowError):
                 reasons.add("INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE")
         if len(closes) != 1:
             reasons.add("TARGET_CLOSE_CONFLICT")
