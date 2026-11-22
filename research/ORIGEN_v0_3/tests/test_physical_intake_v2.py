@@ -196,16 +196,11 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
         rows = rows_for_target()
         rows[0]["mass_value"] = SpoofedNumeric()
-        result = evaluate_temporal_eligibility(rows, **VERIFIED)
-        self.assertIn(
-            "INVALID_MASS_OR_RESOLUTION",
-            result["targets"]["12301"]["reasons"],
-        )
-        self.assertNotEqual(
-            result["targets"]["12301"]["predictive_eligibility"],
-            "STRUCTURAL_PRE_CLOSE_ONLY",
-        )
-
+        with self.assertRaisesRegex(
+            ValueError,
+            r"row 1 column mass_value must be exact text or null",
+        ):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
     def test_printed_number_object_cannot_spoof_integer_through_str(self):
         class SpoofedScalar:
             def __str__(self):
@@ -213,15 +208,11 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
         rows = rows_for_target()
         rows[0]["printed_number"] = SpoofedScalar()
-        result = evaluate_temporal_eligibility(rows, **VERIFIED)
-        reasons = result["targets"]["12301"]["reasons"]
-        self.assertIn("INVALID_PRINTED_NUMBER", reasons)
-        self.assertIn("INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", reasons)
-        self.assertNotEqual(
-            result["targets"]["12301"]["predictive_eligibility"],
-            "STRUCTURAL_PRE_CLOSE_ONLY",
-        )
-
+        with self.assertRaisesRegex(
+            ValueError,
+            r"row 1 column printed_number must be exact text or null",
+        ):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
     def test_hash_object_cannot_spoof_sha256_through_str(self):
         class SpoofedDigest:
             def __str__(self):
@@ -229,15 +220,11 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
         rows = rows_for_target()
         rows[0]["source_document_sha256"] = SpoofedDigest()
-        result = evaluate_temporal_eligibility(rows, **VERIFIED)
-        reasons = result["targets"]["12301"]["reasons"]
-        self.assertIn("INVALID_SOURCE_SHA256", reasons)
-        self.assertIn("EVIDENCE_DOCUMENT_SET_CONFLICT", reasons)
-        self.assertNotEqual(
-            result["targets"]["12301"]["predictive_eligibility"],
-            "STRUCTURAL_PRE_CLOSE_ONLY",
-        )
-
+        with self.assertRaisesRegex(
+            ValueError,
+            r"row 1 column source_document_sha256 must be exact text or null",
+        ):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
     def test_all_digest_fields_reject_objects_that_stringify_to_sha256(self):
         class SpoofedDigest:
             def __init__(self, rendered):
@@ -247,22 +234,18 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                 return self.rendered
 
         cases = (
-            ("custody_receipt_sha256", "c" * 64, "INVALID_CUSTODY_RECEIPT_SHA256"),
-            ("calibration_certificate_sha256", "a" * 64, "INVALID_CALIBRATION_SHA256"),
+            ("custody_receipt_sha256", "c" * 64),
+            ("calibration_certificate_sha256", "a" * 64),
         )
-        for field, rendered, expected_reason in cases:
+        for field, rendered in cases:
             with self.subTest(field=field):
                 rows = rows_for_target()
                 rows[0][field] = SpoofedDigest(rendered)
-                result = evaluate_temporal_eligibility(rows, **VERIFIED)
-                reasons = result["targets"]["12301"]["reasons"]
-                self.assertIn(expected_reason, reasons)
-                self.assertIn("EVIDENCE_DOCUMENT_SET_CONFLICT", reasons)
-                self.assertNotEqual(
-                    result["targets"]["12301"]["predictive_eligibility"],
-                    "STRUCTURAL_PRE_CLOSE_ONLY",
-                )
-
+                with self.assertRaisesRegex(
+                    ValueError,
+                    rf"row 1 column {field} must be exact text or null",
+                ):
+                    evaluate_temporal_eligibility(rows, **VERIFIED)
     def test_mass_unit_object_cannot_spoof_gram_unit_through_str(self):
         class SpoofedUnit:
             def __str__(self):
@@ -270,16 +253,11 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
         rows = rows_for_target()
         rows[0]["mass_unit"] = SpoofedUnit()
-        result = evaluate_temporal_eligibility(rows, **VERIFIED)
-        self.assertIn(
-            "UNSUPPORTED_MASS_UNIT",
-            result["targets"]["12301"]["reasons"],
-        )
-        self.assertNotEqual(
-            result["targets"]["12301"]["predictive_eligibility"],
-            "STRUCTURAL_PRE_CLOSE_ONLY",
-        )
-
+        with self.assertRaisesRegex(
+            ValueError,
+            r"row 1 column mass_unit must be exact text or null",
+        ):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
     def test_timestamp_string_subclass_cannot_spoof_valid_time(self):
         class SpoofedTimestamp(str):
             def strip(self, *args, **kwargs):
@@ -290,16 +268,11 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
         rows = rows_for_target()
         rows[0]["evidence_available_at"] = SpoofedTimestamp("attacker-controlled")
-        result = evaluate_temporal_eligibility(rows, **VERIFIED)
-        self.assertIn(
-            "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE",
-            result["targets"]["12301"]["reasons"],
-        )
-        self.assertNotEqual(
-            result["targets"]["12301"]["predictive_eligibility"],
-            "STRUCTURAL_PRE_CLOSE_ONLY",
-        )
-
+        with self.assertRaisesRegex(
+            ValueError,
+            r"row 1 column evidence_available_at must be exact text or null",
+        ):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
     def test_malformed_declared_reference_containers_fail_closed(self):
         class SpoofedReference(str):
             def __hash__(self):
@@ -943,6 +916,23 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             ) as raised:
                 evaluate_temporal_csv(path, **VERIFIED)
             self.assertIsInstance(raised.exception.__cause__, csv.Error)
+
+    def test_non_text_payload_is_rejected_before_iterator_advances(self):
+        row = rows_for_target()[0]
+        row["source_document_ref"] = bytearray(MAX_V2_ROW_TEXT_BYTES * 256)
+
+        def rows():
+            yield row
+            raise AssertionError(
+                "non-text payload must be rejected before requesting another row"
+            )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"row 1 column source_document_ref must be exact text or null",
+        ):
+            evaluate_temporal_eligibility(rows(), **VERIFIED)
+
 
 if __name__ == "__main__":
     unittest.main()
