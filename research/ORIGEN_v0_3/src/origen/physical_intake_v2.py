@@ -77,6 +77,11 @@ def _parse_time(value: Any, field: str) -> datetime:
         value,
     ):
         raise ValueError(f"{field}: missing or non-canonical timestamp")
+    # RFC 3339 uses -00:00 to mean that the local offset is unknown, not
+    # that UTC is affirmatively known. Treating it as UTC can change date and
+    # pre-close comparisons, so it is not an acceptable trusted-time offset.
+    if value.endswith("-00:00"):
+        raise ValueError(f"{field}: unknown UTC offset is not accepted")
     try:
         result = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
