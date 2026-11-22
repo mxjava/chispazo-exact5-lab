@@ -1,0 +1,71 @@
+{
+  "audit_id": "V265_EVIDENCE_CONTRACT_20261122",
+  "audit_type": "static_code_and_schema_audit",
+  "uses_draw_outcomes": false,
+  "uses_synthetic_draws": false,
+  "required_metadata_columns": [
+    "CONCURSO",
+    "sphere_set_id",
+    "machine_id",
+    "available_before_close",
+    "close_time_local",
+    "metadata_known_time_local"
+  ],
+  "template_column_count": 48,
+  "template_per_sphere_weight_columns": [
+    "sphere_weight_01_g",
+    "sphere_weight_02_g",
+    "sphere_weight_03_g",
+    "sphere_weight_04_g",
+    "sphere_weight_05_g",
+    "sphere_weight_06_g",
+    "sphere_weight_07_g",
+    "sphere_weight_08_g",
+    "sphere_weight_09_g",
+    "sphere_weight_10_g",
+    "sphere_weight_11_g",
+    "sphere_weight_12_g",
+    "sphere_weight_13_g",
+    "sphere_weight_14_g",
+    "sphere_weight_15_g",
+    "sphere_weight_16_g",
+    "sphere_weight_17_g",
+    "sphere_weight_18_g",
+    "sphere_weight_19_g",
+    "sphere_weight_20_g",
+    "sphere_weight_21_g",
+    "sphere_weight_22_g",
+    "sphere_weight_23_g",
+    "sphere_weight_24_g",
+    "sphere_weight_25_g",
+    "sphere_weight_26_g",
+    "sphere_weight_27_g",
+    "sphere_weight_28_g"
+  ],
+  "template_rfid_columns": [
+    "rfid_verified"
+  ],
+  "template_source_provenance_columns": [
+    "source_document",
+    "source_url",
+    "source_sha256"
+  ],
+  "evaluator_consumes": {
+    "machine_id": true,
+    "sphere_set_id": true,
+    "per_sphere_weights": false,
+    "per_sphere_rfid_mapping": false,
+    "extraction_order": false,
+    "per_extraction_timestamps": false,
+    "source_provenance": false
+  },
+  "preclose_timestamp_guard_present": true,
+  "one_sided_t_test_present": true,
+  "holm_adjustment_present": true,
+  "p_family_optional": true,
+  "anytime_evalue_gate_implemented": false,
+  "evidence_class": "ASSOCIATION_SCREEN_ONLY",
+  "physical_bias_evidence": false,
+  "actionable_for_betting": false,
+  "interpretation": "V265 is a machine/sphere-set association screen. It does not consume authenticated per-sphere measurements, RFID-to-ball identity, extraction order/timestamps, or source provenance; it has no anytime e-value gate. It cannot establish physical bias or authorize a prospective action."
+}
