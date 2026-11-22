@@ -24,6 +24,8 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
                 "roles": ["CUSTODIAN"],
                 "enabled": True,
                 "revoked": False,
+                "not_before_utc": "2026-11-20T00:00:00Z",
+                "not_after_utc": "2026-11-23T00:00:00Z",
             }
         }
         self.subject = hashlib.sha256(b"exact sealed portfolio bytes").hexdigest()
@@ -284,12 +286,61 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
 
 
+
+    def test_pinned_key_not_yet_valid_or_expired_is_rejected(self):
+        cases = (
+            {
+                "not_before_utc": "2026-11-21T11:00:01Z",
+                "not_after_utc": "2026-11-23T00:00:00Z",
+            },
+            {
+                "not_before_utc": "2026-11-20T00:00:00Z",
+                "not_after_utc": "2026-11-21T11:00:00Z",
+            },
+        )
+        for changes in cases:
+            with self.subTest(changes=changes):
+                root = dict(self.roots["custody-key-01"], **changes)
+                self.assertEqual(
+                    self.verify(roots={"custody-key-01": root})["status"],
+                    "BLOCKED",
+                )
+
+    def test_attestation_issue_time_must_fall_inside_pinned_key_validity(self):
+        root = dict(
+            self.roots["custody-key-01"],
+            not_before_utc="2026-11-21T10:00:01Z",
+            not_after_utc="2026-11-23T00:00:00Z",
+        )
+        result = self.verify(roots={"custody-key-01": root})
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("issued outside pinned key validity interval", result["reason"])
+
+    def test_pinned_key_validity_requires_canonical_ordered_utc_interval(self):
+        cases = (
+            {
+                "not_before_utc": "2026-11-20 00:00:00Z",
+                "not_after_utc": "2026-11-23T00:00:00Z",
+            },
+            {
+                "not_before_utc": "2026-11-22T00:00:00Z",
+                "not_after_utc": "2026-11-21T00:00:00Z",
+            },
+        )
+        for changes in cases:
+            with self.subTest(changes=changes):
+                root = dict(self.roots["custody-key-01"], **changes)
+                self.assertEqual(
+                    self.verify(roots={"custody-key-01": root})["status"],
+                    "BLOCKED",
+                )
+
     def test_trust_root_rejects_unknown_fields(self):
         roots = {"custody-key-01": dict(self.roots["custody-key-01"], operator_override=True)}
         self.assertEqual(self.verify(roots=roots)["status"], "BLOCKED")
 
-    def test_trust_root_requires_explicit_enabled_and_revoked_state(self):
-        for field in ("enabled", "revoked"):
+    def test_trust_root_requires_explicit_policy_fields(self):
+        for field in ("enabled", "revoked", "not_before_utc", "not_after_utc"):
             with self.subTest(field=field):
                 roots = {"custody-key-01": dict(self.roots["custody-key-01"])}
                 roots["custody-key-01"].pop(field)
