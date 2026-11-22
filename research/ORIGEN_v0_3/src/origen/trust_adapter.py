@@ -17,6 +17,10 @@ from typing import Any, Mapping
 
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 _NONCE = re.compile(r"[A-Za-z0-9_-]{16,128}")
+_ROLE_ID = re.compile(r"[A-Z][A-Z0-9_]{0,63}")
+_KEY_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
+MAX_TRUST_ROOTS = 256
+MAX_ROOT_ROLES = 32
 MAX_ATTESTATION_JSON_BYTES = 16_384
 
 _FIELDS = {
@@ -149,17 +153,19 @@ def verify_attestation(
             )
         if type(trust_roots) is not dict:
             raise ValueError("trust_roots must be a mapping controlled outside the evidence bundle")
-        if any(type(root_key) is not str for root_key in trust_roots):
-            raise ValueError("trust-root identifiers must be exact built-in strings")
-        if type(expected_role) is not str or not expected_role:
-            raise ValueError("expected_role must be a non-empty string")
+        if len(trust_roots) > MAX_TRUST_ROOTS:
+            raise ValueError(f"trust_roots exceeds maximum of {MAX_TRUST_ROOTS} entries")
+        if any(type(root_key) is not str or not _KEY_ID.fullmatch(root_key) for root_key in trust_roots):
+            raise ValueError("trust-root identifiers must be canonical ASCII key IDs of 1..128 characters")
+        if type(expected_role) is not str or not _ROLE_ID.fullmatch(expected_role):
+            raise ValueError("expected_role must be a canonical uppercase role identifier of 1..64 characters")
         if type(expected_subject_sha256) is not str or not _HEX64.fullmatch(expected_subject_sha256):
             raise ValueError("expected_subject_sha256 must be 64 lowercase hexadecimal characters")
         if envelope["schema_version"] != "exact5.attestation.ed25519.v1":
             raise ValueError("unsupported attestation schema")
         key_id, role = envelope["key_id"], envelope["role"]
-        if type(key_id) is not str or not key_id or type(role) is not str or not role:
-            raise ValueError("key_id and role must be non-empty strings")
+        if type(key_id) is not str or not _KEY_ID.fullmatch(key_id) or type(role) is not str or not _ROLE_ID.fullmatch(role):
+            raise ValueError("key_id and role must be canonical identifiers")
         if role != expected_role:
             raise ValueError("attestation role mismatch")
         subject = envelope["subject_sha256"]
@@ -196,9 +202,13 @@ def verify_attestation(
         if type(root["enabled"]) is not bool or type(root["revoked"]) is not bool:
             raise ValueError("pinned trust root enabled/revoked flags must be exact booleans")
         roles = root.get("roles")
-        if (type(roles) is not list
-                or any(type(item) is not str or not item for item in roles)):
-            raise ValueError("pinned trust root roles must be an explicit string list")
+        if (type(roles) is not list or not 1 <= len(roles) <= MAX_ROOT_ROLES
+                or any(type(item) is not str or not _ROLE_ID.fullmatch(item) for item in roles)):
+            raise ValueError(
+                f"pinned trust root roles must contain 1..{MAX_ROOT_ROLES} canonical uppercase role identifiers"
+            )
+        if len(set(roles)) != len(roles):
+            raise ValueError("pinned trust root roles must be unique")
         if role not in roles:
             raise ValueError("pinned key is not authorized for requested role")
         if root["revoked"] is True or root["enabled"] is not True:
