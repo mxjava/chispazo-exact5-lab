@@ -998,5 +998,127 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             evaluate_temporal_eligibility(rows(), **VERIFIED)
 
 
+    def test_smartballs_mass_range_boundaries_are_inclusive(self):
+        cases = (("4.25", "4.55"), ("5.25", "4.95"))
+        for boundary, baseline in cases:
+            with self.subTest(boundary=boundary):
+                rows = rows_for_target()
+                for row in rows:
+                    row["mass_value"] = baseline
+                rows[0]["mass_value"] = boundary
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                target = result["targets"]["12301"]
+                self.assertEqual(
+                    target["predictive_eligibility"], "STRUCTURAL_PRE_CLOSE_ONLY"
+                )
+                self.assertNotIn("SPHERE_MASS_OUT_OF_RANGE", target["reasons"])
+                self.assertNotIn("SPHERE_MASS_SPREAD_EXCEEDED", target["reasons"])
+
+    def test_smartballs_mass_outside_published_range_is_rejected(self):
+        for invalid_mass in ("4.249999", "5.250001"):
+            with self.subTest(invalid_mass=invalid_mass):
+                rows = rows_for_target()
+                rows[0]["mass_value"] = invalid_mass
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                self.assertIn(
+                    "SPHERE_MASS_OUT_OF_RANGE",
+                    result["targets"]["12301"]["reasons"],
+                )
+
+    def test_smartballs_maximum_spread_is_enforced_exactly(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["mass_value"] = "4.700"
+        rows[0]["mass_value"] = "5.001"  # 0.301 g, just above the 0.30 g limit
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "SPHERE_MASS_SPREAD_EXCEEDED",
+            result["targets"]["12301"]["reasons"],
+        )
+
+    def test_ping_pong_mass_range_boundaries_are_inclusive(self):
+        cases = (("2.30", "2.45"), ("3.00", "2.85"))
+        for boundary, baseline in cases:
+            with self.subTest(boundary=boundary):
+                rows = rows_for_target()
+                for row in rows:
+                    row["sphere_type"] = "Ping Pong"
+                    row["mass_value"] = baseline
+                rows[0]["mass_value"] = boundary
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                target = result["targets"]["12301"]
+                self.assertEqual(
+                    target["predictive_eligibility"], "STRUCTURAL_PRE_CLOSE_ONLY"
+                )
+                self.assertNotIn("SPHERE_MASS_OUT_OF_RANGE", target["reasons"])
+                self.assertNotIn("SPHERE_MASS_SPREAD_EXCEEDED", target["reasons"])
+
+    def test_ping_pong_mass_outside_published_range_is_rejected(self):
+        for invalid_mass in ("2.299999", "3.000001"):
+            with self.subTest(invalid_mass=invalid_mass):
+                rows = rows_for_target()
+                for row in rows:
+                    row["sphere_type"] = "Ping Pong"
+                    row["mass_value"] = "2.650"
+                rows[0]["mass_value"] = invalid_mass
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                self.assertIn(
+                    "SPHERE_MASS_OUT_OF_RANGE",
+                    result["targets"]["12301"]["reasons"],
+                )
+
+    def test_ping_pong_maximum_spread_is_enforced_exactly(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["sphere_type"] = "Ping Pong"
+            row["mass_value"] = "2.700"
+        rows[0]["mass_value"] = "2.851"  # 0.151 g, just above the 0.15 g limit
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "SPHERE_MASS_SPREAD_EXCEEDED",
+            result["targets"]["12301"]["reasons"],
+        )
+
+    def test_unknown_sphere_type_is_rejected(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["sphere_type"] = "Unknown-Sphere"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "UNSUPPORTED_SPHERE_TYPE",
+            result["targets"]["12301"]["reasons"],
+        )
+
+    def test_mass_and_resolution_require_bounded_decimal_text(self):
+        for invalid_mass in ("NaN", "Infinity", "4.7e0", "-4.700", "04.700"):
+            with self.subTest(invalid_mass=invalid_mass):
+                rows = rows_for_target()
+                rows[0]["mass_value"] = invalid_mass
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                self.assertIn(
+                    "INVALID_MASS_OR_RESOLUTION",
+                    result["targets"]["12301"]["reasons"],
+                )
+        rows = rows_for_target()
+        rows[0]["measurement_resolution"] = "0"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "INVALID_MASS_OR_RESOLUTION",
+            result["targets"]["12301"]["reasons"],
+        )
+
+    def test_all_28_mass_measurements_are_required(self):
+        rows = rows_for_target()
+        rows[0]["mass_value"] = ""
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("INVALID_MASS_OR_RESOLUTION", reasons)
+        self.assertIn("MASS_MEASUREMENTS_INCOMPLETE", reasons)
+        self.assertNotEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
