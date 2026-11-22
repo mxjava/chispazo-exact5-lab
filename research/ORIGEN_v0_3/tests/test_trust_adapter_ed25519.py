@@ -41,13 +41,16 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         ).decode("ascii")
 
     def verify(self, envelope=None, roots=None, role="CUSTODIAN", subject=None,
-               now="2026-11-21T11:00:00Z"):
+               now="2026-11-21T11:00:00Z", expected_nonce=None):
+        selected = self.envelope if envelope is None else envelope
+        challenge = selected["nonce"] if expected_nonce is None else expected_nonce
         return verify_attestation(
-            self.envelope if envelope is None else envelope,
+            selected,
             trust_roots=self.roots if roots is None else roots,
             expected_role=role,
             expected_subject_sha256=subject or self.subject,
             verification_time_utc=now,
+            expected_nonce=challenge,
         )
 
     def test_noncanonical_public_key_base64_pad_bits_are_rejected(self):
@@ -96,6 +99,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
             raw, trust_roots=self.roots, expected_role="CUSTODIAN",
             expected_subject_sha256=self.subject,
             verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"],
         )
         self.assertEqual(result["status"], "SIGNATURE_VALID")
 
@@ -117,6 +121,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
             duplicated, trust_roots=self.roots, expected_role="CUSTODIAN",
             expected_subject_sha256=self.subject,
             verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"],
         )
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("duplicate JSON object key", result["reason"])
@@ -205,6 +210,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
             self.envelope, SpoofedBytes(b"exact sealed portfolio bytes"),
             trust_roots=self.roots, expected_role="CUSTODIAN",
             verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"],
         )
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("exact built-in raw bytes", result["reason"])
@@ -231,6 +237,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         result = verify_artifact_bytes(
             self.envelope, raw, trust_roots=self.roots,
             expected_role="CUSTODIAN", verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"],
         )
         self.assertEqual(result["status"], "SIGNATURE_VALID")
         self.assertEqual(result["byte_integrity_status"], "MATCHED")
@@ -318,6 +325,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         result = verify_attestation(
             self.envelope, trust_roots=None, expected_role="CUSTODIAN",
             expected_subject_sha256=self.subject, verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"],
         )
         self.assertEqual(result["status"], "BLOCKED")
 
@@ -386,6 +394,24 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
             self.private.sign(canonical_payload(altered))
         ).decode("ascii")
         self.assertEqual(self.verify(envelope=altered)["status"], "SIGNATURE_VALID")
+
+    def test_attestation_nonce_must_match_independently_supplied_challenge(self):
+        result = self.verify(expected_nonce="different_nonce-123456789")
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("does not match the expected challenge", result["reason"])
+
+    def test_expected_nonce_challenge_must_use_strict_url_safe_syntax(self):
+        for challenge in (" " * 16, "challenge with spaces", "é" * 16, "n" * 129):
+            with self.subTest(challenge=repr(challenge)):
+                result = self.verify(expected_nonce=challenge)
+                self.assertEqual(result["status"], "BLOCKED")
+                self.assertIn("expected_nonce must be an independently issued", result["reason"])
+
+    def test_matching_nonce_challenge_is_explicit_but_replay_remains_unchecked(self):
+        result = self.verify(expected_nonce=self.envelope["nonce"])
+        self.assertEqual(result["status"], "SIGNATURE_VALID")
+        self.assertEqual(result["nonce_challenge_status"], "MATCHED_CALLER_SUPPLIED_CHALLENGE")
+        self.assertEqual(result["replay_status"], "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER")
 
 
 if __name__ == "__main__":
