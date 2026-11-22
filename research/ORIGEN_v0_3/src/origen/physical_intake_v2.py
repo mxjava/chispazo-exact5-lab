@@ -411,9 +411,8 @@ def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[st
             headers = reader.fieldnames
         except csv.Error as exc:
             raise ValueError("CSV header syntax is invalid") from exc
-        if reader.fieldnames is None:
+        if headers is None:
             raise ValueError("CSV has no header")
-        headers = reader.fieldnames
         if any(
             type(name) is not str or not name or name != name.strip()
             for name in headers
