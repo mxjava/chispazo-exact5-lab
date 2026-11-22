@@ -99,12 +99,16 @@ class TrustPolicy:
     issuer_keys: tuple[TrustedIssuerKey, ...]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class CryptographicallyVerifiedReceipt:
-    """Proof that the root receipt attestation verified under one supplied key.
+    """Result value for root-attestation verification, not an unforgeable capability.
 
     This type deliberately makes no claim that embedded physical evidence,
     signer/custodian assertions, trusted time, or ledger proofs were verified.
+    Its public initializer is disabled to prevent accidental fabrication; Python
+    code with arbitrary execution in this process can still bypass that guard,
+    so downstream security decisions must use trusted control flow, not merely
+    an isinstance check on an externally supplied object.
     """
 
     receipt: UnverifiedTrustReceipt
@@ -112,6 +116,28 @@ class CryptographicallyVerifiedReceipt:
     verified_key_id: str
     verified_at_utc: datetime
     signed_payload_sha256: str
+
+    def __init__(self, *args, **kwargs) -> None:
+        raise TypeError(
+            "verification results are created only by verify_receipt_attestation"
+        )
+
+
+def _build_verified_receipt(
+    receipt: UnverifiedTrustReceipt,
+    verified_issuer_id: str,
+    verified_key_id: str,
+    verified_at_utc: datetime,
+    signed_payload_sha256: str,
+) -> CryptographicallyVerifiedReceipt:
+    """Internal constructor used only after the Ed25519 verification succeeds."""
+    result = object.__new__(CryptographicallyVerifiedReceipt)
+    object.__setattr__(result, "receipt", receipt)
+    object.__setattr__(result, "verified_issuer_id", verified_issuer_id)
+    object.__setattr__(result, "verified_key_id", verified_key_id)
+    object.__setattr__(result, "verified_at_utc", verified_at_utc)
+    object.__setattr__(result, "signed_payload_sha256", signed_payload_sha256)
+    return result
 
 
 def canonical_attestation_payload(raw: bytes) -> bytes:
@@ -177,7 +203,7 @@ def verify_receipt_attestation(
     except (InvalidSignature, ValueError) as exc:
         raise ValueError("receipt root attestation signature verification failed") from exc
 
-    return CryptographicallyVerifiedReceipt(
+    return _build_verified_receipt(
         receipt=receipt,
         verified_issuer_id=issuer_id,
         verified_key_id=key_id,

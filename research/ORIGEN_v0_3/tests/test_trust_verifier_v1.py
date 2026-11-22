@@ -278,6 +278,18 @@ class TestTrustVerifierV1(unittest.TestCase):
                 raw, policy(public_bytes), verification_time=datetime(2026, 11, 23)
             )
 
+    def test_verified_result_public_constructor_is_disabled(self):
+        raw, _ = signed_receipt()
+        parsed = parse_unverified_receipt(raw)
+        with self.assertRaisesRegex(TypeError, "created only by verify_receipt_attestation"):
+            CryptographicallyVerifiedReceipt(
+                parsed,
+                "independent-verifier",
+                "verifier-key-1",
+                NOW,
+                "a" * 64,
+            )
+
     def test_unverified_parser_never_upgrades_receipt_by_itself(self):
         raw, _ = signed_receipt()
         parsed = parse_unverified_receipt(raw)
