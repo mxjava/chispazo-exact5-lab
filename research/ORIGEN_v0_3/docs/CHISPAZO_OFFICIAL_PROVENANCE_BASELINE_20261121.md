@@ -101,6 +101,20 @@ For each separately identified draw (12387 De las Tres and 12388 Clásico), requ
 
 Keep result outcome records separate from physical-measurement records. A published combination cannot prove the physical state, identity, weight or calibration of the spheres that produced it.
 
+### Additional retrieval hooks from the published SGVO-PRO-05 revision 39
+
+The public procedure PDF identifies **SGVO-PRO-05, revisión 39**; its change-control table dates revision 39 to **March 2026**. Its Plan de Calidad supplies concrete record identifiers for a draw-specific request:
+
+- **CS-02**: daily inspection of draw equipment before each draw; the quality plan says a nonconforming component or scale is replaced.
+- **Tira de pesaje**: the quality plan requires checking each sphere against the applicable mass range and maximum lightest-to-heaviest spread. The record must be obtained with the sphere-case identity and all 28 measurements, not reconstructed from the published winning numbers.
+- **CS-11**: the glossary says it records date, draw name/number/time, selected case, results, and names/signatures of the preparer, verifier, certifier and General Directorate representative. The quality plan also requires comparing the drawn spheres with the numbers entered on CS-11.
+- **Policy 10 timing windows**: for De las Tres, inspector appointment 15:00, tolerance 15:05 and escalation limit 16:00; for nocturnal draws, 21:00, 21:05 and 22:00. The procedure describes a replacement-inspector path if needed. These are procedural windows, not proof that a specific inspector attended.
+- **Policy 15 delayed-act exception**: if an act cannot be printed, it may be signed the next business day, with a maximum of five business days, only if results are not compromised; the Sales/Operations representative must record the issue in the Bitácora. Therefore an unsigned act immediately after a draw is a pending retrieval item, not by itself proof of noncompliance.
+
+These controls improve the evidence request but do not provide any draw-specific CS-02, weighing strip, CS-11, inspector commission, act, or custody record. Obtain originals or certified copies and verify their issuing authority, signatures, timestamps, and chain of custody. Do not infer sphere type, measurements, attendance or equipment identity from the public mask.
+
+Official published procedure: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
+
 ## 6. ORIGEN handling
 
 - Keep all public result observations in a status-only overlay until the official act and provenance package are obtained and independently verified.
