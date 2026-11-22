@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the existing V263 fail-closed structural hedge path.
+"""Run the existing V263 fail-closed structural hedge path (operational entrypoint v1).
 
 This intentionally creates no model prediction: the repository currently has
 no current, source-verified Clásico history or healthy 98,280-row parent score
