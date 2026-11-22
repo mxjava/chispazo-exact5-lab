@@ -52,6 +52,16 @@ def _canonical_identifier(value: Any) -> str:
     return value
 
 
+def _contest_id_precedes(source: str, target: str) -> bool:
+    """Require canonical positive decimal contest IDs in strict chronological order."""
+    if not re.fullmatch(r"[1-9][0-9]*", source):
+        return False
+    if not re.fullmatch(r"[1-9][0-9]*", target):
+        return False
+    # Length/lexicographic comparison avoids converting untrusted IDs to huge ints.
+    return (len(source), source) < (len(target), target)
+
+
 def _canonical_sha256(value: Any) -> str:
     """Return lowercase digest only for exact, unpadded 64-hex text."""
     if type(value) is not str or not re.fullmatch(r"[0-9a-fA-F]{64}", value):
@@ -179,6 +189,8 @@ def evaluate_temporal_eligibility(
                 source_contests.add(source_contest)
                 if not source_contest or _canonical_identifier(row["contest_id"]) != source_contest:
                     reasons.add("CONTEST_ID_ALIAS_MISMATCH")
+                if not _contest_id_precedes(source_contest, target):
+                    reasons.add("CONTEST_ID_ORDER_INVALID")
                 draw_date = row["draw_date"]
                 if type(draw_date) is not str or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", draw_date):
                     reasons.add("INVALID_DRAW_DATE")
@@ -327,7 +339,7 @@ def evaluate_temporal_eligibility(
             "BROKEN_EVIDENCE_AVAILABILITY_ORDER", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
             "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
             "EVIDENCE_DOCUMENT_SET_CONFLICT", "CONTEST_ID_ALIAS_MISMATCH",
-            "INVALID_DRAW_DATE", "DRAW_DATE_SOURCE_DRAW_MISMATCH"
+            "CONTEST_ID_ORDER_INVALID", "INVALID_DRAW_DATE", "DRAW_DATE_SOURCE_DRAW_MISMATCH"
         )):
             classification = "BLOCKED_CONTINUITY"
         elif reasons:
