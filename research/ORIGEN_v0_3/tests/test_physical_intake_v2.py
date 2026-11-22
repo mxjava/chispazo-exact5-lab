@@ -491,6 +491,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         reasons = result["targets"]["12301"]["reasons"]
         self.assertNotIn("DRAW_DATE_SOURCE_DRAW_MISMATCH", reasons)
+        self.assertNotIn("CLASSIC_SCHEDULE_TIME_MISMATCH", reasons)
         self.assertEqual(
             result["targets"]["12301"]["predictive_eligibility"],
             "STRUCTURAL_PRE_CLOSE_ONLY",
@@ -508,6 +509,31 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                     result["targets"]["12301"]["predictive_eligibility"],
                     "BLOCKED_CONTINUITY",
                 )
+
+
+    def test_classic_modality_rejects_de_las_tres_1500_source_and_target_slots(self):
+        rows = rows_for_target()
+        for row in rows:
+            row.update({
+                "set_assigned_at": "2026-11-20T14:00:00-06:00",
+                "draw_close_at": "2026-11-20T14:45:00-06:00",
+                "measurement_at": "2026-11-20T14:55:00-06:00",
+                "source_signed_at": "2026-11-20T14:58:00-06:00",
+                "source_draw_at": "2026-11-20T15:00:00-06:00",
+                "evidence_available_at": "2026-11-20T15:01:00-06:00",
+                "custody_received_at": "2026-11-20T15:02:00-06:00",
+                "target_draw_close_at": "2026-11-21T14:00:00-06:00",
+                "target_draw_at": "2026-11-21T15:00:00-06:00",
+                "mapping_valid_from": "2026-11-20T13:00:00-06:00",
+                "mapping_valid_to": "2026-11-21T15:30:00-06:00",
+            })
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("CLASSIC_SCHEDULE_TIME_MISMATCH", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
 
     def test_none_values_are_not_stringified_into_valid_provenance_refs(self):
         cases = (
