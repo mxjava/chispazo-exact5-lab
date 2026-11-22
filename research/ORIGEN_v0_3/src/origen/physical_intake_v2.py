@@ -121,7 +121,24 @@ def evaluate_temporal_eligibility(
     # untrusted CSV/generator to allocate unbounded memory before the fail-closed gate.
     required_columns = set(V2_REQUIRED_COLUMNS)
     materialized: list[Mapping[str, Any]] = []
-    for row_number, row in enumerate(rows, start=1):
+    # Treat the iterable as an untrusted input boundary. A generator or custom
+    # iterator can fail after yielding a prefix; surface that as a controlled
+    # intake rejection rather than leaking arbitrary iterator exceptions.
+    try:
+        row_iterator = iter(rows)
+    except Exception as exc:
+        raise ValueError("intake rows are not a readable iterable") from exc
+    row_number = 0
+    while True:
+        try:
+            row = next(row_iterator)
+        except StopIteration:
+            break
+        except Exception as exc:
+            raise ValueError(
+                f"intake iterable failed after row {row_number}"
+            ) from exc
+        row_number += 1
         if row_number > MAX_V2_INTAKE_ROWS:
             raise ValueError(
                 f"intake exceeds maximum {MAX_V2_INTAKE_ROWS} rows; "
