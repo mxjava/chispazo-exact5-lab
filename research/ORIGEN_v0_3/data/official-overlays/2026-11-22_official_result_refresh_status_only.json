@@ -1,8 +1,8 @@
 {
   "schema": "exact5.official_overlay.status_only.v3",
-  "observed_at_local": "2026-11-22T15:55:26-06:00",
-  "purpose": "Status-only official endpoint refresh. No pre-close capture, no physical evidence authentication, no canonical-history append, and no scoring.",
-  "classification": "OFFICIAL_ENDPOINT_DISCREPANCY_MASK_NOT_YET_PUBLISHED",
+  "observed_at_local": "2026-11-22T16:54:18-06:00",
+  "purpose": "Status-only official endpoint refresh. The dedicated result page now publishes contest 12389; modality is schedule-consistent but not confirmed by a same-day mask. No pre-close capture, physical evidence authentication, canonical-history append, or scoring.",
+  "classification": "OFFICIAL_RESULT_PUBLISHED_SCHEDULE_CONSISTENT_MASK_NOT_YET_PUBLISHED",
   "official_schedule": {
     "product_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
     "slots": [
@@ -20,40 +20,64 @@
   "observations": {
     "dedicated_chispazo_results_page": {
       "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
-      "opened_observation": "The page still identifies contest 12388 dated 2026-11-21 as latest, with 01 07 12 21 26; it does not show contest 12389.",
-      "status": "STALE_OR_NOT_YET_REFRESHED_FOR_2026-11-22"
-    },
-    "official_mask_index": {
-      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
-      "latest_listed_document": "RESULTADOS 2026-11-21",
-      "next_document_2026_11_22_listed": false,
-      "status": "NO_2026-11-22_MASK_VISIBLE_AT_OBSERVATION"
-    },
-    "home_schedule": {
-      "url": "https://comercializadores.loterianacional.gob.mx/",
-      "next_chispazo_card": {
-        "contest_id": 12390,
-        "date": "2026-11-22",
-        "time_local": "21:00",
-        "modality": "CLASICO",
-        "modality_basis": "Official product schedule maps the 21:00 slot to Clásico.",
-        "result_published_at_observation": false
-      }
-    },
-    "search_index_only_result_snippet": {
-      "url": "https://www.loterianacional.gob.mx/Home/Resultados/?cluster=1&view=cG5sUmVzdWxHYW5hR2F0bw%3D%3D",
-      "surfaced_claim_for_contest_12389": [
+      "status": "OFFICIAL_RESULT_PUBLISHED",
+      "contest_id": 12389,
+      "date": "2026-11-22",
+      "winning_numbers": [
         1,
         15,
         17,
         22,
         25
       ],
-      "status": "NOT_ACCEPTED_AS_VERIFIED_RESULT",
-      "reason": "The indexed snippet is inconsistent with the opened dedicated Chispazo results page, which remains at contest 12388, and the official mask index, which lists no 2026-11-22 document. Treat as a potentially stale/index-only claim; do not append, score, or use for prospective evidence."
+      "observed_text": "Sorteo 12389, Fecha 22/11/2026, combinación 01 15 17 22 25; last-15 table repeats the same contest and result.",
+      "modality_status": "SCHEDULE_INFERRED_DE_LAS_TRES_NOT_MASK_CONFIRMED",
+      "modality_basis": "The official Chispazo product page maps 15:00 to De las Tres and 21:00 to Clásico. The official home index advertises contest 12390 for 2026-11-22 at 21:00. The dedicated result page gives contest 12389 on the same date but does not expose its draw time; assigning it to the 15:00 slot is a sequence/schedule reconciliation, not direct timestamp or mask confirmation."
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_document": "RESULTADOS 2026-11-21",
+      "next_document_2026_11_22_listed": false,
+      "latest_document_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-21.pdf?v=21112026220313",
+      "latest_document_status": "OFFICIAL_PDF_OPENED_FOR_2026-11-21_ONLY",
+      "status": "NO_2026-11-22_MASK_VISIBLE_AT_OBSERVATION"
+    },
+    "home_schedule": {
+      "url": "https://www.loterianacional.gob.mx/home/index",
+      "next_chispazo_card": {
+        "contest_id": 12390,
+        "date": "2026-11-22",
+        "time_local": "21:00",
+        "modality": "CLASICO",
+        "modality_basis": "Official home index shows Chispazo contest 12390 at 21:00; official Chispazo product page maps 21:00 to Clásico.",
+        "result_published_at_observation": false
+      }
+    },
+    "search_index_only_result_snippet": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados/?cluster=1&view=cG5sUmVzdWxHYW5hR2F0bw%3D%3D",
+      "status": "SUPERSEDED_BY_OPENED_DEDICATED_CHISPAZO_RESULTS_PAGE",
+      "reason": "Contest 12389 and its combination are now directly visible on the dedicated official Chispazo results page. The opened page still does not identify the draw time or modality; retain the schedule-inferred status and do not claim same-day mask confirmation."
     }
   },
-  "draws": [],
+  "draws": [
+    {
+      "contest_id": 12389,
+      "date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        15,
+        17,
+        22,
+        25
+      ],
+      "result_source": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "result_status": "PUBLISHED_ON_DEDICATED_OFFICIAL_RESULTS_PAGE",
+      "modality": "DE_LAS_TRES",
+      "modality_status": "SCHEDULE_INFERRED_NOT_MASK_CONFIRMED",
+      "expected_slot_local": "15:00",
+      "modality_basis": "Same-day 21:00 Chispazo contest 12390 is listed by the official home index; official product schedule maps 15:00 to De las Tres and 21:00 to Clásico. The 12389 result page itself omits the time."
+    }
+  ],
   "integrity_limits": {
     "original_2026_11_22_mask_bytes_captured": false,
     "source_pdf_sha256": "NOT_CAPTURED",
@@ -79,7 +103,7 @@
     "dedicated_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
     "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
     "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
-    "home_schedule": "https://comercializadores.loterianacional.gob.mx/",
+    "home_schedule": "https://www.loterianacional.gob.mx/home/index",
     "home_results_index": "https://www.loterianacional.gob.mx/Home/Resultados/?cluster=1&view=cG5sUmVzdWxHYW5hR2F0bw%3D%3D"
   },
   "official_physical_control_procedure": {
