@@ -460,9 +460,9 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
                     parse_attestation_json(raw)
 
 
-    def test_deeply_nested_json_fails_closed_without_recursion_error(self):
+    def test_deeply_nested_non_object_json_is_rejected(self):
         deeply_nested = b"[" * 2_000 + b"0" + b"]" * 2_000
-        with self.assertRaisesRegex(ValueError, "invalid attestation JSON"):
+        with self.assertRaisesRegex(ValueError, "exact built-in object"):
             parse_attestation_json(deeply_nested)
 
 
