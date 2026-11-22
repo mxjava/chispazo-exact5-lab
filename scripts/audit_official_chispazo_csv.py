@@ -79,8 +79,78 @@ for key, choices in aliases.items():
     if len(matches) == 1:
         mapping[key] = matches[0]
 
+# Read the frozen canonical baseline as a comparison target only.
+CANONICAL_URL = (
+    "https://raw.githubusercontent.com/mxjava/chispazo-exact5-lab/"
+    "research/operational-lab-run-20261121/data/history/Chispazo_through_12249.csv"
+)
+with urllib.request.urlopen(CANONICAL_URL, timeout=45) as response:
+    canonical_raw = response.read()
+canonical_text = canonical_raw.decode("utf-8-sig")
+canonical_rows = list(csv.DictReader(io.StringIO(canonical_text)))
+official_index = {}
+official_invalid = []
+for line_no, row in enumerate(data_rows, start=2):
+    try:
+        draw = int(row[mapping["draw_id"]])
+        nums = tuple(int(row[mapping[f"n{i}"]]) for i in range(1, 6))
+        date = datetime.strptime(row[mapping["date"]].strip(), "%d/%m/%Y").date().isoformat()
+        if len(set(nums)) != 5 or any(n < 1 or n > 28 for n in nums) or tuple(sorted(nums)) != nums:
+            raise ValueError("numbers must be five unique ascending integers in 1..28")
+        if draw in official_index:
+            raise ValueError("duplicate draw id")
+        official_index[draw] = (nums, date)
+    except (ValueError, IndexError, KeyError) as exc:
+        official_invalid.append({"line": line_no, "row": row, "error": str(exc)})
+
+canonical_index = {}
+canonical_invalid = []
+for line_no, row in enumerate(canonical_rows, start=2):
+    try:
+        draw = int(row["CONCURSO"])
+        nums = tuple(int(row[f"R{i}"]) for i in range(1, 6))
+        date = datetime.strptime(row["FECHA"].strip(), "%Y-%m-%d").date().isoformat()
+        if draw in canonical_index:
+            raise ValueError("duplicate draw id")
+        canonical_index[draw] = (nums, date)
+    except (ValueError, KeyError) as exc:
+        canonical_invalid.append({"line": line_no, "row": row, "error": str(exc)})
+
+overlap = sorted(set(canonical_index) & set(official_index))
+conflicts = [
+    {"draw_id": draw, "canonical": canonical_index[draw], "official": official_index[draw]}
+    for draw in overlap if canonical_index[draw] != official_index[draw]
+]
+canonical_not_in_official = sorted(set(canonical_index) - set(official_index))
+official_new_ids = sorted(set(official_index) - set(canonical_index))
+official_ids_sorted = sorted(official_index)
+official_gaps = [
+    [a + 1, b - 1] for a, b in zip(official_ids_sorted, official_ids_sorted[1:]) if b != a + 1
+]
+reconciliation = {
+    "canonical_source_url": CANONICAL_URL,
+    "canonical_sha256": hashlib.sha256(canonical_raw).hexdigest(),
+    "canonical_rows": len(canonical_rows),
+    "canonical_unique_draw_ids": len(canonical_index),
+    "official_unique_draw_ids": len(official_index),
+    "overlap_rows_compared": len(overlap),
+    "overlap_conflicts": conflicts[:100],
+    "overlap_conflict_count": len(conflicts),
+    "canonical_draw_ids_missing_from_official": canonical_not_in_official[:100],
+    "canonical_missing_from_official_count": len(canonical_not_in_official),
+    "official_new_draw_id_count": len(official_new_ids),
+    "official_new_draw_id_min": min(official_new_ids) if official_new_ids else None,
+    "official_new_draw_id_max": max(official_new_ids) if official_new_ids else None,
+    "official_id_gaps": official_gaps[:100],
+    "official_invalid_rows": official_invalid[:100],
+    "official_invalid_row_count": len(official_invalid),
+    "canonical_invalid_rows": canonical_invalid[:100],
+    "canonical_invalid_row_count": len(canonical_invalid),
+    "merge_performed": False,
+    "canonical_history_modified": False,
+}
 report = {
-    "status": "SCHEMA_DISCOVERY_ONLY",
+    "status": "OFFICIAL_SOURCE_RECONCILIATION_AUDIT_ONLY",
     "source_url": URL,
     "final_url": final_url,
     "content_type": content_type,
@@ -95,11 +165,12 @@ report = {
     "first_rows": data_rows[:5],
     "last_rows": data_rows[-5:],
     "candidate_column_mapping_zero_based": mapping,
+    "reconciliation": reconciliation,
     "canonical_history_modified": False,
     "v294_modified": False,
     "production_authorized": False,
 }
 (OUT / "audit.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 print(json.dumps(report, ensure_ascii=False, indent=2))
-if not all(k in mapping for k in ("draw_id", "date", "n1", "n2", "n3", "n4", "n5")):
-    print("SCHEMA REVIEW REQUIRED: one or more required columns were not uniquely identified.", file=sys.stderr)
+if not all(k in mapping for k in ("draw_id", "date", "n1", "n2", "n3", "n4", "n5")) or official_invalid or canonical_invalid or conflicts or canonical_not_in_official or official_gaps:
+    print("RECONCILIATION REVIEW REQUIRED: inspect schema, row validity, continuity, and baseline conflicts.", file=sys.stderr)
