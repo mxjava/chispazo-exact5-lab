@@ -127,6 +127,14 @@ official_ids_sorted = sorted(official_index)
 official_gaps = [
     [a + 1, b - 1] for a, b in zip(official_ids_sorted, official_ids_sorted[1:]) if b != a + 1
 ]
+post_baseline_ids = sorted(draw for draw in official_index if draw > 12249)
+audit_status = "BLOCKED_CANONICAL_CONFLICTS" if (conflicts or official_invalid or canonical_invalid or official_gaps) else "SOURCE_RECONCILIATION_CLEAN"
+with (OUT / "canonical_official_conflicts.csv").open("w", newline="", encoding="utf-8") as conflict_file:
+    writer = csv.writer(conflict_file)
+    writer.writerow(["CONCURSO", "FECHA", "CANONICAL_R1_R5", "OFFICIAL_R1_R5"])
+    for item in conflicts:
+        writer.writerow([item["draw_id"], item["canonical"][1], " ".join(map(str, item["canonical"][0])), " ".join(map(str, item["official"][0]))])
+
 reconciliation = {
     "canonical_source_url": CANONICAL_URL,
     "canonical_sha256": hashlib.sha256(canonical_raw).hexdigest(),
@@ -139,6 +147,10 @@ reconciliation = {
     "canonical_draw_ids_missing_from_official": canonical_not_in_official[:100],
     "canonical_missing_from_official_count": len(canonical_not_in_official),
     "official_new_draw_id_count": len(official_new_ids),
+    "official_post_baseline_draw_count": len(post_baseline_ids),
+    "official_post_baseline_draw_id_min": min(post_baseline_ids) if post_baseline_ids else None,
+    "official_post_baseline_draw_id_max": max(post_baseline_ids) if post_baseline_ids else None,
+    "official_post_baseline_ids_contiguous": post_baseline_ids == list(range(12250, 12387)),
     "official_new_draw_id_min": min(official_new_ids) if official_new_ids else None,
     "official_new_draw_id_max": max(official_new_ids) if official_new_ids else None,
     "official_id_gaps": official_gaps[:100],
@@ -150,7 +162,7 @@ reconciliation = {
     "canonical_history_modified": False,
 }
 report = {
-    "status": "OFFICIAL_SOURCE_RECONCILIATION_AUDIT_ONLY",
+    "status": audit_status,
     "source_url": URL,
     "final_url": final_url,
     "content_type": content_type,
