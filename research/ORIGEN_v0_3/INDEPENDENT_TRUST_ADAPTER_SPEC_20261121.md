@@ -118,7 +118,7 @@ No classification in this document authorizes betting or production use. V294 re
 
 ## 8. Implementation sequence and acceptance gates
 
-A. Define typed receipt schema and strict parser — NOT STARTED. The primitive now requires and compares a caller-supplied expected nonce challenge, but does not establish its independent issuance or one-time consumption. Replay protection and nonce uniqueness still require a durable, independently controlled ledger; the current primitive does not prevent replay.  
+A. Define typed receipt schema and strict parser — NOT STARTED. The raw JSON parser caps envelopes at 16,384 bytes, and direct mapping verification now enforces the same canonical-payload ceiling with a preflight text bound. The primitive also requires and compares a caller-supplied expected nonce challenge, but does not establish its independent issuance or one-time consumption. Replay protection and nonce uniqueness still require a durable, independently controlled ledger; the current primitive does not prevent replay.  
 B. Implement byte-level source verifier and signature verification — PARTIAL: Ed25519 detached-signature and exact-byte SHA-256 binding primitive exists; manifest schema and controlled intake integration remain.  
 C. Implement trusted-time and external-ledger verification — NOT STARTED.  
 D. Implement identity/role/separation-of-duties policy — PARTIAL: role allow-list and key enabled/revoked flags are checked; identity proof, authoritative revocation and separation-of-duties remain.  

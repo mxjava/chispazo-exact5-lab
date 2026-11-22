@@ -481,6 +481,15 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("exceeds maximum size", result["reason"])
 
+    def test_direct_mapping_attestation_size_limit_is_enforced(self):
+        from origen.trust_adapter import MAX_ATTESTATION_JSON_BYTES
+
+        oversized_role = "R" * (MAX_ATTESTATION_JSON_BYTES + 1)
+        altered = dict(self.envelope, role=oversized_role)
+        result = self.verify(envelope=altered, role=oversized_role)
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("attestation fields exceed maximum size", result["reason"])
+
     def test_oversized_signature_is_rejected_before_base64_decode(self):
         altered = dict(self.envelope, signature_b64="A" * 1_000_000)
         result = self.verify(envelope=altered)

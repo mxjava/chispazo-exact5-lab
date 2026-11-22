@@ -141,6 +141,12 @@ def verify_attestation(
             raise ValueError("attestation must be an exact dict matching the exact schema")
         if any(type(envelope[field]) is not str for field in _FIELDS | {"signature_b64"}):
             raise ValueError("all attestation fields must be exact built-in strings")
+        field_text_chars = sum(len(envelope[field]) for field in _FIELDS)
+        if field_text_chars > MAX_ATTESTATION_JSON_BYTES:
+            raise ValueError(
+                "attestation fields exceed maximum size of "
+                f"{MAX_ATTESTATION_JSON_BYTES} bytes"
+            )
         if type(trust_roots) is not dict:
             raise ValueError("trust_roots must be a mapping controlled outside the evidence bundle")
         if any(type(root_key) is not str for root_key in trust_roots):
@@ -232,9 +238,15 @@ def verify_attestation(
         from cryptography.exceptions import InvalidSignature
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
+        payload_bytes = canonical_payload(envelope)
+        if len(payload_bytes) > MAX_ATTESTATION_JSON_BYTES:
+            raise ValueError(
+                "canonical attestation payload exceeds maximum size of "
+                f"{MAX_ATTESTATION_JSON_BYTES} bytes"
+            )
         try:
             Ed25519PublicKey.from_public_bytes(public_bytes).verify(
-                signature, canonical_payload(envelope)
+                signature, payload_bytes
             )
         except InvalidSignature as exc:
             raise ValueError("Ed25519 signature verification failed") from exc
