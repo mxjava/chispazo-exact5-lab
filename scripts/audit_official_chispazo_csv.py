@@ -128,7 +128,7 @@ official_gaps = [
     [a + 1, b - 1] for a, b in zip(official_ids_sorted, official_ids_sorted[1:]) if b != a + 1
 ]
 post_baseline_ids = sorted(draw for draw in official_index if draw > 12249)
-audit_status = "BLOCKED_CANONICAL_CONFLICTS" if (conflicts or official_invalid or canonical_invalid or official_gaps) else "SOURCE_RECONCILIATION_CLEAN"
+audit_status = "BLOCKED_CANONICAL_CONFLICTS" if (conflicts or official_invalid or canonical_invalid or official_gaps or canonical_not_in_official) else "SOURCE_RECONCILIATION_CLEAN"
 with (OUT / "canonical_official_conflicts.csv").open("w", newline="", encoding="utf-8") as conflict_file:
     writer = csv.writer(conflict_file)
     writer.writerow(["CONCURSO", "FECHA", "CANONICAL_R1_R5", "OFFICIAL_R1_R5"])
