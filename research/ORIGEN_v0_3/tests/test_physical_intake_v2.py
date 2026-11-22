@@ -760,6 +760,34 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                 evaluate_temporal_csv(path, **VERIFIED)
 
 
+    def test_mapping_rows_reject_unrecognized_v2_columns(self):
+        rows = rows_for_target()
+        rows[0]["authenticated_provenance"] = "true"
+        with self.assertRaisesRegex(
+            ValueError,
+            "row 1 has unexpected columns: authenticated_provenance",
+        ):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
+
+    def test_csv_rejects_unrecognized_v2_header_before_row_processing(self):
+        rows = rows_for_target()
+        headers = list(V2_REQUIRED_COLUMNS) + ["authenticated_provenance"]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "unknown-header.csv"
+            with path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.writer(stream)
+                writer.writerow(headers)
+                for row in rows:
+                    writer.writerow(
+                        [row[column] for column in V2_REQUIRED_COLUMNS] + ["true"]
+                    )
+            with self.assertRaisesRegex(
+                ValueError,
+                "unexpected columns: authenticated_provenance",
+            ):
+                evaluate_temporal_csv(path, **VERIFIED)
+
+
     def test_printed_sphere_number_requires_canonical_decimal_1_through_28(self):
         invalid_values = ("01", "+1", " 1", "1 ", "0", "29", "1.0", "")
         for value in invalid_values:
