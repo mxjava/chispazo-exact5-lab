@@ -433,6 +433,14 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
     )
     if len({item.proof_sha256 for item in time_proofs}) != len(time_proofs):
         raise ValueError("trusted_time_proofs contain duplicate proof digests")
+    # A time authority/event pair is a unique event identity. Accepting two
+    # different timestamps or proofs for the same identity makes downstream
+    # selection ambiguous even when each proof digest is individually unique.
+    time_event_keys = [(item.authority_id, item.event_id) for item in time_proofs]
+    if len(set(time_event_keys)) != len(time_event_keys):
+        raise ValueError(
+            "trusted_time_proofs contain duplicate authority/event identities"
+        )
     ledger = _parse_ledger(root["ledger_anchor"])
     commitments = _parse_commitments(root["commitments"])
     seals = tuple(
