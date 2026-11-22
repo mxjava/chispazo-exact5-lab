@@ -32,6 +32,8 @@ Fuente:
    - Smartballs: 4.25–5.25 g por esfera y rango máximo de 0.30 g entre la más ligera y la más pesada.
    - Ping Pong: 2.30–3.00 g por esfera y rango máximo de 0.15 g.
    El procedimiento no identifica públicamente cuál tipo se asigna específicamente a Chispazo Clásico.
+
+   **Defecto de referencia interna:** las tolerancias están en la Política 6 (hoja 5), pero la actividad 5.2 (hoja 13) y el Plan de Calidad, actividad 2 (hoja 25), remiten a la Política 8. En este mismo documento, la Política 8 trata la firma electrónica del archivo de participaciones, no los pesos. Se conserva la fuente explícita de tolerancias de la Política 6, pero la referencia cruzada 5.2/Plan de Calidad queda como defecto documental que debe aclarar/corregir Lotería Nacional.
 5. **Rechazo y cambio de estuche:** si el peso no es correcto, se notifica el cambio de estuche y se regresa a la actividad 4.1 (verificación/cierre SICAL). Por tanto, el estuche confirmado inicialmente no necesariamente es el estuche final si falla el pesaje. Para usar el estuche como covariable prospectiva se necesita la secuencia de cambios y la hora de fijación del estuche final respecto del último cierre.
 6. **Aceptación y colocación:** la Tira de Pesaje se firma y se anexa al Acta; las esferas se colocan en los alimentadores en orden progresivo y se verifica que correspondan al sorteo.
 7. **Firma del archivo de participaciones:** el procedimiento contempla la recepción y resguardo de las firmas electrónicas de participaciones/cancelaciones después del cierre y antes de la celebración.
@@ -40,6 +42,8 @@ Fuente:
 ### Ambigüedad normativa que no debe resolverse por inferencia
 
 El artículo 9, fracción I, del Reglamento Chispazo dice que se introducen 28 esferas en una urna; la fracción II sitúa después el cierre de ventas. En cambio, la secuencia detallada de SGVO-PRO-05 sitúa el pesaje individual y la colocación en alimentadores después del cierre. Puede tratarse de etapas o usos distintos de “urna” y “alimentadores”, pero las fuentes públicas no permiten reconciliarlo. Se requiere aclaración oficial del paso físico exacto, especialmente para fijar el timestamp de la carga final.
+
+También debe aclararse la referencia cruzada de pesaje: Política 6 contiene los rangos, mientras actividad 5.2 y Plan de Calidad citan Política 8, que regula la firma electrónica de participaciones. No se debe tratar esa remisión como una especificación alternativa de pesaje.
 
 Fuente: https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf (art. 9) y SGVO-PRO-05 (hojas 12–16).
 
