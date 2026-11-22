@@ -10,6 +10,8 @@ Auditoría documental de fuentes oficiales vigentes consultables al 22-11-2026 y
 
 La página oficial de Lotería Nacional coloca Chispazo en **Sorteos Electrónicos** y separa los Sorteos Tradicionales. Chispazo Clásico se celebra a las 21:00; Chispazo de las Tres a las 15:00. Por tanto, para Chispazo Clásico aplican el reglamento Chispazo y el procedimiento público SGVO-PRO-05, no los procedimientos de bolas de madera de sorteos tradicionales.
 
+La Normateca vigente muestra además la separación en su propio índice: Chispazo aparece bajo “Electrónicos”; bajo “Tradicionales” lista SGVO-PRO-15 (preparación y celebración), SGVO-PRO-34 (peso/diámetro de bolas de madera) y SGVO-PRO-08 (mantenimiento de equipo tradicional). Esos tres procedimientos no son la especificación física de Chispazo.
+
 Fuentes:
 - https://loterianacional.gob.mx/Chispazo/Chispazo
 - https://loterianacional.gob.mx/Normateca/Sustantivas?id=2
