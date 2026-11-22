@@ -75,7 +75,7 @@ class TestTrustVerifierV1(unittest.TestCase):
     def test_tampered_claim_is_rejected(self):
         raw, public_bytes = signed_receipt()
         document = json.loads(raw)
-        document["target"]["contest_id"] = "12390"
+        document["artifacts"][0]["sha256"] = "a" * 64
         with self.assertRaisesRegex(ValueError, "signature verification failed"):
             verify_receipt_attestation(
                 encode(document), policy(public_bytes), verification_time=NOW
