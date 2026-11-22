@@ -427,6 +427,10 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
     )
     if len({item.subject_id for item in custodians}) != len(custodians):
         raise ValueError("custodians contain duplicate subject IDs")
+    signer_subjects = {item.subject_id for item in signers}
+    custodian_subjects = {item.subject_id for item in custodians}
+    if signer_subjects.intersection(custodian_subjects):
+        raise ValueError("signer and custodian claims must be separate")
     time_proofs = tuple(
         _parse_time_proof(item, index)
         for index, item in enumerate(_array(root["trusted_time_proofs"], "trusted_time_proofs", minimum=1, maximum=4096))
