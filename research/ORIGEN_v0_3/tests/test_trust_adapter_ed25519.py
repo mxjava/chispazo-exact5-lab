@@ -621,6 +621,46 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
             "expires_at_utc": self.envelope["expires_at_utc"],
         }])
 
+
+    def test_json_wrapper_forwards_durable_nonce_ledger(self):
+        class Ledger:
+            def consume_once(self, **kwargs):
+                return True
+
+        raw = json.dumps(
+            self.envelope, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+        result = verify_attestation_json(
+            raw, trust_roots=self.roots, expected_role="CUSTODIAN",
+            expected_subject_sha256=self.subject,
+            verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"], nonce_ledger=Ledger(),
+        )
+        self.assertEqual(result["status"], "SIGNATURE_VALID")
+        self.assertEqual(
+            result["replay_status"],
+            "CONSUMED_BY_INJECTED_DURABLE_NONCE_LEDGER",
+        )
+
+    def test_artifact_wrapper_forwards_durable_nonce_ledger(self):
+        class Ledger:
+            def consume_once(self, **kwargs):
+                return True
+
+        result = verify_artifact_bytes(
+            self.envelope, b"exact sealed portfolio bytes",
+            trust_roots=self.roots, expected_role="CUSTODIAN",
+            verification_time_utc="2026-11-21T11:00:00Z",
+            expected_nonce=self.envelope["nonce"], nonce_ledger=Ledger(),
+        )
+        self.assertEqual(result["status"], "SIGNATURE_VALID")
+        self.assertEqual(result["byte_integrity_status"], "MATCHED")
+        self.assertEqual(
+            result["replay_status"],
+            "CONSUMED_BY_INJECTED_DURABLE_NONCE_LEDGER",
+        )
+
+
     def test_durable_nonce_ledger_rejects_replay(self):
         class ReplayedLedger:
             def consume_once(self, **kwargs):
