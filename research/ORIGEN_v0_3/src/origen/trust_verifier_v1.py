@@ -90,11 +90,18 @@ def verify_receipt_attestation(
     key_record = matches[0]
     if key_record.revoked:
         raise ValueError("receipt issuer key is revoked")
-    if key_record.valid_from_utc.tzinfo is None or key_record.valid_until_utc.tzinfo is None:
-        raise ValueError("trust-policy key validity bounds must be timezone-aware")
-    if not (
-        key_record.valid_from_utc <= verified_at <= key_record.valid_until_utc
+    if (
+        key_record.valid_from_utc.tzinfo is None
+        or key_record.valid_from_utc.utcoffset() is None
+        or key_record.valid_until_utc.tzinfo is None
+        or key_record.valid_until_utc.utcoffset() is None
     ):
+        raise ValueError("trust-policy key validity bounds must be timezone-aware")
+    valid_from = key_record.valid_from_utc.astimezone(timezone.utc)
+    valid_until = key_record.valid_until_utc.astimezone(timezone.utc)
+    if valid_from > valid_until:
+        raise ValueError("trust-policy key validity interval is inverted")
+    if not (valid_from <= verified_at <= valid_until):
         raise ValueError("receipt issuer key is outside its policy validity interval")
     if receipt.attestation.algorithm != "ed25519":
         raise ValueError("root verifier currently supports Ed25519 only")
