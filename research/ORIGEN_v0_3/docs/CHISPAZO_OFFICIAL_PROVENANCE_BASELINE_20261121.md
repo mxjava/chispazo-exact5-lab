@@ -1,6 +1,6 @@
 # Chispazo — Official procedure and provenance baseline
 
-**Observation:** 2026-11-22 11:53:43 America/Mexico_City  
+**Observation:** 2026-11-22 15:03:04 America/Mexico_City  
 **Classification:** RESEARCH / PUBLIC-RESULT STATUS ONLY / NOT PHYSICAL EVIDENCE  
 **Scope:** Chispazo Clásico (21:00) versus Chispazo de las Tres (15:00)
 
@@ -56,13 +56,13 @@ A separate, currently published Lotería Nacional procedure adds operational con
 Official source: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf  
 Current Normateca listing: https://loterianacional.gob.mx/Normateca/Sustantivas?id=2
 
-## 3. Official schedule and 21-Nov-2026 observation
+## 3. Official schedule and 22-Nov-2026 refresh
 
 The current product page states:
 - Chispazo de las Tres: **15:00** local time.
 - Chispazo Clásico: **21:00** local time.
 
-At the observation time:
+At the 15:03:04 local refresh:
 
 | Contest | Date / scheduled time | Modality basis | Public result status |
 |---|---|---|---|
@@ -71,11 +71,11 @@ At the observation time:
 | 12389 | 22-Nov-2026 / 15:00 | De las Tres by matching the official 15:00 product schedule | Home index advertises the upcoming contest; at 11:53:43 it had not yet reached the scheduled time and no result was published |
 | 22-Nov-2026 / 21:00 | Clásico scheduled slot | Clásico by the official 21:00 product schedule | Future draw at observation; contest ID and result not inferred |
 
-The official results page and mask index expose the 21-Nov results; the results page lists 12388 as latest, and the mask index lists 21-Nov as its latest available daily mask. The linked 21-Nov official PDF visually labels 12387 under the “Chispazo De las tres” logo and 12388 under the “Chispazo Clásico” logo, so those two modality labels are explicit on the mask itself, not merely inferred from schedule. The home index advertises 12389 for 22-Nov at 15:00. At 11:53:43 on 22-Nov, that slot was still in the future; the 21:00 Classic slot was also in the future. Therefore:
+At 15:03:04 local, the official results page still lists 12388 as latest and the mask index lists 21-Nov as its latest available daily mask. The official homepage had advertised contest 12389 for 22-Nov at 15:00. The official product page maps 15:00 to De las Tres and 21:00 to Clásico. The 15:00 slot had passed, but no 12389 result was visible in the dedicated results page at observation. The linked 21-Nov official PDF visually labels 12387 under the “Chispazo De las tres” logo and 12388 under the “Chispazo Clásico” logo, so those two modality labels are explicit on the mask itself, not merely inferred from schedule. The home index advertises 12389 for 22-Nov at 15:00. At 15:03:04 on 22-Nov, the 15:00 De las Tres slot had passed without a result visible in the dedicated results page; the 21:00 Classic slot remained in the future. Therefore:
 - 12387 is the 15:00 De las Tres result: **01 05 11 18 19**.
 - 12388 is the 21:00 Clásico result: **01 07 12 21 26**.
-- 12389 is the scheduled 15:00 De las Tres contest, not a Clásico result.
-- Do not infer a 22-Nov 21:00 Clásico contest ID or winning numbers before publication.
+- 12389 is the advertised 15:00 De las Tres contest, not a Clásico result; its outcome was not yet published at 15:03:04 local.
+- Do not infer a 22-Nov 21:00 Clásico contest ID or winning numbers before publication. The missing 12389 result at 15:03:04 is a publication-latency observation only.
 
 ## 4. Evidence classification
 
