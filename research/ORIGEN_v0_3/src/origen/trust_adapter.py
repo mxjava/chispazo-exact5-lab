@@ -17,6 +17,8 @@ from typing import Any, Mapping
 
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 _NONCE = re.compile(r"[A-Za-z0-9_-]{16,128}")
+MAX_ATTESTATION_JSON_BYTES = 16_384
+
 _FIELDS = {
     "schema_version", "key_id", "role", "subject_sha256",
     "issued_at_utc", "expires_at_utc", "nonce",
@@ -54,6 +56,10 @@ def parse_attestation_json(raw: bytes) -> dict[str, Any]:
     """Parse one canonical UTF-8 attestation object, rejecting duplicate keys."""
     if type(raw) is not bytes:
         raise ValueError("attestation JSON must be exact built-in bytes")
+    if len(raw) > MAX_ATTESTATION_JSON_BYTES:
+        raise ValueError(
+            f"attestation JSON exceeds maximum size of {MAX_ATTESTATION_JSON_BYTES} bytes"
+        )
     try:
         value = json.loads(
             raw.decode("utf-8"),
@@ -95,10 +101,16 @@ def _utc(value: Any, field: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def _decode_canonical_base64(value: Any, field: str) -> bytes:
-    """Decode strict padded base64 and reject alternate encodings of the same bytes."""
+def _decode_canonical_base64(
+    value: Any, field: str, *, expected_encoded_length: int
+) -> bytes:
+    """Decode strict padded base64 with a pre-decode size bound."""
     if type(value) is not str:
         raise ValueError(f"{field} must be exact built-in base64 text")
+    if len(value) != expected_encoded_length:
+        raise ValueError(
+            f"{field} must be exactly {expected_encoded_length} base64 characters"
+        )
     try:
         decoded = base64.b64decode(value, validate=True)
     except (ValueError, binascii.Error) as exc:
@@ -183,8 +195,15 @@ def verify_attestation(
             raise ValueError("pinned key is revoked or disabled by trust policy")
 
         try:
-            public_bytes = _decode_canonical_base64(root["public_key_b64"], "public_key_b64")
-            signature = _decode_canonical_base64(envelope["signature_b64"], "signature_b64")
+            # Bound encoded lengths before allocating decoded buffers. Ed25519
+            # raw keys are 32 bytes (44 padded base64 chars); signatures are
+            # 64 bytes (88 padded base64 chars).
+            public_bytes = _decode_canonical_base64(
+                root["public_key_b64"], "public_key_b64", expected_encoded_length=44
+            )
+            signature = _decode_canonical_base64(
+                envelope["signature_b64"], "signature_b64", expected_encoded_length=88
+            )
         except (KeyError, ValueError, binascii.Error) as exc:
             raise ValueError("invalid or non-canonical base64 key or signature") from exc
         if len(public_bytes) != 32 or len(signature) != 64:
