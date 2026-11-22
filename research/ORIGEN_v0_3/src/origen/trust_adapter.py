@@ -115,10 +115,13 @@ def verify_attestation(
     expected_role: str,
     expected_subject_sha256: str,
     verification_time_utc: str,
+    expected_nonce: str,
 ) -> dict[str, Any]:
     """Verify a detached Ed25519 signature against explicitly pinned role roots.
 
-    verification_time_utc must come from a separately trusted clock source.
+    verification_time_utc and expected_nonce must come from independently
+    controlled services. This module only compares the challenge; it does not
+    prove its origin, one-time use, or durable replay prevention.
     Caller-supplied roots are only as trustworthy as their provisioning channel.
     """
     try:
@@ -151,6 +154,12 @@ def verify_attestation(
             raise ValueError(
                 "nonce must be 16-128 ASCII URL-safe characters (letters, digits, '_' or '-')"
             )
+        if type(expected_nonce) is not str or not _NONCE.fullmatch(expected_nonce):
+            raise ValueError(
+                "expected_nonce must be an independently issued 16-128 character URL-safe challenge"
+            )
+        if nonce != expected_nonce:
+            raise ValueError("attestation nonce does not match the expected challenge")
 
         root = trust_roots.get(key_id)
         if type(root) is not dict:
@@ -208,6 +217,7 @@ def verify_attestation(
             "trusted_time_status": "NOT_ESTABLISHED_BY_THIS_MODULE",
             "revocation_status": "NOT_CHECKED",
             "custody_status": "NOT_ESTABLISHED_BY_THIS_MODULE",
+            "nonce_challenge_status": "MATCHED_CALLER_SUPPLIED_CHALLENGE",
             "replay_status": "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER",
         }
     except Exception as exc:
@@ -222,6 +232,7 @@ def verify_attestation_json(
     expected_role: str,
     expected_subject_sha256: str,
     verification_time_utc: str,
+    expected_nonce: str,
 ) -> dict[str, Any]:
     """Strictly parse original envelope bytes, then verify its detached signature."""
     try:
@@ -237,6 +248,7 @@ def verify_attestation_json(
         expected_role=expected_role,
         expected_subject_sha256=expected_subject_sha256,
         verification_time_utc=verification_time_utc,
+        expected_nonce=expected_nonce,
     )
 
 
@@ -247,6 +259,7 @@ def verify_artifact_bytes(
     trust_roots: Mapping[str, Mapping[str, Any]],
     expected_role: str,
     verification_time_utc: str,
+    expected_nonce: str,
 ) -> dict[str, Any]:
     """Verify signature and bind it to the exact original artifact bytes."""
     if type(artifact_bytes) is not bytes:
@@ -258,6 +271,7 @@ def verify_artifact_bytes(
         expected_role=expected_role,
         expected_subject_sha256=digest,
         verification_time_utc=verification_time_utc,
+        expected_nonce=expected_nonce,
     )
     if result.get("status") != "SIGNATURE_VALID":
         return result
