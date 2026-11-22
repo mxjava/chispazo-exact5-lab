@@ -462,7 +462,10 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
 
     def test_deeply_nested_non_object_json_is_rejected(self):
         deeply_nested = b"[" * 2_000 + b"0" + b"]" * 2_000
-        with self.assertRaisesRegex(ValueError, "exact built-in object"):
+        # CPython versions differ: some reject this during decoding with a
+        # recursion error; others finish decoding and reject the non-object root.
+        # Both paths must be normalized to a controlled ValueError.
+        with self.assertRaises(ValueError):
             parse_attestation_json(deeply_nested)
 
 
