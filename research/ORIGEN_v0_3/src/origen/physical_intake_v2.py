@@ -188,28 +188,35 @@ def evaluate_temporal_eligibility(
         # Bound untrusted text before retaining another copy of each row. A row-count
         # ceiling alone does not bound memory when a field can contain arbitrary text.
         row_text_bytes = 0
-        for value in row.values():
-            if type(value) is str:
-                row_text_bytes += _bounded_utf8_text_bytes(
-                    value, MAX_V2_ROW_TEXT_BYTES - row_text_bytes
+        snapshot: dict[str, Any] = {}
+        for column, value in row.items():
+            # CSV cells are exact strings or None. Do not retain arbitrary objects
+            # or str subclasses: their hidden payloads bypass the UTF-8 budget and
+            # can accumulate across rows before classification.
+            if value is None:
+                snapshot[column] = None
+                continue
+            if type(value) is not str:
+                raise ValueError(
+                    f"row {row_number} column {column} must be exact text or null"
                 )
-                if row_text_bytes > MAX_V2_ROW_TEXT_BYTES:
-                    break
-        if row_text_bytes > MAX_V2_ROW_TEXT_BYTES:
-            raise ValueError(
-                f"row {row_number} exceeds maximum UTF-8 text payload "
-                f"{MAX_V2_ROW_TEXT_BYTES} bytes"
+            row_text_bytes += _bounded_utf8_text_bytes(
+                value, MAX_V2_ROW_TEXT_BYTES - row_text_bytes
             )
+            if row_text_bytes > MAX_V2_ROW_TEXT_BYTES:
+                raise ValueError(
+                    f"row {row_number} exceeds maximum UTF-8 text payload "
+                    f"{MAX_V2_ROW_TEXT_BYTES} bytes"
+                )
+            snapshot[column] = value
         intake_text_bytes += row_text_bytes
         if intake_text_bytes > MAX_V2_INTAKE_TEXT_BYTES:
             raise ValueError(
                 "intake exceeds maximum UTF-8 text payload "
                 f"{MAX_V2_INTAKE_TEXT_BYTES} bytes"
             )
-        # Snapshot each accepted row now. Retaining caller-owned dict references
-        # lets a lazy iterable mutate earlier rows after yielding them but before
-        # classification, making the evaluated evidence differ from intake-time data.
-        materialized.append(row.copy())
+        # Retain only an owned snapshot of exact text/None scalar cells.
+        materialized.append(snapshot)
     if not materialized:
         return {"status": "EMPTY", "targets": {}, "row_count": 0}
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
