@@ -157,7 +157,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(result["identity_status"], "PINNED_KEY_ONLY")
         self.assertEqual(result["trusted_time_status"], "NOT_ESTABLISHED_BY_THIS_MODULE")
         self.assertEqual(result["custody_status"], "NOT_ESTABLISHED_BY_THIS_MODULE")
-        self.assertEqual(result["replay_status"], "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER")
+        self.assertEqual(result["replay_status"], "NOT_CHECKED_NO_NONCE_LEDGER")
 
 
     def test_timestamp_string_subclass_cannot_spoof_valid_utc_time(self):
@@ -465,7 +465,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         result = self.verify(expected_nonce=self.envelope["nonce"])
         self.assertEqual(result["status"], "SIGNATURE_VALID")
         self.assertEqual(result["nonce_challenge_status"], "MATCHED_CALLER_SUPPLIED_CHALLENGE")
-        self.assertEqual(result["replay_status"], "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER")
+        self.assertEqual(result["replay_status"], "NOT_CHECKED_NO_NONCE_LEDGER")
 
     def test_attestation_json_size_limit_is_enforced_before_parsing(self):
         from origen.trust_adapter import MAX_ATTESTATION_JSON_BYTES
@@ -612,7 +612,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(result["status"], "SIGNATURE_VALID")
         self.assertEqual(
             result["replay_status"],
-            "CONSUMED_BY_INJECTED_DURABLE_NONCE_LEDGER",
+            "CONSUMED_BY_INJECTED_NONCE_LEDGER_UNATTESTED",
         )
         self.assertEqual(ledger.calls, [{
             "nonce": self.envelope["nonce"],
@@ -637,7 +637,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(result["status"], "SIGNATURE_VALID")
         self.assertEqual(
             result["replay_status"],
-            "CONSUMED_BY_INJECTED_DURABLE_NONCE_LEDGER",
+            "CONSUMED_BY_INJECTED_NONCE_LEDGER_UNATTESTED",
         )
 
     def test_artifact_wrapper_forwards_durable_nonce_ledger(self):
@@ -655,7 +655,7 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         self.assertEqual(result["byte_integrity_status"], "MATCHED")
         self.assertEqual(
             result["replay_status"],
-            "CONSUMED_BY_INJECTED_DURABLE_NONCE_LEDGER",
+            "CONSUMED_BY_INJECTED_NONCE_LEDGER_UNATTESTED",
         )
 
 
