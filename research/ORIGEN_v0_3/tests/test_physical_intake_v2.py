@@ -55,6 +55,23 @@ VERIFIED = dict(
 
 
 class PhysicalIntakeV2Tests(unittest.TestCase):
+    def test_rows_are_snapshotted_when_consumed_from_mutating_iterable(self):
+        rows = rows_for_target()
+        first_row = rows[0]
+
+        def mutating_rows():
+            yield first_row
+            # Mutate the caller-owned row only after the evaluator has consumed it.
+            first_row["printed_number"] = "999"
+            yield from rows[1:]
+
+        result = evaluate_temporal_eligibility(mutating_rows(), **VERIFIED)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+        self.assertNotIn("INVALID_PRINTED_NUMBER", result["targets"]["12301"]["reasons"])
+
     def test_every_row_must_include_all_required_columns(self):
         rows = rows_for_target()
         del rows[1]["source_document_sha256"]
