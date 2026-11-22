@@ -5,9 +5,11 @@ import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from origen.physical_intake_v2 import (
-    MAX_V2_INTAKE_ROWS, V2_REQUIRED_COLUMNS, evaluate_temporal_csv, evaluate_temporal_eligibility,
+    MAX_V2_INTAKE_ROWS, MAX_V2_ROW_TEXT_CHARS, V2_REQUIRED_COLUMNS,
+    evaluate_temporal_csv, evaluate_temporal_eligibility,
 )
 
 
@@ -56,6 +58,27 @@ VERIFIED = dict(
 
 
 class PhysicalIntakeV2Tests(unittest.TestCase):
+    def test_single_row_text_payload_is_bounded(self):
+        rows = rows_for_target()
+        rows[0]["source_document_ref"] = "X" * (MAX_V2_ROW_TEXT_CHARS + 1)
+        with self.assertRaisesRegex(
+            ValueError,
+            r"row 1 exceeds maximum text payload",
+        ):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
+
+    def test_total_intake_text_payload_is_bounded(self):
+        rows = rows_for_target()
+        with patch(
+            "origen.physical_intake_v2.MAX_V2_INTAKE_TEXT_CHARS",
+            1_000,
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                r"intake exceeds maximum text payload",
+            ):
+                evaluate_temporal_eligibility(rows, **VERIFIED)
+
     def test_rows_are_snapshotted_when_consumed_from_mutating_iterable(self):
         rows = rows_for_target()
         first_row = rows[0]

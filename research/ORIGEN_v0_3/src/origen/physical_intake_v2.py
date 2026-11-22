@@ -32,6 +32,9 @@ V2_REQUIRED_COLUMNS = (
 # One invocation can hold at most 1,000 complete 28-sphere target sets.
 # Larger feeds must be partitioned at complete-target boundaries by the caller.
 MAX_V2_INTAKE_ROWS = 28_000
+# Bound both individual rows and the retained text payload across one invocation.
+MAX_V2_ROW_TEXT_CHARS = 32_768
+MAX_V2_INTAKE_TEXT_CHARS = 64_000_000
 CHISPAZO_LOCAL_TIMEZONE = ZoneInfo("America/Mexico_City")
 CLASSIC_DRAW_SLOT = (21, 0)
 
@@ -131,6 +134,7 @@ def evaluate_temporal_eligibility(
     # untrusted CSV/generator to allocate unbounded memory before the fail-closed gate.
     required_columns = set(V2_REQUIRED_COLUMNS)
     materialized: list[Mapping[str, Any]] = []
+    intake_text_chars = 0
     # Treat the iterable as an untrusted input boundary. A generator or custom
     # iterator can fail after yielding a prefix; surface that as a controlled
     # intake rejection rather than leaking arbitrary iterator exceptions.
@@ -167,6 +171,20 @@ def evaluate_temporal_eligibility(
         if unexpected:
             raise ValueError(
                 f"row {row_number} has unexpected columns: " + ", ".join(unexpected)
+            )
+        # Bound untrusted text before retaining another copy of each row. A row-count
+        # ceiling alone does not bound memory when a field can contain arbitrary text.
+        row_text_chars = sum(len(value) for value in row.values() if type(value) is str)
+        if row_text_chars > MAX_V2_ROW_TEXT_CHARS:
+            raise ValueError(
+                f"row {row_number} exceeds maximum text payload "
+                f"{MAX_V2_ROW_TEXT_CHARS} characters"
+            )
+        intake_text_chars += row_text_chars
+        if intake_text_chars > MAX_V2_INTAKE_TEXT_CHARS:
+            raise ValueError(
+                "intake exceeds maximum text payload "
+                f"{MAX_V2_INTAKE_TEXT_CHARS} characters"
             )
         # Snapshot each accepted row now. Retaining caller-owned dict references
         # lets a lazy iterable mutate earlier rows after yielding them but before
