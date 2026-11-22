@@ -13,7 +13,7 @@ import json
 import hashlib
 import re
 from datetime import datetime, timezone
-from typing import Any, Mapping
+from typing import Any, Mapping, Protocol
 
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 _NONCE = re.compile(r"[A-Za-z0-9_-]{16,128}")
@@ -22,6 +22,26 @@ _KEY_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
 MAX_TRUST_ROOTS = 256
 MAX_ROOT_ROLES = 32
 MAX_ATTESTATION_JSON_BYTES = 16_384
+
+
+class NonceLedger(Protocol):
+    """External atomic, durable, shared one-time nonce-consumption service.
+
+    Implementations MUST atomically reserve (nonce, subject_sha256, key_id)
+    across concurrent workers and persist the reservation until expiry. A
+    process-local set or best-effort cache does not satisfy this contract.
+    """
+
+    def consume_once(
+        self, *, nonce: str, subject_sha256: str, key_id: str,
+        expires_at_utc: str,
+    ) -> bool:
+        """Return True only for the first durable consumption; False on replay.
+
+        Backend errors MUST raise. The verifier fails closed on errors or on
+        any return value other than the exact built-in bool type.
+        """
+        ...
 
 _FIELDS = {
     "schema_version", "key_id", "role", "subject_sha256",
@@ -132,12 +152,14 @@ def verify_attestation(
     expected_subject_sha256: str,
     verification_time_utc: str,
     expected_nonce: str,
+    nonce_ledger: NonceLedger | None = None,
 ) -> dict[str, Any]:
     """Verify a detached Ed25519 signature against explicitly pinned role roots.
 
     verification_time_utc and expected_nonce must come from independently
     controlled services. This module only compares the challenge; it does not
-    prove its origin, one-time use, or durable replay prevention.
+    prove its origin or trusted time. When nonce_ledger is supplied, its
+    consume_once operation must provide atomic durable replay prevention.
     Caller-supplied roots are only as trustworthy as their provisioning channel.
     """
     try:
@@ -261,6 +283,20 @@ def verify_attestation(
         except InvalidSignature as exc:
             raise ValueError("Ed25519 signature verification failed") from exc
 
+        replay_status = "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER"
+        if nonce_ledger is not None:
+            consumed = nonce_ledger.consume_once(
+                nonce=nonce,
+                subject_sha256=subject,
+                key_id=key_id,
+                expires_at_utc=envelope["expires_at_utc"],
+            )
+            if type(consumed) is not bool:
+                raise ValueError("nonce ledger must return an exact built-in bool")
+            if not consumed:
+                raise ValueError("attestation nonce has already been consumed")
+            replay_status = "CONSUMED_BY_INJECTED_DURABLE_NONCE_LEDGER"
+
         return {
             "status": "SIGNATURE_VALID",
             "key_id": key_id,
@@ -272,7 +308,7 @@ def verify_attestation(
             "custody_status": "NOT_ESTABLISHED_BY_THIS_MODULE",
             "nonce_challenge_status": "MATCHED_CALLER_SUPPLIED_CHALLENGE",
             "key_validity_status": "CHECKED_AGAINST_CALLER_SUPPLIED_TIME",
-            "replay_status": "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER",
+            "replay_status": replay_status,
         }
     except Exception as exc:
         # Fail closed for malformed external inputs; never let parser/type errors escape.
