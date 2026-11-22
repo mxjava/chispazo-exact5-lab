@@ -281,6 +281,27 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must contain 1"):
             parse_unverified_receipt(raw)
 
+    def test_duplicate_trusted_time_authority_event_identity_is_rejected(self):
+        document = valid_document()
+        duplicate = copy.deepcopy(document["trusted_time_proofs"][0])
+        duplicate["event_at_utc"] = "2026-11-23T02:51:00Z"
+        duplicate["proof_sha256"] = digest("5")
+        document["trusted_time_proofs"].append(duplicate)
+        with self.assertRaisesRegex(
+            ValueError,
+            "duplicate authority/event identities",
+        ):
+            parse_unverified_receipt(encode(document))
+
+    def test_same_event_id_from_distinct_time_authorities_is_not_collapsed(self):
+        document = valid_document()
+        other_authority = copy.deepcopy(document["trusted_time_proofs"][0])
+        other_authority["authority_id"] = "tsa-independent-test"
+        other_authority["proof_sha256"] = digest("5")
+        document["trusted_time_proofs"].append(other_authority)
+        parsed = parse_unverified_receipt(encode(document))
+        self.assertEqual(len(parsed.trusted_time_proofs), 2)
+
     def test_receipt_arrays_cannot_be_empty_or_unbounded(self):
         document = valid_document()
         document["trusted_time_proofs"] = []
