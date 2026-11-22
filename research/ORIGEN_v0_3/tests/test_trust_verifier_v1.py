@@ -5,7 +5,7 @@ import base64
 import copy
 import json
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timezone, tzinfo
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -296,6 +296,39 @@ class TestTrustVerifierV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "timezone-aware"):
             verify_receipt_attestation(
                 raw, policy(public_bytes), verification_time=datetime(2026, 11, 23)
+            )
+
+    def test_hostile_timezone_callbacks_fail_closed(self):
+        class HostileTimezone(tzinfo):
+            def utcoffset(self, dt):
+                raise RuntimeError("hostile timezone callback")
+
+            def dst(self, dt):
+                return None
+
+            def tzname(self, dt):
+                return "HOSTILE"
+
+        raw, public_bytes, _ = signed_receipt()
+        hostile_time = datetime(2026, 11, 23, 4, 0, tzinfo=HostileTimezone())
+
+        malformed_key = TrustedIssuerKey(
+            issuer_id="independent-verifier",
+            key_id="verifier-key-1",
+            public_key_bytes=public_bytes,
+            valid_from_utc=hostile_time,
+            valid_until_utc=VALID_UNTIL,
+        )
+        with self.assertRaisesRegex(ValueError, "timezone offset is invalid"):
+            verify_receipt_attestation(
+                raw,
+                TrustPolicy("policy-2026-11", (malformed_key,)),
+                verification_time=NOW,
+            )
+
+        with self.assertRaisesRegex(ValueError, "timezone offset is invalid"):
+            verify_receipt_attestation(
+                raw, policy(public_bytes), verification_time=hostile_time
             )
 
     def test_verified_result_public_constructor_is_disabled(self):
