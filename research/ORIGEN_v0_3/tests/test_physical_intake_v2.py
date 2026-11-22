@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from origen.physical_intake_v2 import (
+    MAX_V2_CSV_HEADER_BYTES, MAX_V2_CSV_RECORD_BYTES,
     MAX_V2_INTAKE_ROWS, MAX_V2_ROW_TEXT_BYTES, V2_REQUIRED_COLUMNS,
     evaluate_temporal_csv, evaluate_temporal_eligibility,
 )
@@ -910,6 +911,69 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                     stream.write(
                         buffer.getvalue().rstrip("\r\n") + ',"unterminated\r\n'
                     )
+            with self.assertRaisesRegex(
+                ValueError,
+                r"intake iterable failed after row 0",
+            ) as raised:
+                evaluate_temporal_csv(path, **VERIFIED)
+            self.assertIsInstance(raised.exception.__cause__, csv.Error)
+
+    def test_csv_oversized_header_is_rejected_before_column_materialization(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "oversized-header.csv"
+            path.write_bytes(b"x," * (MAX_V2_CSV_HEADER_BYTES // 2) + b"x\\n")
+            with self.assertRaisesRegex(
+                ValueError,
+                rf"CSV header exceeds maximum {MAX_V2_CSV_HEADER_BYTES} bytes",
+            ):
+                evaluate_temporal_csv(path, **VERIFIED)
+
+    def test_csv_oversized_record_is_rejected_before_field_materialization(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "oversized-record.csv"
+            header = ",".join(V2_REQUIRED_COLUMNS).encode("utf-8") + b"\\n"
+            path.write_bytes(
+                header + b"x" * (MAX_V2_CSV_RECORD_BYTES + 1) + b"\\n"
+            )
+            with self.assertRaisesRegex(
+                ValueError,
+                r"intake iterable failed after row 0",
+            ) as raised:
+                evaluate_temporal_csv(path, **VERIFIED)
+            self.assertIsInstance(raised.exception.__cause__, csv.Error)
+            self.assertIn(
+                "CSV record exceeds maximum",
+                str(raised.exception.__cause__),
+            )
+
+    def test_csv_extra_columns_are_rejected_before_mapping(self):
+        row = rows_for_target()[0]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "extra-data-column.csv"
+            with path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.writer(stream)
+                writer.writerow(V2_REQUIRED_COLUMNS)
+                writer.writerow(
+                    [row[column] for column in V2_REQUIRED_COLUMNS] + ["EXTRA"]
+                )
+            with self.assertRaisesRegex(
+                ValueError,
+                r"intake iterable failed after row 0",
+            ) as raised:
+                evaluate_temporal_csv(path, **VERIFIED)
+            self.assertIsInstance(raised.exception.__cause__, csv.Error)
+            self.assertIn(
+                "CSV record has more fields than its header",
+                str(raised.exception.__cause__),
+            )
+
+    def test_csv_multiline_scalar_is_rejected_at_physical_record_boundary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "multiline-field.csv"
+            with path.open("wb") as stream:
+                stream.write(",".join(V2_REQUIRED_COLUMNS).encode("utf-8") + b"\\n")
+                stream.write(b'"untrusted\\n')
+                stream.write(b'value",\\n')
             with self.assertRaisesRegex(
                 ValueError,
                 r"intake iterable failed after row 0",
