@@ -178,10 +178,14 @@ def verify_attestation(
             raise ValueError("key_id is not present in pinned trust roots")
         if any(type(field) is not str for field in root):
             raise ValueError("trust-root field names must be exact built-in strings")
-        allowed_root_fields = {"public_key_b64", "roles", "enabled", "revoked"}
+        allowed_root_fields = {
+            "public_key_b64", "roles", "enabled", "revoked",
+            "not_before_utc", "not_after_utc",
+        }
         if set(root) != allowed_root_fields:
             raise ValueError(
-                "pinned trust root must explicitly define public_key_b64, roles, enabled, and revoked"
+                "pinned trust root must explicitly define public_key_b64, roles, enabled, "
+                "revoked, not_before_utc, and not_after_utc"
             )
         if type(root["enabled"]) is not bool or type(root["revoked"]) is not bool:
             raise ValueError("pinned trust root enabled/revoked flags must be exact booleans")
@@ -193,6 +197,13 @@ def verify_attestation(
             raise ValueError("pinned key is not authorized for requested role")
         if root["revoked"] is True or root["enabled"] is not True:
             raise ValueError("pinned key is revoked or disabled by trust policy")
+        root_not_before = _utc(root["not_before_utc"], "trust_root.not_before_utc")
+        root_not_after = _utc(root["not_after_utc"], "trust_root.not_after_utc")
+        now = _utc(verification_time_utc, "verification_time_utc")
+        if not root_not_before < root_not_after:
+            raise ValueError("pinned key validity interval is empty or reversed")
+        if not root_not_before <= now < root_not_after:
+            raise ValueError("pinned key is not valid at verification time")
 
         try:
             # Bound encoded lengths before allocating decoded buffers. Ed25519
@@ -211,9 +222,10 @@ def verify_attestation(
 
         issued = _utc(envelope["issued_at_utc"], "issued_at_utc")
         expires = _utc(envelope["expires_at_utc"], "expires_at_utc")
-        now = _utc(verification_time_utc, "verification_time_utc")
         if not issued < expires:
             raise ValueError("attestation validity interval is empty or reversed")
+        if not root_not_before <= issued < root_not_after:
+            raise ValueError("attestation was issued outside pinned key validity interval")
         if not issued <= now < expires:
             raise ValueError("attestation is not valid at verification time")
 
@@ -237,6 +249,7 @@ def verify_attestation(
             "revocation_status": "NOT_CHECKED",
             "custody_status": "NOT_ESTABLISHED_BY_THIS_MODULE",
             "nonce_challenge_status": "MATCHED_CALLER_SUPPLIED_CHALLENGE",
+            "key_validity_status": "CHECKED_AGAINST_CALLER_SUPPLIED_TIME",
             "replay_status": "NOT_CHECKED_NO_DURABLE_NONCE_LEDGER",
         }
     except Exception as exc:
