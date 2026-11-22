@@ -616,8 +616,6 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         )
         self.assertEqual(ledger.calls, [{
             "nonce": self.envelope["nonce"],
-            "subject_sha256": self.subject,
-            "key_id": "custody-key-01",
             "expires_at_utc": self.envelope["expires_at_utc"],
         }])
 
@@ -669,6 +667,43 @@ class Ed25519TrustAdapterTests(unittest.TestCase):
         result = self.verify(nonce_ledger=ReplayedLedger())
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("already been consumed", result["reason"])
+
+    def test_nonce_replay_is_rejected_across_subject_and_signer_changes(self):
+        class AtomicLedger:
+            def __init__(self):
+                self.consumed_nonces = set()
+
+            def consume_once(self, *, nonce, expires_at_utc):
+                if nonce in self.consumed_nonces:
+                    return False
+                self.consumed_nonces.add(nonce)
+                return True
+
+        ledger = AtomicLedger()
+        first = self.verify(nonce_ledger=ledger)
+        self.assertEqual(first["status"], "SIGNATURE_VALID")
+
+        different_subject = hashlib.sha256(b"different signed object").hexdigest()
+        altered = dict(
+            self.envelope,
+            key_id="custody-key-02",
+            subject_sha256=different_subject,
+        )
+        altered["signature_b64"] = base64.b64encode(
+            self.private.sign(canonical_payload(altered))
+        ).decode("ascii")
+        roots = dict(self.roots)
+        roots["custody-key-02"] = dict(self.roots["custody-key-01"])
+
+        replay = self.verify(
+            envelope=altered,
+            roots=roots,
+            subject=different_subject,
+            nonce_ledger=ledger,
+        )
+        self.assertEqual(replay["status"], "BLOCKED")
+        self.assertIn("already been consumed", replay["reason"])
+
 
     def test_durable_nonce_ledger_backend_failure_fails_closed(self):
         class UnavailableLedger:
