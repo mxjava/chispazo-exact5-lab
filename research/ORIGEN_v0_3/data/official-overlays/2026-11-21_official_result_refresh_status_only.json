@@ -1,6 +1,6 @@
 {
   "schema": "exact5.official_overlay.status_only.v3",
-  "observed_at_local": "2026-11-22T15:03:04-06:00",
+  "observed_at_local": "2026-11-22T15:10:09-06:00",
   "purpose": "Status-only refresh from public official Lotería Nacional endpoints. No prediction, no pre-close snapshot, no canonical-history append.",
   "classification": "OFFICIAL_RESULTS_PUBLISHED_MODALITY_BASIS_MIXED",
   "correction": {
@@ -129,12 +129,12 @@
       "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas"
     ],
     "eligibility": "NOT_ELIGIBLE_FOR_SCORING_OR_PROSPECTIVE_EVIDENCE",
-    "note": "The official homepage had advertised contest 12389 for 22-Nov at 15:00 (De las Tres by the official product schedule). At the 15:03:04 local refresh, the dedicated Chispazo results page still published 12388 as latest and showed no 12389 outcome. The 15:00 slot has passed, but this is publication latency only; it does not establish that the draw did not occur. Keep the separate 21:00 Clásico slot distinct and do not infer its contest ID or result."
+    "note": "The official homepage had advertised contest 12389 for 22-Nov at 15:00 (De las Tres by the official product schedule). Follow-up checks at 15:03:04 and 15:10:09 local still found 12388 as latest on the dedicated results page and no 12389 outcome. The 15:00 slot has passed, but this is publication latency only; it does not establish that the draw did not occur. Keep the separate 21:00 Clásico slot distinct and do not infer its contest ID or result."
   },
   "endpoint_discrepancies": {
-    "dedicated_chispazo_results_page": "At the 15:03:04 local refresh, the official page still publishes 12388 (01 07 12 21 26) and 12387 (01 05 11 18 19), both dated 21/11/2026; no 22-Nov 12389 result is visible.",
+    "dedicated_chispazo_results_page": "At both the 15:03:04 and 15:10:09 local refreshes, the official page still publishes 12388 (01 07 12 21 26) and 12387 (01 05 11 18 19), both dated 21/11/2026; no 22-Nov 12389 result is visible.",
     "home_results_page": "The opened official Chispazo results page still identifies 12388 as latest at the 15:03:04 local refresh; 12389 is not published there.",
-    "mask_index": "The official mask index lists RESULTADOS 2026-11-21 as latest at the 15:03:04 local refresh; no 22-Nov mask is listed.",
+    "mask_index": "The official mask index still lists RESULTADOS 2026-11-21 as latest at the 15:10:09 local follow-up; no 22-Nov mask is listed.",
     "mask_pdf": "The official 21-Nov PDF is publicly openable and its extracted page content explicitly labels 12387 De las Tres and 12388 Clásico. The original PDF bytes were not captured into the repository; SHA-256 remains NOT_CAPTURED.",
     "home_index": "The live opened homepage now displays 22-Nov-2026 at 15:00, contest 12389. This resolves the prior stale-page discrepancy; the card is schedule-only and does not establish a result or physical provenance."
   },
@@ -1320,6 +1320,67 @@
         "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
         "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
         "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-21.pdf?v=21112026220313"
+      ]
+    },
+    {
+      "observed_at_local": "2026-11-22T15:10:09-06:00",
+      "observation_scope": "Second post-15:00 follow-up to determine whether official Chispazo result/mask publication has advanced; status-only check.",
+      "dedicated_results_page": {
+        "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+        "latest_published_contest_id": 12388,
+        "latest_published_date": "2026-11-21",
+        "latest_published_numbers": [
+          1,
+          7,
+          12,
+          21,
+          26
+        ],
+        "previous_same_day_de_las_tres": {
+          "contest_id": 12387,
+          "numbers": [
+            1,
+            5,
+            11,
+            18,
+            19
+          ]
+        },
+        "result_for_2026_11_22_contest_12389_visible": false
+      },
+      "mask_index": {
+        "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+        "latest_listed_mask_date": "2026-11-21",
+        "mask_for_2026_11_22_listed": false
+      },
+      "interpretation": "At 15:10:09 local, the dedicated results page and mask index had not advanced beyond the 21-Nov results/mask. The advertised 22-Nov 15:00 De las Tres result remained unpublished in these two endpoints. This is an observation of publication latency, not evidence that the draw did not occur. The separate 21:00 Clásico draw remains a different slot; no ID or result is inferred.",
+      "integrity_limits": {
+        "original_2026_11_21_mask_bytes_captured": false,
+        "original_2026_11_22_mask_bytes_captured": false,
+        "source_sha256": "NOT_CAPTURED",
+        "independent_custody": false,
+        "signed_preclose_snapshot": false,
+        "trusted_source_timestamp": false,
+        "official_act_obtained": false,
+        "signed_participation_file_obtained": false,
+        "physical_sphere_measurements_obtained": false,
+        "calibration_certificate_obtained": false
+      },
+      "eligibility": {
+        "snapshot_preclose": false,
+        "oos_eligible": false,
+        "score_computed": false,
+        "canonical_history_appended": false,
+        "canonical_append_verified": false,
+        "challenger_changed": false,
+        "v294_changed": false,
+        "main_modified": false,
+        "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+      },
+      "sources": [
+        "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+        "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+        "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
       ]
     }
   ]
