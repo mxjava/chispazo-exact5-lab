@@ -141,13 +141,13 @@ def _build_verified_receipt(
 
 
 def canonical_attestation_payload(raw: bytes) -> bytes:
-    """Canonical JSON of all receipt claims except the self-referential attestation."""
+    """Canonical JSON of all receipt claims and attestation metadata except signature bytes."""
     if type(raw) is not bytes:
         raise TypeError("trust receipt input must be exact bytes")
     parsed = parse_unverified_receipt(raw)
     del parsed  # Parsing first enforces the strict schema and duplicate-key rules.
     document = json.loads(raw.decode("utf-8"))
-    document.pop("receipt_attestation")
+    document["receipt_attestation"].pop("signature_b64")
     return json.dumps(
         document, sort_keys=True, separators=(",", ":"), ensure_ascii=True
     ).encode("ascii")

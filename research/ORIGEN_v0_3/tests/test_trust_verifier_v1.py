@@ -26,22 +26,27 @@ VALID_FROM = datetime(2026, 1, 1, tzinfo=timezone.utc)
 VALID_UNTIL = datetime(2027, 1, 1, tzinfo=timezone.utc)
 
 
-def signed_receipt():
-    private_key = Ed25519PrivateKey.generate()
-    document = valid_document()
+def sign_document(document, private_key):
     unsigned = copy.deepcopy(document)
-    unsigned.pop("receipt_attestation")
+    unsigned["receipt_attestation"].pop("signature_b64")
     payload = json.dumps(
         unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=True
     ).encode("ascii")
     document["receipt_attestation"]["signature_b64"] = base64.b64encode(
         private_key.sign(payload)
     ).decode("ascii")
+    return encode(document)
+
+
+def signed_receipt():
+    private_key = Ed25519PrivateKey.generate()
+    document = valid_document()
+    raw = sign_document(document, private_key)
     public_bytes = private_key.public_key().public_bytes(
         encoding=serialization.Encoding.Raw,
         format=serialization.PublicFormat.Raw,
     )
-    return encode(document), public_bytes
+    return raw, public_bytes, private_key
 
 
 def policy(public_bytes, *, revoked=False, key_id="verifier-key-1"):
@@ -62,7 +67,7 @@ def policy(public_bytes, *, revoked=False, key_id="verifier-key-1"):
 
 class TestTrustVerifierV1(unittest.TestCase):
     def test_valid_root_attestation_returns_scoped_verified_type(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         result = verify_receipt_attestation(
             raw, policy(public_bytes), verification_time=NOW
         )
@@ -73,7 +78,7 @@ class TestTrustVerifierV1(unittest.TestCase):
         self.assertEqual(len(result.signed_payload_sha256), 64)
 
     def test_tampered_claim_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         document = json.loads(raw)
         document["artifacts"][0]["sha256"] = "a" * 64
         with self.assertRaisesRegex(ValueError, "signature verification failed"):
@@ -81,22 +86,37 @@ class TestTrustVerifierV1(unittest.TestCase):
                 encode(document), policy(public_bytes), verification_time=NOW
             )
 
+    def test_root_signature_covers_attestation_metadata(self):
+        raw, public_bytes, _ = signed_receipt()
+        original = json.loads(raw)
+        for field, replacement in (
+            ("signed_at_utc", "2026-11-23T03:06:00Z"),
+            ("timestamp_proof_sha256", "b" * 64),
+        ):
+            with self.subTest(field=field):
+                altered = copy.deepcopy(original)
+                altered["receipt_attestation"][field] = replacement
+                with self.assertRaisesRegex(ValueError, "signature verification failed"):
+                    verify_receipt_attestation(
+                        encode(altered), policy(public_bytes), verification_time=NOW
+                    )
+
     def test_unknown_key_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         with self.assertRaisesRegex(ValueError, "unknown or ambiguous"):
             verify_receipt_attestation(
                 raw, policy(public_bytes, key_id="other-key"), verification_time=NOW
             )
 
     def test_revoked_key_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         with self.assertRaisesRegex(ValueError, "revoked"):
             verify_receipt_attestation(
                 raw, policy(public_bytes, revoked=True), verification_time=NOW
             )
 
     def test_key_outside_validity_interval_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         too_early = datetime(2025, 12, 31, tzinfo=timezone.utc)
         with self.assertRaisesRegex(ValueError, "outside its policy validity"):
             verify_receipt_attestation(
@@ -104,7 +124,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             )
 
     def test_inverted_key_validity_interval_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         malformed = TrustPolicy(
             policy_version="policy-2026-11",
             issuer_keys=(
@@ -121,7 +141,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
     def test_signed_at_outside_key_validity_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         trust = TrustPolicy(
             policy_version="policy-2026-11",
             issuer_keys=(
@@ -138,7 +158,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(raw, trust, verification_time=NOW)
 
     def test_signed_at_after_verification_time_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         earlier = datetime(2026, 11, 23, 3, 0, tzinfo=timezone.utc)
         with self.assertRaisesRegex(ValueError, "after verification time"):
             verify_receipt_attestation(
@@ -146,7 +166,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             )
 
     def test_policy_rejects_list_instead_of_exact_tuple(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         valid = policy(public_bytes)
         malformed = TrustPolicy(
             policy_version=valid.policy_version,
@@ -156,7 +176,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
     def test_policy_rejects_mutable_public_key_bytes(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         malformed_key = TrustedIssuerKey(
             issuer_id="independent-verifier",
             key_id="verifier-key-1",
@@ -169,7 +189,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
     def test_policy_rejects_non_boolean_revocation_flag(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         malformed_key = TrustedIssuerKey(
             issuer_id="independent-verifier",
             key_id="verifier-key-1",
@@ -183,14 +203,14 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
     def test_policy_rejects_duplicate_issuer_key_pairs(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         key = policy(public_bytes).issuer_keys[0]
         malformed = TrustPolicy("policy-2026-11", (key, key))
         with self.assertRaisesRegex(ValueError, "duplicate issuer/key"):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
     def test_policy_rejects_noncanonical_issuer_identifier(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         malformed_key = TrustedIssuerKey(
             issuer_id=" independent-verifier",
             key_id="verifier-key-1",
@@ -203,7 +223,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
     def test_policy_rejects_naive_validity_bound(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         malformed_key = TrustedIssuerKey(
             issuer_id="independent-verifier",
             key_id="verifier-key-1",
@@ -216,7 +236,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
     def test_policy_issuer_key_collection_is_bounded(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         malformed = TrustPolicy(
             "policy-2026-11",
             tuple(
@@ -234,7 +254,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
     def test_policy_subclass_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
 
         class PolicySubclass(TrustPolicy):
             pass
@@ -245,7 +265,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
     def test_bytes_subclass_receipt_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
 
         class ReceiptBytes(bytes):
             pass
@@ -256,7 +276,7 @@ class TestTrustVerifierV1(unittest.TestCase):
             )
 
     def test_datetime_subclass_verification_clock_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
 
         class ClockSubclass(datetime):
             pass
@@ -266,20 +286,20 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(raw, policy(public_bytes), verification_time=clock)
 
     def test_policy_version_mismatch_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         trust = TrustPolicy(policy_version="wrong-policy", issuer_keys=policy(public_bytes).issuer_keys)
         with self.assertRaisesRegex(ValueError, "does not match"):
             verify_receipt_attestation(raw, trust, verification_time=NOW)
 
     def test_naive_verification_clock_is_rejected(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         with self.assertRaisesRegex(ValueError, "timezone-aware"):
             verify_receipt_attestation(
                 raw, policy(public_bytes), verification_time=datetime(2026, 11, 23)
             )
 
     def test_verified_result_public_constructor_is_disabled(self):
-        raw, _ = signed_receipt()
+        raw, _, _ = signed_receipt()
         parsed = parse_unverified_receipt(raw)
         with self.assertRaisesRegex(TypeError, "created only by verify_receipt_attestation"):
             CryptographicallyVerifiedReceipt(
@@ -291,13 +311,13 @@ class TestTrustVerifierV1(unittest.TestCase):
             )
 
     def test_unverified_parser_never_upgrades_receipt_by_itself(self):
-        raw, _ = signed_receipt()
+        raw, _, _ = signed_receipt()
         parsed = parse_unverified_receipt(raw)
         self.assertEqual(parsed.declared_status, "AUTHENTICATED")
         self.assertNotIsInstance(parsed, CryptographicallyVerifiedReceipt)
 
     def test_declared_rejected_receipt_is_not_verified(self):
-        raw, public_bytes = signed_receipt()
+        raw, public_bytes, _ = signed_receipt()
         document = json.loads(raw)
         document["status"] = "REJECTED"
         document["failure_codes"] = ["TEST_REJECTED"]
