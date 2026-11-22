@@ -235,6 +235,28 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         self.assertEqual(target["predictive_eligibility"], "STRUCTURAL_PRE_CLOSE_ONLY")
         self.assertEqual(target["reasons"], [])
 
+    def test_source_contest_id_must_be_canonical_and_prior_to_target(self):
+        # Timestamps alone must not allow a future, equal, padded, or nonnumeric
+        # contest identifier to masquerade as the prior source draw.
+        cases = (
+            ("12302", "12301"),
+            ("12301", "12301"),
+            ("not-numeric", "12301"),
+            ("012300", "12301"),
+            ("12300", "not-numeric"),
+        )
+        for source_id, target_id in cases:
+            with self.subTest(source_id=source_id, target_id=target_id):
+                rows = rows_for_target()
+                for row in rows:
+                    row["source_contest_id"] = source_id
+                    row["contest_id"] = source_id
+                    row["target_contest_id"] = target_id
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                target = result["targets"][target_id]
+                self.assertIn("CONTEST_ID_ORDER_INVALID", target["reasons"])
+                self.assertEqual(target["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
     def test_caller_supplied_reference_strings_are_declarations_not_authentication(self):
         # These deliberately fabricated identifiers satisfy only structural membership.
         result = evaluate_temporal_eligibility(
