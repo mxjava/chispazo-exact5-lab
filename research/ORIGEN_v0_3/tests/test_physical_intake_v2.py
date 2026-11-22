@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from origen.physical_intake_v2 import (
-    MAX_V2_INTAKE_ROWS, MAX_V2_ROW_TEXT_CHARS, V2_REQUIRED_COLUMNS,
+    MAX_V2_INTAKE_ROWS, MAX_V2_ROW_TEXT_BYTES, V2_REQUIRED_COLUMNS,
     evaluate_temporal_csv, evaluate_temporal_eligibility,
 )
 
@@ -60,22 +60,40 @@ VERIFIED = dict(
 class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_single_row_text_payload_is_bounded(self):
         rows = rows_for_target()
-        rows[0]["source_document_ref"] = "X" * (MAX_V2_ROW_TEXT_CHARS + 1)
+        rows[0]["source_document_ref"] = "X" * (MAX_V2_ROW_TEXT_BYTES + 1)
         with self.assertRaisesRegex(
             ValueError,
-            r"row 1 exceeds maximum text payload",
+            r"row 1 exceeds maximum UTF-8 text payload",
+        ):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
+
+    def test_single_row_utf8_payload_is_bounded_not_character_counted(self):
+        rows = rows_for_target()
+        rows[0]["source_document_ref"] = "💥" * (MAX_V2_ROW_TEXT_BYTES // 4 + 1)
+        with self.assertRaisesRegex(
+            ValueError,
+            r"row 1 exceeds maximum UTF-8 text payload",
+        ):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
+
+    def test_unpaired_surrogate_is_rejected_at_utf8_intake_boundary(self):
+        rows = rows_for_target()
+        rows[0]["source_document_ref"] = "\ud800"
+        with self.assertRaisesRegex(
+            ValueError,
+            r"valid UTF-8 encodable Unicode",
         ):
             evaluate_temporal_eligibility(rows, **VERIFIED)
 
     def test_total_intake_text_payload_is_bounded(self):
         rows = rows_for_target()
         with patch(
-            "origen.physical_intake_v2.MAX_V2_INTAKE_TEXT_CHARS",
+            "origen.physical_intake_v2.MAX_V2_INTAKE_TEXT_BYTES",
             1_000,
         ):
             with self.assertRaisesRegex(
                 ValueError,
-                r"intake exceeds maximum text payload",
+                r"intake exceeds maximum UTF-8 text payload",
             ):
                 evaluate_temporal_eligibility(rows, **VERIFIED)
 
