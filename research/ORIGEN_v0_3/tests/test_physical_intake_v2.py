@@ -59,6 +59,19 @@ VERIFIED = dict(
 
 
 class PhysicalIntakeV2Tests(unittest.TestCase):
+    def test_csv_wrapper_rejects_unrecognized_trust_escalation_keywords(self):
+        # The CSV wrapper must expose only structural declaration inputs. It must
+        # not forward arbitrary caller keywords that could be mistaken for a
+        # future authenticated-verification channel.
+        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
+            evaluate_temporal_csv("not-opened.csv", authenticated=True)
+        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
+            evaluate_temporal_csv(
+                "not-opened.csv",
+                authenticated_reference_sets={"custody": {"RECEIPT-1"}},
+            )
+
+
     def test_single_row_text_payload_is_bounded(self):
         rows = rows_for_target()
         rows[0]["source_document_ref"] = "X" * (MAX_V2_ROW_TEXT_BYTES + 1)
