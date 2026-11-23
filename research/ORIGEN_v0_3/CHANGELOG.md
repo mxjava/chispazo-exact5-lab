@@ -94,3 +94,10 @@
 - Added a byte-level, string-aware nesting scan before JSON decoding/canonical re-serialization; receipts deeper than 64 nested objects/arrays are rejected before recursive codec work.
 - Added adversarial tests for over-depth input and bracket characters inside strings. The limit is a parser resource bound, not an authentication or provenance claim.
 - Pending CI on the updated PR #13 head.
+
+## Official status refresh — 2026-11-23 04:56 America/Mexico_City
+- Added status-only overlay `data/official-overlays/2026-11-23_0456_official_status_only.json` and review `docs/OFFICIAL_STATUS_REFRESH_20261123_0456.md`.
+- Official results page and 22-Nov mask continue to show 12390 = Classic (01 06 09 19 23) and 12389 = De las Tres (01 15 17 22 25). Mask index latest remains 22-Nov.
+- Home index shows a 23-Nov 15:00 card numbered 12391, but the rendered card does not explicitly name the product; it is not bound to the Chispazo target register. No 23-Nov 21:00 Classic contest ID or result was visible.
+- No new draw-specific primary physical evidence was obtained. The official 22-Nov PDF could be browser-rendered but not downloaded as original bytes; SHA-256 remains NOT_CAPTURED. SGVO-PRO-05 revision 39 remains procedural reference only.
+- No canonical append, V294 change, main write, merge, promotion, prospective score, or eligibility change.
