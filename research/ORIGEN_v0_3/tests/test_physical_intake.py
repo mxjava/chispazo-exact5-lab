@@ -222,8 +222,8 @@ class PhysicalIntakeTests(unittest.TestCase):
             path = Path(tmp) / "duplicate.csv"
             headers = list(REQUIRED_COLUMNS) + ["printed_number"]
             path.write_text(
-                ",".join(headers) + "\\n"
-                + ",".join(["x"] * len(headers)) + "\\n",
+                ",".join(headers) + "\n"
+                + ",".join(["x"] * len(headers)) + "\n",
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "headers must be unique"):
@@ -232,20 +232,20 @@ class PhysicalIntakeTests(unittest.TestCase):
     def test_csv_rejects_padded_and_blank_headers(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "padded.csv"
-            path.write_text("contest_id, draw_date\\n", encoding="utf-8")
+            path.write_text("contest_id, draw_date\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "leading or trailing whitespace"):
                 validate_physical_csv(path)
-            path.write_text("contest_id,\\n", encoding="utf-8")
+            path.write_text("contest_id,\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "non-empty canonical"):
                 validate_physical_csv(path)
 
     def test_csv_rejects_extra_or_missing_row_fields(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "malformed.csv"
-            path.write_text(",".join(REQUIRED_COLUMNS) + "\\n" + ",".join(["x"] * (len(REQUIRED_COLUMNS) + 1)) + "\\n", encoding="utf-8")
+            path.write_text(",".join(REQUIRED_COLUMNS) + "\n" + ",".join(["x"] * (len(REQUIRED_COLUMNS) + 1)) + "\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "more or fewer fields"):
                 validate_physical_csv(path)
-            path.write_text(",".join(REQUIRED_COLUMNS) + "\\n" + ",".join(["x"] * (len(REQUIRED_COLUMNS) - 1)) + "\\n", encoding="utf-8")
+            path.write_text(",".join(REQUIRED_COLUMNS) + "\n" + ",".join(["x"] * (len(REQUIRED_COLUMNS) - 1)) + "\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "more or fewer fields"):
                 validate_physical_csv(path)
 
