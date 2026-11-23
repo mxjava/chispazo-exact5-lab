@@ -8,6 +8,7 @@ from origen.independent_trust_adapter import (
     ProvenanceStatus,
     verify_independent_provenance,
 )
+from origen.trust_receipt_v1 import MAX_TRUST_RECEIPT_BYTES
 
 
 class TestIndependentTrustAdapter(unittest.TestCase):
@@ -42,6 +43,17 @@ class TestIndependentTrustAdapter(unittest.TestCase):
     def test_empty_original_bytes_are_rejected(self):
         with self.assertRaisesRegex(ValueError, "must not be empty"):
             verify_independent_provenance(b"")
+
+    def test_input_at_shared_receipt_size_limit_remains_fail_closed(self):
+        result = verify_independent_provenance(b"x" * MAX_TRUST_RECEIPT_BYTES)
+        self.assertIs(result, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_input_one_byte_over_shared_receipt_size_limit_is_rejected(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            f"must not exceed {MAX_TRUST_RECEIPT_BYTES} bytes",
+        ):
+            verify_independent_provenance(b"x" * (MAX_TRUST_RECEIPT_BYTES + 1))
 
 
 if __name__ == "__main__":
