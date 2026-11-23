@@ -78,7 +78,7 @@ def test_daily_pair_structure_fails_closed_on_missing_or_wrong_pairs():
         1,
     )
     assert result["dates_with_other_row_count"] == 1
-    assert result["anomaly_count"] == 2
+    assert result["anomaly_count"] == 3
     assert result["post_transition_ids_contiguous"] is False
     assert {item["reason"] for item in result["anomalies"]} == {
         "EXPECTED_TWO_CONSECUTIVE_IDS_ODD_THEN_EVEN"
