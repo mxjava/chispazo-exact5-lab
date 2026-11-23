@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 MAX_TRUST_RECEIPT_BYTES = 262_144
+MAX_TRUST_RECEIPT_JSON_DEPTH = 64
 # Receipt integer claims are bounded to the portable signed 64-bit range.
 MAX_TRUST_RECEIPT_INTEGER = (1 << 63) - 1
 SCHEMA_VERSION = "origen.trust-receipt.v1"
@@ -151,6 +152,38 @@ def _reject_json_constant(value: str) -> None:
 
 def _reject_json_float(value: str) -> None:
     raise ValueError("floating-point JSON numbers are not accepted in trust receipts")
+
+
+def _validate_json_nesting_depth(raw: bytes) -> None:
+    """Reject excessive JSON container nesting before invoking recursive codecs.
+
+    This byte-level scan ignores brackets inside quoted strings and escaped
+    quotes/backslashes. JSON grammar and delimiter matching remain the decoder's
+    responsibility; this function only enforces a conservative resource bound.
+    """
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in raw:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:  # backslash
+                escaped = True
+            elif byte == 0x22:  # quote
+                in_string = False
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x7B, 0x5B):  # { [
+            depth += 1
+            if depth > MAX_TRUST_RECEIPT_JSON_DEPTH:
+                raise ValueError(
+                    "trust receipt exceeds maximum JSON nesting depth "
+                    f"{MAX_TRUST_RECEIPT_JSON_DEPTH}"
+                )
+        elif byte in (0x7D, 0x5D) and depth:  # } ]
+            depth -= 1
 
 
 def _parse_json_integer(value: str) -> int:
@@ -393,6 +426,7 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
         raise TypeError("trust receipt input must be exact bytes")
     if not raw or len(raw) > MAX_TRUST_RECEIPT_BYTES:
         raise ValueError(f"trust receipt must contain 1..{MAX_TRUST_RECEIPT_BYTES} bytes")
+    _validate_json_nesting_depth(raw)
     try:
         text = raw.decode("utf-8", errors="strict")
     except UnicodeDecodeError as exc:
