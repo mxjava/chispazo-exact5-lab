@@ -135,6 +135,28 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cannot contain failure codes"):
             parse_unverified_receipt(encode(document))
 
+    def test_noncanonical_whitespace_is_rejected(self):
+        raw = json.dumps(
+            valid_document(), sort_keys=True, ensure_ascii=True
+        ).encode("utf-8")
+        with self.assertRaisesRegex(ValueError, "canonical UTF-8 encoding"):
+            parse_unverified_receipt(raw)
+
+    def test_noncanonical_key_order_is_rejected(self):
+        raw = json.dumps(
+            valid_document(), sort_keys=False, separators=(",", ":"), ensure_ascii=True
+        ).encode("utf-8")
+        with self.assertRaisesRegex(ValueError, "canonical UTF-8 encoding"):
+            parse_unverified_receipt(raw)
+
+    def test_noncanonical_string_escape_is_rejected(self):
+        raw = encode(valid_document()).replace(
+            b'"policy_version":"policy-2026-11"',
+            b'"policy_version":"policy\\u002d2026-11"',
+        )
+        with self.assertRaisesRegex(ValueError, "canonical UTF-8 encoding"):
+            parse_unverified_receipt(raw)
+
     def test_duplicate_root_json_key_is_rejected(self):
         raw = b'{"schema_version":"origen.trust-receipt.v1","schema_version":"origen.trust-receipt.v1"}'
         with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
