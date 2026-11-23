@@ -189,7 +189,14 @@ def verify_detached_ed25519_envelope(
     verify_at = _utc(verification_time_utc, "verification_time_utc")
     if issued > verify_at:
         raise ValueError("signed envelope is from the future")
-    if not (_utc(row["not_before_utc"], "not_before_utc") <= issued <= _utc(row["not_after_utc"], "not_after_utc")):
+    key_not_before = _utc(row["not_before_utc"], "not_before_utc")
+    key_not_after = _utc(row["not_after_utc"], "not_after_utc")
+    # issued_at_utc is signed by the same key, not independently trusted time.
+    # Until a trusted timestamp is verified, require the key to be valid both
+    # at the claimed issuance and at this deployment-controlled verification time.
+    if not (key_not_before <= verify_at <= key_not_after):
+        raise ValueError("signing key is not valid at verification time")
+    if not (key_not_before <= issued <= key_not_after):
         raise ValueError("signing key was not valid at envelope issuance")
     try:
         payload = base64.b64decode(env["payload_b64"], validate=True)
