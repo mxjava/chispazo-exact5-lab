@@ -216,6 +216,41 @@ class CustodyTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 write_record_exclusive(path, record)
 
+    def test_record_reader_rejects_duplicate_json_keys(self):
+        record, _ = self.make_record()
+        raw = json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        needle = b'"candidate_id":"CANDIDATE-DRYRUN-1"'
+        self.assertIn(needle, raw)
+        ambiguous = raw.replace(
+            needle,
+            b'"candidate_id":"CANDIDATE-DRYRUN-1","candidate_id":"attacker"',
+            1,
+        ) + b"\\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "duplicate.json"
+            path.write_bytes(ambiguous)
+            with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
+                read_record(path)
+
+    def test_record_reader_rejects_noncanonical_json_whitespace(self):
+        record, _ = self.make_record()
+        raw = json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "whitespace.json"
+            path.write_bytes(raw.replace(b",", b", ", 1) + b"\\n")
+            with self.assertRaisesRegex(ValueError, "exact canonical JSON"):
+                read_record(path)
+
+    def test_record_reader_rejects_nonstandard_json_constants(self):
+        record, _ = self.make_record()
+        raw = json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        malformed = raw[:-1] + b',"untrusted":NaN}' + b"\\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "nan.json"
+            path.write_bytes(malformed)
+            with self.assertRaisesRegex(ValueError, "non-standard JSON constant"):
+                read_record(path)
+
     def test_duplicate_portfolio_lines_rejected(self):
         raw = portfolio_bytes()
         lines = raw.decode().splitlines()
