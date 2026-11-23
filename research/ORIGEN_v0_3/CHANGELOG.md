@@ -1,3 +1,16 @@
+## Classic schedule binding in trust receipt V1 (2026-11-23)
+- The V1 trust-receipt parser now requires a declared `CLASSIC` target close timestamp to resolve to the official **21:00 America/Mexico_City** slot. Previously, the parser accepted any valid UTC close time while still labeling the target CLASSIC; that allowed a 15:00 De las Tres time or an arbitrary late close to satisfy the structural pre-close comparison.
+- Added an adversarial test covering 15:00, 20:59 and 22:00 local close claims. This aligns the V1 receipt target boundary with the existing V2 physical-intake schedule check.
+- The check is a schedule-consistency guard only. It does not authenticate the contest ID, official schedule source, clock, timestamp token, receipt signature, or physical evidence.
+- Code commit: `f5ac7da6c424149c62f7de9f66b70546ca1d3958`; test commit: `ab035c87e5289ebad6f86060816b9469ea530844`. CI pending at the time of this entry.
+
+## Official status refresh — 2026-11-23 05:57 America/Mexico_City
+- Official results page still publishes 12390 = 01 06 09 19 23 and 12389 = 01 15 17 22 25; it shows 23-Nov as the next draw date but no 23-Nov result.
+- Official mask index lists 22-Nov as newest. The one-page 22-Nov PDF was opened and visually confirms 12389 as De las Tres and 12390 as Clásico. The official product page maps those modalities to 15:00 and 21:00 respectively.
+- The opened home-index rendering shows 22-Nov 21:00 / 12390, not a 23-Nov card. A search-index snippet separately mentions 23-Nov 15:00 / 12391, but it conflicts with the opened rendering and does not explicitly identify the product; it is retained as unconfirmed and not added to the target register. No 23-Nov Clásico ID is inferred.
+- No new draw-specific primary physical records were obtained. The official PDF was browser-rendered but direct download failed; original bytes and SHA-256 remain `NOT_CAPTURED`. Overlay: `data/official-overlays/2026-11-23_0557_official_status_only.json`.
+- No canonical append, V294 change, main write, merge, promotion or eligibility change.
+
 ## Ledger-anchor transition integrity (2026-11-23)
 - The unverified trust-receipt parser now rejects a ledger anchor whose resulting head digest is identical to its previous head digest. A declared append must represent a state transition; otherwise the receipt could claim an entry without advancing the committed head.
 - Added an adversarial regression test and documented the invariant.
