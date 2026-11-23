@@ -39,8 +39,8 @@ def _canonical_object(raw: bytes, label: str) -> dict:
     if type(raw) is not bytes:
         raise TypeError(f"{label} must be exact bytes")
     try:
-        obj = json.loads(raw.decode("utf-8", "strict"), object_pairs_hook=_unique_object, parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
-    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        obj = json.loads(raw.decode("utf-8", "strict"), object_pairs_hook=_unique_object, parse_constant=lambda value: (_ for _ in ()).throw(json.JSONDecodeError("invalid JSON constant", value, 0)))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ValueError(f"{label} must be valid UTF-8 JSON") from exc
     if type(obj) is not dict:
         raise ValueError(f"{label} must be a JSON object")
