@@ -1,3 +1,9 @@
+## Physical manifest MIME semantic binding (2026-11-23)
+- Closed a structural declaration gap: the v1 manifest accepted any syntactically valid MIME string for any artifact type, so a draw recording could be declared as application/pdf or a non-recording artifact as video/mp4.
+- The parser now requires DRAW-RECORDING-FULL and DRAW-RECORDING-EDITED to declare video/* and rejects video/* for all non-recording artifact types.
+- Added adversarial regressions for both directions. This validates only the declared MIME/type pairing; it does not inspect original bytes or authenticate source provenance.
+- Code commit: `47e56b9b6ff20697c7c53829cf50d1fb741abeb5`; test commit: `aa2487d66420399a6d78d7d9927152a2d184be86`. Final CI will be recorded against the resulting PR head after documentation and source-status overlay commits.
+
 ## Physical manifest signer/custodian separation (2026-11-23)
 - Fixed a structural trust-boundary gap: the physical manifest previously prevented a trusted-time authority from aliasing signers/custodians but did not prevent the same declared subject ID from acting as both artifact signer and archive custodian.
 - The parser now rejects any intersection between signer subject IDs and custodian subject IDs; added a regression that mutates a valid fixture to self-custody an artifact under a signer identity.
