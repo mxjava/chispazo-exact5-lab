@@ -251,6 +251,17 @@ class CustodyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "maximum size"):
                 read_record(path)
 
+    def test_read_record_bounds_stream_read_without_stat_or_read_bytes(self):
+        from unittest.mock import patch
+        from origen.custody import MAX_CUSTODY_RECORD_BYTES
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "growing.json"
+            path.write_bytes(b" " * (MAX_CUSTODY_RECORD_BYTES + 8192))
+            with patch.object(Path, "stat", side_effect=AssertionError("pre-read stat is not allowed")):
+                with patch.object(Path, "read_bytes", side_effect=AssertionError("unbounded read_bytes is not allowed")):
+                    with self.assertRaisesRegex(ValueError, "maximum size"):
+                        read_record(path)
+
     def test_read_record_rejects_excessive_json_nesting(self):
         from origen.custody import MAX_CUSTODY_RECORD_JSON_DEPTH
         with tempfile.TemporaryDirectory() as tmp:
