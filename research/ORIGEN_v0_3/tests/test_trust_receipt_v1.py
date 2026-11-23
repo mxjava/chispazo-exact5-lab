@@ -428,6 +428,23 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "1..4096"):
             parse_unverified_receipt(encode(document))
 
+    def test_time_authority_cannot_alias_receipt_issuer_or_any_participant(self):
+        aliases = (
+            ("receipt issuer", lambda doc: doc["receipt_attestation"]["issuer_id"]),
+            ("signer", lambda doc: doc["signers"][0]["subject_id"]),
+            ("custodian", lambda doc: doc["custodians"][0]["subject_id"]),
+            ("generator", lambda doc: doc["output_seals"][0]["generator_id"]),
+        )
+        for label, identity in aliases:
+            with self.subTest(alias=label):
+                document = valid_document()
+                document["trusted_time_proofs"][0]["authority_id"] = identity(document)
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "trusted time authority IDs must be distinct from receipt issuer and all declared participants",
+                ):
+                    parse_unverified_receipt(encode(document))
+
 
 if __name__ == "__main__":
     unittest.main()
