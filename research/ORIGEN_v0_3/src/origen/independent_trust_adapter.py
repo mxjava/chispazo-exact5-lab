@@ -1,42 +1,39 @@
 """Fail-closed boundary for the not-yet-provisioned independent trust adapter.
 
-This module deliberately does not authenticate evidence. No institutional trust
-roots, controlled artifact store, trusted-time service, or independent ledger
-have been provisioned and independently reviewed for this repository. Until
-those dependencies exist, every request returns BLOCKED_PROVENANCE.
+No institutional trust roots, controlled artifact store, trusted-time service,
+or independent ledger have been provisioned and independently reviewed for
+this repository. Until those dependencies exist, every request returns the
+single non-authenticating BLOCKED_PROVENANCE enum value.
 
 Do not replace this gate with caller-supplied booleans, callbacks, key maps, or
-reference sets. A future implementation must be separately reviewed and must
-bind original artifact bytes to independently controlled trust roots.
+reference sets. A future implementation must be separately reviewed and bind
+original artifact bytes to independently controlled trust roots.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from enum import Enum
 
 
-@dataclass(frozen=True, slots=True)
-class ProvenanceDecision:
-    """Non-authenticating fail-closed result; never an eligibility credential."""
+class ProvenanceStatus(str, Enum):
+    """Only status this unprovisioned adapter is capable of returning."""
 
-    status: str
-    authenticated: bool
-    failure_codes: tuple[str, ...]
+    BLOCKED_PROVENANCE = "BLOCKED_PROVENANCE"
 
 
-def verify_independent_provenance(original_receipt_bytes: bytes) -> ProvenanceDecision:
-    """Fail closed until independent trust infrastructure is actually deployed.
+INDEPENDENT_TRUST_BACKEND_NOT_PROVISIONED = (
+    "INDEPENDENT_TRUST_BACKEND_NOT_PROVISIONED"
+)
 
-    The bytes argument is accepted only to make the trust boundary explicit.
+
+def verify_independent_provenance(original_receipt_bytes: bytes) -> ProvenanceStatus:
+    """Fail closed until independent trust infrastructure is deployed.
+
     This function does not parse claims, trust digests, inspect caller-provided
-    references, or invoke a caller-controlled verifier. It cannot return an
-    authenticated decision in this implementation.
+    references, or invoke caller-controlled verifiers. Its return type has no
+    AUTHENTICATED member, so this module cannot issue an authenticated status.
     """
     if type(original_receipt_bytes) is not bytes:
         raise TypeError("original_receipt_bytes must be exact bytes")
     if not original_receipt_bytes:
         raise ValueError("original_receipt_bytes must not be empty")
-    return ProvenanceDecision(
-        status="BLOCKED_PROVENANCE",
-        authenticated=False,
-        failure_codes=("INDEPENDENT_TRUST_BACKEND_NOT_PROVISIONED",),
-    )
+    return ProvenanceStatus.BLOCKED_PROVENANCE
