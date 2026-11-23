@@ -316,7 +316,7 @@ def _reject_json_constant(value: str) -> None:
 def read_record(path: str | Path) -> dict[str, Any]:
     """Read only the exact canonical record bytes; reject ambiguous JSON."""
     raw = Path(path).read_bytes()
-    if not raw.endswith(b"\\n"):
+    if not raw.endswith(b"\n"):
         raise ValueError("record file must end with LF")
     try:
         value = json.loads(
