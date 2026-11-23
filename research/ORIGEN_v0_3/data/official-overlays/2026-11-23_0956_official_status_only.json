@@ -96,7 +96,17 @@
     "room_access_control": "Policy 19 requires CS-12 room attendance registration.",
     "scale_calibration_control": "Policy 25 requires scale calibration at least annually.",
     "source_bytes_downloaded": false,
-    "source_pdf_sha256": "NOT_CAPTURED"
+    "source_pdf_sha256": "NOT_CAPTURED",
+    "additional_official_records": [
+      "Relación de Ganadores report and electronic signature (Chispazo code CLSBR140)",
+      "Full recording from sphere weighing through the electronic draw",
+      "Edited draw-only recording retained with the Acta",
+      "CS-02 daily equipment inspection record",
+      "For the 21:00 nightly workflow: participation/cancellation files and signatures, MJF transaction file, printed MJF signature form and security-box/OIC deposit"
+    ],
+    "recording_control": "Policy 30 requires full recording from sphere weighing through the electronic draw; the edited draw-only recording forms part of the Acta.",
+    "winner_relation_report": "Policy 11 includes Relación de Ganadores in the Acta; policy 12 lists Chispazo code CLSBR140 and its electronic signature in the weekly DVD package.",
+    "nightly_mjf_control": "The procedure annex says that after 21:00, participation/cancellation files and signatures are written to CD/DVD, then the MJF and its printed electronic-signature form are deposited in the security box for OIC custody."
   },
   "physical_evidence": {
     "new_2026_11_23_draw_specific_primary_records_obtained": false,
@@ -112,7 +122,12 @@
     "segob_oic_security_box_custody_record": "NOT_OBTAINED",
     "independent_custody_and_trusted_time_proofs": "NOT_OBTAINED",
     "external_ledger_inclusion_proof": "NOT_OBTAINED",
-    "two_independent_preclose_output_seals": "NOT_OBTAINED"
+    "two_independent_preclose_output_seals": "NOT_OBTAINED",
+    "full_draw_recording": "NOT_OBTAINED",
+    "edited_draw_recording": "NOT_OBTAINED",
+    "winner_relation_report_and_signature": "NOT_OBTAINED",
+    "nightly_mjf_and_signature_form": "NOT_OBTAINED",
+    "cs02_daily_equipment_inspection": "NOT_OBTAINED"
   },
   "eligibility": {
     "status": "BLOCKED_PROVENANCE",
