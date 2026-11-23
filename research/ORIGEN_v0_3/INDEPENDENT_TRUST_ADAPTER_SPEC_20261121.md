@@ -76,7 +76,7 @@ The adapter returns a signed/attested verification receipt with:
 
 The structural parser requires each output-seal signature digest to resolve to a declared signer signature digest, and signer signature digests must be unique. This only removes ambiguous/unbound references; it does not verify signature bytes, key ownership, signer role authorization, or institutional identity.
 
-The parser also rejects literal identifier aliasing between trusted-time authority IDs and the receipt issuer, signers, custodians, or generators. This is only a structural collision guard: distinct strings do not establish distinct legal entities, independent services, or authenticated time authority.
+The parser also rejects literal identifier aliasing between trusted-time authority IDs and the receipt issuer, signers, custodians, or generators. This is only a structural collision guard: distinct strings do not establish distinct legal entities, independent services, or authenticated time authority. It also rejects a ledger anchor whose resulting head digest equals its previous head digest: a claimed append must advance the committed ledger state. This is a structural transition check only; it does not verify the ledger, entry, or inclusion proof.
 
 The downstream evaluator accepts only an `AUTHENTICATED` receipt whose digests exactly match the run inputs. It must not accept caller-created booleans or arbitrary string sets as a substitute.
 
@@ -94,6 +94,7 @@ The downstream evaluator accepts only an `AUTHENTICATED` receipt whose digests e
 | Custodian equals generator where separation is required | Reject |
 | Custody chain is internally re-hashed but has no independent ledger anchor | Reject |
 | External ledger head does not match receipt | Reject |
+| Ledger entry claims the same previous and resulting head digest | Reject |
 | Target list changed after preregistration | Reject |
 | Target outcomes were already observed before commitment | Reject |
 | Candidate, code or preregistration digest mismatch | Reject |

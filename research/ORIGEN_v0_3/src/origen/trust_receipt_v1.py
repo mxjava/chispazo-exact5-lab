@@ -286,11 +286,17 @@ def _parse_ledger(value: object) -> LedgerAnchorClaim:
         {"ledger_id", "entry_id", "previous_head_sha256", "head_sha256", "inclusion_proof_sha256"},
         "ledger_anchor",
     )
+    previous_head = _digest(
+        item["previous_head_sha256"], "ledger_anchor.previous_head_sha256"
+    )
+    head = _digest(item["head_sha256"], "ledger_anchor.head_sha256")
+    if head == previous_head:
+        raise ValueError("ledger head must advance beyond the previous head")
     return LedgerAnchorClaim(
         ledger_id=_identifier(item["ledger_id"], "ledger_anchor.ledger_id"),
         entry_id=_identifier(item["entry_id"], "ledger_anchor.entry_id"),
-        previous_head_sha256=_digest(item["previous_head_sha256"], "ledger_anchor.previous_head_sha256"),
-        head_sha256=_digest(item["head_sha256"], "ledger_anchor.head_sha256"),
+        previous_head_sha256=previous_head,
+        head_sha256=head,
         inclusion_proof_sha256=_digest(item["inclusion_proof_sha256"], "ledger_anchor.inclusion_proof_sha256"),
     )
 

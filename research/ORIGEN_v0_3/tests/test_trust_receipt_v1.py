@@ -120,6 +120,15 @@ def encode(document: dict) -> bytes:
 
 
 class TestTrustReceiptV1(unittest.TestCase):
+    def test_ledger_head_must_advance_beyond_previous_head(self):
+        document = valid_document()
+        document["ledger_anchor"]["head_sha256"] = document["ledger_anchor"]["previous_head_sha256"]
+        with self.assertRaisesRegex(
+            ValueError,
+            "ledger head must advance beyond the previous head",
+        ):
+            parse_unverified_receipt(encode(document))
+
     def test_valid_document_parses_to_explicitly_unverified_type(self):
         parsed = parse_unverified_receipt(encode(valid_document()))
         self.assertIsInstance(parsed, UnverifiedTrustReceipt)

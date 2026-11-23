@@ -1,3 +1,8 @@
+## Ledger-anchor transition integrity (2026-11-23)
+- The unverified trust-receipt parser now rejects a ledger anchor whose resulting head digest is identical to its previous head digest. A declared append must represent a state transition; otherwise the receipt could claim an entry without advancing the committed head.
+- Added an adversarial regression test and documented the invariant.
+- This is structural consistency only. It does not verify the ledger entry, inclusion proof, external head anchoring, or ledger operator identity.
+
 ## Official 22-Nov mask status refresh (observed 2026-11-23 01:52 America/Mexico_City)
 - The official mask index now lists the 22-Nov PDF. Visual review confirms contest 12389 is Chispazo De las tres (15:00 slot) and contest 12390 is Chispazo Clásico (21:00 slot); the clock times come from the official product schedule, not printed PDF times.
 - The official Chispazo results page shows 12390 = 01 06 09 19 23 and 12389 = 01 15 17 22 25. The opened commercializer page rendered 12389 as latest, so the endpoint discrepancy is retained.
