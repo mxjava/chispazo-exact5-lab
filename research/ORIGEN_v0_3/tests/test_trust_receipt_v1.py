@@ -239,6 +239,7 @@ class TestTrustReceiptV1(unittest.TestCase):
         for close_at in (
             "2026-11-22T21:00:00Z",  # 15:00 America/Mexico_City (De las Tres)
             "2026-11-23T02:59:00Z",  # 20:59 America/Mexico_City
+            "2026-11-24T03:00:59Z",  # 21:00:59 America/Mexico_City is not the exact draw slot
             "2026-11-23T04:00:00Z",  # 22:00 America/Mexico_City
         ):
             with self.subTest(close_at=close_at):
