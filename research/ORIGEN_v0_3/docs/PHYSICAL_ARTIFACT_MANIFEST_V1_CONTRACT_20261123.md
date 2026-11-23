@@ -41,6 +41,14 @@ The four Acta attachments are exactly the four rows listed for Chispazo in polic
 
 V1 requires separate source objects and distinct original-byte digests. A single combined bundle containing multiple logical records is not representable by v1; do not split or reserialize a source file and then claim the derived bytes are the original source. A future schema version may add explicit byte-range/page locators for a signed bundle.
 
+## MIME declarations
+
+The parser requires semantic MIME compatibility for the two recording artifact types:
+- DRAW-RECORDING-FULL and DRAW-RECORDING-EDITED must declare a `video/*` media type.
+- Non-recording artifact types must not declare a `video/*` media type.
+
+This is a structural consistency check on the declared MIME string. It does not inspect file signatures/magic bytes, decode a recording, or prove that the original source object matches the declared media type. The independent verifier must inspect the actual bytes and apply its own allowlist/content-detection policy.
+
 ## Target binding
 
 The target must be CLASSIC, have a canonical positive decimal contest ID, a Mexico City local draw date, and a UTC close timestamp resolving exactly to 21:00:00 America/Mexico_City on that local date. A 15:00 De las Tres close is rejected.
@@ -77,7 +85,7 @@ The ledger anchor must claim a different resulting head digest from its previous
 
 The isolated suite covers:
 - missing or duplicate artifact types and duplicate source-object IDs;
-- signer-key identity aliasing and invalid media types, including explicit video/mp4 and text/csv coverage;
+- signer-key identity aliasing, invalid media types, and mismatched recording/non-recording video MIME declarations, including explicit video/mp4 and text/csv coverage;
 - omission of full/edited draw recordings, winner-relation report/signature, nightly MJF/signature form or CS-02 inspection;
 - cross-contest artifact binding;
 - De las Tres 15:00 slot and mismatched local date;
