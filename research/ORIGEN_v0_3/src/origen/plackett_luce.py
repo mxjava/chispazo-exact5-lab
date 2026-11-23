@@ -48,12 +48,18 @@ def mass_log_weights(masses_g: Sequence[float], beta_per_sd: float) -> tuple[flo
     # This avoids overflow for finite but widely separated positive inputs.
     minimum = min(values)
     offsets = tuple(value - minimum for value in values)
-    mean_offset = math.fsum(offsets) / N_SPHERES
-    deviations = tuple(offset - mean_offset for offset in offsets)
-    scale = max(abs(value) for value in deviations)
-    if scale == 0:
+    offset_scale = max(offsets)
+    if offset_scale == 0:
         return (0.0,) * N_SPHERES
-    scaled = tuple(value / scale for value in deviations)
+    # Normalize before summing: fsum of 28 individually finite offsets can
+    # overflow even when the final mean is representable.
+    normalized_offsets = tuple(value / offset_scale for value in offsets)
+    mean_normalized = math.fsum(normalized_offsets) / N_SPHERES
+    deviations = tuple(value - mean_normalized for value in normalized_offsets)
+    deviation_scale = max(abs(value) for value in deviations)
+    if deviation_scale == 0:
+        return (0.0,) * N_SPHERES
+    scaled = tuple(value / deviation_scale for value in deviations)
     scaled_sd = math.sqrt(math.fsum(value * value for value in scaled) / N_SPHERES)
     standardized = tuple(value / scaled_sd for value in scaled)
     weighted = tuple(beta * value for value in standardized)
