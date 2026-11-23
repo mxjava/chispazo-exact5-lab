@@ -1,0 +1,185 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "observation": {
+    "observed_at_local": "2026-11-23T08:53:45-06:00",
+    "observed_at_utc": "2026-11-23T14:53:45Z",
+    "timezone": "America/Mexico_City",
+    "classification": "STATUS_ONLY_PUBLIC_OFFICIAL_SNAPSHOT"
+  },
+  "sources": {
+    "official_home_index": "https://www.loterianacional.gob.mx/home/index",
+    "official_chispazo_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_chispazo_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_mask_pdf_opened": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221841",
+    "current_electronic_draw_procedure": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"
+  },
+  "official_results_snapshot": {
+    "latest_published": {
+      "contest_id": 12390,
+      "draw_date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        6,
+        9,
+        19,
+        23
+      ],
+      "modality": "CLASSIC",
+      "modality_status": "MASK_TEXT_CONFIRMED",
+      "published": true
+    },
+    "previous_contest": {
+      "contest_id": 12389,
+      "draw_date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        15,
+        17,
+        22,
+        25
+      ],
+      "modality": "DE_LAS_TRES",
+      "modality_status": "MASK_TEXT_CONFIRMED",
+      "published": true
+    },
+    "next_draw_date_visible": "2026-11-23",
+    "result_for_2026_11_23_visible": false,
+    "classic_contest_id_for_2026_11_23": "NOT_VISIBLE_NOT_INFERRED"
+  },
+  "official_home_index": {
+    "opened_page_rendering": {
+      "card_2026_11_23_15_00_visible": true,
+      "card_date": "2026-11-23",
+      "card_local_time": "15:00",
+      "displayed_draw_number": 12391,
+      "product_name_explicitly_rendered": false,
+      "schedule_slot_match": "DE_LAS_TRES",
+      "schedule_slot_match_basis": "Official Chispazo product page maps 15:00 to De las Tres and 21:00 to Clásico.",
+      "card_2026_11_23_21_00_classic_visible": false
+    }
+  },
+  "official_chispazo_schedule": {
+    "de_las_tres_local_time": "15:00",
+    "clasico_local_time": "21:00",
+    "source": "Official Chispazo product page",
+    "procedure_close_slots_match": true
+  },
+  "official_mask": {
+    "latest_index_entry": "RESULTADOS 2026-11-22",
+    "result_2026_11_23_mask_visible": false,
+    "pdf_2026_11_22_opened_in_browser": true,
+    "modality_labels": {
+      "12389": {
+        "modality": "DE_LAS_TRES",
+        "modality_status": "MASK_TEXT_CONFIRMED",
+        "printed_label": "Chispazo De las tres",
+        "winning_numbers": [
+          1,
+          15,
+          17,
+          22,
+          25
+        ]
+      },
+      "12390": {
+        "modality": "CLASSIC",
+        "modality_status": "MASK_TEXT_CONFIRMED",
+        "printed_label": "Chispazo Clásico",
+        "winning_numbers": [
+          1,
+          6,
+          9,
+          19,
+          23
+        ]
+      }
+    },
+    "clock_time_source": "Official Chispazo product page; the mask prints modality labels, not the daily clock slots."
+  },
+  "official_procedure": {
+    "document": "SGVO-PRO-05 — Procedimiento Sorteos Electrónicos",
+    "classification": "PUBLIC / NORMATECA VIGENTES",
+    "revision": 39,
+    "footer_version": "DN-07 Version 09",
+    "pages": 38,
+    "publication_date": "2026-03-20",
+    "draw_close_slots_local": {
+      "de_las_tres": "15:00",
+      "nocturnal_classic": "21:00"
+    },
+    "sphere_mass_specs_g": {
+      "SMARTBALLS": {
+        "minimum": "4.25",
+        "maximum": "5.25",
+        "maximum_spread": "0.30"
+      },
+      "PING PONG": {
+        "minimum": "2.30",
+        "maximum": "3.00",
+        "maximum_spread": "0.15"
+      }
+    },
+    "chispazo_acta_attachments": [
+      "SUMARIO DE SORTEO (CIERRE DE VENTA)",
+      "NÚMEROS GANADORES DE LOS SORTEOS CS-11",
+      "SUMARIO DE SORTEO",
+      "TIRA DE PESAJE"
+    ],
+    "weighing_strip_signatories": [
+      "responsable del pesaje de esferas",
+      "representante de la Dirección de Operación de Concursos, Juegos y Sorteos",
+      "representante de la Dirección General",
+      "Inspector de la Secretaría de Gobernación"
+    ],
+    "acta_minimum_fields": [
+      "place",
+      "date",
+      "event time",
+      "Lotería Nacional officials' names, roles and signatures",
+      "SEGOB inspector name, signature and commission number",
+      "incidents, if any"
+    ],
+    "participation_file_signature_control": "Electronic signature for participation/cancellation files is produced after sales close, recorded to controlled media, checked with the printed form, signed by responsible representatives and deposited by the SEGOB inspector in the security box for OIC custody.",
+    "v2_mass_constants_match": true,
+    "source_bytes_downloaded_to_repository": false,
+    "source_pdf_sha256": "NOT_CAPTURED",
+    "note": "The official PDF was opened and text-extracted in the browser. Original PDF bytes were not captured; extracted text is not a substitute for the source file hash."
+  },
+  "physical_evidence": {
+    "new_2026_11_23_draw_specific_primary_records_obtained": false,
+    "signed_draw_act": "NOT_OBTAINED",
+    "sales_close_summary": "NOT_OBTAINED",
+    "cs11_winning_numbers_form": "NOT_OBTAINED",
+    "post_draw_summary": "NOT_OBTAINED",
+    "original_weighing_strip_with_28_readings": "NOT_OBTAINED",
+    "scale_identity_and_calibration": "NOT_OBTAINED",
+    "equipment_and_urn_records": "NOT_OBTAINED",
+    "participation_and_cancellation_files_with_electronic_signature": "NOT_OBTAINED",
+    "security_box_deposit_or_oic_custody_record": "NOT_OBTAINED",
+    "independent_custody_receipt": "NOT_OBTAINED",
+    "trusted_timestamp_or_external_ledger_proof": "NOT_OBTAINED",
+    "two_independent_preclose_output_seals": "NOT_OBTAINED"
+  },
+  "contract_gaps": {
+    "v2_csv_has_no_dedicated_fields_for_each_required_draw_artifact": true,
+    "trust_receipt_parser_requires_only_one_generic_artifact": true,
+    "current_adapter_authentication_status": "BLOCKED_PROVENANCE",
+    "required_next_design": "Versioned artifact manifest with mandatory per-contest artifact types, original byte lengths and digests, signature/custody/time-proof bindings, and independent verification; do not enable AUTHENTICATED until independently reviewed."
+  },
+  "eligibility": {
+    "status": "BLOCKED_PROVENANCE",
+    "snapshot_eligible": false,
+    "prospective_oos_eligible": false,
+    "score_eligible": false,
+    "reason": "Only official public schedule/results/mask/procedure information was confirmed. No 23-Nov draw-specific signed, pre-close, original-byte or independently custodied physical records were obtained."
+  },
+  "protections": {
+    "v294": "FROZEN",
+    "canonical_history": "UNCHANGED",
+    "main_writes": false,
+    "canonical_append": false,
+    "merge_or_promotion": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
