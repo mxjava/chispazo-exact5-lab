@@ -1,3 +1,16 @@
+## Bounded custody record reads (2026-11-23)
+- Closed a reproducible resource-boundary gap in `read_record`: the prior `stat()` then `read_bytes()` sequence could read an unbounded file if it grew after the size check.
+- The parser now performs one bounded binary read of at most `MAX_CUSTODY_RECORD_BYTES + 1` and rejects the extra byte before JSON depth scanning or decoding.
+- Added an adversarial regression with an oversized file while forbidding the old pre-read `stat()` and unbounded `read_bytes()` path.
+- Code commit: `78f434b0a1e8469a4be69d06c802c376f3f7daa2`; test commit: `9b359bd0efd565877b496af586b66f59a384d699`. CI was started on the test commit; exact-head outcomes will be recorded in the PR discussion after completion.
+- This is a local resource bound only; it does not authenticate source identity, signatures, timestamps, or custody.
+
+## Official status refresh — 2026-11-23 13:58 America/Mexico_City
+- Added status-only overlay `data/official-overlays/2026-11-23_1358_official_status_only.json` and review `docs/OFFICIAL_STATUS_REFRESH_20261123_1358.md`.
+- Official results still end at 12390 (22-Nov); the 23-Nov 15:00 home-index card shows 12391 but does not explicitly identify Chispazo or its modality, so it is not assigned. The official schedule remains De las Tres 15:00 / Clásico 21:00.
+- Official mask index latest is 22-Nov. No 23-Nov mask or draw-specific primary physical records were obtained; original PDF bytes and SHA-256 remain `NOT_CAPTURED`.
+- No canonical append, V294 change, main write, merge, promotion, or eligibility change.
+
 ## Physical manifest MIME semantic binding (2026-11-23)
 - Closed a structural declaration gap: the v1 manifest accepted any syntactically valid MIME string for any artifact type, so a draw recording could be declared as application/pdf or a non-recording artifact as video/mp4.
 - The parser now requires DRAW-RECORDING-FULL and DRAW-RECORDING-EDITED to declare video/* and rejects video/* for all non-recording artifact types.
