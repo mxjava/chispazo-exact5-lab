@@ -239,6 +239,15 @@ class TestTrustReceiptV1(unittest.TestCase):
         ):
             parse_unverified_receipt(encode(document))
 
+    def test_receipt_attestation_cannot_reuse_a_signer_key(self):
+        document = valid_document()
+        document["receipt_attestation"]["key_id"] = document["signers"][0]["key_id"]
+        with self.assertRaisesRegex(
+            ValueError,
+            "attestation key must be separate from signer keys",
+        ):
+            parse_unverified_receipt(encode(document))
+
     def test_receipt_issuer_cannot_also_be_a_generator(self):
         document = valid_document()
         document["receipt_attestation"]["issuer_id"] = document["output_seals"][0]["generator_id"]
