@@ -46,14 +46,19 @@ def test_rejects_duplicate_contests(tmp_path):
         aggregate_control_reports([first_path, second_path])
 
 
-def test_rejects_reused_portfolio_hash(tmp_path):
-    first_path, _ = make_report(tmp_path, 12390, 20261123)
-    second_path = tmp_path / "evaluation_12391.json"
-    report = json.loads(first_path.read_text(encoding="utf-8"))
-    report["contest_id"] = 12391
-    second_path.write_text(json.dumps(report), encoding="utf-8")
-    with pytest.raises(ValueError, match="duplicate portfolio hash"):
-        aggregate_control_reports([first_path, second_path])
+def test_allows_same_fixed_portfolio_across_distinct_draws(tmp_path):
+    portfolio = tmp_path / "fixed_portfolio.csv"
+    with portfolio.open("w", newline="", encoding="utf-8") as stream:
+        write_portfolio(generate_uniform_portfolio(20261123, 10), 20261123, stream)
+    reports = []
+    for contest_id, result in [(12390, [1, 7, 12, 21, 26]), (12391, [2, 8, 13, 22, 27])]:
+        report = evaluate_uniform_portfolio(portfolio, contest_id, result)
+        path = tmp_path / f"evaluation_{contest_id}.json"
+        path.write_text(json.dumps(report), encoding="utf-8")
+        reports.append(path)
+    aggregate = aggregate_control_reports(reports)
+    assert aggregate["contest_count"] == 2
+    assert aggregate["portfolio_sha256"][0] == aggregate["portfolio_sha256"][1]
 
 
 def test_rejects_predictive_or_tampered_report(tmp_path):
