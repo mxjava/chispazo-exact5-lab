@@ -9,6 +9,7 @@ import unittest
 
 from origen.trust_receipt_v1 import (
     MAX_TRUST_RECEIPT_BYTES,
+    MAX_TRUST_RECEIPT_JSON_DEPTH,
     UnverifiedTrustReceipt,
     parse_unverified_receipt,
 )
@@ -409,6 +410,26 @@ class TestTrustReceiptV1(unittest.TestCase):
         raw = b" " * (MAX_TRUST_RECEIPT_BYTES + 1)
         with self.assertRaisesRegex(ValueError, "must contain 1"):
             parse_unverified_receipt(raw)
+
+    def test_excessive_json_container_nesting_is_rejected_before_decode(self):
+        nested = (
+            b'{"untrusted":'
+            + b"[" * MAX_TRUST_RECEIPT_JSON_DEPTH
+            + b"0"
+            + b"]" * MAX_TRUST_RECEIPT_JSON_DEPTH
+            + b"}"
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            f"maximum JSON nesting depth {MAX_TRUST_RECEIPT_JSON_DEPTH}",
+        ):
+            parse_unverified_receipt(nested)
+
+    def test_brackets_inside_json_strings_do_not_count_as_nesting(self):
+        document = valid_document()
+        document["status"] = "AUTHENTICATED[]{}"
+        with self.assertRaisesRegex(ValueError, "status must be"):
+            parse_unverified_receipt(encode(document))
 
     def test_duplicate_trusted_time_authority_event_identity_is_rejected(self):
         document = valid_document()
