@@ -131,6 +131,11 @@ class TestDetachedEnvelope(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid base64"):
             self.verify(envelope=canonical(env))
 
+    def test_excessive_json_nesting_is_rejected_before_recursive_decode(self):
+        nested = b"[" * 17 + b"0" + b"]" * 17
+        with self.assertRaisesRegex(ValueError, "maximum JSON nesting depth 16"):
+            self.verify(envelope=nested)
+
     def test_signature_from_untrusted_key_is_rejected(self):
         other = Ed25519PrivateKey.generate().sign(self.payload)
         env = json.loads(self.envelope)
