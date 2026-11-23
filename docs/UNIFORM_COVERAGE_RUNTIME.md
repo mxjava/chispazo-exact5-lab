@@ -31,3 +31,19 @@ as if it were a model portfolio. The 30-line count alone is not evidence of
 predictive eligibility. To enter the predictive freeze path, a separate candidate
 must pass the existing preflight, provenance, commit-binding, and immutable-ledger
 checks. Do not remove or rewrite the mode marker to bypass this guard.
+
+## Post-draw control evaluation
+
+After the official result is available, score the exact CSV that was generated (do
+not regenerate it). Example:
+
+```powershell
+python -m src.pipeline.evaluate_uniform_portfolio --portfolio runs/uniform_coverage_20261122.csv --contest-id 12390 --result 01 07 12 21 26 --out runs/uniform_coverage_12390_evaluation.json
+```
+
+The evaluator checks the CSV schema, non-predictive mode marker, contiguous ranks,
+single seed, valid unique combinations, and five distinct result numbers. It records
+the input SHA-256, best hit count, exact-5 count, and hit distribution. The report
+is explicitly `EVALUATED_CONTROL_ONLY`; it does not create or alter a prospective
+registration and cannot be used as evidence of predictive lift. Only use a completed,
+officially verified result and preserve the original portfolio CSV.
