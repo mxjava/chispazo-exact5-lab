@@ -430,6 +430,8 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
         raise ValueError("signers contain duplicate key IDs")
     if len({item.subject_id for item in signers}) != len(signers):
         raise ValueError("signers contain duplicate subject IDs")
+    if len({item.signature_sha256 for item in signers}) != len(signers):
+        raise ValueError("signers contain duplicate signature digests")
     custodians = tuple(
         _parse_custodian(item, index)
         for index, item in enumerate(_array(root["custodians"], "custodians", minimum=1, maximum=64))
@@ -468,6 +470,11 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
         raise ValueError("two output seals must have distinct seal digests")
     if len({item.signature_sha256 for item in seals}) != 2:
         raise ValueError("two output seals must have distinct signature digests")
+    signer_signature_digests = {item.signature_sha256 for item in signers}
+    if not {item.signature_sha256 for item in seals}.issubset(signer_signature_digests):
+        raise ValueError(
+            "every output seal signature must reference a declared signer signature digest"
+        )
     generator_ids = {item.generator_id for item in seals}
     if generator_ids.intersection(signer_subjects):
         raise ValueError("signer and generator claims must be separate")
