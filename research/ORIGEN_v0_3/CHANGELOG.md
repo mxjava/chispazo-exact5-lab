@@ -1,5 +1,12 @@
 # Changelog
 
+## Trust verifier timezone callback snapshot (2026-11-23)
+- Normalize aware datetimes using one captured UTC offset instead of calling `astimezone()` after `utcoffset()`; this prevents a stateful custom `tzinfo` callback from returning a different offset on the second invocation and shifting the verified instant.
+- Require the captured offset to be an exact `timedelta`; retain fail-closed handling for exceptions and naive datetimes.
+- Added a regression with a timezone whose offset changes from UTC to UTC-06:00 on its second call. The verifier must call it once and retain the first instant.
+- This is defensive normalization of caller-provided time only. It does not make verification time trusted or replace TSA/RFC 3161.
+
+
 ## 0.3.0
 - Added chronological and expanding-window evaluation splits.
 - Added paired prequential log-score summaries and exact sign testing.
