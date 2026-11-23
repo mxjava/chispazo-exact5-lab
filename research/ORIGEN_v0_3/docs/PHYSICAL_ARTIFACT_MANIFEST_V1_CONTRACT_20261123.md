@@ -49,7 +49,7 @@ This is a schedule-slot check, not proof that the contest ID or official close e
 
 ## Signatures
 
-Every signature claim binds one artifact digest to a subject ID, role, key ID, supported algorithm and signature digest. Signature digests are unique; a subject may make only one signature claim per artifact.
+Every signature claim binds one artifact digest to a subject ID, role, key ID, supported algorithm and signature digest. Signature digests are unique; a subject may make only one signature claim per artifact; one key_id cannot be attributed to multiple subject IDs.
 
 DRAW-ACTA must declare these role labels, derived from policy 2 and policy 11:
 - GENERAL-DIRECTORATE-REPRESENTATIVE
@@ -67,7 +67,7 @@ PARTICIPATION-CANCELLATION-SIGNATURE-MEDIA, WINNER-RELATION-REPORT-WITH-SIGNATUR
 
 ## Custody and time declarations
 
-Every required artifact must have at least one custody event. Each event binds an artifact digest, event ID, custodian subject/role, received-at UTC time, custody receipt digest and timestamp-proof digest.
+Every required artifact must have at least one custody event. Each event binds an artifact digest, globally unique event ID, custodian subject/role, received-at UTC time, custody receipt digest and timestamp-proof digest. The referenced time proof must carry the exact same event ID as the custody event.
 
 Each referenced timestamp proof must exist and its declared event time must exactly equal the custody event's received-at time. Authority/event identities and proof digests must be unique. Time-authority identifiers must not literally alias declared signer or custodian identifiers.
 
@@ -77,13 +77,14 @@ The ledger anchor must claim a different resulting head digest from its previous
 
 The isolated suite covers:
 - missing or duplicate artifact types and duplicate source-object IDs;
+- signer-key identity aliasing and invalid media types, including explicit video/mp4 and text/csv coverage;
 - omission of full/edited draw recordings, winner-relation report/signature, nightly MJF/signature form or CS-02 inspection;
 - cross-contest artifact binding;
 - De las Tres 15:00 slot and mismatched local date;
 - missing Acta roles and missing/duplicate weighing-strip signers;
 - signature references to unknown artifacts;
 - missing custody events and missing/mismatched time proofs;
-- duplicate time authority/event identities and authority aliasing;
+- duplicate custody event IDs, custody/time-proof event-ID mismatch, duplicate time authority/event identities and authority aliasing;
 - unchanged ledger head;
 - boolean byte lengths, duplicate JSON keys, noncanonical JSON and excessive nesting;
 - valid structural manifest still returns no authentication capability and the independent adapter remains BLOCKED_PROVENANCE.

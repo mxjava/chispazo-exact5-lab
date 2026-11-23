@@ -28,7 +28,11 @@ def valid_document() -> dict:
             "contest_id": contest_id,
             "source_id": "LOTERIA-NACIONAL",
             "source_object_id": f"OBJECT-{index:02d}",
-            "media_type": "application/pdf",
+            "media_type": (
+                "video/mp4" if artifact_type.startswith("DRAW-RECORDING-")
+                else "text/csv" if artifact_type == "SPHERE-NUMBER-MAPPING-REGISTER"
+                else "application/pdf"
+            ),
         })
 
     by_type = {item["artifact_type"]: item for item in artifacts}
@@ -135,6 +139,9 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         self.assertEqual(len(parsed.artifacts), len(REQUIRED_ARTIFACT_TYPES))
         self.assertEqual(len(parsed.custody_events), len(REQUIRED_ARTIFACT_TYPES))
         self.assertEqual(parsed.raw_sha256, hashlib.sha256(raw).hexdigest())
+        media_by_type = {item.artifact_type: item.media_type for item in parsed.artifacts}
+        self.assertEqual(media_by_type["DRAW-RECORDING-FULL"], "video/mp4")
+        self.assertEqual(media_by_type["SPHERE-NUMBER-MAPPING-REGISTER"], "text/csv")
         self.assertFalse(hasattr(parsed, "authenticated"))
         self.assertIs(
             verify_independent_provenance(raw),
@@ -321,6 +328,30 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         document["trusted_time_proofs"][1]["authority_id"] = document["trusted_time_proofs"][0]["authority_id"]
         document["trusted_time_proofs"][1]["event_id"] = document["trusted_time_proofs"][0]["event_id"]
         with self.assertRaisesRegex(ValueError, "duplicate authority/event identities"):
+            parse_unverified_physical_manifest(encode(document))
+
+    def test_custody_event_id_must_match_referenced_time_proof_event_id(self):
+        document = valid_document()
+        document["trusted_time_proofs"][0]["event_id"] = "DIFFERENT-EVENT"
+        with self.assertRaisesRegex(ValueError, "custody event ID must match"):
+            parse_unverified_physical_manifest(encode(document))
+
+    def test_duplicate_custody_event_id_is_rejected_across_custodians(self):
+        document = valid_document()
+        document["custody_events"][1]["event_id"] = document["custody_events"][0]["event_id"]
+        with self.assertRaisesRegex(ValueError, "duplicate event IDs"):
+            parse_unverified_physical_manifest(encode(document))
+
+    def test_signer_key_id_cannot_alias_two_subjects(self):
+        document = valid_document()
+        document["signatures"][1]["key_id"] = document["signatures"][0]["key_id"]
+        with self.assertRaisesRegex(ValueError, "key_id cannot be bound to multiple subject IDs"):
+            parse_unverified_physical_manifest(encode(document))
+
+    def test_invalid_media_type_is_rejected(self):
+        document = valid_document()
+        document["artifacts"][0]["media_type"] = "application"
+        with self.assertRaisesRegex(ValueError, "canonical MIME type"):
             parse_unverified_physical_manifest(encode(document))
 
     def test_time_authority_cannot_alias_signer_or_custodian_subject(self):

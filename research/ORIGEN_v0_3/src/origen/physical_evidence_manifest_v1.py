@@ -27,7 +27,7 @@ _UTC_TIMESTAMP = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
     r"(?:\.[0-9]{1,6})?Z\Z"
 )
-_MEDIA_TYPE = re.compile(r"(?:application|text|image)/[A-Za-z0-9.+-]+\Z")
+_MEDIA_TYPE = re.compile(r"(?:application|text|image|video)/[A-Za-z0-9.+-]+\Z")
 _SIGNATURE_ALGORITHMS = {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}
 
 # Four records listed in the Chispazo Acta attachment matrix, plus the Acta,
@@ -490,6 +490,11 @@ def parse_unverified_physical_manifest(raw: bytes) -> UnverifiedPhysicalEvidence
     ]
     if len(set(signature_subject_artifacts)) != len(signature_subject_artifacts):
         raise ValueError("a subject may declare only one signature per artifact")
+    key_subjects: dict[str, str] = {}
+    for claim in signatures:
+        prior_subject = key_subjects.setdefault(claim.key_id, claim.subject_id)
+        if prior_subject != claim.subject_id:
+            raise ValueError("a signer key_id cannot be bound to multiple subject IDs")
     signatures_by_artifact: dict[str, list[PhysicalSignatureClaim]] = {}
     for claim in signatures:
         signatures_by_artifact.setdefault(claim.artifact_sha256, []).append(claim)
@@ -533,11 +538,9 @@ def parse_unverified_physical_manifest(raw: bytes) -> UnverifiedPhysicalEvidence
         _parse_custody_event(item, index, artifact_digests)
         for index, item in enumerate(custody_values)
     )
-    custody_event_keys = [
-        (item.custodian_subject_id, item.event_id) for item in custody_events
-    ]
-    if len(set(custody_event_keys)) != len(custody_event_keys):
-        raise ValueError("custody_events contain duplicate custodian/event identities")
+    custody_event_ids = [item.event_id for item in custody_events]
+    if len(set(custody_event_ids)) != len(custody_event_ids):
+        raise ValueError("custody_events contain duplicate event IDs")
     receipt_digests = [item.receipt_sha256 for item in custody_events]
     if len(set(receipt_digests)) != len(receipt_digests):
         raise ValueError("custody_events contain duplicate receipt digests")
@@ -564,6 +567,8 @@ def parse_unverified_physical_manifest(raw: bytes) -> UnverifiedPhysicalEvidence
         proof = time_by_digest.get(event.timestamp_proof_sha256)
         if proof is None:
             raise ValueError("custody event timestamp proof is not declared")
+        if proof.event_id != event.event_id:
+            raise ValueError("custody event ID must match its referenced time-proof event ID")
         if proof.event_at_utc != event.received_at_utc:
             raise ValueError("custody received_at_utc must match its referenced time proof")
 
