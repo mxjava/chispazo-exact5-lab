@@ -17,6 +17,8 @@ from typing import Any, Mapping, Sequence
 
 GENESIS = "0" * 64
 CLASSIC_PORTFOLIO_LINES = 30
+MAX_CUSTODY_RECORD_BYTES = 65_536
+MAX_CUSTODY_RECORD_JSON_DEPTH = 16
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 _SHA40 = re.compile(r"[0-9a-f]{40}")
 _RECORD_FIELDS = {
@@ -320,15 +322,50 @@ def _reject_json_constant(value: str) -> None:
     raise ValueError(f"non-finite JSON number is not permitted: {value}")
 
 
+def _validate_record_json_depth(raw: bytes) -> None:
+    """Bound JSON nesting before the recursive decoder processes untrusted bytes."""
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in raw:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:
+                escaped = True
+            elif byte == 0x22:
+                in_string = False
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x7B, 0x5B):
+            depth += 1
+            if depth > MAX_CUSTODY_RECORD_JSON_DEPTH:
+                raise ValueError("record JSON exceeds maximum nesting depth " + str(MAX_CUSTODY_RECORD_JSON_DEPTH))
+        elif byte in (0x7D, 0x5D) and depth:
+            depth -= 1
+
+
+def _reject_record_json_float(value: str) -> None:
+    raise ValueError("floating-point JSON numbers are not permitted in custody records")
+
+
 def read_record(path: str | Path) -> dict[str, Any]:
-    """Read one canonical record; reject ambiguous JSON encodings and values."""
-    raw = Path(path).read_bytes()
+    """Read one bounded canonical record; reject ambiguous JSON encodings and values."""
+    source = Path(path)
+    if source.stat().st_size > MAX_CUSTODY_RECORD_BYTES:
+        raise ValueError("record file exceeds maximum size of " + str(MAX_CUSTODY_RECORD_BYTES) + " bytes")
+    raw = source.read_bytes()
+    if len(raw) > MAX_CUSTODY_RECORD_BYTES:
+        raise ValueError("record file exceeds maximum size of " + str(MAX_CUSTODY_RECORD_BYTES) + " bytes")
+    _validate_record_json_depth(raw)
     if not raw.endswith(b"\n"):
         raise ValueError("record file must end with LF")
     value = json.loads(
         raw.decode("utf-8", errors="strict"),
         object_pairs_hook=_unique_json_object,
         parse_constant=_reject_json_constant,
+        parse_float=_reject_record_json_float,
     )
     if not isinstance(value, dict):
         raise ValueError("record JSON must be an object")
