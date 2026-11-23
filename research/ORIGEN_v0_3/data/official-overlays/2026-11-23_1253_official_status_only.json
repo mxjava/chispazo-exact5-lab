@@ -122,7 +122,23 @@
     "revision": 39,
     "status": "PUBLIC_PROCEDURAL_REFERENCE",
     "draw_specific_compliance_proven": false,
-    "note": "The public procedure remains a checklist/reference for required records and roles, not evidence that any draw-specific records were created or independently preserved."
+    "note": "The public procedure remains a checklist/reference for required records and roles, not evidence that any draw-specific records were created or independently preserved.",
+    "publication_date": "2026-03-20",
+    "chispazo_record_matrix": [
+      "SUMARIO DE SORTEO (CIERRE DE VENTA)",
+      "NÚMEROS GANADORES DE LOS SORTEOS CS-11",
+      "SUMARIO DE SORTEO",
+      "TIRA DE PESAJE"
+    ],
+    "record_signoff_requirements": {
+      "cs11": "The procedure says the CS-11 is signed and signatures are collected from Lotería Nacional representatives and the SEGOB inspector; the original is attached to the draw act.",
+      "weighing_strip": "The weighing responsible person signs the strip; it is reviewed/rubricated by the Subdirectorate General Sales and Operations representative, the SEGOB inspector, and the General Directorate representative."
+    },
+    "automatic_sales_close_slots": {
+      "general_procedure": "15:00 for draws of the Three; 21:00 for nocturnal draws",
+      "chispazo_product_mapping": "Official Chispazo product page maps De las Tres to 15:00 and Clásico to 21:00",
+      "caveat": "Schedule requirements do not authenticate the clock or prove draw-specific records."
+    }
   },
   "eligibility": {
     "status": "BLOCKED_PROVENANCE",
