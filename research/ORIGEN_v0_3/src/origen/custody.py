@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 GENESIS = "0" * 64
+CLASSIC_PORTFOLIO_LINES = 30
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 _SHA40 = re.compile(r"[0-9a-f]{40}")
 _RECORD_FIELDS = {
@@ -59,7 +60,9 @@ def parse_utc(value: str, field: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def validate_portfolio(portfolio: bytes, expected_lines: int = 30) -> list[str]:
+def validate_portfolio(portfolio: bytes, expected_lines: int = CLASSIC_PORTFOLIO_LINES) -> list[str]:
+    if expected_lines != CLASSIC_PORTFOLIO_LINES:
+        raise ValueError(f"Classic custody portfolios must contain exactly {CLASSIC_PORTFOLIO_LINES} lines")
     if not isinstance(portfolio, bytes):
         raise TypeError("portfolio must be supplied as exact bytes")
     if not isinstance(expected_lines, int) or isinstance(expected_lines, bool) or expected_lines <= 0:
@@ -124,6 +127,8 @@ def build_seal_record(
     """Build a hash-bound record; caller must retain an independent receipt."""
     if not isinstance(target_contest_id, int) or isinstance(target_contest_id, bool) or target_contest_id <= 0:
         raise ValueError("target_contest_id must be a positive integer")
+    if expected_lines != CLASSIC_PORTFOLIO_LINES:
+        raise ValueError(f"Classic custody portfolios must contain exactly {CLASSIC_PORTFOLIO_LINES} lines")
     if (not isinstance(history_max_contest_id, int) or isinstance(history_max_contest_id, bool)
             or history_max_contest_id != target_contest_id - 1):
         raise ValueError("history cutoff must be an integer exactly target_contest_id - 1")
@@ -203,9 +208,11 @@ def verify_seal_record(
             return False, "target_contest_id must be an integer"
         if not isinstance(record.get("history_max_contest_id"), int) or isinstance(record.get("history_max_contest_id"), bool):
             return False, "history_max_contest_id must be an integer"
+        if record["target_contest_id"] <= 0:
+            return False, "target_contest_id must be positive"
         count = record.get("portfolio_line_count")
-        if not isinstance(count, int) or isinstance(count, bool) or count <= 0:
-            return False, "portfolio_line_count must be a positive integer"
+        if not isinstance(count, int) or isinstance(count, bool) or count != CLASSIC_PORTFOLIO_LINES:
+            return False, f"portfolio_line_count must equal {CLASSIC_PORTFOLIO_LINES}"
         for field in ("candidate_spec_sha256", "history_sha256", "environment_manifest_sha256",
                       "portfolio_sha256", "custodian_recomputed_sha256",
                       "previous_record_sha256", "record_sha256"):
