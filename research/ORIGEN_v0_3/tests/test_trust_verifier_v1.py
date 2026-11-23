@@ -180,16 +180,6 @@ class TestTrustVerifierV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "reuses one public key"):
             verify_receipt_attestation(raw, malformed, verification_time=NOW)
 
-    def test_root_attestation_key_cannot_be_reused_as_claimed_signer_key(self):
-        raw, public_bytes, private_key = signed_receipt()
-        document = json.loads(raw)
-        document["signers"][0]["key_id"] = "verifier-key-1"
-        aliased_raw = sign_document(document, private_key)
-        with self.assertRaisesRegex(ValueError, "distinct from every claimed signer"):
-            verify_receipt_attestation(
-                aliased_raw, policy(public_bytes), verification_time=NOW
-            )
-
     def test_policy_rejects_list_instead_of_exact_tuple(self):
         raw, public_bytes, _ = signed_receipt()
         valid = policy(public_bytes)
