@@ -502,6 +502,10 @@ def parse_unverified_physical_manifest(raw: bytes) -> UnverifiedPhysicalEvidence
         prior_subject = key_subjects.setdefault(claim.key_id, claim.subject_id)
         if prior_subject != claim.subject_id:
             raise ValueError("a signer key_id cannot be bound to multiple subject IDs")
+    signature_digests = [item.signature_sha256 for item in signatures]
+    if len(set(signature_digests)) != len(signature_digests):
+        raise ValueError("signature claims contain duplicate signature digests")
+
     signatures_by_artifact: dict[str, list[PhysicalSignatureClaim]] = {}
     for claim in signatures:
         signatures_by_artifact.setdefault(claim.artifact_sha256, []).append(claim)
