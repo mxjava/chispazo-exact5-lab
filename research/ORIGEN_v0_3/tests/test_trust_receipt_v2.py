@@ -111,6 +111,33 @@ class TestTrustReceiptV2(unittest.TestCase):
         ):
             parse_unverified_receipt_v2(nested)
 
+    def test_output_seal_timestamp_proofs_cannot_be_cross_wired(self):
+        document = valid_v2_document()
+        first_ref = document["output_seals"][0]["timestamp_proof_sha256"]
+        second_ref = document["output_seals"][1]["timestamp_proof_sha256"]
+        document["output_seals"][0]["timestamp_proof_sha256"] = second_ref
+        document["output_seals"][1]["timestamp_proof_sha256"] = first_ref
+
+        with self.assertRaises(ValueError) as context:
+            parse_unverified_receipt_v2(encode(document))
+        self.assertEqual(
+            str(context.exception),
+            "output_seals[0] timestamp proof subject must match signature_sha256",
+        )
+
+    def test_v2_depth_scanner_accepts_exactly_64_containers(self):
+        nested = (
+            b'{"untrusted":'
+            + b"[" * (MAX_TRUST_RECEIPT_JSON_DEPTH_V2 - 1)
+            + b"0"
+            + b"]" * (MAX_TRUST_RECEIPT_JSON_DEPTH_V2 - 1)
+            + b"}"
+        )
+        # The depth scanner must allow the documented inclusive limit; the
+        # normal schema validator then rejects this intentionally extra field.
+        with self.assertRaisesRegex(ValueError, "receipt fields mismatch"):
+            parse_unverified_receipt_v2(nested)
+
     def test_v2_brackets_inside_json_strings_do_not_count_as_nesting(self):
         document = valid_v2_document()
         document["status"] = "AUTHENTICATED[]{}"
