@@ -1,0 +1,346 @@
+{
+  "schema_version": "exact5.coverage-retrospective.v1",
+  "classification": "DESCRIPTIVE_RETROSPECTIVE_ONLY",
+  "contest": {
+    "contest_id": 12390,
+    "draw_date": "2026-11-22",
+    "modality": "CLASICO",
+    "scheduled_close_local": "2026-11-22T21:00:00-06:00",
+    "scheduled_close_utc": "2026-11-23T03:00:00Z",
+    "winning_numbers": [
+      1,
+      6,
+      9,
+      19,
+      23
+    ],
+    "official_result_source": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221841",
+    "official_mask_explicit_label": "Chispazo Clásico",
+    "official_price_per_line_mxn": 10,
+    "official_prize_2_hits_mxn": 10,
+    "official_pdf_sha256": "NOT_CAPTURED",
+    "original_pdf_bytes_downloaded": false,
+    "download_attempt": "FAILED"
+  },
+  "portfolio": {
+    "mode": "COMBINATORIAL_4HIT_COVERAGE_NOT_PREDICTIVE",
+    "seed": 20261123,
+    "line_count": 30,
+    "preclose_artifact_commit": "787d16ff136be88f87264479f33494a2c2e85876",
+    "preclose_commit_created_at_utc": "2026-11-23T02:33:18Z",
+    "pr_opened_at_utc": "2026-11-23T02:33:46Z",
+    "preclose_csv_sha256": "c2d2cc980c719b77a2aeb07679e0aa17367d4796f2a9854fabe1c50b7b3f0892",
+    "csv_contains_contest_id_or_modality": false,
+    "independent_trusted_timestamp": false,
+    "independent_two_party_custody": false,
+    "lines": [
+      {
+        "rank": 1,
+        "combo": "06-08-09-14-25",
+        "hits": [
+          6,
+          9
+        ],
+        "hit_count": 2
+      },
+      {
+        "rank": 2,
+        "combo": "01-10-11-13-19",
+        "hits": [
+          1,
+          19
+        ],
+        "hit_count": 2
+      },
+      {
+        "rank": 3,
+        "combo": "02-04-16-18-26",
+        "hits": [],
+        "hit_count": 0
+      },
+      {
+        "rank": 4,
+        "combo": "05-17-20-24-27",
+        "hits": [],
+        "hit_count": 0
+      },
+      {
+        "rank": 5,
+        "combo": "07-15-22-23-28",
+        "hits": [
+          23
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 6,
+        "combo": "03-06-10-12-21",
+        "hits": [
+          6
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 7,
+        "combo": "01-12-17-19-28",
+        "hits": [
+          1,
+          19
+        ],
+        "hit_count": 2
+      },
+      {
+        "rank": 8,
+        "combo": "03-13-21-22-24",
+        "hits": [],
+        "hit_count": 0
+      },
+      {
+        "rank": 9,
+        "combo": "04-05-07-15-18",
+        "hits": [],
+        "hit_count": 0
+      },
+      {
+        "rank": 10,
+        "combo": "11-16-20-23-27",
+        "hits": [
+          23
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 11,
+        "combo": "02-09-14-22-26",
+        "hits": [
+          9
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 12,
+        "combo": "05-08-10-19-25",
+        "hits": [
+          19
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 13,
+        "combo": "01-02-07-17-23",
+        "hits": [
+          1,
+          23
+        ],
+        "hit_count": 2
+      },
+      {
+        "rank": 14,
+        "combo": "06-12-13-18-25",
+        "hits": [
+          6
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 15,
+        "combo": "16-20-24-26-28",
+        "hits": [],
+        "hit_count": 0
+      },
+      {
+        "rank": 16,
+        "combo": "03-04-08-15-21",
+        "hits": [],
+        "hit_count": 0
+      },
+      {
+        "rank": 17,
+        "combo": "01-09-11-14-27",
+        "hits": [
+          1,
+          9
+        ],
+        "hit_count": 2
+      },
+      {
+        "rank": 18,
+        "combo": "08-12-15-18-22",
+        "hits": [],
+        "hit_count": 0
+      },
+      {
+        "rank": 19,
+        "combo": "05-13-23-26-28",
+        "hits": [
+          23
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 20,
+        "combo": "03-09-10-17-20",
+        "hits": [
+          9
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 21,
+        "combo": "06-11-21-24-27",
+        "hits": [
+          6
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 22,
+        "combo": "02-07-14-16-25",
+        "hits": [],
+        "hit_count": 0
+      },
+      {
+        "rank": 23,
+        "combo": "04-06-19-24-25",
+        "hits": [
+          6,
+          19
+        ],
+        "hit_count": 2
+      },
+      {
+        "rank": 24,
+        "combo": "04-09-13-14-20",
+        "hits": [
+          9
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 25,
+        "combo": "03-12-19-22-23",
+        "hits": [
+          19,
+          23
+        ],
+        "hit_count": 2
+      },
+      {
+        "rank": 26,
+        "combo": "02-10-18-27-28",
+        "hits": [],
+        "hit_count": 0
+      },
+      {
+        "rank": 27,
+        "combo": "01-07-11-16-21",
+        "hits": [
+          1
+        ],
+        "hit_count": 1
+      },
+      {
+        "rank": 28,
+        "combo": "05-08-15-17-26",
+        "hits": [],
+        "hit_count": 0
+      },
+      {
+        "rank": 29,
+        "combo": "05-06-07-09-16",
+        "hits": [
+          6,
+          9
+        ],
+        "hit_count": 2
+      },
+      {
+        "rank": 30,
+        "combo": "02-08-10-24-26",
+        "hits": [],
+        "hit_count": 0
+      }
+    ]
+  },
+  "score": {
+    "hit_count_histogram": {
+      "0": 11,
+      "1": 11,
+      "2": 8,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    },
+    "max_hits": 2,
+    "ranks_with_2_hits": [
+      1,
+      2,
+      7,
+      13,
+      17,
+      23,
+      25,
+      29
+    ],
+    "ranks_with_1_hit": [
+      5,
+      6,
+      10,
+      11,
+      12,
+      14,
+      19,
+      20,
+      21,
+      24,
+      27
+    ],
+    "ranks_with_0_hits": [
+      3,
+      4,
+      8,
+      9,
+      15,
+      16,
+      18,
+      22,
+      26,
+      28,
+      30
+    ],
+    "any_3plus": false,
+    "any_4plus": false,
+    "exact5": false
+  },
+  "conditional_financial_scenario_if_all_30_lines_were_purchased": {
+    "purchase_evidence": "NOT_AVAILABLE",
+    "price_per_line_mxn": 10,
+    "hypothetical_cost_mxn": 300,
+    "two_hit_lines": 8,
+    "prize_per_two_hit_line_mxn": 10,
+    "hypothetical_gross_prize_mxn": 80,
+    "hypothetical_net_mxn": -220,
+    "note": "Conditional arithmetic only; this is not evidence that any lines were purchased."
+  },
+  "combinatorial_context": {
+    "possible_5_of_28_outcomes": 98280,
+    "maximum_4plus_outcomes_covered_by_30_distinct_lines": 3480,
+    "coverage_fraction": "3480/98280",
+    "coverage_percent": 3.5409,
+    "exact5_probability_for_any_30_distinct_lines_fraction": "30/98280",
+    "exact5_probability_percent": 0.0305,
+    "predictive_edge_claimed": false
+  },
+  "artifact_history": {
+    "postdraw_regeneration_commit": "88252ac81a79c33e499059270c5857462fbeac8e",
+    "postdraw_regeneration_created_at_utc": "2026-11-23T03:19:39Z",
+    "current_csv_blob_sha1": "e2d8d4ca7e361661c34378e59db5830c744eb669",
+    "current_head_at_report": "960b981fcd4a9253c6185f5529dfb91cb8f0e9f9",
+    "note": "The current PR CSV was regenerated after the draw; the pre-close CSV remains recoverable at the pre-close commit above."
+  },
+  "eligibility": {
+    "prospective_oos_eligible": false,
+    "authenticated_preclose_seal": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
