@@ -90,6 +90,23 @@ def _utc(value: object, label: str) -> datetime:
     return parsed
 
 
+
+def _signature_input(key_id: str, role: str, issued_at_utc: str, payload: bytes) -> bytes:
+    """Domain-separated canonical bytes binding envelope metadata to payload."""
+    metadata = json.dumps(
+        {
+            "domain": "ORIGEN-DETACHED-ED25519-ENVELOPE-V1",
+            "issued_at_utc": issued_at_utc,
+            "key_id": key_id,
+            "payload_sha256": hashlib.sha256(payload).hexdigest(),
+            "role": role,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("ascii")
+    return b"ORIGEN-DETACHED-ED25519-ENVELOPE-V1\\x00" + metadata
+
 def verify_detached_ed25519_envelope(
     envelope_bytes: bytes,
     trust_store_bytes: bytes,
@@ -174,6 +191,7 @@ def verify_detached_ed25519_envelope(
         raise ValueError("signed payload exceeds 512 KiB limit")
     if base64.b64encode(payload).decode("ascii") != env["payload_b64"] or base64.b64encode(signature).decode("ascii") != env["signature_b64"] or base64.b64encode(public_key).decode("ascii") != row["public_key_b64"]:
         raise ValueError("base64 encoding is not canonical")
-    if not verify_ed25519_signature_bytes(public_key, payload, signature):
+    signed_input = _signature_input(env["key_id"], env["role"], env["issued_at_utc"], payload)
+    if not verify_ed25519_signature_bytes(public_key, signed_input, signature):
         raise ValueError("Ed25519 signature verification failed")
     return payload
