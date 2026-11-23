@@ -28,7 +28,7 @@ def _parse_combo(value: str) -> tuple[int, ...]:
     return nums
 
 
-def _uniform_null_metrics(line_count: int, result: list[int] | tuple[int, ...], observed_best_hits: int) -> dict:
+def _uniform_null_metrics(line_count: int, observed_best_hits: int) -> dict:
     """Exact finite-population null calibration for uniform sampling without replacement."""
     universe = math.comb(28, 5)
     category_sizes = {str(k): math.comb(5, k) * math.comb(23, 5 - k) for k in range(6)}
@@ -111,7 +111,7 @@ def evaluate_uniform_portfolio(portfolio_path: str | Path, contest_id: int, resu
         "best_hits": best_hits,
         "exact5_count": hits.count(5),
         "hit_distribution": distribution,
-        "uniform_null": _uniform_null_metrics(len(combos), result, best_hits),
+        "uniform_null": _uniform_null_metrics(len(combos), best_hits),
         "lines": [
             {"rank": rank, "combo": "-".join(f"{n:02d}" for n in combo), "hits": hit}
             for rank, (combo, hit) in enumerate(zip(combos, hits), start=1)
