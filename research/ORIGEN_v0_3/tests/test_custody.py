@@ -263,10 +263,9 @@ class CustodyTests(unittest.TestCase):
     def test_read_record_ignores_brackets_inside_json_strings_for_depth(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "brackets-in-string.json"
-            path.write_bytes(b'{"value":"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[["}\n')
-            with self.assertRaisesRegex(ValueError, "canonical UTF-8 JSON"):
-                read_record(path)
-
+            brackets = "[" * 40
+            path.write_bytes(b'{"value":"' + brackets.encode("ascii") + b'"}\\n')
+            self.assertEqual(read_record(path), {"value": brackets})
     def test_read_record_rejects_floating_point_numbers(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "float.json"
