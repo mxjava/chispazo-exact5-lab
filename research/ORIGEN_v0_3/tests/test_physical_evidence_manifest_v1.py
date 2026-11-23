@@ -49,6 +49,16 @@ def valid_document() -> dict:
         "PARTICIPATION-CANCELLATION-SIGNATURE-MEDIA": (
             "INFORMATION-TECHNOLOGY-REPRESENTATIVE",
         ),
+        "WINNER-RELATION-REPORT-WITH-SIGNATURE": (
+            "INFORMATION-TECHNOLOGY-REPRESENTATIVE",
+        ),
+        "MJF-SIGNATURE-PRINTED-FORM": (
+            "INFORMATION-TECHNOLOGY-REPRESENTATIVE",
+        ),
+        "CS02-DAILY-EQUIPMENT-INSPECTION": (
+            "EQUIPMENT-OPERATOR",
+            "SUBDIRECTORATE-GENERAL-SALES-OPERATIONS-REPRESENTATIVE",
+        ),
     }
     signature_index = 0
     for artifact_type, roles in role_sets.items():
@@ -134,7 +144,7 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
     def test_missing_required_artifact_is_rejected(self):
         document = valid_document()
         document["artifacts"].pop()
-        with self.assertRaisesRegex(ValueError, "array with 11..11"):
+        with self.assertRaisesRegex(ValueError, rf"array with {len(REQUIRED_ARTIFACT_TYPES)}..{len(REQUIRED_ARTIFACT_TYPES)}"):
             parse_unverified_physical_manifest(encode(document))
 
     def test_duplicate_artifact_type_is_rejected_even_with_another_digest(self):
@@ -181,6 +191,62 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
             )
         ]
         with self.assertRaisesRegex(ValueError, "DRAW-ACTA signatures are missing"):
+            parse_unverified_physical_manifest(encode(document))
+
+    def test_cs02_inspection_requires_operator_and_sgvo_roles(self):
+        document = valid_document()
+        artifact_sha = next(
+            item["sha256"] for item in document["artifacts"]
+            if item["artifact_type"] == "CS02-DAILY-EQUIPMENT-INSPECTION"
+        )
+        document["signatures"] = [
+            item for item in document["signatures"]
+            if not (
+                item["artifact_sha256"] == artifact_sha
+                and item["role"] == "EQUIPMENT-OPERATOR"
+            )
+        ]
+        with self.assertRaisesRegex(ValueError, "CS02-DAILY-EQUIPMENT-INSPECTION signatures are missing"):
+            parse_unverified_physical_manifest(encode(document))
+
+    def test_winner_relation_report_requires_it_signature(self):
+        document = valid_document()
+        artifact_sha = next(
+            item["sha256"] for item in document["artifacts"]
+            if item["artifact_type"] == "WINNER-RELATION-REPORT-WITH-SIGNATURE"
+        )
+        document["signatures"] = [
+            item for item in document["signatures"]
+            if item["artifact_sha256"] != artifact_sha
+        ]
+        with self.assertRaisesRegex(ValueError, "must have at least one declared signature"):
+            parse_unverified_physical_manifest(encode(document))
+
+    def test_mjf_signature_form_requires_it_signature(self):
+        document = valid_document()
+        artifact_sha = next(
+            item["sha256"] for item in document["artifacts"]
+            if item["artifact_type"] == "MJF-SIGNATURE-PRINTED-FORM"
+        )
+        document["signatures"] = [
+            item for item in document["signatures"]
+            if item["artifact_sha256"] != artifact_sha
+        ]
+        with self.assertRaisesRegex(ValueError, "must have at least one declared signature"):
+            parse_unverified_physical_manifest(encode(document))
+
+    def test_recording_full_and_edited_are_distinct_required_artifacts(self):
+        document = valid_document()
+        recording_types = {
+            item["artifact_type"] for item in document["artifacts"]
+            if item["artifact_type"].startswith("DRAW-RECORDING-")
+        }
+        self.assertEqual(recording_types, {"DRAW-RECORDING-FULL", "DRAW-RECORDING-EDITED"})
+        document["artifacts"] = [
+            item for item in document["artifacts"]
+            if item["artifact_type"] != "DRAW-RECORDING-FULL"
+        ]
+        with self.assertRaisesRegex(ValueError, rf"array with {len(REQUIRED_ARTIFACT_TYPES)}..{len(REQUIRED_ARTIFACT_TYPES)}"):
             parse_unverified_physical_manifest(encode(document))
 
     def test_weighing_strip_requires_exact_four_activity_5_4_roles(self):
@@ -235,7 +301,7 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
     def test_every_artifact_requires_a_custody_event(self):
         document = valid_document()
         document["custody_events"].pop()
-        with self.assertRaisesRegex(ValueError, "array with 11..4096"):
+        with self.assertRaisesRegex(ValueError, rf"array with {len(REQUIRED_ARTIFACT_TYPES)}..4096"):
             parse_unverified_physical_manifest(encode(document))
 
     def test_custody_time_must_match_referenced_time_proof(self):

@@ -40,7 +40,7 @@ Policy 11's attachment matrix lists these four records for Chispazo:
 3. SUMARIO DE SORTEO
 4. TIRA DE PESAJE
 
-The Acta itself must include place, date and event time; names, roles and signatures of the public servants commissioned under policy 2; the SEGOB inspector's name, signature and commission number; and incidents when present.
+The Acta itself must include place, date and event time; names, roles and signatures of the public servants commissioned under policy 2; the SEGOB inspector's name, signature and commission number; and incidents when present. It also carries the Relación de Ganadores report. Policy 12 identifies the Chispazo report code CLSBR140 and its electronic signature for the weekly DVD package.
 
 **Role correction:** the prior matrix mislabeled the SGVO reviewer as the Dirección de Operación de Concursos, Juegos y Sorteos. Activity 5.4 instead says the person responsible for weighing signs the Tira de Pesaje, which is then reviewed/rubricated by:
 - representative of the Subdirección General de Ventas y Operaciones;
@@ -55,7 +55,11 @@ Policy 8 states that the electronic signature of the participation file is recor
 
 Policy 16's activity note says its validation sequence is performed only for nocturnal draws. This is relevant to the 21:00 Clásico target and must not be generalized to the 15:00 De las Tres workflow without checking the applicable steps.
 
-Policy 19 requires people participating in an electronic draw to register in CS-12, the room-attendance form. The ORIGEN manifest includes the CS-12 record as a supporting access-control artifact.
+Policy 19 requires people participating in an electronic draw to register in CS-12, the room-attendance form. Activity 2.1 also records daily equipment inspection in CS-02, signed by the operator and requested SGVO countersignature. The ORIGEN manifest includes both records.
+
+Policy 30 requires recording from sphere weighing through the electronic draw as documentary witness material; the edited draw-only recording is retained as part of the Acta. The manifest therefore distinguishes the full recording from the edited Acta copy.
+
+For the 21:00 nightly workflow, the procedure's annex says that after 21:00 the participation/cancellation files and their electronic signatures are written to CD/DVD, then the Master Transaction File (MJF) and its printed electronic-signature form are deposited in the security box for OIC custody. This nightly MJF control is not generalized to the 15:00 De las Tres workflow.
 
 ## 5. Versioned physical-evidence manifest
 
@@ -67,14 +71,18 @@ The new physical-evidence manifest v1 requires one original-byte entry for each 
 - equipment/urn record;
 - sphere-to-number mapping register;
 - CS-12 room-access register;
-- SEGOB/OIC custody record.
+- SEGOB/OIC custody record;
+- full weighing-to-draw recording and edited draw-only recording;
+- Relación de Ganadores report with its electronic signature;
+- nightly MJF and its printed electronic-signature form;
+- CS-02 daily equipment inspection.
 
-Only the four attachment names above are stated as Chispazo Acta attachments by policy 11. The remaining entries are ORIGEN supporting-evidence requirements for reconstructing equipment, mapping, access and custody; they are not represented as verbatim SGVO attachment names.
+Only the four attachment names above are stated as Chispazo Acta attachments by policy 11. The winner-relation report/signature, recordings, participation/cancellation media, nightly MJF/signature form, CS-02, CS-12, calibration and SEGOB/OIC custody are separate procedure controls or records. Equipment/urn identity and sphere-to-number mapping are ORIGEN supporting-evidence requirements. None is represented as an additional verbatim row in the policy-11 attachment matrix.
 
 The schema also requires:
 - exact target contest ID, local draw date and 21:00 Mexico City close;
 - source ID, immutable source-object ID, media type, original-byte SHA-256 and byte length for every artifact;
-- explicit signature claims for the Acta, weighing strip and participation/cancellation signature media;
+- explicit signature claims for the Acta, weighing strip, participation/cancellation media, winner-relation report, MJF signature form and CS-02 inspection;
 - exactly four distinct weighing-strip signers with the activity-5.4 roles;
 - a custody event for every artifact;
 - each custody event's time-proof reference to resolve to the same declared UTC event time;

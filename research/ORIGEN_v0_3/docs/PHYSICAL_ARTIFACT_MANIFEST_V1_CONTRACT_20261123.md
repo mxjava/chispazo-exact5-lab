@@ -30,8 +30,14 @@ Exactly one distinct source object and original-byte digest is required for each
 | SPHERE-NUMBER-MAPPING-REGISTER | Mapping of sphere identifiers to printed numbers | ORIGEN physical support |
 | CS12-ROOM-ACCESS-REGISTER | CS-12 attendance/access record for the draw room | Official procedure record |
 | SEGOB-OIC-CUSTODY-RECORD | Deposit/retrieval record for the security-box/OIC custody path | Official procedure custody control |
+| DRAW-RECORDING-FULL | Full recording from sphere weighing through the electronic draw | Official procedure documentary witness |
+| DRAW-RECORDING-EDITED | Edited recording of the draw, retained with the Acta | Official procedure Acta media |
+| WINNER-RELATION-REPORT-WITH-SIGNATURE | Report Relación de Ganadores and its electronic signature | Official procedure report |
+| MJF-TRANSACTION-FILE | Archivo Maestro de Transacciones deposited after the 21:00 nightly close | Official nightly custody record |
+| MJF-SIGNATURE-PRINTED-FORM | MJF electronic-signature print form | Official nightly custody record |
+| CS02-DAILY-EQUIPMENT-INSPECTION | Daily equipment-function inspection form CS-02 | Official procedure equipment control |
 
-The four Acta attachments are exactly the four rows listed for Chispazo in policy 11 of SGVO-PRO-05. The supporting ORIGEN entries are not claimed to be additional verbatim rows in that attachment matrix.
+The four Acta attachments are exactly the four rows listed for Chispazo in policy 11 of SGVO-PRO-05. The winner-relation report/signature and the recordings are separately required by policies 11, 12 and 30. The MJF and its printed signature form are included because the procedure's nightly annex describes their deposit after 21:00. Participation/cancellation media, CS-02, CS-12, calibration and SEGOB/OIC custody are separate procedure controls. Equipment/urn identity and sphere-to-number mapping are additional ORIGEN physical-support requirements. None is represented as an additional verbatim row in the policy-11 attachment matrix.
 
 V1 requires separate source objects and distinct original-byte digests. A single combined bundle containing multiple logical records is not representable by v1; do not split or reserialize a source file and then claim the derived bytes are the original source. A future schema version may add explicit byte-range/page locators for a signed bundle.
 
@@ -57,7 +63,7 @@ WEIGHING-STRIP must declare exactly four distinct subjects and exactly these act
 - SEGOB-INSPECTOR
 - GENERAL-DIRECTORATE-REPRESENTATIVE
 
-PARTICIPATION-CANCELLATION-SIGNATURE-MEDIA must have at least one signature claim. These role strings are schema labels; the parser does not authenticate the people or verify the signature bytes.
+PARTICIPATION-CANCELLATION-SIGNATURE-MEDIA, WINNER-RELATION-REPORT-WITH-SIGNATURE and MJF-SIGNATURE-PRINTED-FORM must each have an IT-representative signature claim. CS02-DAILY-EQUIPMENT-INSPECTION must declare both the EQUIPMENT-OPERATOR and SGVO-representative roles. These role strings are schema labels; the parser does not authenticate the people or verify the signature bytes.
 
 ## Custody and time declarations
 
@@ -71,6 +77,7 @@ The ledger anchor must claim a different resulting head digest from its previous
 
 The isolated suite covers:
 - missing or duplicate artifact types and duplicate source-object IDs;
+- omission of full/edited draw recordings, winner-relation report/signature, nightly MJF/signature form or CS-02 inspection;
 - cross-contest artifact binding;
 - De las Tres 15:00 slot and mismatched local date;
 - missing Acta roles and missing/duplicate weighing-strip signers;

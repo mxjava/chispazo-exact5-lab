@@ -30,8 +30,8 @@ _UTC_TIMESTAMP = re.compile(
 _MEDIA_TYPE = re.compile(r"(?:application|text|image)/[A-Za-z0-9.+-]+\Z")
 _SIGNATURE_ALGORITHMS = {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}
 
-# Four records listed in the Chispazo Acta attachment matrix, plus the Acta
-# itself and ORIGEN supporting records needed for physical/custody reconstruction.
+# Four records listed in the Chispazo Acta attachment matrix, plus the Acta,
+# other procedure-controlled media/records and ORIGEN physical-support records.
 REQUIRED_ARTIFACT_TYPES = frozenset({
     "DRAW-ACTA",
     "SALES-CLOSE-SUMMARY",
@@ -44,6 +44,12 @@ REQUIRED_ARTIFACT_TYPES = frozenset({
     "SPHERE-NUMBER-MAPPING-REGISTER",
     "CS12-ROOM-ACCESS-REGISTER",
     "SEGOB-OIC-CUSTODY-RECORD",
+    "DRAW-RECORDING-FULL",
+    "DRAW-RECORDING-EDITED",
+    "WINNER-RELATION-REPORT-WITH-SIGNATURE",
+    "MJF-TRANSACTION-FILE",
+    "MJF-SIGNATURE-PRINTED-FORM",
+    "CS02-DAILY-EQUIPMENT-INSPECTION",
 })
 
 # Policy 2 + policy 11: commissioned representatives and SEGOB inspector
@@ -63,10 +69,25 @@ _WEIGHING_STRIP_REQUIRED_ROLES = frozenset({
     "GENERAL-DIRECTORATE-REPRESENTATIVE",
 })
 
+_IT_REQUIRED_ROLE = frozenset({"INFORMATION-TECHNOLOGY-REPRESENTATIVE"})
+_CS02_REQUIRED_ROLES = frozenset({
+    "EQUIPMENT-OPERATOR",
+    "SUBDIRECTORATE-GENERAL-SALES-OPERATIONS-REPRESENTATIVE",
+})
+_REQUIRED_ROLES_BY_ARTIFACT = {
+    "PARTICIPATION-CANCELLATION-SIGNATURE-MEDIA": _IT_REQUIRED_ROLE,
+    "WINNER-RELATION-REPORT-WITH-SIGNATURE": _IT_REQUIRED_ROLE,
+    "MJF-SIGNATURE-PRINTED-FORM": _IT_REQUIRED_ROLE,
+    "CS02-DAILY-EQUIPMENT-INSPECTION": _CS02_REQUIRED_ROLES,
+}
+
 _SIGNED_ARTIFACT_TYPES = frozenset({
     "DRAW-ACTA",
     "WEIGHING-STRIP",
     "PARTICIPATION-CANCELLATION-SIGNATURE-MEDIA",
+    "WINNER-RELATION-REPORT-WITH-SIGNATURE",
+    "MJF-SIGNATURE-PRINTED-FORM",
+    "CS02-DAILY-EQUIPMENT-INSPECTION",
 })
 
 _ROOT_FIELDS = {
@@ -482,6 +503,14 @@ def parse_unverified_physical_manifest(raw: bytes) -> UnverifiedPhysicalEvidence
     acta_roles = {item.role for item in signatures_by_artifact.get(acta_digest, [])}
     if not _ACTA_REQUIRED_ROLES.issubset(acta_roles):
         raise ValueError("DRAW-ACTA signatures are missing policy-2 or SEGOB roles")
+
+    for artifact_type, required_roles in _REQUIRED_ROLES_BY_ARTIFACT.items():
+        artifact_digest = artifact_by_type[artifact_type].sha256
+        declared_roles = {
+            item.role for item in signatures_by_artifact.get(artifact_digest, [])
+        }
+        if not required_roles.issubset(declared_roles):
+            raise ValueError(f"{artifact_type} signatures are missing required roles")
 
     strip_digest = artifact_by_type["WEIGHING-STRIP"].sha256
     strip_signatures = signatures_by_artifact.get(strip_digest, [])
