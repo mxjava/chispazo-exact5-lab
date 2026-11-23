@@ -354,6 +354,22 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "canonical MIME type"):
             parse_unverified_physical_manifest(encode(document))
 
+    def test_recording_mime_claims_must_match_artifact_semantics(self):
+        cases = (
+            ("DRAW-RECORDING-FULL", "application/pdf"),
+            ("DRAW-ACTA", "video/mp4"),
+        )
+        for artifact_type, media_type in cases:
+            with self.subTest(artifact_type=artifact_type, media_type=media_type):
+                document = valid_document()
+                artifact = next(
+                    item for item in document["artifacts"]
+                    if item["artifact_type"] == artifact_type
+                )
+                artifact["media_type"] = media_type
+                with self.assertRaisesRegex(ValueError, "media_type is incompatible"):
+                    parse_unverified_physical_manifest(encode(document))
+
     def test_custodian_subject_cannot_alias_signer_subject(self):
         document = valid_document()
         document["custody_events"][0]["custodian_subject_id"] = document["signatures"][0]["subject_id"]
