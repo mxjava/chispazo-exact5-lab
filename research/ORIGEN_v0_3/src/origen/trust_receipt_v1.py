@@ -459,6 +459,8 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
     if status == "REJECTED" and not failures:
         raise ValueError("REJECTED declaration must contain at least one failure code")
     attestation = _parse_attestation(root["receipt_attestation"])
+    if attestation.key_id in {item.key_id for item in signers}:
+        raise ValueError("receipt attestation key must be separate from signer keys")
     return UnverifiedTrustReceipt(
         declared_status=status,
         policy_version=policy_version,
