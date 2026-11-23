@@ -165,6 +165,31 @@ class TestTrustVerifierV1(unittest.TestCase):
                 raw, policy(public_bytes), verification_time=earlier
             )
 
+
+    def test_policy_rejects_public_key_reuse_across_issuer_identities(self):
+        raw, public_bytes, _ = signed_receipt()
+        original = policy(public_bytes).issuer_keys[0]
+        alias = TrustedIssuerKey(
+            issuer_id="second-independent-verifier",
+            key_id="different-key-label",
+            public_key_bytes=public_bytes,
+            valid_from_utc=VALID_FROM,
+            valid_until_utc=VALID_UNTIL,
+        )
+        malformed = TrustPolicy("policy-2026-11", (original, alias))
+        with self.assertRaisesRegex(ValueError, "reuses one public key"):
+            verify_receipt_attestation(raw, malformed, verification_time=NOW)
+
+    def test_root_attestation_key_cannot_be_reused_as_claimed_signer_key(self):
+        raw, public_bytes, private_key = signed_receipt()
+        document = json.loads(raw)
+        document["signers"][0]["key_id"] = "verifier-key-1"
+        aliased_raw = sign_document(document, private_key)
+        with self.assertRaisesRegex(ValueError, "distinct from every claimed signer"):
+            verify_receipt_attestation(
+                aliased_raw, policy(public_bytes), verification_time=NOW
+            )
+
     def test_policy_rejects_list_instead_of_exact_tuple(self):
         raw, public_bytes, _ = signed_receipt()
         valid = policy(public_bytes)
