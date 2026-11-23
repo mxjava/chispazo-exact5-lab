@@ -27,7 +27,7 @@ class TestDetachedEnvelope(unittest.TestCase):
             "keys": [{
                 "key_id": "test-authority-01",
                 "public_key_b64": base64.b64encode(public).decode(),
-                "roles": ["evidence_attestor"],
+                "roles": ["evidence_attestor", "custodian"],
                 "not_before_utc": "2026-01-01T00:00:00Z",
                 "not_after_utc": "2027-01-01T00:00:00Z",
                 "revoked": False,
@@ -35,7 +35,14 @@ class TestDetachedEnvelope(unittest.TestCase):
         })
         self.pin = hashlib.sha256(self.store).hexdigest()
         self.payload = b'{"artifact_sha256":"' + b"a" * 64 + b'"}'
-        self.signature = self.private.sign(self.payload)
+        signed_input = b"ORIGEN-DETACHED-ED25519-ENVELOPE-V1\\x00" + canonical({
+            "domain": "ORIGEN-DETACHED-ED25519-ENVELOPE-V1",
+            "issued_at_utc": "2026-11-23T14:00:00Z",
+            "key_id": "test-authority-01",
+            "payload_sha256": hashlib.sha256(self.payload).hexdigest(),
+            "role": "evidence_attestor",
+        })
+        self.signature = self.private.sign(signed_input)
         self.envelope = canonical({
             "schema": "origen.detached-ed25519-envelope.v1",
             "key_id": "test-authority-01",
@@ -60,6 +67,18 @@ class TestDetachedEnvelope(unittest.TestCase):
     def test_tampered_payload_is_rejected(self):
         env = json.loads(self.envelope)
         env["payload_b64"] = base64.b64encode(self.payload + b"!").decode()
+        with self.assertRaisesRegex(ValueError, "signature verification failed"):
+            self.verify(envelope=canonical(env))
+
+    def test_role_metadata_is_cryptographically_bound(self):
+        env = json.loads(self.envelope)
+        env["role"] = "custodian"
+        with self.assertRaisesRegex(ValueError, "signature verification failed"):
+            self.verify(envelope=canonical(env), role="custodian")
+
+    def test_issued_at_metadata_is_cryptographically_bound(self):
+        env = json.loads(self.envelope)
+        env["issued_at_utc"] = "2026-11-23T14:30:00Z"
         with self.assertRaisesRegex(ValueError, "signature verification failed"):
             self.verify(envelope=canonical(env))
 
