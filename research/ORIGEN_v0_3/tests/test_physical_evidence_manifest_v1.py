@@ -376,6 +376,20 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "media_type is incompatible"):
                     parse_unverified_physical_manifest(encode(document))
 
+    def test_unrecognized_custodian_role_never_authenticates_provenance(self):
+        # Role labels are declarations, not identity/authority evidence. The
+        # manifest parser is explicitly unverified and the trust adapter must
+        # remain fail-closed even for a syntactically valid but unrecognized role.
+        document = valid_document()
+        document["custody_events"][0]["custodian_role"] = "ROOT-ADMIN"
+        raw = encode(document)
+        parsed = parse_unverified_physical_manifest(raw)
+        self.assertEqual(parsed.custody_events[0].custodian_role, "ROOT-ADMIN")
+        self.assertIs(
+            verify_independent_provenance(raw),
+            ProvenanceStatus.BLOCKED_PROVENANCE,
+        )
+
     def test_custodian_subject_cannot_alias_signer_subject(self):
         document = valid_document()
         document["custody_events"][0]["custodian_subject_id"] = document["signatures"][0]["subject_id"]
