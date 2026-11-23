@@ -1,0 +1,157 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "observation": {
+    "observed_at_local": "2026-11-23T14:51:15-06:00",
+    "observed_at_utc": "2026-11-23T20:51:15Z",
+    "timezone": "America/Mexico_City",
+    "classification": "STATUS_ONLY_PUBLIC_OFFICIAL_SNAPSHOT"
+  },
+  "sources": {
+    "official_home_index": "https://www.loterianacional.gob.mx/home/index",
+    "official_chispazo_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_chispazo_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "official_normateca_current_sustantive_rules": "https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+    "sgvo_pro_05_rev39": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+    "sgvo_pro_34_rev01": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_34.pdf",
+    "prior_2026_11_22_mask": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221508"
+  },
+  "official_results_snapshot": {
+    "latest": {
+      "contest_id": 12390,
+      "draw_date": "2026-11-22",
+      "modality": "CLASSIC",
+      "winning_numbers": [
+        1,
+        6,
+        9,
+        19,
+        23
+      ],
+      "published": true
+    },
+    "previous": {
+      "contest_id": 12389,
+      "draw_date": "2026-11-22",
+      "modality": "DE_LAS_TRES",
+      "winning_numbers": [
+        1,
+        15,
+        17,
+        22,
+        25
+      ],
+      "published": true
+    },
+    "next_draw_date_visible": "2026-11-23",
+    "result_for_2026_11_23_visible": false,
+    "classic_contest_id_for_2026_11_23": "NOT_VISIBLE"
+  },
+  "home_index_card": {
+    "date": "2026-11-23",
+    "local_time": "15:00",
+    "displayed_draw_number": 12391,
+    "displayed_title": "Ilumina tu suerte",
+    "product_identity_explicit_in_rendered_card": false,
+    "modality_assignment": "NOT_INFERRED"
+  },
+  "schedule": {
+    "de_las_tres": "15:00",
+    "classic": "21:00",
+    "timezone": "America/Mexico_City",
+    "source": "Official Chispazo product page"
+  },
+  "official_mask": {
+    "index_latest_date": "2026-11-22",
+    "new_2026_11_23_mask_visible": false,
+    "prior_2026_11_22": {
+      "12389": {
+        "modality": "DE_LAS_TRES",
+        "numbers": [
+          1,
+          15,
+          17,
+          22,
+          25
+        ]
+      },
+      "12390": {
+        "modality": "CLASSIC",
+        "numbers": [
+          1,
+          6,
+          9,
+          19,
+          23
+        ]
+      },
+      "source_original_bytes_downloaded": false,
+      "source_sha256": "NOT_CAPTURED"
+    }
+  },
+  "procedure_reconciliation": {
+    "sgvo_pro_05": {
+      "revision": 39,
+      "pages": 38,
+      "last_updated": "2026-03-20",
+      "status": "PUBLIC_PROCEDURAL_REFERENCE",
+      "relevant_policies": {
+        "sphere_weighing": "Each electronic draw; Smartballs 4.25-5.25 g and max spread 0.30 g; Ping Pong 2.30-3.00 g and max spread 0.15 g",
+        "sales_close": "15:00 De las Tres; 21:00 nocturnal/Classic",
+        "pre_draw_participation_file": "Electronic signature stored before draw and deposited by SEGOB inspector in OIC-controlled safe",
+        "draw_act_attachments": [
+          "SUMARIO_CIERRE_VENTA",
+          "CS-11",
+          "SUMARIO_SORTEO",
+          "TIRA_DE_PESAJE"
+        ],
+        "scale_calibration": "At least annually under responsible subgerencia calendar"
+      }
+    },
+    "sgvo_pro_34": {
+      "revision": 1,
+      "pages": 16,
+      "last_updated": "2026-03-20",
+      "scope": "SORTEOS_TRADICIONALES_ONLY",
+      "explicit_exclusion": "Not applicable to Chispazo electronic draws; wooden maple-ball specifications and abacus procedure must not be imported"
+    },
+    "draw_specific_compliance_proven": false
+  },
+  "physical_evidence": {
+    "observation_pre_2026_11_23_15_00": true,
+    "observation_pre_2026_11_23_21_00": true,
+    "draw_specific_primary_records_for_2026_11_23_obtained": false,
+    "signed_draw_act": "NOT_OBTAINED",
+    "signed_participation_file_and_signature": "NOT_OBTAINED",
+    "cs11": "NOT_OBTAINED",
+    "original_weighing_strip_and_28_measurements": "NOT_OBTAINED",
+    "scale_identity_and_calibration": "NOT_OBTAINED",
+    "equipment_and_urn_records": "NOT_OBTAINED",
+    "independent_custody_receipt": "NOT_OBTAINED",
+    "trusted_timestamp_or_external_ledger_proof": "NOT_OBTAINED",
+    "two_independent_preclose_output_seals": "NOT_OBTAINED"
+  },
+  "source_bytes": {
+    "sgvo_pro_05_original_bytes_downloaded": false,
+    "sgvo_pro_05_sha256": "NOT_CAPTURED",
+    "sgvo_pro_34_original_bytes_downloaded": false,
+    "sgvo_pro_34_sha256": "NOT_CAPTURED",
+    "2026_11_22_mask_original_bytes_downloaded": false,
+    "2026_11_22_mask_sha256": "NOT_CAPTURED"
+  },
+  "eligibility": {
+    "status": "BLOCKED_PROVENANCE",
+    "snapshot_eligible": false,
+    "prospective_oos_eligible": false,
+    "score_eligible": false,
+    "reason": "Public procedure and result metadata only; no draw-specific signed physical records, original source bytes, independent custody, trusted time, or two pre-close seals."
+  },
+  "protections": {
+    "v294": "FROZEN",
+    "canonical_history": "UNCHANGED",
+    "main_writes": false,
+    "canonical_append": false,
+    "merge_or_promotion": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
