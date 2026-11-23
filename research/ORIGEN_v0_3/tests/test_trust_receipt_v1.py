@@ -202,6 +202,12 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "distinct generators"):
             parse_unverified_receipt(encode(document))
 
+    def test_signer_cannot_also_be_a_generator(self):
+        document = valid_document()
+        document["signers"][0]["subject_id"] = document["output_seals"][0]["generator_id"]
+        with self.assertRaisesRegex(ValueError, "signer and generator claims must be separate"):
+            parse_unverified_receipt(encode(document))
+
     def test_custodian_cannot_be_one_of_the_generators(self):
         document = valid_document()
         document["custodians"][0]["subject_id"] = "generator-a"
