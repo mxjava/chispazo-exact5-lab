@@ -22,3 +22,12 @@ prediction or a certified Exact5 model result.
 For a fair 5-of-28 draw, each exact line has probability 1/98,280. A set of 30
 distinct lines has uniform exact-5 probability 30/98,280; the utility does not
 increase that probability above the uniform baseline.
+
+## Boundary with the prospective registration pipeline
+
+The generator's CSV includes the explicit `UNIFORM_COVERAGE_NOT_PREDICTIVE` mode.
+The predictive freeze command now rejects that marker instead of accepting the file
+as if it were a model portfolio. The 30-line count alone is not evidence of
+predictive eligibility. To enter the predictive freeze path, a separate candidate
+must pass the existing preflight, provenance, commit-binding, and immutable-ledger
+checks. Do not remove or rewrite the mode marker to bypass this guard.
