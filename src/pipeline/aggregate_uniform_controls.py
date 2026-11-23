@@ -90,7 +90,7 @@ def _write_json_atomically(path: str | Path, report: dict) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as stream:
             json.dump(report, stream, indent=2, ensure_ascii=False)
-            stream.write("\\n")
+            stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temp_name, destination)
