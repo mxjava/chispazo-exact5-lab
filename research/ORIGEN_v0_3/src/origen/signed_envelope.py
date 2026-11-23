@@ -105,7 +105,7 @@ def _signature_input(key_id: str, role: str, issued_at_utc: str, payload: bytes)
         separators=(",", ":"),
         ensure_ascii=True,
     ).encode("ascii")
-    return b"ORIGEN-DETACHED-ED25519-ENVELOPE-V1\\x00" + metadata
+    return b"ORIGEN-DETACHED-ED25519-ENVELOPE-V1\x00" + metadata
 
 def verify_detached_ed25519_envelope(
     envelope_bytes: bytes,
