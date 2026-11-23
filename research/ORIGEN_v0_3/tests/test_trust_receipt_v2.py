@@ -8,6 +8,7 @@ import unittest
 
 from origen.trust_receipt_v1 import parse_unverified_receipt
 from origen.trust_receipt_v2 import (
+    MAX_TRUST_RECEIPT_JSON_DEPTH_V2,
     SCHEMA_VERSION_V2,
     UnverifiedTrustReceiptV2,
     parse_unverified_receipt_v2,
@@ -94,6 +95,26 @@ class TestTrustReceiptV2(unittest.TestCase):
             document["receipt_attestation"]["timestamp_proof_sha256"]
         )
         with self.assertRaisesRegex(ValueError, "references must be distinct"):
+            parse_unverified_receipt_v2(encode(document))
+
+    def test_v2_rejects_excessive_json_nesting_before_decode(self):
+        nested = (
+            b'{"untrusted":'
+            + b"[" * MAX_TRUST_RECEIPT_JSON_DEPTH_V2
+            + b"0"
+            + b"]" * MAX_TRUST_RECEIPT_JSON_DEPTH_V2
+            + b"}"
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            f"maximum JSON nesting depth {MAX_TRUST_RECEIPT_JSON_DEPTH_V2}",
+        ):
+            parse_unverified_receipt_v2(nested)
+
+    def test_v2_brackets_inside_json_strings_do_not_count_as_nesting(self):
+        document = valid_v2_document()
+        document["status"] = "AUTHENTICATED[]{}"
+        with self.assertRaisesRegex(ValueError, "status must be"):
             parse_unverified_receipt_v2(encode(document))
 
     def test_v1_parser_does_not_silently_accept_v2_schema(self):
