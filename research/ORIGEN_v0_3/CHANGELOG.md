@@ -1,3 +1,8 @@
+## Trusted-time authority identity separation (2026-11-23)
+- The unverified receipt parser now rejects exact identifier collisions between any declared trusted-time authority and the receipt issuer, signers, custodians, or output generators.
+- Added adversarial coverage for all four collision classes and documented the rule in the adapter specification.
+- This blocks literal role aliasing only; it does not prove distinct real-world entities, authenticate a TSA/RFC 3161 token, or provision independent trust roots.
+
 # Changelog
 
 ## Output-seal signer-reference binding (2026-11-22)
