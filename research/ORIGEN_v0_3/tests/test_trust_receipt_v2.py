@@ -117,6 +117,14 @@ class TestTrustReceiptV2(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "status must be"):
             parse_unverified_receipt_v2(encode(document))
 
+    def test_v2_depth_scanner_ignores_delimiters_after_escaped_quotes(self):
+        document = valid_v2_document()
+        # The escaped quote must not end the JSON string for the byte-level
+        # nesting scanner; otherwise these brackets are miscounted as containers.
+        document["status"] = 'AUTHENTICATED"' + ("[" * 65) + ("]" * 65)
+        with self.assertRaisesRegex(ValueError, "status must be"):
+            parse_unverified_receipt_v2(encode(document))
+
     def test_v1_parser_does_not_silently_accept_v2_schema(self):
         with self.assertRaisesRegex(ValueError, "unsupported trust receipt schema_version"):
             parse_unverified_receipt(encode(valid_v2_document()))
