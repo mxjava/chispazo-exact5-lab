@@ -20,3 +20,8 @@ The 22-Nov mask PDF and SGVO-PRO-05 PDF could not be captured as original bytes 
 - [Chispazo schedule and rules](https://www.loterianacional.gob.mx/Chispazo/Chispazo)
 - [Official mask index](https://www.loterianacional.gob.mx/Mascarillas/Mascarillas)
 - [SGVO-PRO-05 electronic draw procedure](https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf)
+
+## Procedural controls confirmed in SGVO-PRO-05 Rev. 39
+The official procedure's Chispazo record matrix lists the sales-close summary, CS-11 winning-numbers form, draw summary, and weighing strip. It directs that the CS-11 be signed with signatures collected from Lotería Nacional representatives and the SEGOB inspector, with the original attached to the draw act. It also directs the weighing responsible person to sign the weighing strip, followed by review/rubric by the Subdirectorate General Sales and Operations representative, the SEGOB inspector, and the General Directorate representative. The procedure states automatic sales close at 15:00 for draws of the Three and 21:00 for nocturnal draws; the official Chispazo product page maps those slots to De las Tres and Clásico, respectively.
+
+These are process requirements only. They do not establish that any specific 23-Nov records exist, that any signatory actually signed, that a timestamp is trusted, or that custody was independent. The procedure PDF was inspected in the official web-rendered view, but the original PDF bytes were not captured; its SHA-256 remains **NOT_CAPTURED**.
