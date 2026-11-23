@@ -1,3 +1,16 @@
+## Exact Classic slot precision in ORIGEN V1 and V2 (2026-11-23)
+- Hardened both schedule guards to require **21:00:00 exactly** in `America/Mexico_City`, including zero seconds and microseconds. The prior hour/minute-only comparison accepted a declared 21:00:59 timestamp as the Classic draw slot.
+- V1 receipt regression cases reject 15:00 (De las Tres), 20:59, 21:00:59 and 22:00; the valid 21:00:00 fixture remains accepted. V2 physical-intake regression rejects a 21:00:59 target draw time.
+- Commits: V1 parser `5c874e5a56c2a819955fc0cae686d30772095e51`; V2 schedule helper `565b81bca214fa81199bd2666d7c2549e851a877`; V1 test `8c94eaba33d9f7ed78430da39cbc34b93559fe82`; V2 test `aa1582671f80d9a07fd8f1635891068ce91e3559`.
+- CI on test commit `aa1582671f80d9a07fd8f1635891068ce91e3559`: isolated ORIGEN run `45170718622` passed **333 tests**; root CI run `45170718667` passed `compileall` and `pytest -q` (**535 passed, 2 skipped, 100 subtests passed**).
+- The fixed slot is a structural schedule guard, not an authenticated schedule feed. If Lotería Nacional authorizes a schedule change, the code policy must be versioned and independently reviewed before accepting the new slot.
+
+## Official procedure evidence baseline — 2026-11-23
+- Directly reviewed the official **SGVO-PRO-05, Procedimiento Sorteos Electrónicos**, revision **39**, published 20-Mar-2026, 38 pages, footer DN-07 Version 09.
+- It specifies automatic sales close at 15:00 for De las Tres and 21:00 for nocturnal draws; the Chispazo product page maps those slots to De las Tres and Clásico respectively.
+- The Chispazo Acta attachment matrix lists the Sumario de sorteo (cierre de venta), CS-11, Sumario de sorteo and Tira de Pesaje. The Tira de Pesaje requires signatures from the weighing responsible person, Dirección de Operación de Concursos, Juegos y Sorteos representative, Dirección General representative and SEGOB inspector. Participation/cancellation file signatures and safe custody are also required by the procedure.
+- These are official process requirements, not evidence that contest 12390 records were produced or independently preserved. Procedure PDF original bytes and SHA-256 were not captured.
+
 ## Classic schedule binding in trust receipt V1 (2026-11-23)
 - The V1 trust-receipt parser now requires a declared `CLASSIC` target close timestamp to resolve to the official **21:00 America/Mexico_City** slot. Previously, the parser accepted any valid UTC close time while still labeling the target CLASSIC; that allowed a 15:00 De las Tres time or an arbitrary late close to satisfy the structural pre-close comparison.
 - Added an adversarial test covering 15:00, 20:59 and 22:00 local close claims. This aligns the V1 receipt target boundary with the existing V2 physical-intake schedule check.
