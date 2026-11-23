@@ -230,7 +230,7 @@ class CustodyTests(unittest.TestCase):
             needle,
             b'"candidate_id":"CANDIDATE-DRYRUN-1","candidate_id":"attacker"',
             1,
-        ) + b"\\n"
+        ) + b"\n"
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "duplicate.json"
             path.write_bytes(ambiguous)
@@ -242,14 +242,14 @@ class CustodyTests(unittest.TestCase):
         raw = json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "whitespace.json"
-            path.write_bytes(raw.replace(b",", b", ", 1) + b"\\n")
+            path.write_bytes(raw.replace(b",", b", ", 1) + b"\n")
             with self.assertRaisesRegex(ValueError, "exact canonical JSON"):
                 read_record(path)
 
     def test_record_reader_rejects_nonstandard_json_constants(self):
         record, _ = self.make_record()
         raw = json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")
-        malformed = raw[:-1] + b',"untrusted":NaN}' + b"\\n"
+        malformed = raw[:-1] + b',"untrusted":NaN}' + b"\n"
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "nan.json"
             path.write_bytes(malformed)
