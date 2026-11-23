@@ -16,6 +16,7 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 MAX_TRUST_RECEIPT_BYTES = 262_144
 MAX_TRUST_RECEIPT_JSON_DEPTH = 64
@@ -31,6 +32,8 @@ _UTC_TIMESTAMP = re.compile(
     r"(?:\.[0-9]{1,6})?Z\Z"
 )
 _SIGNATURE_ALGORITHMS = {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}
+_CHISPAZO_LOCAL_TIMEZONE = ZoneInfo("America/Mexico_City")
+_CLASSIC_DRAW_SLOT = (21, 0)
 
 _ROOT_FIELDS = {
     "schema_version", "status", "policy_version", "verifier_build_sha256",
@@ -247,6 +250,13 @@ def _timestamp(value: object, field: str) -> str:
     return value
 
 
+def _is_classic_draw_slot(value: str) -> bool:
+    """Match the official 21:00 Chispazo Clásico slot in Mexico City time."""
+    instant = datetime.fromisoformat(value[:-1] + "+00:00")
+    local = instant.astimezone(_CHISPAZO_LOCAL_TIMEZONE)
+    return (local.hour, local.minute) == _CLASSIC_DRAW_SLOT
+
+
 def _algorithm(value: object, field: str) -> str:
     if type(value) is not str or value not in _SIGNATURE_ALGORITHMS:
         raise ValueError(f"{field} is not a supported receipt-schema algorithm")
@@ -346,10 +356,18 @@ def _parse_target(value: object) -> TargetClaim:
     target_digest = _digest(item["target_list_sha256"], "target.target_list_sha256")
     if target_digest != _target_list_digest(contest_id):
         raise ValueError("target_list_sha256 does not match the canonical one-contest target list")
+    draw_close_at_utc = _timestamp(
+        item["draw_close_at_utc"], "target.draw_close_at_utc"
+    )
+    if not _is_classic_draw_slot(draw_close_at_utc):
+        raise ValueError(
+            "CLASSIC draw_close_at_utc must resolve to the official 21:00 "
+            "America/Mexico_City slot"
+        )
     return TargetClaim(
         modality=modality,
         contest_id=contest_id,
-        draw_close_at_utc=_timestamp(item["draw_close_at_utc"], "target.draw_close_at_utc"),
+        draw_close_at_utc=draw_close_at_utc,
         target_list_sha256=target_digest,
     )
 
