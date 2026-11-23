@@ -1,0 +1,118 @@
+"""Tests for detached envelope verification; trust anchors are synthetic fixtures."""
+from __future__ import annotations
+
+import base64
+import hashlib
+import json
+import unittest
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from origen.signed_envelope import verify_detached_ed25519_envelope
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+
+
+class TestDetachedEnvelope(unittest.TestCase):
+    def setUp(self):
+        self.private = Ed25519PrivateKey.generate()
+        public = self.private.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+        )
+        self.store = canonical({
+            "schema": "origen.trust-store.v1",
+            "keys": [{
+                "key_id": "test-authority-01",
+                "public_key_b64": base64.b64encode(public).decode(),
+                "roles": ["evidence_attestor"],
+                "not_before_utc": "2026-01-01T00:00:00Z",
+                "not_after_utc": "2027-01-01T00:00:00Z",
+                "revoked": False,
+            }],
+        })
+        self.pin = hashlib.sha256(self.store).hexdigest()
+        self.payload = b'{"artifact_sha256":"' + b"a" * 64 + b'"}'
+        self.signature = self.private.sign(self.payload)
+        self.envelope = canonical({
+            "schema": "origen.detached-ed25519-envelope.v1",
+            "key_id": "test-authority-01",
+            "role": "evidence_attestor",
+            "issued_at_utc": "2026-11-23T14:00:00Z",
+            "payload_b64": base64.b64encode(self.payload).decode(),
+            "signature_b64": base64.b64encode(self.signature).decode(),
+        })
+
+    def verify(self, envelope=None, store=None, pin=None, role="evidence_attestor", at="2026-11-23T15:00:00Z"):
+        return verify_detached_ed25519_envelope(
+            self.envelope if envelope is None else envelope,
+            self.store if store is None else store,
+            self.pin if pin is None else pin,
+            role,
+            at,
+        )
+
+    def test_valid_signature_and_authorized_role_returns_exact_payload(self):
+        self.assertEqual(self.verify(), self.payload)
+
+    def test_tampered_payload_is_rejected(self):
+        env = json.loads(self.envelope)
+        env["payload_b64"] = base64.b64encode(self.payload + b"!").decode()
+        with self.assertRaisesRegex(ValueError, "signature verification failed"):
+            self.verify(envelope=canonical(env))
+
+    def test_wrong_deployment_pin_rejects_trust_store(self):
+        with self.assertRaisesRegex(ValueError, "does not match deployment pin"):
+            self.verify(pin="0" * 64)
+
+    def test_wrong_role_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "role or key_id"):
+            self.verify(role="custodian")
+
+    def test_revoked_key_is_rejected(self):
+        store = json.loads(self.store)
+        store["keys"][0]["revoked"] = True
+        raw = canonical(store)
+        with self.assertRaisesRegex(ValueError, "unknown, revoked"):
+            self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
+
+    def test_key_outside_validity_window_is_rejected(self):
+        env = json.loads(self.envelope)
+        env["issued_at_utc"] = "2025-12-31T23:59:59Z"
+        with self.assertRaisesRegex(ValueError, "not valid at envelope issuance"):
+            self.verify(envelope=canonical(env))
+
+    def test_future_envelope_is_rejected(self):
+        env = json.loads(self.envelope)
+        env["issued_at_utc"] = "2026-12-01T00:00:00Z"
+        with self.assertRaisesRegex(ValueError, "from the future"):
+            self.verify(envelope=canonical(env))
+
+    def test_noncanonical_envelope_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "canonical JSON"):
+            self.verify(envelope=b'{ "schema": "wrong" }')
+
+    def test_duplicate_trust_store_key_ids_are_rejected(self):
+        store = json.loads(self.store)
+        store["keys"].append(dict(store["keys"][0]))
+        raw = canonical(store)
+        with self.assertRaisesRegex(ValueError, "duplicated"):
+            self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
+
+    def test_duplicate_json_object_keys_are_rejected(self):
+        raw = b'{"keys":[],"schema":"origen.trust-store.v1","schema":"origen.trust-store.v1"}'
+        with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
+            self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
+
+    def test_signature_from_untrusted_key_is_rejected(self):
+        other = Ed25519PrivateKey.generate().sign(self.payload)
+        env = json.loads(self.envelope)
+        env["signature_b64"] = base64.b64encode(other).decode()
+        with self.assertRaisesRegex(ValueError, "signature verification failed"):
+            self.verify(envelope=canonical(env))
+
+
+if __name__ == "__main__":
+    unittest.main()
