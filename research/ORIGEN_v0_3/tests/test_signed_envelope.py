@@ -91,14 +91,14 @@ class TestDetachedEnvelope(unittest.TestCase):
             self.verify(role="custodian")
 
     def test_required_role_rejects_whitespace_and_non_token_values(self):
-        for role in ("", " ", "evidence attestor", "custodian\\n", "ñ"):
+        for role in ("", " ", "evidence attestor", "custodian\n", "ñ"):
             with self.subTest(role=role):
                 with self.assertRaisesRegex(ValueError, "canonical role identifier"):
                     self.verify(role=role)
 
     def test_trust_store_rejects_noncanonical_role_identifiers(self):
         store = json.loads(self.store)
-        store["keys"][0]["roles"].append("custodian\\n")
+        store["keys"][0]["roles"].append("custodian\n")
         raw = canonical(store)
         with self.assertRaisesRegex(ValueError, "trust store roles are invalid"):
             self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
