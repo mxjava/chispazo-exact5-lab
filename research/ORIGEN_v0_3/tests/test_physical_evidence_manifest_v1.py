@@ -354,6 +354,12 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "canonical MIME type"):
             parse_unverified_physical_manifest(encode(document))
 
+    def test_custodian_subject_cannot_alias_signer_subject(self):
+        document = valid_document()
+        document["custody_events"][0]["custodian_subject_id"] = document["signatures"][0]["subject_id"]
+        with self.assertRaisesRegex(ValueError, "signer and custodian claims must be separate"):
+            parse_unverified_physical_manifest(encode(document))
+
     def test_time_authority_cannot_alias_signer_or_custodian_subject(self):
         document = valid_document()
         document["trusted_time_proofs"][0]["authority_id"] = document["signatures"][0]["subject_id"]
