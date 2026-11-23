@@ -130,6 +130,11 @@ class CustodyTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("exact v1 schema", reason)
 
+    def test_empty_custody_chain_is_not_reported_as_verified(self):
+        ok, reason = verify_record_chain([], {})
+        self.assertFalse(ok)
+        self.assertIn("at least one record", reason)
+
     def test_full_chain_verifies(self):
         first, raw1 = self.make_record()
         second, raw2 = self.make_record(
