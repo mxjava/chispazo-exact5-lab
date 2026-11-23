@@ -69,7 +69,7 @@ PARTICIPATION-CANCELLATION-SIGNATURE-MEDIA, WINNER-RELATION-REPORT-WITH-SIGNATUR
 
 Every required artifact must have at least one custody event. Each event binds an artifact digest, globally unique event ID, custodian subject/role, received-at UTC time, custody receipt digest and timestamp-proof digest. The referenced time proof must carry the exact same event ID as the custody event.
 
-Each referenced timestamp proof must exist and its declared event time must exactly equal the custody event's received-at time. Authority/event identities and proof digests must be unique. Time-authority identifiers must not literally alias declared signer or custodian identifiers.
+Each referenced timestamp proof must exist and its declared event time must exactly equal the custody event's received-at time. Authority/event identities and proof digests must be unique. Signer and custodian subject IDs must be disjoint; time-authority identifiers must not literally alias declared signer or custodian identifiers. These are structural identifier checks only and do not authenticate real-world identity or independence.
 
 The ledger anchor must claim a different resulting head digest from its previous head. This is only a structural transition check; the parser does not verify the ledger or inclusion proof.
 
@@ -83,7 +83,7 @@ The isolated suite covers:
 - De las Tres 15:00 slot and mismatched local date;
 - missing Acta roles and missing/duplicate weighing-strip signers;
 - signature references to unknown artifacts;
-- missing custody events and missing/mismatched time proofs;
+- missing custody events, signer/custodian subject aliasing and missing/mismatched time proofs;
 - duplicate custody event IDs, custody/time-proof event-ID mismatch, duplicate time authority/event identities and authority aliasing;
 - unchanged ledger head;
 - boolean byte lengths, duplicate JSON keys, noncanonical JSON and excessive nesting;
