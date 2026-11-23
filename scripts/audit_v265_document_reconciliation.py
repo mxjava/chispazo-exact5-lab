@@ -24,7 +24,7 @@ def validate() -> dict:
     assert report["V265"]["anytime_evalue_gate_implemented"] is False
     assert report["classification"] == "MECHANISM_DOCUMENTATION_ONLY"
     assert report["predictive_advantage_claimed"] is False
-    assert len(rows) == 12
+    assert len(rows) == 15
     assert any(row["variable"] == "sphere_weight_01_to_28" and row["status"] == "NO_AUTHENTIC_TIRA_OBTAINED" for row in rows)
     return {"report_id": report["audit_id"], "matrix_rows": len(rows), "classification": report["classification"], "valid": True}
 
