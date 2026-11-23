@@ -54,7 +54,7 @@ class PlackettLuceTests(unittest.TestCase):
         masses = [4.7 + i / 1000 for i in range(28)]
         logs = mass_log_weights(masses, 0.75)
         self.assertAlmostEqual(math.fsum(logs), 0.0, places=11)
-        self.assertGreater(logs[-1], logs[0])
+        self.assertLess(logs[-1], logs[0])
         reverse = mass_log_weights(masses, -0.75)
         self.assertAlmostEqual(logs[0], -reverse[0], places=13)
 
