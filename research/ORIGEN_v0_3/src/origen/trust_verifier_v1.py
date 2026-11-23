@@ -60,6 +60,7 @@ def _snapshot_trust_policy(policy: object):
 
     entries = []
     seen_pairs = set()
+    seen_public_keys = set()
     for index, item in enumerate(policy.issuer_keys):
         if type(item) is not TrustedIssuerKey:
             raise ValueError(f"policy issuer_keys[{index}] must be an exact TrustedIssuerKey")
@@ -79,6 +80,9 @@ def _snapshot_trust_policy(policy: object):
         )
         if valid_from > valid_until:
             raise ValueError(f"issuer_keys[{index}] validity interval is inverted")
+        if item.public_key_bytes in seen_public_keys:
+            raise ValueError("policy reuses one public key across issuer identities")
+        seen_public_keys.add(item.public_key_bytes)
         pair = (issuer_id, key_id)
         if pair in seen_pairs:
             raise ValueError("policy contains duplicate issuer/key identifiers")
@@ -178,6 +182,8 @@ def verify_receipt_attestation(
         raise ValueError("receipt declaration is REJECTED, not eligible for verification")
     if receipt.policy_version != policy_version:
         raise ValueError("receipt policy_version does not match externally supplied policy")
+    if receipt.attestation.key_id in {signer.key_id for signer in receipt.signers}:
+        raise ValueError("root attestation key must be distinct from every claimed signer key")
     verified_at = _policy_utc_datetime(verification_time, "verification_time")
 
     matches = [
