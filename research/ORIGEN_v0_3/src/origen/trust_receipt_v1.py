@@ -464,6 +464,8 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
     if len({item.signature_sha256 for item in seals}) != 2:
         raise ValueError("two output seals must have distinct signature digests")
     generator_ids = {item.generator_id for item in seals}
+    if generator_ids.intersection(signer_subjects):
+        raise ValueError("signer and generator claims must be separate")
     if generator_ids.intersection(item.subject_id for item in custodians):
         raise ValueError("generator and custodian claims must be separate")
     failure_values = _array(root["failure_codes"], "failure_codes", minimum=0, maximum=256)
