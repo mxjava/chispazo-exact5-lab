@@ -77,8 +77,10 @@ python -m src.pipeline.aggregate_uniform_controls --reports runs/eval_12390.json
 The aggregator validates control-only status, the non-predictive flags, contest
 uniqueness, portfolio SHA-256 format, hit-distribution totals, exact-5 count,
 best-hit consistency, and compatible null-calibration metadata. It rejects duplicate
-contest IDs and reused portfolio hashes rather than treating them as independent
-observations. The aggregate reports observed versus expected 0–5 hit counts across
+contest IDs. Reusing the same fixed portfolio across different independently drawn
+contests is allowed and often desirable: each contest is a new draw, while the
+portfolio hash makes the repeated fixed input explicit. The aggregate reports observed
+versus expected 0–5 hit counts across
 the supplied contests. It is descriptive only: it does not compute a predictive
 edge p-value, does not append to the official prospective ledger, and cannot upgrade
 any model's evidence status. Preserve each original report and portfolio CSV.
