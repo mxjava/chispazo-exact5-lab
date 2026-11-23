@@ -33,7 +33,7 @@ _UTC_TIMESTAMP = re.compile(
 )
 _SIGNATURE_ALGORITHMS = {"ed25519", "ecdsa-p256-sha256", "rsa-pss-sha256"}
 _CHISPAZO_LOCAL_TIMEZONE = ZoneInfo("America/Mexico_City")
-_CLASSIC_DRAW_SLOT = (21, 0)
+_CLASSIC_DRAW_SLOT = (21, 0, 0, 0)
 
 _ROOT_FIELDS = {
     "schema_version", "status", "policy_version", "verifier_build_sha256",
@@ -254,7 +254,7 @@ def _is_classic_draw_slot(value: str) -> bool:
     """Match the official 21:00 Chispazo Clásico slot in Mexico City time."""
     instant = datetime.fromisoformat(value[:-1] + "+00:00")
     local = instant.astimezone(_CHISPAZO_LOCAL_TIMEZONE)
-    return (local.hour, local.minute) == _CLASSIC_DRAW_SLOT
+    return (local.hour, local.minute, local.second, local.microsecond) == _CLASSIC_DRAW_SLOT
 
 
 def _algorithm(value: object, field: str) -> str:
