@@ -577,6 +577,14 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
         raise ValueError(
             "trusted time authority IDs must be distinct from receipt issuer and all declared participants"
         )
+    # The ledger is an independent trust domain, not another label for one of
+    # the actors whose claims it is meant to anchor. This is structural
+    # anti-aliasing only; it does not authenticate the ledger or its operator.
+    if ledger.ledger_id in declared_participants | time_authority_ids | {attestation.issuer_id}:
+        raise ValueError(
+            "ledger ID must be distinct from receipt issuer, signers, custodians, "
+            "generators, and trusted time authorities"
+        )
     return UnverifiedTrustReceipt(
         declared_status=status,
         policy_version=policy_version,
