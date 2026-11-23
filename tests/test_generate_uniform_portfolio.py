@@ -43,6 +43,18 @@ class UniformPortfolioTests(unittest.TestCase):
             self.assertEqual(tuple(sorted(combo)), combo)
             self.assertTrue(all(1 <= value <= 28 for value in combo))
 
+    def test_seed_has_versioned_golden_vector(self):
+        self.assertEqual(
+            generate_uniform_portfolio(20261122, 5),
+            [
+                (3, 4, 10, 11, 20),
+                (5, 15, 17, 21, 25),
+                (8, 9, 12, 16, 25),
+                (5, 7, 11, 18, 19),
+                (1, 4, 7, 11, 27),
+            ],
+        )
+
     def test_validation(self):
         for value in (0, -1, UNIVERSE + 1):
             with self.assertRaises(ValueError):
@@ -58,7 +70,6 @@ class UniformPortfolioTests(unittest.TestCase):
         self.assertIn("UNIFORM_COVERAGE_NOT_PREDICTIVE", output.getvalue())
         self.assertEqual(len(output.getvalue().strip().splitlines()), 3)
         self.assertEqual(format_combo((1, 2, 3, 4, 5)), "01-02-03-04-05")
-
 
     def test_cli_writes_reproducible_csv_artifact(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -85,6 +96,7 @@ class UniformPortfolioTests(unittest.TestCase):
         rows = stdout.getvalue().strip().splitlines()
         self.assertEqual(len(rows), 4)
         self.assertEqual(rows[0], "rank,combo,mode,seed")
+
 
 if __name__ == "__main__":
     unittest.main()
