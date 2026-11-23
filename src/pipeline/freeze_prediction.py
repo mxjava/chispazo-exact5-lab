@@ -161,14 +161,21 @@ def verify_registration_payload(payload: dict) -> bool:
 
 
 def reject_non_predictive_portfolio(df: pd.DataFrame) -> None:
-    """Prevent explicitly non-predictive coverage artifacts entering the freeze path."""
+    """Prevent explicitly non-predictive artifacts entering the predictive freeze path."""
     if "mode" not in df.columns:
         return
     modes = df["mode"].astype(str).str.strip()
-    if (modes == "UNIFORM_COVERAGE_NOT_PREDICTIVE").any():
+    non_predictive = modes.str.endswith("_NOT_PREDICTIVE")
+    if non_predictive.any():
+        found = sorted(set(modes[non_predictive].tolist()))
+        if "UNIFORM_COVERAGE_NOT_PREDICTIVE" in found:
+            raise ValueError(
+                "uniform coverage output is explicitly non-predictive and cannot be frozen "
+                "as a predictive registration"
+            )
         raise ValueError(
-            "uniform coverage output is explicitly non-predictive and cannot be frozen "
-            "as a predictive registration"
+            "non-predictive portfolio mode(s) cannot be frozen as a predictive registration: "
+            + ", ".join(found)
         )
 
 

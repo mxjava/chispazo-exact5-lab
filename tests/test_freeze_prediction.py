@@ -50,3 +50,13 @@ def test_uniform_generator_output_cannot_enter_predictive_freeze():
     import pytest
     with pytest.raises(ValueError, match="uniform coverage output"):
         reject_non_predictive_portfolio(frame)
+
+
+def test_combinatorial_4hit_coverage_is_rejected_from_predictive_freeze():
+    import pytest
+    frame = pd.DataFrame({
+        "combo": ["01-02-03-04-05"] * 30,
+        "mode": ["COMBINATORIAL_4HIT_COVERAGE_NOT_PREDICTIVE"] * 30,
+    })
+    with pytest.raises(ValueError, match="non-predictive portfolio mode"):
+        reject_non_predictive_portfolio(frame)
