@@ -54,7 +54,7 @@ class PlackettLuceTests(unittest.TestCase):
         masses = [4.7 + i / 1000 for i in range(28)]
         logs = mass_log_weights(masses, 0.75)
         self.assertAlmostEqual(math.fsum(logs), 0.0, places=11)
-        self.assertLess(logs[-1], logs[0])
+        self.assertGreater(logs[-1], logs[0])
         reverse = mass_log_weights(masses, -0.75)
         self.assertAlmostEqual(logs[0], -reverse[0], places=13)
 
@@ -62,7 +62,7 @@ class PlackettLuceTests(unittest.TestCase):
         masses = [1e308] * 27 + [1.0]
         logs = mass_log_weights(masses, 0.5)
         self.assertTrue(all(math.isfinite(value) for value in logs))
-        self.assertGreater(logs[-1], logs[0])
+        self.assertLess(logs[-1], logs[0])
 
     def test_log_weights_reject_booleans(self):
         with self.assertRaisesRegex(ValueError, "log_weights"):
