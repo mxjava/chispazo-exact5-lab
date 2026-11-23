@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import pandas as pd
-from src.pipeline.freeze_prediction import normalize_lines
+from src.pipeline.freeze_prediction import normalize_lines, reject_non_predictive_portfolio
 
 
 def test_normalize_30_distinct():
@@ -20,3 +20,21 @@ def test_normalize_30_distinct():
         combos.append('-'.join(map(str,c)))
     out=normalize_lines(pd.DataFrame({'combo':combos}))
     assert len(out)==30 and len(set(out))==30
+
+
+def test_uniform_coverage_portfolio_is_rejected_from_predictive_freeze():
+    frame = pd.DataFrame({
+        "combo": [f"{i:02d}-02-03-04-05" for i in range(1, 31)],
+        "mode": ["UNIFORM_COVERAGE_NOT_PREDICTIVE"] * 30,
+    })
+    import pytest
+    with pytest.raises(ValueError, match="explicitly non-predictive"):
+        reject_non_predictive_portfolio(frame)
+
+
+def test_predictive_candidate_mode_is_not_misclassified_as_uniform():
+    frame = pd.DataFrame({
+        "combo": [f"{i:02d}-02-03-04-05" for i in range(1, 31)],
+        "mode": ["PREDICTIVE_CANDIDATE"] * 30,
+    })
+    reject_non_predictive_portfolio(frame)
