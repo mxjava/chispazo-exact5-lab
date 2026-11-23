@@ -1,9 +1,9 @@
 # Uniform coverage runtime (research-only)
 
 The Exact5 predictive gate remains closed because the validated historical evidence
-does not establish a positive edge. This small utility makes the software usable
-without bypassing that gate: it samples distinct 5-of-28 combinations uniformly
-without replacement, with a reproducible integer seed.
+does not establish a positive edge. This utility provides a usable coverage/control
+mode without bypassing that gate: it samples distinct 5-of-28 combinations uniformly
+without replacement, using a versioned deterministic SHA-256 rank sampler.
 
 It is **not V294**, does not use historical frequencies, does not claim predictive
 lift, and does not create a prospective registration. It does not read or mutate
@@ -19,6 +19,14 @@ For five lines, change `--lines 30` to `--lines 5`. Preserve the seed and CSV
 unchanged if you intend to evaluate the result later. Do not call this output a
 prediction or a certified Exact5 model result.
 
+The sampler is versioned as `Exact5UniformPortfolio/v1`. It derives a deterministic
+SHA-256 counter stream from the canonical decimal seed and uses rejection sampling
+for unbiased bounded integers, followed by Floyd sampling without replacement.
+This avoids relying on the implementation details of Python's `random.sample`,
+which are not a cross-version serialization contract. The golden-vector test pins
+the output for seed `20261122`. A future algorithm change must use a new sampler
+version rather than silently changing existing seed-to-portfolio mappings.
+
 For a fair 5-of-28 draw, each exact line has probability 1/98,280. A set of 30
 distinct lines has uniform exact-5 probability 30/98,280; the utility does not
 increase that probability above the uniform baseline.
@@ -26,7 +34,7 @@ increase that probability above the uniform baseline.
 ## Boundary with the prospective registration pipeline
 
 The generator's CSV includes the explicit `UNIFORM_COVERAGE_NOT_PREDICTIVE` mode.
-The predictive freeze command now rejects that marker instead of accepting the file
+The predictive freeze command rejects that marker instead of accepting the file
 as if it were a model portfolio. The 30-line count alone is not evidence of
 predictive eligibility. To enter the predictive freeze path, a separate candidate
 must pass the existing preflight, provenance, commit-binding, and immutable-ledger
@@ -59,11 +67,11 @@ to report expected hit counts and the null tail probability for observing a best
 hit count at least as large as the one recorded. It also reports the null
 probability of at least one exact-5 in a portfolio of that size.
 
-These are descriptive null-calibration quantities for a uniformly sampled
-portfolio. A small tail probability from one observed portfolio is not by itself
-evidence of a predictive model: repeated prospective testing, preregistration,
-multiple-testing control, independent custody, and the protocol's evidence gates
-remain mandatory. The output never upgrades the mode from control-only.
+These are descriptive null-calibration quantities for uniformly sampled controls.
+A small tail probability from one observed portfolio is not by itself evidence of a
+predictive model: repeated prospective testing, preregistration, multiple-testing
+control, independent custody, and the protocol's evidence gates remain mandatory.
+The output never upgrades the mode from control-only.
 
 ## Aggregate multiple completed control evaluations
 
@@ -80,7 +88,7 @@ best-hit consistency, and compatible null-calibration metadata. It rejects dupli
 contest IDs. Reusing the same fixed portfolio across different independently drawn
 contests is allowed and often desirable: each contest is a new draw, while the
 portfolio hash makes the repeated fixed input explicit. The aggregate reports observed
-versus expected 0–5 hit counts across
-the supplied contests. It is descriptive only: it does not compute a predictive
-edge p-value, does not append to the official prospective ledger, and cannot upgrade
-any model's evidence status. Preserve each original report and portfolio CSV.
+versus expected 0–5 hit counts across the supplied contests. It is descriptive only:
+it does not compute a predictive-edge p-value, does not append to the official
+prospective ledger, and cannot upgrade any model's evidence status. Preserve each
+original report and portfolio CSV.
