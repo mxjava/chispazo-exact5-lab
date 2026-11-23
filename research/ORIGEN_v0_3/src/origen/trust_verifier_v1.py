@@ -11,7 +11,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -40,8 +40,14 @@ def _policy_utc_datetime(value: object, field: str) -> datetime:
         raise ValueError(f"{field} timezone offset is invalid") from exc
     if offset is None:
         raise ValueError(f"{field} must be timezone-aware")
+    if type(offset) is not timedelta:
+        raise ValueError(f"{field} timezone offset is invalid")
+    # Snapshot the offset exactly once. Calling astimezone() after utcoffset()
+    # would invoke an untrusted tzinfo callback a second time; a stateful
+    # implementation could return a different offset and move the instant.
     try:
-        return value.astimezone(timezone.utc)
+        naive = value.replace(tzinfo=None)
+        return (naive - offset).replace(tzinfo=timezone.utc)
     except Exception as exc:
         raise ValueError(f"{field} cannot be normalized to UTC") from exc
 
@@ -60,6 +66,7 @@ def _snapshot_trust_policy(policy: object):
 
     entries = []
     seen_pairs = set()
+    seen_public_keys = set()
     for index, item in enumerate(policy.issuer_keys):
         if type(item) is not TrustedIssuerKey:
             raise ValueError(f"policy issuer_keys[{index}] must be an exact TrustedIssuerKey")
@@ -83,6 +90,9 @@ def _snapshot_trust_policy(policy: object):
         if pair in seen_pairs:
             raise ValueError("policy contains duplicate issuer/key identifiers")
         seen_pairs.add(pair)
+        if item.public_key_bytes in seen_public_keys:
+            raise ValueError("policy reuses one public key across issuer identities")
+        seen_public_keys.add(item.public_key_bytes)
         entries.append(
             (issuer_id, key_id, item.public_key_bytes, valid_from, valid_until, item.revoked)
         )
