@@ -26,7 +26,7 @@ This is a structural analysis only. The CSV does not include a modality column. 
 - Post-transition ID range: 5923–12388.
 - Post-transition IDs contiguous: yes; 6,466 IDs, no gaps.
 - Post-transition date anomalies: 0.
-- The five earlier two-row dates (1999–2002) are outside the post-transition rule and are not silently reclassified.
+- The ten earlier two-row dates (1999–2003) are outside the post-transition rule and are not silently reclassified.
 
 The published Lotería Nacional schedule lists De las Tres at 15:00 and Clásico at 21:00. Official daily results/masks identify both named modalities and provide anchors for independent review. These facts make an odd/even modality mapping a plausible *candidate*, but this structural report itself does not prove the mapping for every historical row.
 
