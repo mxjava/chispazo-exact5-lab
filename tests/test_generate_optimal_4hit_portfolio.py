@@ -34,3 +34,30 @@ def test_csv_is_explicitly_non_predictive():
     assert rows[0] == "rank,combo,mode,seed"
     assert len(rows) == 31
     assert all(MODE in row for row in rows[1:])
+
+
+def test_checked_in_csv_matches_generator_and_full_outcome_histogram():
+    import csv
+    from pathlib import Path
+    from itertools import combinations
+
+    expected, gains = generate_portfolio(20261123)
+    artifact = Path(__file__).resolve().parents[2] / "runs" / "optimal_4hit_coverage_20261123.csv"
+    with artifact.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+
+    actual = [tuple(int(value) for value in row["combo"].split("-")) for row in rows]
+    assert actual == expected
+    assert len(actual) == 30 and len(set(actual)) == 30
+    assert all(row["mode"] == MODE and row["seed"] == "20261123" for row in rows)
+    assert gains == [116] * 30
+
+    # Independent enumeration of every possible winning 5-set.
+    tickets = [set(ticket) for ticket in actual]
+    histogram = {4: 0, 5: 0}
+    for draw in combinations(range(1, 29), 5):
+        best = max(len(set(draw) & ticket) for ticket in tickets)
+        if best >= 4:
+            histogram[best] += 1
+    assert histogram == {4: 3450, 5: 30}
+    assert sum(histogram.values()) == 3480
