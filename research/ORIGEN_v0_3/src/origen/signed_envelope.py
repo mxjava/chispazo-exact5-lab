@@ -17,6 +17,7 @@ from .crypto_primitives import verify_ed25519_signature_bytes
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _KEY_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_ROLE_RE = re.compile(r"^[A-Za-z][A-Za-z0-9._:-]{0,63}$")
 _ENVELOPE_FIELDS = {"schema", "key_id", "role", "issued_at_utc", "payload_b64", "signature_b64"}
 _STORE_FIELDS = {"schema", "keys"}
 _KEY_FIELDS = {"key_id", "public_key_b64", "roles", "not_before_utc", "not_after_utc", "revoked"}
@@ -121,8 +122,8 @@ def verify_detached_ed25519_envelope(
         raise ValueError("trust store exceeds 1 MiB limit")
     if type(pinned_trust_store_sha256) is not str or not _SHA256_RE.fullmatch(pinned_trust_store_sha256):
         raise ValueError("pinned_trust_store_sha256 must be lowercase SHA-256 hex")
-    if type(required_role) is not str or not required_role:
-        raise ValueError("required_role must be a non-empty string")
+    if type(required_role) is not str or not _ROLE_RE.fullmatch(required_role):
+        raise ValueError("required_role must be a canonical role identifier")
     actual_pin = hashlib.sha256(trust_store_bytes).hexdigest()
     if actual_pin != pinned_trust_store_sha256:
         raise ValueError("trust store SHA-256 does not match deployment pin")
@@ -140,7 +141,10 @@ def verify_detached_ed25519_envelope(
         kid = row["key_id"]
         if type(kid) is not str or not _KEY_ID_RE.fullmatch(kid) or kid in key_map:
             raise ValueError("trust store key_id is invalid or duplicated")
-        if type(row["roles"]) is not list or not row["roles"] or any(type(r) is not str or not r for r in row["roles"]):
+        if type(row["roles"]) is not list or not row["roles"] or any(
+            type(role) is not str or not _ROLE_RE.fullmatch(role)
+            for role in row["roles"]
+        ):
             raise ValueError("trust store roles are invalid")
         if len(set(row["roles"])) != len(row["roles"]):
             raise ValueError("trust store roles contain duplicates")
@@ -170,7 +174,13 @@ def verify_detached_ed25519_envelope(
     env = _canonical_object(envelope_bytes, "signed envelope")
     if set(env) != _ENVELOPE_FIELDS or env["schema"] != "origen.detached-ed25519-envelope.v1":
         raise ValueError("signed envelope schema or fields are invalid")
-    if type(env["key_id"]) is not str or type(env["role"]) is not str or env["role"] != required_role:
+    if (
+        type(env["key_id"]) is not str
+        or not _KEY_ID_RE.fullmatch(env["key_id"])
+        or type(env["role"]) is not str
+        or not _ROLE_RE.fullmatch(env["role"])
+        or env["role"] != required_role
+    ):
         raise ValueError("signed envelope role or key_id is invalid")
     row = key_map.get(env["key_id"])
     if row is None or row["revoked"] or required_role not in row["roles"]:
