@@ -318,6 +318,13 @@ def _parse_artifact(
     media_type = item["media_type"]
     if type(media_type) is not str or not _MEDIA_TYPE.fullmatch(media_type):
         raise ValueError(f"artifacts[{index}].media_type must be a canonical MIME type")
+    is_recording = artifact_type in {"DRAW-RECORDING-FULL", "DRAW-RECORDING-EDITED"}
+    claims_video = media_type.startswith("video/")
+    if is_recording != claims_video:
+        raise ValueError(
+            f"artifacts[{index}].media_type is incompatible with {artifact_type}: "
+            "draw recordings must use video/* and non-recording artifacts must not"
+        )
     return PhysicalArtifactClaim(
         artifact_type=artifact_type,
         sha256=_digest(item["sha256"], f"artifacts[{index}].sha256"),
