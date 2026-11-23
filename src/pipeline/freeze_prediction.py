@@ -220,7 +220,9 @@ def main() -> int:
             or history_max <= 0 or history_max != a.target - 1):
         raise SystemExit(f"Refusing freeze: history_max={history_meta.get('contest_max')} must equal target-1={a.target-1}")
     try:
-        portfolio_df = pd.read_csv(a.portfolio)\n        reject_non_predictive_portfolio(portfolio_df)\n        lines = normalize_lines(portfolio_df)
+        portfolio_df = pd.read_csv(a.portfolio)
+        reject_non_predictive_portfolio(portfolio_df)
+        lines = normalize_lines(portfolio_df)
     except (OSError, UnicodeError, ValueError, TypeError,
             pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
         raise SystemExit(f"Refusing freeze: invalid portfolio: {exc}") from exc
