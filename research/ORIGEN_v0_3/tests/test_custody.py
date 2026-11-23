@@ -257,10 +257,33 @@ class CustodyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "growing.json"
             path.write_bytes(b" " * (MAX_CUSTODY_RECORD_BYTES + 8192))
+            real_open = Path.open
+            read_sizes = []
+
+            class ReadSpy:
+                def __init__(self, stream):
+                    self.stream = stream
+
+                def __enter__(self):
+                    self.stream.__enter__()
+                    return self
+
+                def __exit__(self, *exc_info):
+                    return self.stream.__exit__(*exc_info)
+
+                def read(self, size=-1):
+                    read_sizes.append(size)
+                    return self.stream.read(size)
+
+            def tracked_open(source, *args, **kwargs):
+                return ReadSpy(real_open(source, *args, **kwargs))
+
             with patch.object(Path, "stat", side_effect=AssertionError("pre-read stat is not allowed")):
                 with patch.object(Path, "read_bytes", side_effect=AssertionError("unbounded read_bytes is not allowed")):
-                    with self.assertRaisesRegex(ValueError, "maximum size"):
-                        read_record(path)
+                    with patch.object(Path, "open", new=tracked_open):
+                        with self.assertRaisesRegex(ValueError, "maximum size"):
+                            read_record(path)
+            self.assertEqual(read_sizes, [MAX_CUSTODY_RECORD_BYTES + 1])
 
     def test_read_record_rejects_excessive_json_nesting(self):
         from origen.custody import MAX_CUSTODY_RECORD_JSON_DEPTH
