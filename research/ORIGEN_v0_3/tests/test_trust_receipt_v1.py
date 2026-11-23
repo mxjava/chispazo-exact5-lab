@@ -55,7 +55,7 @@ def valid_document() -> dict:
             {
                 "authority_id": "tsa-test",
                 "event_id": "event-1",
-                "event_at_utc": "2026-11-23T02:50:00Z",
+                "event_at_utc": "2026-11-23T03:05:00Z",
                 "proof_sha256": digest("4"),
             }
         ],
@@ -129,6 +129,15 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(
             ValueError,
             "receipt attestation timestamp proof must reference a declared trusted time proof",
+        ):
+            parse_unverified_receipt(encode(document))
+
+    def test_attestation_signed_at_must_match_referenced_trusted_time_proof(self):
+        document = valid_document()
+        document["trusted_time_proofs"][0]["event_at_utc"] = "2026-11-23T03:04:59Z"
+        with self.assertRaisesRegex(
+            ValueError,
+            "signed_at_utc must match its referenced trusted time proof",
         ):
             parse_unverified_receipt(encode(document))
 
