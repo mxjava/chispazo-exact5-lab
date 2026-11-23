@@ -403,6 +403,15 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "BLOCKED_PROVENANCE",
         )
 
+    def test_signer_and_custodian_identity_must_be_separate(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["custodian_id"] = row["source_signer_id"]
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        target = result["targets"]["12301"]
+        self.assertIn("SIGNER_CUSTODIAN_ROLE_COLLISION", target["reasons"])
+        self.assertEqual(target["predictive_eligibility"], "BLOCKED_PROVENANCE")
+
     def test_missing_continuity_is_separate_block(self):
         result = evaluate_temporal_eligibility(
             rows_for_target(),
