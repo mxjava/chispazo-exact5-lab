@@ -232,21 +232,21 @@ class CustodyTests(unittest.TestCase):
     def test_read_record_rejects_duplicate_json_keys(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "duplicate.json"
-            path.write_bytes(b'{"outer":{"x":1,"x":2}}\\n')
+            path.write_bytes(b'{"outer":{"x":1,"x":2}}\n')
             with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
                 read_record(path)
 
     def test_read_record_rejects_non_finite_json_numbers(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "nonfinite.json"
-            path.write_bytes(b'{"value":NaN}\\n')
+            path.write_bytes(b'{"value":NaN}\n')
             with self.assertRaisesRegex(ValueError, "non-finite JSON number"):
                 read_record(path)
 
     def test_read_record_rejects_noncanonical_json_encoding(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "noncanonical.json"
-            path.write_bytes(b'{"value": 1}\\n')
+            path.write_bytes(b'{"value": 1}\n')
             with self.assertRaisesRegex(ValueError, "canonical UTF-8 JSON"):
                 read_record(path)
 
@@ -265,7 +265,7 @@ class CustodyTests(unittest.TestCase):
 
     def test_verifier_rejects_self_consistent_short_portfolio_record(self):
         record, raw = self.make_record()
-        short = raw.splitlines()[0] + b"\\n"
+        short = raw.splitlines()[0] + b"\n"
         import hashlib
         record["portfolio_sha256"] = hashlib.sha256(short).hexdigest()
         record["custodian_recomputed_sha256"] = record["portfolio_sha256"]
