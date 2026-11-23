@@ -97,10 +97,31 @@
   },
   "procedure_baseline": {
     "document": "SGVO-PRO-05",
+    "title": "PROCEDIMIENTO SORTEOS ELECTRÓNICOS",
     "revision": 39,
+    "published_date": "2026-03-20",
+    "pages": 38,
+    "footer_version": "DN-07 Version 09",
     "status": "PUBLIC_PROCEDURAL_REFERENCE",
+    "nocturnal_automatic_sales_close_local_time": "21:00",
+    "de_las_tres_automatic_sales_close_local_time": "15:00",
+    "chispazo_required_act_attachments": [
+      "SUMARIO DE SORTEO (CIERRE DE VENTA)",
+      "NÚMEROS GANADORES DE LOS SORTEOS CS-11",
+      "SUMARIO DE SORTEO",
+      "TIRA DE PESAJE"
+    ],
+    "weighing_strip_required_signatories": [
+      "RESPONSABLE DEL PESAJE DE ESFERAS",
+      "REPRESENTANTE DE LA DIRECCIÓN DE OPERACIÓN DE CONCURSOS, JUEGOS Y SORTEOS",
+      "REPRESENTANTE DE LA DIRECCIÓN GENERAL",
+      "INSPECTOR DE LA SECRETARÍA DE GOBERNACIÓN"
+    ],
+    "participation_file_signature_and_safe_custody": "PROCEDURE_REQUIRED",
+    "weekly_signed_results_media_and_act_attachment": "PROCEDURE_REQUIRED",
+    "source_pdf_sha256": "NOT_CAPTURED",
     "draw_specific_compliance_proven": false,
-    "note": "Procedural requirements are not evidence that draw-specific records were created, signed or independently preserved."
+    "note": "These are published process requirements, not evidence that records for contest 12390 or any other specific draw were created, signed, archived or independently preserved."
   },
   "eligibility": {
     "status": "BLOCKED_PROVENANCE",
