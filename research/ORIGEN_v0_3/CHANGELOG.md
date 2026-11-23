@@ -1,3 +1,17 @@
+## Stable mass centering correction after exact-head CI failure (2026-11-23)
+- Exact-head CI on `b7fcf53fbbde20ce027e40487db1b9f4145c0404` exposed an overflow in the new extreme-finite-mass regression: summing 27 finite offsets near 1e308 overflowed `math.fsum` before division.
+- Corrected the numerical path by normalizing offsets by their maximum before computing the mean and population standard deviation. This preserves the z-score under positive affine scaling and avoids the intermediate sum overflow.
+- Fix commit: `3f7e5a8c9903af33b4428bb3944b80bc6fe45970`. Exact-head CI was triggered; results are pending and must be verified before claiming green.
+- No predictive parameter, preregistration, V294, or historical data change.
+
+## Official procedure reconciliation and 23-Nov status snapshot (2026-11-23 14:51 America/Mexico_City)
+- Added `docs/OFFICIAL_PROCEDURE_RECONCILIATION_20261123_1451.md` and status-only overlay `data/official-overlays/2026-11-23_1451_official_status_only.json`.
+- Re-reviewed current Normateca: SGVO-PRO-05 Rev. 39 (last updated 20-Mar-2026) directly governs electronic draws. Policy 6 requires per-draw weighing and gives Smartballs 4.25–5.25 g / 0.30 g max spread and Ping Pong 2.30–3.00 g / 0.15 g max spread; policy 25 requires scale calibration at least annually. Policies 8, 9 and 11 establish pre-draw participation-file custody, 15:00 De las Tres / 21:00 nocturnal close, and the Acta attachment matrix including CS-11 and Tira de Pesaje.
+- New applicability safeguard: SGVO-PRO-34 Rev. 01 is explicitly limited to Sorteos Tradicionales and is not a Chispazo specification. Its wooden maple-ball 3.0 g ±0.8 g rules must not be imported into the electronic-draw intake.
+- At 14:51, official results still ended at 12390 (22-Nov); the 23-Nov 15:00 home card showed 12391 but did not explicitly identify the product, so it remains unassigned. Official mask index latest was 22-Nov; no 23-Nov result, Classic contest ID, or draw-specific primary physical records were visible.
+- Original PDF bytes for SGVO-PRO-05, SGVO-PRO-34 and the 22-Nov mask were not captured; hashes remain `NOT_CAPTURED`. No authenticity or draw-specific compliance is inferred from the public procedure.
+- No main write, merge, promotion, canonical append, or V294 change; production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
 ## Custody timestamp unknown-offset rejection (2026-11-23)
 - Closed a temporal-interpretation gap: RFC 3339 `-00:00` denotes an unknown local offset, not a known UTC offset. The custody parser now rejects it rather than normalizing it to UTC.
 - Added adversarial coverage for all three custody timestamps at both record-build and record-verification boundaries.
