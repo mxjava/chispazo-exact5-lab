@@ -9,6 +9,9 @@ from origen.independent_trust_adapter import (
     verify_independent_provenance,
 )
 from origen.trust_receipt_v1 import MAX_TRUST_RECEIPT_BYTES
+from origen.trust_receipt_v2 import parse_unverified_receipt_v2
+from test_trust_receipt_v2 import valid_v2_document
+from test_trust_receipt_v1 import encode
 
 
 class TestIndependentTrustAdapter(unittest.TestCase):
@@ -20,6 +23,21 @@ class TestIndependentTrustAdapter(unittest.TestCase):
             "INDEPENDENT_TRUST_BACKEND_NOT_PROVISIONED",
         )
         self.assertNotIn("AUTHENTICATED", ProvenanceStatus.__members__)
+
+    def test_structurally_valid_v2_receipt_still_cannot_authenticate_at_boundary(self):
+        raw = encode(valid_v2_document())
+        parsed = parse_unverified_receipt_v2(raw)
+        self.assertEqual(parsed.receipt.declared_status, "AUTHENTICATED")
+        self.assertIs(
+            verify_independent_provenance(raw),
+            ProvenanceStatus.BLOCKED_PROVENANCE,
+        )
+
+    def test_malformed_receipt_bytes_are_not_promoted_or_parsed_by_boundary(self):
+        self.assertIs(
+            verify_independent_provenance(b'{"status":'),
+            ProvenanceStatus.BLOCKED_PROVENANCE,
+        )
 
     def test_caller_cannot_inject_trust_roots_or_verifier_callbacks(self):
         with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
