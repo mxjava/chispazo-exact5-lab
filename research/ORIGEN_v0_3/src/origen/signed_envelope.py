@@ -23,7 +23,7 @@ _KEY_FIELDS = {"key_id", "public_key_b64", "roles", "not_before_utc", "not_after
 _MAX_ENVELOPE_BYTES = 1048576
 _MAX_TRUST_STORE_BYTES = 1048576
 _MAX_PAYLOAD_BYTES = 524288
-_TIMESTAMP_RE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$")
+_TIMESTAMP_RE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?Z$")
 
 
 def _unique_object(pairs):
