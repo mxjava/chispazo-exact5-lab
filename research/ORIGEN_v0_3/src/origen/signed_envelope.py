@@ -116,6 +116,7 @@ def verify_detached_ed25519_envelope(
     if type(store["keys"]) is not list or not store["keys"] or len(store["keys"]) > 4096:
         raise ValueError("trust store keys must be a non-empty bounded array")
     key_map = {}
+    public_key_owners = {}
     for row in store["keys"]:
         if type(row) is not dict or set(row) != _KEY_FIELDS:
             raise ValueError("trust store key entry fields are invalid")
@@ -141,6 +142,12 @@ def verify_detached_ed25519_envelope(
             or base64.b64encode(public_key).decode("ascii") != row["public_key_b64"]
         ):
             raise ValueError("trust store public key must be canonical 32-byte Ed25519 base64")
+        previous_owner = public_key_owners.get(public_key)
+        if previous_owner is not None:
+            raise ValueError(
+                "trust store public key bytes must not be aliased across key IDs"
+            )
+        public_key_owners[public_key] = kid
         key_map[kid] = row
 
     env = _canonical_object(envelope_bytes, "signed envelope")
