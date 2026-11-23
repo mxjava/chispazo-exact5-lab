@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import tempfile
@@ -26,6 +27,29 @@ def _parse_combo(value: str) -> tuple[int, ...]:
         raise ValueError(f"combo must contain five distinct ascending values: {value!r}")
     return nums
 
+
+def _uniform_null_metrics(line_count: int, result: list[int] | tuple[int, ...], observed_best_hits: int) -> dict:
+    """Exact finite-population null calibration for uniform sampling without replacement."""
+    universe = math.comb(28, 5)
+    category_sizes = {str(k): math.comb(5, k) * math.comb(23, 5 - k) for k in range(6)}
+    expected_counts = {key: line_count * size / universe for key, size in category_sizes.items()}
+    below_observed = sum(size for key, size in category_sizes.items() if int(key) < observed_best_hits)
+    if line_count > below_observed:
+        p_best_at_least_observed = 1.0
+    else:
+        p_best_at_least_observed = 1.0 - math.comb(below_observed, line_count) / math.comb(universe, line_count)
+    exact5_population = category_sizes['5']
+    p_any_exact5 = 1.0 - math.comb(universe - exact5_population, line_count) / math.comb(universe, line_count)
+    return {
+        'method': 'exact_hypergeometric_uniform_sample_without_replacement',
+        'universe_size': universe,
+        'line_count': line_count,
+        'expected_hit_distribution': expected_counts,
+        'expected_exact5_count': expected_counts['5'],
+        'p_value_best_hits_at_least_observed': p_best_at_least_observed,
+        'p_value_at_least_one_exact5': p_any_exact5,
+        'interpretation': 'uniform-null calibration only; not evidence of predictive lift',
+    }
 
 def evaluate_uniform_portfolio(portfolio_path: str | Path, contest_id: int, result: list[int] | tuple[int, ...]) -> dict:
     """Validate and score a generated uniform CSV against one completed result."""
@@ -87,6 +111,7 @@ def evaluate_uniform_portfolio(portfolio_path: str | Path, contest_id: int, resu
         "best_hits": best_hits,
         "exact5_count": hits.count(5),
         "hit_distribution": distribution,
+        "uniform_null": _uniform_null_metrics(len(combos), result, best_hits),
         "lines": [
             {"rank": rank, "combo": "-".join(f"{n:02d}" for n in combo), "hits": hit}
             for rank, (combo, hit) in enumerate(zip(combos, hits), start=1)
