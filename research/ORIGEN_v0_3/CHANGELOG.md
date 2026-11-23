@@ -89,3 +89,8 @@
 - At the 21:58 local observation, official results endpoints still showed 12389 (01 15 17 22 25) and no 12390 combination; the mask index still listed 21-Nov as newest. Contest 12389 is schedule-slot matched to De las Tres, not same-day-mask confirmed.
 - No 22-Nov original mask bytes, signed draw act, signed participation file, CS-11, weighing strip, measurements, calibration certificate, trusted timestamp, independent custody receipt, or pre-close seal were obtained. No canonical append, V294 change, main write, merge, or promotion.
 - Validation of the parser/test change on commit `7e710244c0975a552aac4399f8a371d1f4287f81`: isolated ORIGEN run `45109181485` passed **323 tests**; root CI run `45109181527` passed `compileall` and `pytest -q` (**525 passed, 2 skipped, 92 subtests passed**). The subsequent overlay/changelog commits are data/documentation only and do not alter executable code; production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
+## Trust-receipt JSON depth bound (2026-11-23)
+- Added a byte-level, string-aware nesting scan before JSON decoding/canonical re-serialization; receipts deeper than 64 nested objects/arrays are rejected before recursive codec work.
+- Added adversarial tests for over-depth input and bracket characters inside strings. The limit is a parser resource bound, not an authentication or provenance claim.
+- Pending CI on the updated PR #13 head.
