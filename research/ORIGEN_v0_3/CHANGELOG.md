@@ -1,3 +1,8 @@
+## Physical manifest signer/custodian separation (2026-11-23)
+- Fixed a structural trust-boundary gap: the physical manifest previously prevented a trusted-time authority from aliasing signers/custodians but did not prevent the same declared subject ID from acting as both artifact signer and archive custodian.
+- The parser now rejects any intersection between signer subject IDs and custodian subject IDs; added a regression that mutates a valid fixture to self-custody an artifact under a signer identity.
+- This checks literal identifiers only. It does not authenticate legal identities, roles, or actual organizational independence; the independent adapter remains fail-closed.
+
 ## Correct Classic slot binding in physical intake V2 (2026-11-23)
 - Audit found the V2 physical-intake guard was applied to `source_draw_at` and `target_draw_at`, although the temporal contract defines these as actual extraction timestamps and SGVO-PRO-05 revision 39, policy 9, sets the automatic sales close for nocturnal draws at 21:00.
 - Moved the exact 21:00:00 America/Mexico_City check to `draw_close_at` and `target_draw_close_at`. Actual extraction timestamps remain governed by chronology and may follow the close; no unsupported upper bound is inferred from the inspector attendance window.
