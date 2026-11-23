@@ -97,6 +97,18 @@ python -m src.pipeline.evaluate_registration `
   --result N1 N2 N3 N4 N5
 ```
 
+## Portafolio de cobertura uniforme (modo operativo no predictivo)
+
+El generador reproducible está disponible sin abrir el gate predictivo:
+
+```powershell
+python -m src.pipeline.generate_uniform_portfolio --seed 20261122 --lines 30 --out runs/uniform_coverage_20261122.csv
+```
+
+Para cinco líneas usa `--lines 5`. Cada fila queda marcada `UNIFORM_COVERAGE_NOT_PREDICTIVE`.
+Este modo no usa V294 ni histórico, no equivale a una predicción y no autoriza congelar una
+registración predictiva. Consulta `docs/UNIFORM_COVERAGE_RUNTIME.md` para sus límites y probabilidad.
+
 ## Tests
 
 ```powershell
