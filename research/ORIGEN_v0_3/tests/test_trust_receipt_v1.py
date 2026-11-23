@@ -280,7 +280,7 @@ class TestTrustReceiptV1(unittest.TestCase):
         document = valid_document()
         second = copy.deepcopy(document["signers"][0])
         second["role"] = "independent-reviewer"
-        second["key_id"] = "institution-key-2"
+        second["key_id"] = "institution-key-3"
         second["signature_sha256"] = digest("a")
         document["signers"].append(second)
         with self.assertRaisesRegex(ValueError, "signers contain duplicate subject IDs"):
