@@ -119,6 +119,18 @@ class TestDetachedEnvelope(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicated"):
             self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
 
+    def test_same_public_key_cannot_be_registered_under_distinct_key_ids(self):
+        store = json.loads(self.store)
+        alias = dict(store["keys"][0])
+        alias["key_id"] = "test-authority-alias-02"
+        store["keys"].append(alias)
+        raw = canonical(store)
+        with self.assertRaisesRegex(
+            ValueError,
+            "public key bytes must not be aliased across key IDs",
+        ):
+            self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
+
     def test_duplicate_json_object_keys_are_rejected(self):
         raw = b'{"keys":[],"schema":"origen.trust-store.v1","schema":"origen.trust-store.v1"}'
         with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
