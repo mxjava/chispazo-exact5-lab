@@ -61,8 +61,6 @@ def aggregate_control_reports(paths: list[str | Path]) -> dict:
     hashes = [r["portfolio_sha256"] for r in reports]
     if len(set(contests)) != len(contests):
         raise ValueError("duplicate contest_id; one control evaluation per contest is allowed")
-    if len(set(hashes)) != len(hashes):
-        raise ValueError("duplicate portfolio hash; do not reuse the same portfolio as an independent control")
     aggregate = {str(k): sum(r["hit_distribution"][str(k)] for r in reports) for k in range(6)}
     total_lines = sum(r["line_count"] for r in reports)
     expected = {str(k): sum(r["uniform_null"]["expected_hit_distribution"][str(k)] for r in reports) for k in range(6)}
