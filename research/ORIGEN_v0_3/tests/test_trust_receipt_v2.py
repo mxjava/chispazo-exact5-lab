@@ -157,5 +157,34 @@ class TestTrustReceiptV2(unittest.TestCase):
             parse_unverified_receipt(encode(valid_v2_document()))
 
 
+    def test_v2_attestation_timestamp_proof_time_must_match_signed_at(self):
+        document = valid_v2_document()
+        proof_ref = document["receipt_attestation"]["timestamp_proof_sha256"]
+        proof = next(
+            item for item in document["trusted_time_proofs"]
+            if item["proof_sha256"] == proof_ref
+        )
+        proof["event_at_utc"] = "2026-11-23T03:04:59Z"
+        with self.assertRaisesRegex(
+            ValueError,
+            "receipt attestation signed_at_utc must match its referenced trusted time proof",
+        ):
+            parse_unverified_receipt_v2(encode(document))
+
+    def test_v2_preserves_v1_unique_authority_event_identity_invariant(self):
+        document = valid_v2_document()
+        first = document["trusted_time_proofs"][0]
+        second = document["trusted_time_proofs"][1]
+        second["authority_id"] = first["authority_id"]
+        second["event_id"] = first["event_id"]
+        # Keep proof_sha256 distinct: the collision is the authority/event pair.
+        self.assertNotEqual(first["proof_sha256"], second["proof_sha256"])
+        with self.assertRaisesRegex(
+            ValueError,
+            "trusted_time_proofs contain duplicate authority/event identities",
+        ):
+            parse_unverified_receipt_v2(encode(document))
+
+
 if __name__ == "__main__":
     unittest.main()
