@@ -264,7 +264,7 @@ class CustodyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "brackets-in-string.json"
             brackets = "[" * 40
-            path.write_bytes(b'{"value":"' + brackets.encode("ascii") + b'"}\\n')
+            path.write_bytes(b'{"value":"' + brackets.encode("ascii") + b'"}' + bytes([10]))
             self.assertEqual(read_record(path), {"value": brackets})
     def test_read_record_rejects_floating_point_numbers(self):
         with tempfile.TemporaryDirectory() as tmp:
