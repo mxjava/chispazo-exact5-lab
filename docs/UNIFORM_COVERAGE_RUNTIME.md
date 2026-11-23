@@ -47,3 +47,20 @@ the input SHA-256, best hit count, exact-5 count, and hit distribution. The repo
 is explicitly `EVALUATED_CONTROL_ONLY`; it does not create or alter a prospective
 registration and cannot be used as evidence of predictive lift. Only use a completed,
 officially verified result and preserve the original portfolio CSV.
+
+## Exact uniform-null calibration
+
+The post-draw evaluator also reports a finite-population null calibration for the
+same portfolio size. The universe has 98,280 exact-5 combinations. For a fixed
+five-number result, the number of universe combinations with exactly k hits is
+`C(5,k) * C(23,5-k)`. Since portfolio lines are sampled without replacement,
+the evaluator uses hypergeometric probabilities (not a binomial approximation)
+to report expected hit counts and the null tail probability for observing a best
+hit count at least as large as the one recorded. It also reports the null
+probability of at least one exact-5 in a portfolio of that size.
+
+These are descriptive null-calibration quantities for a uniformly sampled
+portfolio. A small tail probability from one observed portfolio is not by itself
+evidence of a predictive model: repeated prospective testing, preregistration,
+multiple-testing control, independent custody, and the protocol's evidence gates
+remain mandatory. The output never upgrades the mode from control-only.
