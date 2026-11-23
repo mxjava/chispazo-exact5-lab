@@ -8,6 +8,7 @@ from origen.independent_trust_adapter import (
     ProvenanceStatus,
     verify_independent_provenance,
 )
+from origen.trust_receipt_v2 import parse_unverified_receipt_v2
 from origen.trust_receipt_v1 import (
     MAX_TRUST_RECEIPT_BYTES,
     parse_unverified_receipt,
@@ -34,6 +35,16 @@ class TestIndependentTrustAdapter(unittest.TestCase):
             ProvenanceStatus.BLOCKED_PROVENANCE,
         )
 
+    def test_structurally_valid_v2_receipt_still_cannot_authenticate_at_boundary(self):
+        from test_trust_receipt_v2 import valid_v2_document
+
+        raw = encode(valid_v2_document())
+        parsed = parse_unverified_receipt_v2(raw)
+        self.assertEqual(parsed.receipt.declared_status, "AUTHENTICATED")
+        self.assertIs(
+            verify_independent_provenance(raw),
+            ProvenanceStatus.BLOCKED_PROVENANCE,
+        )
     def test_malformed_receipt_bytes_are_not_promoted_or_parsed_by_boundary(self):
         # The adapter is deliberately not a structural parser: malformed input
         # cannot cause it to fall through to a permissive or caller-selected path.
