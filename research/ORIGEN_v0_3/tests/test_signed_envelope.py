@@ -90,6 +90,25 @@ class TestDetachedEnvelope(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "role or key_id"):
             self.verify(role="custodian")
 
+    def test_required_role_rejects_whitespace_and_non_token_values(self):
+        for role in ("", " ", "evidence attestor", "custodian\\n", "ñ"):
+            with self.subTest(role=role):
+                with self.assertRaisesRegex(ValueError, "canonical role identifier"):
+                    self.verify(role=role)
+
+    def test_trust_store_rejects_noncanonical_role_identifiers(self):
+        store = json.loads(self.store)
+        store["keys"][0]["roles"].append("custodian\\n")
+        raw = canonical(store)
+        with self.assertRaisesRegex(ValueError, "trust store roles are invalid"):
+            self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
+
+    def test_envelope_rejects_noncanonical_key_identifier(self):
+        env = json.loads(self.envelope)
+        env["key_id"] = "test authority"
+        with self.assertRaisesRegex(ValueError, "role or key_id"):
+            self.verify(envelope=canonical(env))
+
     def test_revoked_key_is_rejected(self):
         store = json.loads(self.store)
         store["keys"][0]["revoked"] = True
