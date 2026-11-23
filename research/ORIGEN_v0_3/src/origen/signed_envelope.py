@@ -20,6 +20,10 @@ _KEY_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _ENVELOPE_FIELDS = {"schema", "key_id", "role", "issued_at_utc", "payload_b64", "signature_b64"}
 _STORE_FIELDS = {"schema", "keys"}
 _KEY_FIELDS = {"key_id", "public_key_b64", "roles", "not_before_utc", "not_after_utc", "revoked"}
+_MAX_ENVELOPE_BYTES = 1048576
+_MAX_TRUST_STORE_BYTES = 1048576
+_MAX_PAYLOAD_BYTES = 524288
+_TIMESTAMP_RE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$")
 
 
 def _unique_object(pairs):
@@ -35,8 +39,8 @@ def _canonical_object(raw: bytes, label: str) -> dict:
     if type(raw) is not bytes:
         raise TypeError(f"{label} must be exact bytes")
     try:
-        obj = json.loads(raw.decode("utf-8", "strict"), object_pairs_hook=_unique_object)
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        obj = json.loads(raw.decode("utf-8", "strict"), object_pairs_hook=_unique_object, parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
         raise ValueError(f"{label} must be valid UTF-8 JSON") from exc
     if type(obj) is not dict:
         raise ValueError(f"{label} must be a JSON object")
@@ -47,8 +51,8 @@ def _canonical_object(raw: bytes, label: str) -> dict:
 
 
 def _utc(value: object, label: str) -> datetime:
-    if type(value) is not str or not value.endswith("Z"):
-        raise ValueError(f"{label} must be an RFC3339 UTC timestamp ending in Z")
+    if type(value) is not str or not _TIMESTAMP_RE.fullmatch(value):
+        raise ValueError(f"{label} must be canonical RFC3339 UTC with at most 6 fractional digits")
     try:
         parsed = datetime.fromisoformat(value[:-1] + "+00:00")
     except ValueError as exc:
@@ -66,6 +70,10 @@ def verify_detached_ed25519_envelope(
     verification_time_utc: str,
 ) -> bytes:
     """Verify envelope and return exact signed payload bytes; fail closed."""
+    if type(envelope_bytes) is not bytes or len(envelope_bytes) > _MAX_ENVELOPE_BYTES:
+        raise ValueError("signed envelope exceeds 1 MiB limit")
+    if type(trust_store_bytes) is not bytes or len(trust_store_bytes) > _MAX_TRUST_STORE_BYTES:
+        raise ValueError("trust store exceeds 1 MiB limit")
     if type(pinned_trust_store_sha256) is not str or not _SHA256_RE.fullmatch(pinned_trust_store_sha256):
         raise ValueError("pinned_trust_store_sha256 must be lowercase SHA-256 hex")
     if type(required_role) is not str or not required_role:
@@ -114,6 +122,10 @@ def verify_detached_ed25519_envelope(
         public_key = base64.b64decode(row["public_key_b64"], validate=True)
     except (ValueError, TypeError) as exc:
         raise ValueError("signed envelope or trust store contains invalid base64") from exc
+    if len(payload) > _MAX_PAYLOAD_BYTES:
+        raise ValueError("signed payload exceeds 512 KiB limit")
+    if base64.b64encode(payload).decode("ascii") != env["payload_b64"] or base64.b64encode(signature).decode("ascii") != env["signature_b64"] or base64.b64encode(public_key).decode("ascii") != row["public_key_b64"]:
+        raise ValueError("base64 encoding is not canonical")
     if not verify_ed25519_signature_bytes(public_key, payload, signature):
         raise ValueError("Ed25519 signature verification failed")
     return payload
