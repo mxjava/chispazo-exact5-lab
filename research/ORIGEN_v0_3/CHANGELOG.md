@@ -1,3 +1,9 @@
+## V317.1 lagged intake sequence gate (2026-11-23)
+- Added explicit source/target ordinals from an official Classic-only sequence manifest to the V2 physical intake contract. Contest IDs alone are insufficient because Lotería Nacional publishes two Chispazo draws per day (De las Tres at 15:00 and Clásico at 21:00).
+- V2 now rejects a target unless its Classic-only ordinal is exactly the source ordinal plus one, requires a manifest reference and SHA-256, and checks caller-declared manifest-reference membership. This is structural validation only: the module does not authenticate the manifest issuer, completeness, signature, timestamp, or custody.
+- Updated the V2 draft CSV template, V317.1 proposal, and adversarial tests for skipped Classic sequence ordinals, missing manifest declaration, and malformed manifest digest.
+- CI is running on the updated research head. No outcome scoring, beta search, production use, main write, merge, or promotion.
+
 ## V317 official timing compatibility blocker (2026-11-23)
 - Reconciled V317 with SGVO-PRO-05 Rev. 39 activity flow. The official sequence verifies SICAL sales as closed before the “Pesaje y Colocación de las Esferas” activity; the weighing strip is then checked, signed, attached to the Acta and the spheres are loaded before extraction.
 - Same-draw mass is therefore post-close and cannot be represented as a pre-close feature for that same draw. V2's source-to-later-target temporal split can only support a lagged experiment if exact set, sphere-ID mapping and machine continuity to the target are independently proven and the evidence is sealed before target close. Since the procedure requires weighing each draw, prior mass cannot be carried forward by assumption.
