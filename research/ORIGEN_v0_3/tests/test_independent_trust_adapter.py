@@ -3,18 +3,22 @@ from __future__ import annotations
 
 import unittest
 
-from origen.independent_trust_adapter import verify_independent_provenance
+from origen.independent_trust_adapter import (
+    INDEPENDENT_TRUST_BACKEND_NOT_PROVISIONED,
+    ProvenanceStatus,
+    verify_independent_provenance,
+)
 
 
 class TestIndependentTrustAdapter(unittest.TestCase):
-    def test_unprovisioned_backend_always_blocks_even_well_formed_looking_bytes(self):
+    def test_unprovisioned_backend_always_blocks_authentication_looking_bytes(self):
         result = verify_independent_provenance(b'{"status":"AUTHENTICATED"}')
-        self.assertEqual(result.status, "BLOCKED_PROVENANCE")
-        self.assertFalse(result.authenticated)
+        self.assertIs(result, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertEqual(
-            result.failure_codes,
-            ("INDEPENDENT_TRUST_BACKEND_NOT_PROVISIONED",),
+            INDEPENDENT_TRUST_BACKEND_NOT_PROVISIONED,
+            "INDEPENDENT_TRUST_BACKEND_NOT_PROVISIONED",
         )
+        self.assertNotIn("AUTHENTICATED", ProvenanceStatus.__members__)
 
     def test_caller_cannot_inject_trust_roots_or_verifier_callbacks(self):
         with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
