@@ -1,3 +1,9 @@
+## Correct Classic slot binding in physical intake V2 (2026-11-23)
+- Audit found the V2 physical-intake guard was applied to `source_draw_at` and `target_draw_at`, although the temporal contract defines these as actual extraction timestamps and SGVO-PRO-05 revision 39, policy 9, sets the automatic sales close for nocturnal draws at 21:00.
+- Moved the exact 21:00:00 America/Mexico_City check to `draw_close_at` and `target_draw_close_at`. Actual extraction timestamps remain governed by chronology and may follow the close; no unsupported upper bound is inferred from the inspector attendance window.
+- Updated fixtures to use 21:00 sales close, then measurement/signature/extraction after close. Added regressions proving that 15:00 De las Tres close and 21:00:59 close timestamps are rejected while actual Classic extraction after 21:00 is accepted.
+- Structural schedule correction only. It does not authenticate event clocks, signatures, physical records, custody or independent trust; no model or V294 change.
+
 ## Exact Classic slot precision in ORIGEN V1 and V2 (2026-11-23)
 - Hardened both schedule guards to require **21:00:00 exactly** in `America/Mexico_City`, including zero seconds and microseconds. The prior hour/minute-only comparison accepted a declared 21:00:59 timestamp as the Classic draw slot.
 - V1 receipt regression cases reject 15:00 (De las Tres), 20:59, 21:00:59 and 22:00; the valid 21:00:00 fixture remains accepted. V2 physical-intake regression rejects a 21:00:59 target draw time.

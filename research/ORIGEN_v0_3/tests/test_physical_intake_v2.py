@@ -22,24 +22,24 @@ def rows_for_target(available="2026-11-20T21:15:00-06:00",
             "source_contest_id": "12300", "target_contest_id": "12301",
             "contest_id": "12300", "draw_date": "2026-11-20",
             "modality": "CLASSIC",
-            "draw_close_at": "2026-11-20T20:45:00-06:00",
-            "target_draw_close_at": "2026-11-21T19:00:00-06:00",
+            "draw_close_at": "2026-11-20T21:00:00-06:00",
+            "target_draw_close_at": "2026-11-21T21:00:00-06:00",
             "sphere_set_id": "SET-A", "set_assigned_at": "2026-11-20T17:00:00-06:00",
             "sphere_type": "Smartballs", "machine_id": "M-01",
             "machine_model": "Model-X", "sphere_id": f"SPH-{number:02d}",
             "printed_number": str(number), "mass_value": "4.700",
-            "mass_unit": "g", "measurement_at": "2026-11-20T20:55:00-06:00",
+            "mass_unit": "g", "measurement_at": "2026-11-20T21:05:00-06:00",
             "measurement_resolution": "0.001", "scale_id": "SCALE-1",
             "calibration_valid_from": "2026-01-01T00:00:00-06:00",
             "calibration_valid_to": "2026-12-31T23:59:59-06:00",
             "calibration_certificate_sha256": "a" * 64,
             "mapping_valid_from": "2026-11-20T16:00:00-06:00",
             "mapping_valid_to": "2026-11-22T21:30:00-06:00",
-            "source_draw_at": "2026-11-20T21:00:00-06:00",
-            "target_draw_at": "2026-11-21T21:00:00-06:00",
+            "source_draw_at": "2026-11-20T21:10:00-06:00",
+            "target_draw_at": "2026-11-21T21:10:00-06:00",
             "source_document_sha256": "b" * 64,
             "source_document_ref": "DOC-12300",
-            "source_signed_at": "2026-11-20T20:58:00-06:00",
+            "source_signed_at": "2026-11-20T21:08:00-06:00",
             "source_signer_id": "SIGNER-1", "source_signature_ref": "SIG-1",
             "evidence_available_at": available, "custody_received_at": received,
             "custodian_id": "CUST-1", "custodian_role": "independent-archive",
@@ -163,11 +163,11 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
     def test_draw_date_uses_mexico_city_date_for_utc_timestamps(self):
         rows = rows_for_target()
-        # 20:45 and 21:00 on 20-Nov in Mexico City are 02:45Z and
-        # 03:00Z on 21-Nov. The official draw_date remains 20-Nov locally.
+        # 21:00 sales close and 21:10 extraction on 20-Nov in Mexico City
+        # are 03:00Z and 03:10Z on 21-Nov. draw_date remains 20-Nov locally.
         for row in rows:
-            row["draw_close_at"] = "2026-11-21T02:45:00Z"
-            row["source_draw_at"] = "2026-11-21T03:00:00Z"
+            row["draw_close_at"] = "2026-11-21T03:00:00Z"
+            row["source_draw_at"] = "2026-11-21T03:10:00Z"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         target = result["targets"]["12301"]
         self.assertNotIn("DRAW_DATE_SOURCE_DRAW_MISMATCH", target["reasons"])
@@ -387,7 +387,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         self.assertNotIn("authenticated", result["targets"]["12301"])
 
     def test_measurement_before_close_but_receipt_after_target_close_is_ineligible(self):
-        rows = rows_for_target(received="2026-11-21T19:00:00-06:00")
+        rows = rows_for_target(received="2026-11-21T21:01:00-06:00")
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertEqual(
             result["targets"]["12301"]["predictive_eligibility"],
@@ -397,7 +397,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_measurement_after_source_close_can_be_eligible_for_later_target(self):
         rows = rows_for_target()
         for row in rows:
-            row["measurement_at"] = "2026-11-20T20:55:00-06:00"
+            row["measurement_at"] = "2026-11-20T21:05:00-06:00"
             row["evidence_available_at"] = "2026-11-20T21:15:00-06:00"
             row["custody_received_at"] = "2026-11-20T21:16:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
@@ -539,7 +539,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_draw_date_accepts_utc_draw_timestamp_for_same_source_local_date(self):
         rows = rows_for_target()
         for row in rows:
-            row["source_draw_at"] = "2026-11-21T03:00:00Z"
+            row["source_draw_at"] = "2026-11-21T03:10:00Z"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         reasons = result["targets"]["12301"]["reasons"]
         self.assertNotIn("DRAW_DATE_SOURCE_DRAW_MISMATCH", reasons)
@@ -568,14 +568,14 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         for row in rows:
             row.update({
                 "set_assigned_at": "2026-11-20T14:00:00-06:00",
-                "draw_close_at": "2026-11-20T14:45:00-06:00",
-                "measurement_at": "2026-11-20T14:55:00-06:00",
-                "source_signed_at": "2026-11-20T14:58:00-06:00",
-                "source_draw_at": "2026-11-20T15:00:00-06:00",
-                "evidence_available_at": "2026-11-20T15:01:00-06:00",
-                "custody_received_at": "2026-11-20T15:02:00-06:00",
-                "target_draw_close_at": "2026-11-21T14:00:00-06:00",
-                "target_draw_at": "2026-11-21T15:00:00-06:00",
+                "draw_close_at": "2026-11-20T15:00:00-06:00",
+                "measurement_at": "2026-11-20T15:05:00-06:00",
+                "source_signed_at": "2026-11-20T15:08:00-06:00",
+                "source_draw_at": "2026-11-20T15:10:00-06:00",
+                "evidence_available_at": "2026-11-20T15:15:00-06:00",
+                "custody_received_at": "2026-11-20T15:16:00-06:00",
+                "target_draw_close_at": "2026-11-21T15:00:00-06:00",
+                "target_draw_at": "2026-11-21T15:10:00-06:00",
                 "mapping_valid_from": "2026-11-20T13:00:00-06:00",
                 "mapping_valid_to": "2026-11-21T15:30:00-06:00",
             })
@@ -588,24 +588,43 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         )
 
 
-    def test_classic_draw_slot_rejects_nonzero_seconds(self):
+    def test_classic_sales_close_slot_rejects_nonzero_seconds(self):
+        cases = (
+            ("draw_close_at", "2026-11-20T21:00:59-06:00"),
+            ("target_draw_close_at", "2026-11-21T21:00:59-06:00"),
+        )
+        for field, timestamp in cases:
+            with self.subTest(field=field):
+                rows = rows_for_target()
+                for row in rows:
+                    row[field] = timestamp
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                reasons = result["targets"]["12301"]["reasons"]
+                self.assertIn("CLASSIC_SCHEDULE_TIME_MISMATCH", reasons)
+                self.assertEqual(
+                    result["targets"]["12301"]["predictive_eligibility"],
+                    "BLOCKED_CONTINUITY",
+                )
+
+    def test_actual_classic_draw_timestamps_may_follow_sales_close(self):
         rows = rows_for_target()
         for row in rows:
-            row["target_draw_at"] = "2026-11-21T21:00:59-06:00"
+            row["source_draw_at"] = "2026-11-20T21:12:00-06:00"
+            row["target_draw_at"] = "2026-11-21T21:17:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
-        reasons = result["targets"]["12301"]["reasons"]
-        self.assertIn("CLASSIC_SCHEDULE_TIME_MISMATCH", reasons)
+        target = result["targets"]["12301"]
+        self.assertNotIn("CLASSIC_SCHEDULE_TIME_MISMATCH", target["reasons"])
         self.assertEqual(
-            result["targets"]["12301"]["predictive_eligibility"],
-            "BLOCKED_CONTINUITY",
+            target["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
         )
 
     def test_utc_2100_is_not_misread_as_classic_local_2100(self):
         rows = rows_for_target()
         for row in rows:
-            row["target_draw_close_at"] = "2026-11-21T14:00:00-06:00"
+            row["target_draw_close_at"] = "2026-11-21T21:00:00Z"
             # 21:00 UTC is 15:00 in America/Mexico_City, i.e. De las Tres.
-            row["target_draw_at"] = "2026-11-21T21:00:00Z"
+            row["target_draw_at"] = "2026-11-21T21:10:00Z"
             row["mapping_valid_to"] = "2026-11-21T15:30:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         reasons = result["targets"]["12301"]["reasons"]

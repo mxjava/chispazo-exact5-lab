@@ -127,8 +127,8 @@ def _parse_time(value: Any, field: str) -> datetime:
 
 
 
-def _is_classic_draw_slot(value: datetime) -> bool:
-    """Check the official 21:00 Classic slot in Mexico City local time."""
+def _is_classic_sales_close_slot(value: datetime) -> bool:
+    """Check the official 21:00 Classic sales-close slot in Mexico City local time."""
     local = value.astimezone(CHISPAZO_LOCAL_TIMEZONE)
     return (local.hour, local.minute, local.second, local.microsecond) == CLASSIC_DRAW_SLOT
 
@@ -275,7 +275,12 @@ def evaluate_temporal_eligibility(
                 source_draw_raw = row["source_draw_at"]
                 source_draw = _parse_time(source_draw_raw, "source_draw_at")
                 target_draw = _parse_time(row["target_draw_at"], "target_draw_at")
-                if not _is_classic_draw_slot(source_draw) or not _is_classic_draw_slot(target_draw):
+                # The published 21:00 slot is the sales-close boundary. The
+                # actual extraction timestamps may legitimately follow that close.
+                if (
+                    not _is_classic_sales_close_slot(source_close)
+                    or not _is_classic_sales_close_slot(close)
+                ):
                     reasons.add("CLASSIC_SCHEDULE_TIME_MISMATCH")
                 assignment = _parse_time(row["set_assigned_at"], "set_assigned_at")
                 signed = _parse_time(row["source_signed_at"], "source_signed_at")
@@ -317,7 +322,8 @@ def evaluate_temporal_eligibility(
                     else:
                         # draw_date is the official Mexico City calendar date, not
                         # the calendar date implied by whichever offset a source used.
-                        # A 21:00 local Classic draw is 03:00Z on the following UTC day.
+                        # The 21:00 local Classic sales close is 03:00Z on the next UTC
+                        # day; actual extraction may occur later on the local draw date.
                         source_close_local_date = source_close.astimezone(
                             CHISPAZO_LOCAL_TIMEZONE
                         ).date()
