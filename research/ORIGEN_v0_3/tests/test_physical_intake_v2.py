@@ -325,6 +325,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             declared_timestamp_refs=frozenset({"TSA-1"}),
             declared_source_refs=frozenset({"DOC-12300"}),
             declared_continuity_targets=frozenset({"12301"}),
+            declared_classic_sequence_refs=frozenset({"CLASSIC-SEQ-2026"}),
         )
         self.assertEqual(result["status"], "STRUCTURAL_REVIEW_ONLY")
         self.assertEqual(
