@@ -61,6 +61,13 @@ class TestIndependentTrustAdapter(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "exact bytes"):
             verify_independent_provenance(SpoofedBytes(b"receipt"))
 
+    def test_mutable_and_view_backed_buffers_are_rejected_at_boundary(self):
+        mutable = bytearray(b"receipt")
+        for candidate in (mutable, memoryview(mutable)):
+            with self.subTest(input_type=type(candidate).__name__):
+                with self.assertRaisesRegex(TypeError, "exact bytes"):
+                    verify_independent_provenance(candidate)
+
     def test_empty_original_bytes_are_rejected(self):
         with self.assertRaisesRegex(ValueError, "must not be empty"):
             verify_independent_provenance(b"")
