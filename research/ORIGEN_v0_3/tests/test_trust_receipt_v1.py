@@ -441,6 +441,25 @@ class TestTrustReceiptV1(unittest.TestCase):
         ):
             parse_unverified_receipt(nested)
 
+    def test_json_nesting_depth_limit_is_inclusive(self):
+        # The root object consumes one level, leaving exactly 63 nested arrays
+        # at the configured maximum of 64. Parsing must reach schema validation.
+        nested: object = "not-a-status"
+        for _ in range(MAX_TRUST_RECEIPT_JSON_DEPTH - 1):
+            nested = [nested]
+        document = valid_document()
+        document["status"] = nested
+        with self.assertRaisesRegex(ValueError, "status must be"):
+            parse_unverified_receipt(encode(document))
+
+    def test_escaped_quote_and_backslash_do_not_end_json_string_for_depth_scan(self):
+        document = valid_document()
+        # json.dumps encodes the backslash and quote; the following delimiters
+        # remain string content and must not consume the nesting budget.
+        document["status"] = r'invalid \" ' + "[]{}" * (MAX_TRUST_RECEIPT_JSON_DEPTH + 2)
+        with self.assertRaisesRegex(ValueError, "status must be"):
+            parse_unverified_receipt(encode(document))
+
     def test_brackets_inside_json_strings_do_not_count_as_nesting(self):
         document = valid_document()
         document["status"] = "AUTHENTICATED[]{}"
