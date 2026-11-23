@@ -53,6 +53,10 @@ def _require_sha(value: Any, field: str) -> None:
 def parse_utc(value: str, field: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field} must be a non-empty ISO-8601 timestamp")
+    # RFC 3339 -00:00 means the local offset is unknown, not UTC.
+    # Treating it as UTC would manufacture certainty in custody chronology.
+    if value.endswith("-00:00"):
+        raise ValueError(f"{field} must not use the unknown UTC offset -00:00")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
