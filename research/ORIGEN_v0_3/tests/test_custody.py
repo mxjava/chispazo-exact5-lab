@@ -229,6 +229,27 @@ class CustodyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unique"):
             self.make_record(portfolio=duplicate)
 
+    def test_read_record_rejects_duplicate_json_keys(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "duplicate.json"
+            path.write_bytes(b'{"outer":{"x":1,"x":2}}\\n')
+            with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
+                read_record(path)
+
+    def test_read_record_rejects_non_finite_json_numbers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "nonfinite.json"
+            path.write_bytes(b'{"value":NaN}\\n')
+            with self.assertRaisesRegex(ValueError, "non-finite JSON number"):
+                read_record(path)
+
+    def test_read_record_rejects_noncanonical_json_encoding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "noncanonical.json"
+            path.write_bytes(b'{"value": 1}\\n')
+            with self.assertRaisesRegex(ValueError, "canonical UTF-8 JSON"):
+                read_record(path)
+
     def test_non_utc_timestamp_rejected(self):
         with self.assertRaisesRegex(ValueError, "UTC offset"):
             self.make_record(generated_at_utc="2026-11-20T11:00:00-06:00")
