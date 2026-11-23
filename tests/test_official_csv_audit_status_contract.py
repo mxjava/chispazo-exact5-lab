@@ -41,3 +41,62 @@ def test_post_baseline_continuity_fails_closed_on_gaps():
     check = _load_pure_function(script, "post_baseline_ids_are_contiguous")
     assert check([12250, 12252, 12253]) is False
     assert check([]) is True
+
+
+def test_daily_pair_structure_accepts_two_consecutive_odd_even_ids():
+    script = Path(__file__).parents[1] / "scripts" / "audit_official_chispazo_csv.py"
+    check = _load_pure_function(script, "analyze_daily_pair_structure")
+    result = check(
+        [
+            ["5924", "01/01/2018"],
+            ["5923", "01/01/2018"],
+            ["5925", "02/01/2018"],
+            ["5926", "02/01/2018"],
+        ],
+        0,
+        1,
+    )
+    assert result["observed_dates"] == 2
+    assert result["dates_matching_two_consecutive_odd_even_ids"] == 2
+    assert result["post_transition_ids_contiguous"] is True
+    assert result["anomaly_count"] == 0
+    assert result["classification"] == "STRUCTURAL_PATTERN_ONLY_NO_MODALITY_ASSERTION"
+
+
+def test_daily_pair_structure_fails_closed_on_missing_or_wrong_pairs():
+    script = Path(__file__).parents[1] / "scripts" / "audit_official_chispazo_csv.py"
+    check = _load_pure_function(script, "analyze_daily_pair_structure")
+    result = check(
+        [
+            ["5923", "01/01/2018"],
+            ["5925", "02/01/2018"],
+            ["5927", "02/01/2018"],
+            ["5928", "03/01/2018"],
+            ["5930", "03/01/2018"],
+        ],
+        0,
+        1,
+    )
+    assert result["dates_with_other_row_count"] == 1
+    assert result["anomaly_count"] == 2
+    assert result["post_transition_ids_contiguous"] is False
+    assert {item["reason"] for item in result["anomalies"]} == {
+        "EXPECTED_TWO_CONSECUTIVE_IDS_ODD_THEN_EVEN"
+    }
+
+
+def test_daily_pair_structure_does_not_project_rule_before_transition():
+    script = Path(__file__).parents[1] / "scripts" / "audit_official_chispazo_csv.py"
+    check = _load_pure_function(script, "analyze_daily_pair_structure")
+    result = check(
+        [
+            ["558", "19/10/2002"],
+            ["559", "19/10/2002"],
+            ["5923", "25/09/2017"],
+            ["5924", "25/09/2017"],
+        ],
+        0,
+        1,
+    )
+    assert result["observed_dates"] == 1
+    assert result["anomaly_count"] == 0
