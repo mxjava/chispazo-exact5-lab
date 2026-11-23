@@ -82,7 +82,9 @@
     ],
     "per_sphere_RFID_or_printed_ID_confirmed": false,
     "extraction_order_or_per_extraction_timestamp": false,
-    "applicability": "UNCONFIRMED_PUBLIC_COPY"
+    "applicability": "UNCONFIRMED_PUBLIC_COPY",
+    "storage_rule": "Tira archived with CS-11 in the draw file; kept bimonthly in the drawing room, then transferred to Subdirección de Concursos y Sorteos (unconfirmed applicability)",
+    "per_sphere_timestamp": false
   },
   "CS02_schema_if_SGM_PRO_06_applies": {
     "date_draw_number_inspection_time_signatures_observations": true,
@@ -98,7 +100,14 @@
       "scale_printer",
       "roll_battery"
     ],
-    "numeric_thresholds": "UNCONFIRMED_FOR_CURRENT_OPERATION"
+    "numeric_thresholds": "UNCONFIRMED_FOR_CURRENT_OPERATION",
+    "compressor_pressure_psi": {
+      "min": 27,
+      "max": 30
+    },
+    "printer_date_time_attached": true,
+    "all_equipment_used_each_session": true,
+    "replace_equipment_and_note_anomaly": true
   },
   "RFID_public_report": {
     "period": "2018-2024",
@@ -129,5 +138,20 @@
   "operational_records_obtained": [],
   "official_PDF_binary_SHA256_calculated": false,
   "classification": "MECHANISM_DOCUMENTATION_ONLY",
-  "predictive_advantage_claimed": false
+  "predictive_advantage_claimed": false,
+  "CS11_fields": [
+    "date",
+    "draw_number",
+    "case_number",
+    "sphere_vs_recorded_numbers",
+    "participants",
+    "results",
+    "signatures"
+  ],
+  "CS11_timing": "after extraction; result and verification record",
+  "video_master": {
+    "SGM_PRO_06": "unedited recording from weighing through draw; verified and held by Subdirección de Concursos y Sorteos (applicability unconfirmed)",
+    "SGVO_PRO_05": "recording from weighing through electronic draw; edited draw-only version is attached to the Acta"
+  },
+  "CS09_timing": "SGM-PRO-06 copy: events entered after the draw; monthly signature; not a pre-close input by default"
 }
