@@ -1,0 +1,43 @@
+{
+  "snapshot_id": "LN-SGVO-PRO-05-REV39-SOURCE-CONTRACT-2026-11-23",
+  "status": "DOCUMENTARY_SOURCE_AUDIT_COMPLETE",
+  "classification": "MECHANISM_EVIDENCE_ONLY",
+  "findings": {
+    "POLICY_5_2_AND_QUALITY_PLAN_CROSS_REFERENCE_MISMATCH": true,
+    "TIRA_SIGNATORY_ROLE_LABEL_MISMATCH": true,
+    "CS11_TEMPLATE_NOT_EMBEDDED_IN_PUBLIC_PRO05": true,
+    "CS11_TIME_FIELD_NOT_SPECIFIED_IN_PUBLIC_PLAN": true,
+    "SGVO_MAN_02_IS_RESERVED_PROJECT_LEAD_ONLY": true,
+    "REGULATION_ARTICLE_9_VS_PRO05_SEQUENCE_REQUIRES_CLARIFICATION": true,
+    "ELECTRONIC_SIGNATURE_IS_POST_CLOSE_PRE_DRAW": true,
+    "CURRENT_MACHINE_MAINTENANCE_STATUS_UNKNOWN": true,
+    "RFID_EXISTS_BUT_DRAW_LEVEL_TRACE_IS_MISSING": true,
+    "PRO34_TRADITIONAL_SCOPE_EXCLUDED_FROM_CHISPAZO": true,
+    "2026_222_ELECTRICAL_BUILDING_MAINTENANCE_EXCLEDED": true
+  },
+  "finding_codes": [
+    "2026_222_ELECTRICAL_BUILDING_MAINTENANCE_EXCLUDED",
+    "CS11_TEMPLATE_NOT_EMBEDDED_IN_PUBLIC_PRO05",
+    "CS11_TIME_FIELD_NOT_SPECIFIED_IN_PUBLIC_PLAN",
+    "CURRENT_MACHINE_MAINTENANCE_STATUS_UNKNOWN",
+    "ELECTRONIC_SIGNATURE_IS_POST_CLOSE_PRE_DRAW",
+    "POLICY_5_2_AND_QUALITY_PLAN_CROSS_REFERENCE_MISMATCH",
+    "PRO34_TRADITIONAL_SCOPE_EXCLUDED_FROM_CHISPAZO",
+    "REGULATION_ARTICLE_9_VS_PRO05_SEQUENCE_REQUIRES_CLARIFICATION",
+    "RFID_EXISTS_BUT_DRAW_LEVEL_TRACE_IS_MISSING",
+    "SGVO_MAN_02_IS_RESERVED_PROJECT_LEAD_ONLY",
+    "TIRA_SIGNATORY_ROLE_LABEL_MISMATCH"
+  ],
+  "predictive_advantage_claim": false,
+  "physical_bias_claim": false,
+  "draw_specific_physical_data_used": false,
+  "frequency_pair_triple_transition_analysis_run": false,
+  "manual_draft_fields_authoritative": false,
+  "notes": [
+    "The audit validates a frozen transcript of official-source excerpts; it does not authenticate the original PDF bytes.",
+    "The CS-11 time-field result is scoped to the field list published in the SGVO-PRO-05 quality plan; the blank CS-11 template was not embedded in the procedure PDF.",
+    "The SGVO-MAN-02 content is retained as a reserved project lead only and is not treated as current approved operating authority.",
+    "No draw-specific physical measurements, RFID events, asset assignments, maintenance work orders, or original audiovisual files were obtained."
+  ],
+  "source_snapshot_sha256": "a850802bc8e814158170575a23b8d19c25b523acf7110a2cedf89d96073f557f"
+}
