@@ -1,6 +1,8 @@
 """Strict V1 parser for untrusted ORIGEN trust-receipt documents.
 
-Parsing validates shape and canonical encoding only. It does not verify signatures,
+Receipt bytes use the repository canonical JSON profile: UTF-8, sorted object keys,
+no insignificant whitespace, and ASCII escapes. Parsing validates shape and
+internal consistency only; it does not verify signatures,
 keys, identities, trusted time, ledger inclusion, or physical provenance. In
 particular, a declared status of AUTHENTICATED is untrusted input and MUST NOT be
 used as an eligibility decision.
@@ -399,6 +401,11 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
         )
     except (json.JSONDecodeError, RecursionError) as exc:
         raise ValueError("trust receipt is not valid bounded JSON") from exc
+    canonical = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("utf-8")
+    if raw != canonical:
+        raise ValueError("trust receipt JSON must use canonical UTF-8 encoding")
     root = _object(payload, _ROOT_FIELDS, "receipt")
     if root["schema_version"] != SCHEMA_VERSION:
         raise ValueError("unsupported trust receipt schema_version")
