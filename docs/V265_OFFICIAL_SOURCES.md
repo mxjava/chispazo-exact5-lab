@@ -47,3 +47,12 @@ RFID: el Informe de Gestión 2018–2024 declara que las máquinas y esferas adq
 V265: el evaluador exige IDs de máquina/estuche y timestamps de disponibilidad pre-cierre, pero no exige ni consume los 28 pesos individuales, RFID por esfera, orden/timestamp de extracción ni procedencia por fila. Por ello sólo puede evaluar asociaciones condicionadas a etiquetas de máquina/estuche; no puede acreditar sesgo físico de esferas. Ver `reports/V265_PHYSICAL_EVIDENCE_AUDIT_20261121.md`.
 
 Regla de uso: ningún dato post-cierre (Tira de Pesaje, extracción, CS-11, acta, incidencias, video del evento o firma del archivo de participaciones) alimenta una predicción que deba congelarse antes del cierre. Los IDs de máquina/estuche o la inspección CS-02 sólo serían candidatos prospectivos si su valor exacto, procedencia y timestamp fueran verificables y accesibles antes del cierre.
+
+
+## Corrección de inventario normativo — 2026-11-23
+
+Se localizó una copia pública adicional de SGM-PRO-06 Preparación de Sorteos, revisión 22, DN-07 v05, en la ruta SUSTANTIVAS/VIGENTES/sgm_p0_6.pdf. La revisión registra último cambio en junio de 2017, pero el archivo no aparece en la lista actual de Normas Sustantivas Vigentes. Por ello su aplicabilidad actual queda sin confirmar. No es el mismo documento que SGVO-MAN-02, que sí aparece como proyecto normativo en la ventana 23-02-2026 a 04-03-2026.
+
+La copia SGM-PRO-06 describe pesaje individual de 28 esferas Chispazo en orden numérico, valores y estadísticos impresos, fecha/hora al inicio y al final, y colores amarillo/azul según máquina. Su anexo dice preferentemente antes del cierre de 21:15. Esto entra en conflicto con SGVO-PRO-05 revisión 39, listado vigente y actualizado 20-03-2026, que describe pesaje después de verificar SICAL cerrado a las 21:00 y tiene otros rangos de peso en Política 6. No usar SGM-PRO-06 como norma operativa hasta recibir confirmación escrita.
+
+SGVO-PRO-05 actividad 5.2 y Plan de Calidad remiten erróneamente a Política 8 para los pesos; Política 8 trata de la firma electrónica del archivo de participaciones. Los rangos están en Política 6. La rama de sustitución de estuche regresa a actividad 4.1; el texto no dice que se reabran ventas. Ver el informe y matriz V265_DOCUMENT_RECONCILIATION_20261123.
