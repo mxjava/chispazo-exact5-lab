@@ -80,6 +80,16 @@ The parser also rejects literal identifier aliasing between trusted-time authori
 
 The downstream evaluator accepts only an `AUTHENTICATED` receipt whose digests exactly match the run inputs. It must not accept caller-created booleans or arbitrary string sets as a substitute.
 
+## V2 time-proof subject binding
+
+The separate `origen.trust-receipt.v2` parser adds two explicit links:
+- Every `trusted_time_proofs` entry carries `subject_sha256`.
+- Every `output_seals` entry carries `timestamp_proof_sha256`.
+
+For each output seal, the referenced proof must exist, its `subject_sha256` must equal the seal's declared `signature_sha256`, and its `event_at_utc` must equal `created_at_utc`. The receipt-attestation proof must bind to SHA-256 of the exact decoded attestation signature bytes. The attestation proof and the two output-seal proof references must be distinct.
+
+This closes a structural orphan-reference gap: V1 could validate that a seal's claimed time was before close without linking that claim to any declared time-proof record. V2 still does **not** validate the RFC 3161/CMS token, TSA chain/EKU/nonce/accuracy/revocation, signature bytes, signer identity, or root provisioning. A matching digest and timestamp string are not trusted time; the adapter remains fail-closed.
+
 ## 6. Mandatory adversarial tests
 
 | Attack / defect | Expected result |

@@ -1,3 +1,9 @@
+## Trust-receipt V2 seal timestamp binding (2026-11-23)
+- Added a separate V2 structural parser. Each output seal now references a declared time-proof digest whose subject digest must equal that seal's signature digest and whose event time must equal the seal's claimed creation time.
+- The receipt-attestation time proof must bind to SHA-256 of the exact decoded attestation signature bytes; its event time remains bound to signed_at_utc through the V1 invariant checks.
+- Added adversarial tests for missing proof references, subject substitution, timestamp mismatch, and proof reuse.
+- This is structural linkage only. It does not validate RFC 3161/CMS token bytes, TSA certificate chains, signer signatures, authority identity, trusted root provisioning, or physical custody. V1 remains unchanged.
+
 ## Ledger-anchor transition integrity (2026-11-23)
 - The unverified trust-receipt parser now rejects a ledger anchor whose resulting head digest is identical to its previous head digest. A declared append must represent a state transition; otherwise the receipt could claim an entry without advancing the committed head.
 - Added an adversarial regression test and documented the invariant.
