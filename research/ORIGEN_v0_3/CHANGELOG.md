@@ -60,3 +60,12 @@
 - 146 tests passed; full fixed-era replay and artifact upload succeeded (run 44447156133).
 - Era A n=6,075; era B n=1,648; global max z=4.3320; null q95=6.8491; Monte Carlo p=0.1820. `NO_ERA_DIFFERENCE_DETECTED`.
 - No causal equipment attribution or predictive signal.
+
+
+## Trust-receipt timestamp binding and official 22-Nov refresh (2026-11-22)
+- The unverified receipt parser now requires the trusted-time proof selected by `receipt_attestation.timestamp_proof_sha256` to carry the same `event_at_utc` as `receipt_attestation.signed_at_utc`. This is an internal consistency check only; it does not verify an RFC 3161 token or authenticate the clock/authority.
+- Corrected the synthetic valid fixture and added an adversarial regression test for a one-second mismatch.
+- Added status-only overlay `data/official-overlays/2026-11-22_2158_official_status_only.json`. Official Home index places contest 12389 at 15:00 and contest 12390 at 21:00; the official product page maps those slots to De las Tres and Clásico respectively.
+- At the 21:58 local observation, official results endpoints still showed 12389 (01 15 17 22 25) and no 12390 combination; the mask index still listed 21-Nov as newest. Contest 12389 is schedule-slot matched to De las Tres, not same-day-mask confirmed.
+- No 22-Nov original mask bytes, signed draw act, signed participation file, CS-11, weighing strip, measurements, calibration certificate, trusted timestamp, independent custody receipt, or pre-close seal were obtained. No canonical append, V294 change, main write, merge, or promotion.
+- CI for the new parser/test commit is pending; production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
