@@ -5,7 +5,7 @@ import base64
 import copy
 import json
 import unittest
-from datetime import datetime, timezone, tzinfo
+from datetime import datetime, timedelta, timezone, tzinfo
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -345,6 +345,30 @@ class TestTrustVerifierV1(unittest.TestCase):
             verify_receipt_attestation(
                 raw, policy(public_bytes), verification_time=hostile_time
             )
+
+    def test_timezone_offset_is_snapshotted_once_before_utc_normalization(self):
+        class ChangingTimezone(tzinfo):
+            def __init__(self):
+                self.calls = 0
+
+            def utcoffset(self, dt):
+                self.calls += 1
+                return timedelta(0) if self.calls == 1 else timedelta(hours=-6)
+
+            def dst(self, dt):
+                return timedelta(0)
+
+            def tzname(self, dt):
+                return "CHANGING"
+
+        raw, public_bytes, _ = signed_receipt()
+        changing_timezone = ChangingTimezone()
+        caller_clock = datetime(2026, 11, 23, 4, 0, tzinfo=changing_timezone)
+        result = verify_receipt_attestation(
+            raw, policy(public_bytes), verification_time=caller_clock
+        )
+        self.assertEqual(result.verified_at_utc, NOW)
+        self.assertEqual(changing_timezone.calls, 1)
 
     def test_verified_result_public_constructor_is_disabled(self):
         raw, _, _ = signed_receipt()
