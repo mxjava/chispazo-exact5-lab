@@ -588,6 +588,18 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         )
 
 
+    def test_classic_draw_slot_rejects_nonzero_seconds(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["target_draw_at"] = "2026-11-21T21:00:59-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("CLASSIC_SCHEDULE_TIME_MISMATCH", reasons)
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_CONTINUITY",
+        )
+
     def test_utc_2100_is_not_misread_as_classic_local_2100(self):
         rows = rows_for_target()
         for row in rows:
