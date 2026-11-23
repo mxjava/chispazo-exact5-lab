@@ -44,12 +44,22 @@ def mass_log_weights(masses_g: Sequence[float], beta_per_sd: float) -> tuple[flo
         raise ValueError("beta_per_sd must be a finite numeric value") from exc
     if not math.isfinite(beta):
         raise ValueError("beta_per_sd must be finite")
-    mean = math.fsum(values) / N_SPHERES
-    variance = math.fsum((value - mean) ** 2 for value in values) / N_SPHERES
-    sd = math.sqrt(variance)
-    if sd == 0:
+    # Center relative to the minimum and scale deviations before squaring.
+    # This avoids overflow for finite but widely separated positive inputs.
+    minimum = min(values)
+    offsets = tuple(value - minimum for value in values)
+    mean_offset = math.fsum(offsets) / N_SPHERES
+    deviations = tuple(offset - mean_offset for offset in offsets)
+    scale = max(abs(value) for value in deviations)
+    if scale == 0:
         return (0.0,) * N_SPHERES
-    return tuple(beta * ((value - mean) / sd) for value in values)
+    scaled = tuple(value / scale for value in deviations)
+    scaled_sd = math.sqrt(math.fsum(value * value for value in scaled) / N_SPHERES)
+    standardized = tuple(value / scaled_sd for value in scaled)
+    weighted = tuple(beta * value for value in standardized)
+    if any(not math.isfinite(value) for value in weighted):
+        raise ValueError("beta_per_sd and standardized masses produce non-finite log weights")
+    return weighted
 
 
 def log_plackett_luce_set_probability(
@@ -58,7 +68,17 @@ def log_plackett_luce_set_probability(
     draw_size: int = DRAW_SIZE,
 ) -> float:
     """Log probability of an unordered set under sequential Plackett-Luce draws."""
-    logs = tuple(float(value) for value in log_weights)
+    try:
+        raw_logs = tuple(log_weights)
+        if any(isinstance(value, bool) for value in raw_logs):
+            raise ValueError("log_weights must contain 28 finite numeric values")
+        logs = tuple(float(value) for value in raw_logs)
+    except (TypeError, OverflowError) as exc:
+        raise ValueError("log_weights must contain 28 finite numeric values") from exc
+    except ValueError as exc:
+        if "log_weights" in str(exc):
+            raise
+        raise ValueError("log_weights must contain 28 finite numeric values") from exc
     if len(logs) != N_SPHERES or any(not math.isfinite(value) for value in logs):
         raise ValueError("log_weights must contain 28 finite values")
     if not isinstance(draw_size, int) or isinstance(draw_size, bool) or not 1 <= draw_size <= N_SPHERES:
