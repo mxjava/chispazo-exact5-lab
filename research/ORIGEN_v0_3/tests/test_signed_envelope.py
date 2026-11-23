@@ -106,6 +106,31 @@ class TestDetachedEnvelope(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
             self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
 
+    def test_oversized_envelope_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "1 MiB limit"):
+            self.verify(envelope=b" " * 1048577)
+
+    def test_oversized_trust_store_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "1 MiB limit"):
+            self.verify(store=b" " * 1048577)
+
+    def test_nonstandard_json_nan_constant_is_rejected(self):
+        raw = b'{"keys":[],"schema":"origen.trust-store.v1","unused":NaN}'
+        with self.assertRaisesRegex(ValueError, "valid UTF-8 JSON"):
+            self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
+
+    def test_timestamp_with_more_than_six_fractional_digits_is_rejected(self):
+        env = json.loads(self.envelope)
+        env["issued_at_utc"] = "2026-11-23T14:00:00.1234567Z"
+        with self.assertRaisesRegex(ValueError, "canonical RFC3339"):
+            self.verify(envelope=canonical(env))
+
+    def test_noncanonical_base64_is_rejected(self):
+        env = json.loads(self.envelope)
+        env["payload_b64"] = env["payload_b64"].rstrip("=")
+        with self.assertRaisesRegex(ValueError, "invalid base64"):
+            self.verify(envelope=canonical(env))
+
     def test_signature_from_untrusted_key_is_rejected(self):
         other = Ed25519PrivateKey.generate().sign(self.payload)
         env = json.loads(self.envelope)
