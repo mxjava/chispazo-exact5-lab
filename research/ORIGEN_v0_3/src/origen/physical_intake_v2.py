@@ -520,7 +520,14 @@ def evaluate_temporal_eligibility(
     }
 
 
-def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[str, Any]:
+def evaluate_temporal_csv(
+    path: str | Path,
+    *,
+    declared_custody_refs: set[str] | frozenset[str] | None = None,
+    declared_timestamp_refs: set[str] | frozenset[str] | None = None,
+    declared_source_refs: set[str] | frozenset[str] | None = None,
+    declared_continuity_targets: set[str] | frozenset[str] | None = None,
+) -> dict[str, Any]:
     """Read bounded, single-physical-line CSV records before structural intake.
 
     The V2 schema contains scalar fields only. Multiline CSV cells are rejected;
@@ -595,4 +602,10 @@ def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[st
                     values.extend([None] * (len(headers) - len(values)))
                 yield dict(zip(headers, values))
 
-        return evaluate_temporal_eligibility(rows(), **verification)
+        return evaluate_temporal_eligibility(
+            rows(),
+            declared_custody_refs=declared_custody_refs,
+            declared_timestamp_refs=declared_timestamp_refs,
+            declared_source_refs=declared_source_refs,
+            declared_continuity_targets=declared_continuity_targets,
+        )
