@@ -261,6 +261,7 @@ def evaluate_temporal_eligibility(
         calibration_hashes: set[str] = set()
         signature_refs: set[str] = set()
         signer_ids: set[str] = set()
+        custodian_ids: set[str] = set()
         timestamp_refs: set[str] = set()
         mass_values: list[Decimal] = []
         for row in group:
@@ -297,6 +298,7 @@ def evaluate_temporal_eligibility(
                 calibration_hashes.add(calibration_hash)
                 signature_refs.add(_canonical_identifier(row["source_signature_ref"]))
                 signer_ids.add(_canonical_identifier(row["source_signer_id"]))
+                custodian_ids.add(_canonical_identifier(row["custodian_id"]))
                 timestamp_refs.add(_canonical_identifier(row["trusted_timestamp_ref"]))
                 source_contest = _canonical_identifier(row["source_contest_id"])
                 source_contests.add(source_contest)
@@ -445,6 +447,8 @@ def evaluate_temporal_eligibility(
             reasons.add("EVIDENCE_DOCUMENT_SET_CONFLICT")
         if len(source_contests) != 1 or "" in source_contests:
             reasons.add("SOURCE_CONTEST_CONFLICT")
+        if signer_ids.intersection(custodian_ids):
+            reasons.add("SIGNER_CUSTODIAN_ROLE_COLLISION")
         if (
             len(group) != 28
             or len(sphere_ids) != 28
@@ -471,6 +475,7 @@ def evaluate_temporal_eligibility(
             "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "INVALID_SOURCE_SHA256",
             "INVALID_CUSTODY_RECEIPT_SHA256", "INVALID_CALIBRATION_SHA256",
             "CUSTODY_NOT_INDEPENDENTLY_VERIFIED", "TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",
+            "SIGNER_CUSTODIAN_ROLE_COLLISION",
             "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
             "CUSTODY_RECEIPT_MISSING", "TRUSTED_TIMESTAMP_MISSING",
             "PRIMARY_SOURCE_MISSING", "SOURCE_SIGNATURE_MISSING",
