@@ -482,6 +482,11 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
     if status == "REJECTED" and not failures:
         raise ValueError("REJECTED declaration must contain at least one failure code")
     attestation = _parse_attestation(root["receipt_attestation"])
+    trusted_time_proof_digests = {item.proof_sha256 for item in time_proofs}
+    if attestation.timestamp_proof_sha256 not in trusted_time_proof_digests:
+        raise ValueError(
+            "receipt attestation timestamp proof must reference a declared trusted time proof"
+        )
     declared_participants = signer_subjects | custodian_subjects | generator_ids
     if attestation.issuer_id in declared_participants:
         raise ValueError(

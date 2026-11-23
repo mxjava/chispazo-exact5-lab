@@ -103,7 +103,7 @@ def valid_document() -> dict:
             "algorithm": "ed25519",
             "signature_b64": base64.b64encode(b"x" * 64).decode("ascii"),
             "signed_at_utc": "2026-11-23T03:05:00Z",
-            "timestamp_proof_sha256": digest("3"),
+            "timestamp_proof_sha256": digest("4"),
         },
     }
 
@@ -122,6 +122,15 @@ class TestTrustReceiptV1(unittest.TestCase):
         self.assertEqual(len(parsed.output_seals), 2)
         self.assertEqual(parsed.raw_sha256, hashlib.sha256(encode(valid_document())).hexdigest())
         self.assertFalse(hasattr(parsed, "authenticated"))
+
+    def test_attestation_timestamp_proof_must_reference_declared_trusted_time_proof(self):
+        document = valid_document()
+        document["receipt_attestation"]["timestamp_proof_sha256"] = digest("3")
+        with self.assertRaisesRegex(
+            ValueError,
+            "receipt attestation timestamp proof must reference a declared trusted time proof",
+        ):
+            parse_unverified_receipt(encode(document))
 
     def test_rejected_document_requires_failure_code(self):
         document = valid_document()
