@@ -1,0 +1,80 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "observation": {
+    "observed_at_local": "2026-11-23T16:30:00-06:00",
+    "observed_at_utc": "2026-11-23T22:30:00Z",
+    "timezone": "America/Mexico_City",
+    "classification": "STATUS_ONLY_PUBLIC_OFFICIAL_SNAPSHOT"
+  },
+  "sources": {
+    "official_home_results": "https://www.loterianacional.gob.mx/Home/Resultados",
+    "official_home_index": "https://www.loterianacional.gob.mx/home/index",
+    "official_chispazo_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_chispazo_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "prior_2026_11_22_mask": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221841"
+  },
+  "official_result_observation": {
+    "contest_id": 12391,
+    "draw_date": "2026-11-23",
+    "winning_numbers": [3, 7, 19, 20, 24],
+    "home_results_visible": true,
+    "dedicated_chispazo_results_page_current_through": 12390,
+    "dedicated_page_discrepancy": "The dedicated Chispazo results page still displayed 12390 while Home/Resultados displayed 12391.",
+    "home_index_slot": "15:00",
+    "modality": "DE_LAS_TRES",
+    "modality_status": "SCHEDULE_INFERRED_NOT_MASK_CONFIRMED",
+    "modality_basis": "Home index displays contest 12391 at 15:00; official Chispazo product schedule maps 15:00 to De las Tres and 21:00 to Clásico. No 2026-11-23 mask was listed at observation time."
+  },
+  "next_classic_status": {
+    "contest_id": 12392,
+    "draw_date": "2026-11-23",
+    "result_visible": false,
+    "modality": "NOT_CONFIRMED_BY_CURRENT_MASK",
+    "expected_slot_local": "21:00",
+    "slot_basis": "Official Chispazo product schedule; contest association is provisional until official result/mask publication."
+  },
+  "official_mask": {
+    "index_latest_date": "2026-11-22",
+    "new_2026_11_23_mask_visible": false,
+    "2026_11_22": {
+      "12389": {"modality": "DE_LAS_TRES", "numbers": [1, 15, 17, 22, 25]},
+      "12390": {"modality": "CLASSIC", "numbers": [1, 6, 9, 19, 23]},
+      "source_original_bytes_downloaded": false,
+      "source_sha256": "NOT_CAPTURED"
+    }
+  },
+  "physical_evidence": {
+    "draw_specific_primary_records_for_2026_11_23_obtained": false,
+    "signed_draw_act": "NOT_OBTAINED",
+    "signed_participation_file_and_signature": "NOT_OBTAINED",
+    "cs11": "NOT_OBTAINED",
+    "original_weighing_strip_and_28_measurements": "NOT_OBTAINED",
+    "scale_identity_and_calibration": "NOT_OBTAINED",
+    "equipment_and_urn_records": "NOT_OBTAINED",
+    "independent_custody_receipt": "NOT_OBTAINED",
+    "trusted_timestamp_or_external_ledger_proof": "NOT_OBTAINED",
+    "two_independent_preclose_output_seals": "NOT_OBTAINED"
+  },
+  "source_bytes": {
+    "2026_11_22_mask_original_bytes_downloaded": false,
+    "2026_11_22_mask_sha256": "NOT_CAPTURED",
+    "2026_11_23_mask_original_bytes_downloaded": false,
+    "2026_11_23_mask_sha256": "NOT_CAPTURED"
+  },
+  "eligibility": {
+    "status": "BLOCKED_PROVENANCE",
+    "snapshot_eligible": false,
+    "prospective_oos_eligible": false,
+    "score_eligible": false,
+    "reason": "Public result/schedule metadata only; 2026-11-23 mask, draw-specific signed physical records, original source bytes, independent custody, trusted time, and two pre-close seals were not obtained."
+  },
+  "protections": {
+    "v294": "FROZEN",
+    "canonical_history": "UNCHANGED",
+    "main_writes": false,
+    "canonical_append": false,
+    "merge_or_promotion": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
