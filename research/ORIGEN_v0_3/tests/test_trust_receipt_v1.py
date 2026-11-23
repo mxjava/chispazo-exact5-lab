@@ -42,7 +42,14 @@ def valid_document() -> dict:
                 "key_id": "institution-key-1",
                 "algorithm": "ed25519",
                 "signature_sha256": digest("2"),
-            }
+            },
+            {
+                "subject_id": "institution-signer-2",
+                "role": "records-officer",
+                "key_id": "institution-key-2",
+                "algorithm": "ed25519",
+                "signature_sha256": digest("e"),
+            },
         ],
         "custodians": [
             {
@@ -240,6 +247,21 @@ class TestTrustReceiptV1(unittest.TestCase):
         document = valid_document()
         document["output_seals"][1]["generator_id"] = document["output_seals"][0]["generator_id"]
         with self.assertRaisesRegex(ValueError, "distinct generators"):
+            parse_unverified_receipt(encode(document))
+
+    def test_output_seal_signature_must_reference_a_declared_signer_signature(self):
+        document = valid_document()
+        document["output_seals"][0]["signature_sha256"] = digest("9")
+        with self.assertRaisesRegex(
+            ValueError,
+            "every output seal signature must reference a declared signer signature digest",
+        ):
+            parse_unverified_receipt(encode(document))
+
+    def test_signer_signature_digests_must_be_unique(self):
+        document = valid_document()
+        document["signers"][1]["signature_sha256"] = document["signers"][0]["signature_sha256"]
+        with self.assertRaisesRegex(ValueError, "signers contain duplicate signature digests"):
             parse_unverified_receipt(encode(document))
 
     def test_signer_cannot_also_be_a_generator(self):
