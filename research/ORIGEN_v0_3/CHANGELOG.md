@@ -1,7 +1,7 @@
 ## Stable mass centering correction after exact-head CI failure (2026-11-23)
 - Exact-head CI on `b7fcf53fbbde20ce027e40487db1b9f4145c0404` exposed an overflow in the new extreme-finite-mass regression: summing 27 finite offsets near 1e308 overflowed `math.fsum` before division.
 - Corrected the numerical path by normalizing offsets by their maximum before computing the mean and population standard deviation. This preserves the z-score under positive affine scaling and avoids the intermediate sum overflow.
-- Fix commit: `3f7e5a8c9903af33b4428bb3944b80bc6fe45970`. Exact-head CI was triggered; results are pending and must be verified before claiming green.
+- Fix commit: `3f7e5a8c9903af33b4428bb3944b80bc6fe45970`. The next CI run passed the former overflow point but exposed an incorrectly directed test assertion: the 1.0 g sphere is lighter than the 1e308 g spheres and must receive the lower log weight for positive beta. Corrected the assertion in test commit `fa427b2c6a0b7cf6b117e41fafb67b283212d9a5`; exact-head CI for the resulting PR head is pending.
 - No predictive parameter, preregistration, V294, or historical data change.
 
 ## Official procedure reconciliation and 23-Nov status snapshot (2026-11-23 14:51 America/Mexico_City)
