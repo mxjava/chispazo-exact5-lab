@@ -353,9 +353,11 @@ def _reject_record_json_float(value: str) -> None:
 def read_record(path: str | Path) -> dict[str, Any]:
     """Read one bounded canonical record; reject ambiguous JSON encodings and values."""
     source = Path(path)
-    if source.stat().st_size > MAX_CUSTODY_RECORD_BYTES:
-        raise ValueError("record file exceeds maximum size of " + str(MAX_CUSTODY_RECORD_BYTES) + " bytes")
-    raw = source.read_bytes()
+    # Read at most one byte beyond the limit. A stat()-then-read_bytes()
+    # sequence is vulnerable to file growth between the size check and read,
+    # allowing an untrusted record to consume unbounded memory.
+    with source.open("rb") as stream:
+        raw = stream.read(MAX_CUSTODY_RECORD_BYTES + 1)
     if len(raw) > MAX_CUSTODY_RECORD_BYTES:
         raise ValueError("record file exceeds maximum size of " + str(MAX_CUSTODY_RECORD_BYTES) + " bytes")
     _validate_record_json_depth(raw)
