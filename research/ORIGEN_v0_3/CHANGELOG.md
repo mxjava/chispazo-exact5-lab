@@ -1,5 +1,10 @@
 # Changelog
 
+## Output-seal signer-reference binding (2026-11-22)
+- The unverified trust-receipt parser now requires each output-seal signature digest to resolve to a declared signer signature digest, and rejects duplicate signer signature digests to keep that structural reference unambiguous.
+- Updated the synthetic fixture with two distinct signer claims and added adversarial tests for an unreferenced seal signature and aliased signer signature digests.
+- This is structural reference integrity only. It does not verify signature bytes, key ownership, signer roles, institutional identity, trusted time, or physical custody; the independent adapter remains fail-closed.
+
 ## 0.3.0
 - Added chronological and expanding-window evaluation splits.
 - Added paired prequential log-score summaries and exact sign testing.
