@@ -1,11 +1,15 @@
+import contextlib
 import csv
+import io
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from src.pipeline.evaluate_uniform_portfolio import (
     MODE,
     evaluate_uniform_portfolio,
+    main,
 )
 from src.pipeline.generate_uniform_portfolio import generate_uniform_portfolio, write_portfolio
 
@@ -61,3 +65,23 @@ def test_rejects_invalid_draw_result(tmp_path, result):
     write_generated(portfolio, lines=5)
     with pytest.raises(ValueError, match="exactly five"):
         evaluate_uniform_portfolio(portfolio, 12390, result)
+
+
+def test_cli_writes_json_report_atomically(tmp_path):
+    portfolio = tmp_path / "portfolio.csv"
+    output = tmp_path / "evaluation.json"
+    write_generated(portfolio, lines=5)
+    stdout = io.StringIO()
+    with patch("sys.argv", [
+        "evaluate_uniform_portfolio",
+        "--portfolio", str(portfolio),
+        "--contest-id", "12390",
+        "--result", "1", "7", "12", "21", "26",
+        "--out", str(output),
+    ]), contextlib.redirect_stdout(stdout):
+        assert main() == 0
+    import json
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["status"] == "EVALUATED_CONTROL_ONLY"
+    assert report["line_count"] == 5
+    assert "EVALUATED_CONTROL_ONLY" in stdout.getvalue()
