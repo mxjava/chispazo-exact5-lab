@@ -318,6 +318,26 @@ class CustodyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "UTC offset"):
             self.make_record(generated_at_utc="2026-11-20T11:00:00-06:00")
 
+    def test_unknown_rfc3339_offset_rejected_during_build(self):
+        for field in ("generated_at_utc", "received_at_utc", "official_draw_close_at_utc"):
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(ValueError, "unknown UTC offset"):
+                    self.make_record(**{field: "2026-11-20T17:00:00-00:00"})
+
+    def test_unknown_rfc3339_offset_rejected_during_verification(self):
+        import hashlib
+        for field in ("generated_at_utc", "received_at_utc", "official_draw_close_at_utc"):
+            with self.subTest(field=field):
+                record, raw = self.make_record()
+                record[field] = "2026-11-20T17:00:00-00:00"
+                unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
+                record["record_sha256"] = hashlib.sha256(
+                    json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+                ).hexdigest()
+                ok, reason = verify_seal_record(record, raw)
+                self.assertFalse(ok)
+                self.assertIn("unknown UTC offset", reason)
+
     def test_invalid_numbers_rejected(self):
         raw = portfolio_bytes().replace(b"02-", b"29-", 1)
         with self.assertRaises(ValueError):
