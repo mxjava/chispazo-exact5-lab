@@ -233,5 +233,24 @@ class CustodyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.make_record(portfolio=raw)
 
+    def test_builder_rejects_non_30_line_classic_portfolio(self):
+        with self.assertRaisesRegex(ValueError, "exactly 30 lines"):
+            self.make_record(expected_lines=1)
+
+    def test_verifier_rejects_self_consistent_short_portfolio_record(self):
+        record, raw = self.make_record()
+        short = raw.splitlines()[0] + b"\\n"
+        import hashlib
+        record["portfolio_sha256"] = hashlib.sha256(short).hexdigest()
+        record["custodian_recomputed_sha256"] = record["portfolio_sha256"]
+        record["portfolio_line_count"] = 1
+        unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
+        record["record_sha256"] = hashlib.sha256(
+            json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+        ok, reason = verify_seal_record(record, short)
+        self.assertFalse(ok)
+        self.assertEqual(reason, "portfolio_line_count must equal 30")
+
 if __name__ == "__main__":
     unittest.main()
