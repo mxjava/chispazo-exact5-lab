@@ -214,6 +214,24 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "signer and custodian claims must be separate"):
             parse_unverified_receipt(encode(document))
 
+    def test_receipt_issuer_cannot_also_be_a_signer(self):
+        document = valid_document()
+        document["receipt_attestation"]["issuer_id"] = document["signers"][0]["subject_id"]
+        with self.assertRaisesRegex(
+            ValueError,
+            "issuer must be separate from signers, custodians, and generators",
+        ):
+            parse_unverified_receipt(encode(document))
+
+    def test_receipt_issuer_cannot_also_be_a_custodian(self):
+        document = valid_document()
+        document["receipt_attestation"]["issuer_id"] = document["custodians"][0]["subject_id"]
+        with self.assertRaisesRegex(
+            ValueError,
+            "issuer must be separate from signers, custodians, and generators",
+        ):
+            parse_unverified_receipt(encode(document))
+
     def test_artifact_cannot_claim_another_contest(self):
         document = valid_document()
         document["artifacts"][0]["contest_id"] = "12390"
