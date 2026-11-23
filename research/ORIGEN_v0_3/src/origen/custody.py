@@ -307,11 +307,31 @@ def write_record_exclusive(path: str | Path, record: dict[str, Any]) -> None:
         raise
 
 
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    value: dict[str, Any] = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError(f"duplicate JSON object key: {key}")
+        value[key] = item
+    return value
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"non-finite JSON number is not permitted: {value}")
+
+
 def read_record(path: str | Path) -> dict[str, Any]:
+    """Read one canonical record; reject ambiguous JSON encodings and values."""
     raw = Path(path).read_bytes()
     if not raw.endswith(b"\n"):
         raise ValueError("record file must end with LF")
-    value = json.loads(raw.decode("utf-8"))
+    value = json.loads(
+        raw.decode("utf-8", errors="strict"),
+        object_pairs_hook=_unique_json_object,
+        parse_constant=_reject_json_constant,
+    )
     if not isinstance(value, dict):
         raise ValueError("record JSON must be an object")
+    if raw != canonical_json_bytes(value) + b"\n":
+        raise ValueError("record JSON must use canonical UTF-8 JSON encoding")
     return value
