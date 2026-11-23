@@ -423,8 +423,6 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
         raise ValueError("signers contain duplicate key IDs")
     if len({item.subject_id for item in signers}) != len(signers):
         raise ValueError("signers contain duplicate subject IDs")
-    if len({item.subject_id for item in signers}) != len(signers):
-        raise ValueError("signers contain duplicate subject IDs")
     custodians = tuple(
         _parse_custodian(item, index)
         for index, item in enumerate(_array(root["custodians"], "custodians", minimum=1, maximum=64))
@@ -481,6 +479,11 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
     if attestation.issuer_id in declared_participants:
         raise ValueError(
             "receipt attestation issuer must be separate from signers, custodians, and generators"
+        )
+    signer_key_ids = {item.key_id for item in signers}
+    if attestation.key_id in signer_key_ids:
+        raise ValueError(
+            "receipt attestation key must be separate from signer keys"
         )
     return UnverifiedTrustReceipt(
         declared_status=status,
