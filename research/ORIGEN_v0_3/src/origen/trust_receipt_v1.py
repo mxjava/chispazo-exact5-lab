@@ -514,6 +514,11 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
         raise ValueError(
             "receipt attestation key must be separate from signer keys"
         )
+    time_authority_ids = {item.authority_id for item in time_proofs}
+    if time_authority_ids.intersection(declared_participants | {attestation.issuer_id}):
+        raise ValueError(
+            "trusted time authority IDs must be distinct from receipt issuer and all declared participants"
+        )
     return UnverifiedTrustReceipt(
         declared_status=status,
         policy_version=policy_version,
