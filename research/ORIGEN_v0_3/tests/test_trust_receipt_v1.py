@@ -510,6 +510,24 @@ class TestTrustReceiptV1(unittest.TestCase):
                 ):
                     parse_unverified_receipt(encode(document))
 
+    def test_ledger_id_cannot_alias_issuer_or_any_trust_participant(self):
+        aliases = (
+            ("receipt issuer", lambda doc: doc["receipt_attestation"]["issuer_id"]),
+            ("signer", lambda doc: doc["signers"][0]["subject_id"]),
+            ("custodian", lambda doc: doc["custodians"][0]["subject_id"]),
+            ("generator", lambda doc: doc["output_seals"][0]["generator_id"]),
+            ("time authority", lambda doc: doc["trusted_time_proofs"][0]["authority_id"]),
+        )
+        for label, identity in aliases:
+            with self.subTest(alias=label):
+                document = valid_document()
+                document["ledger_anchor"]["ledger_id"] = identity(document)
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "ledger ID must be distinct from receipt issuer, signers, custodians, generators, and trusted time authorities",
+                ):
+                    parse_unverified_receipt(encode(document))
+
 
 if __name__ == "__main__":
     unittest.main()
