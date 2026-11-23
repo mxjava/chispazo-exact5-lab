@@ -3,6 +3,9 @@
 Exhaustively optimizes coverage over all C(28,5)=98,280 possible winning sets.
 The objective is combinatorial coverage only; it does not estimate which draw is
 more likely and must never enter the predictive registration pipeline.
+
+The hot path is vectorized with NumPy. Integer score arithmetic and ascending
+candidate indices preserve the v1 greedy/tie-breaking semantics exactly.
 """
 from __future__ import annotations
 
@@ -13,6 +16,8 @@ import itertools
 import math
 import sys
 from pathlib import Path
+
+import numpy as np
 
 N = 28
 R = 5
@@ -47,22 +52,30 @@ class _TieSampler:
 
 
 def _coverage_space():
+    """Build compact integer index arrays once for the complete 5-of-28 space."""
     draws = list(itertools.combinations(range(1, N + 1), R))
     draw_index = {draw: i for i, draw in enumerate(draws)}
     quads = list(itertools.combinations(range(1, N + 1), R - 1))
     quad_index = {quad: i for i, quad in enumerate(quads)}
-    quad_to_draws = []
-    for quad in quads:
-        members = set(quad)
-        quad_to_draws.append([
-            draw_index[tuple(sorted((*quad, value)))]
-            for value in range(1, N + 1)
-            if value not in members
-        ])
-    ticket_quads = [
-        [quad_index[quad] for quad in itertools.combinations(draw, R - 1)]
-        for draw in draws
-    ]
+
+    quad_to_draws = np.asarray(
+        [
+            [
+                draw_index[tuple(sorted((*quad, value)))]
+                for value in range(1, N + 1)
+                if value not in quad
+            ]
+            for quad in quads
+        ],
+        dtype=np.int32,
+    )
+    ticket_quads = np.asarray(
+        [
+            [quad_index[quad] for quad in itertools.combinations(draw, R - 1)]
+            for draw in draws
+        ],
+        dtype=np.int32,
+    )
     return draws, quad_to_draws, ticket_quads
 
 
@@ -73,52 +86,43 @@ def generate_portfolio(seed: int) -> tuple[list[tuple[int, ...]], list[int]]:
     four-number subsets extended by one outside number. Its own five-number set
     is counted five times in those subsets, so four duplicate counts are removed.
     Ties first minimize number-frequency imbalance, then use the SHA-256 tie stream.
+
+    NumPy evaluates all 98,280 candidate gains in one vectorized operation per
+    iteration. This preserves the v1 candidate order and tie semantics.
     """
     sampler = _TieSampler(seed)
     draws, quad_to_draws, ticket_quads = _coverage_space()
-    covered = bytearray(len(draws))
-    used = bytearray(len(draws))
-    frequencies = [0] * (N + 1)
+    covered = np.zeros(len(draws), dtype=np.bool_)
+    used = np.zeros(len(draws), dtype=np.bool_)
+    draw_values = np.asarray(draws, dtype=np.int8)
+    frequencies = np.zeros(N + 1, dtype=np.int64)
     selected: list[tuple[int, ...]] = []
     marginal_gains: list[int] = []
 
     for _ in range(LINES):
-        quad_gains = [
-            sum(1 for draw_id in extensions if not covered[draw_id])
-            for extensions in quad_to_draws
-        ]
-        best_gain = -1
-        best_balance = None
-        candidates: list[int] = []
+        # Each four-subset has 24 possible extensions. Count uncovered outcomes.
+        quad_gains = (~covered[quad_to_draws]).sum(axis=1, dtype=np.int32)
 
-        for ticket_id, ticket in enumerate(draws):
-            if used[ticket_id]:
-                continue
-            gain = sum(quad_gains[qid] for qid in ticket_quads[ticket_id])
-            if not covered[ticket_id]:
-                gain -= R - 1
-            if gain > best_gain:
-                best_gain = gain
-                best_balance = None
-                candidates = []
-            if gain == best_gain:
-                balance_delta = sum(2 * frequencies[value] + 1 for value in ticket)
-                if best_balance is None or balance_delta < best_balance:
-                    best_balance = balance_delta
-                    candidates = [ticket_id]
-                elif balance_delta == best_balance:
-                    candidates.append(ticket_id)
+        # Sum the five subset gains for every possible ticket simultaneously.
+        gains = quad_gains[ticket_quads].sum(axis=1, dtype=np.int32)
+        gains -= np.where(covered, 0, R - 1).astype(np.int32)
+        gains[used] = -1
 
-        chosen_id = candidates[sampler.randbelow(len(candidates))]
+        best_gain = int(gains.max())
+        candidates = np.flatnonzero(gains == best_gain)
+
+        # Preserve the original secondary objective: minimum frequency-square
+        # increment, then deterministic SHA-256 selection among exact ties.
+        balance = (2 * frequencies[draw_values[candidates]] + 1).sum(axis=1)
+        candidates = candidates[balance == balance.min()]
+        chosen_id = int(candidates[sampler.randbelow(len(candidates))])
+
         chosen = draws[chosen_id]
         selected.append(chosen)
         marginal_gains.append(best_gain)
-        used[chosen_id] = 1
-        for value in chosen:
-            frequencies[value] += 1
-        for quad_id in ticket_quads[chosen_id]:
-            for draw_id in quad_to_draws[quad_id]:
-                covered[draw_id] = 1
+        used[chosen_id] = True
+        frequencies[list(chosen)] += 1
+        covered[quad_to_draws[ticket_quads[chosen_id]]] = True
 
     return selected, marginal_gains
 
