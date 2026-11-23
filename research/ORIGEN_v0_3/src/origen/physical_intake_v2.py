@@ -16,7 +16,9 @@ from typing import Any, Iterable, Mapping
 from zoneinfo import ZoneInfo
 
 V2_REQUIRED_COLUMNS = (
-    "source_contest_id", "target_contest_id", "contest_id", "draw_date",
+    "source_contest_id", "target_contest_id", "source_classic_sequence",
+    "target_classic_sequence", "official_classic_sequence_manifest_ref",
+    "official_classic_sequence_manifest_sha256", "contest_id", "draw_date",
     "modality", "draw_close_at", "target_draw_close_at", "target_draw_at", "sphere_set_id",
     "set_assigned_at", "sphere_type", "machine_id", "machine_model",
     "sphere_id", "printed_number", "mass_value", "mass_unit", "measurement_at",
@@ -97,6 +99,13 @@ def _contest_id_precedes(source: str, target: str) -> bool:
     return (len(source), source) < (len(target), target)
 
 
+def _canonical_positive_sequence(value: Any) -> int | None:
+    """Parse a bounded canonical positive Classic-sequence ordinal."""
+    if type(value) is not str or not re.fullmatch(r"[1-9][0-9]{0,11}", value):
+        return None
+    return int(value)
+
+
 def _canonical_sha256(value: Any) -> str:
     """Return lowercase digest only for exact, unpadded 64-hex text."""
     if type(value) is not str or not re.fullmatch(r"[0-9a-fA-F]{64}", value):
@@ -140,6 +149,7 @@ def evaluate_temporal_eligibility(
     declared_timestamp_refs: set[str] | frozenset[str] | None = None,
     declared_source_refs: set[str] | frozenset[str] | None = None,
     declared_continuity_targets: set[str] | frozenset[str] | None = None,
+    declared_classic_sequence_refs: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """Classify each target independently; missing external attestations fail closed.
 
@@ -153,6 +163,9 @@ def evaluate_temporal_eligibility(
     sources = _declared_reference_set(declared_source_refs, "declared_source_refs")
     continuity = _declared_reference_set(
         declared_continuity_targets, "declared_continuity_targets"
+    )
+    classic_sequences = _declared_reference_set(
+        declared_classic_sequence_refs, "declared_classic_sequence_refs"
     )
 
     # Consume the iterable incrementally: list(rows) before validation allowed an
@@ -243,6 +256,10 @@ def evaluate_temporal_eligibility(
         reasons: set[str] = set()
         closes: set[datetime] = set()
         source_contests: set[str] = set()
+        source_classic_sequences: set[int | None] = set()
+        target_classic_sequences: set[int | None] = set()
+        sequence_manifest_refs: set[str] = set()
+        sequence_manifest_hashes: set[str] = set()
         modalities: set[str] = set()
         sphere_ids: set[str] = set()
         printed_numbers: set[int] = set()
@@ -311,6 +328,14 @@ def evaluate_temporal_eligibility(
                     reasons.add("CONTEST_ID_ALIAS_MISMATCH")
                 if not _contest_id_precedes(source_contest, target):
                     reasons.add("CONTEST_ID_ORDER_INVALID")
+                source_sequence = _canonical_positive_sequence(row["source_classic_sequence"])
+                target_sequence = _canonical_positive_sequence(row["target_classic_sequence"])
+                source_classic_sequences.add(source_sequence)
+                target_classic_sequences.add(target_sequence)
+                sequence_manifest_refs.add(_canonical_identifier(row["official_classic_sequence_manifest_ref"]))
+                sequence_manifest_hashes.add(_canonical_sha256(row["official_classic_sequence_manifest_sha256"]))
+                if source_sequence is None or target_sequence is None or target_sequence != source_sequence + 1:
+                    reasons.add("CLASSIC_SEQUENCE_NOT_CONSECUTIVE")
                 draw_date = row["draw_date"]
                 if type(draw_date) is not str or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", draw_date):
                     reasons.add("INVALID_DRAW_DATE")
@@ -453,6 +478,18 @@ def evaluate_temporal_eligibility(
             reasons.add("EVIDENCE_DOCUMENT_SET_CONFLICT")
         if len(source_contests) != 1 or "" in source_contests:
             reasons.add("SOURCE_CONTEST_CONFLICT")
+        if (
+            len(source_classic_sequences) != 1 or None in source_classic_sequences
+            or len(target_classic_sequences) != 1 or None in target_classic_sequences
+            or len(sequence_manifest_refs) != 1 or "" in sequence_manifest_refs
+            or len(sequence_manifest_hashes) != 1 or "" in sequence_manifest_hashes
+        ):
+            reasons.add("CLASSIC_SEQUENCE_MANIFEST_INVALID")
+        if not all(
+            _canonical_identifier(row.get("official_classic_sequence_manifest_ref"))
+            in classic_sequences for row in group
+        ):
+            reasons.add("CLASSIC_SEQUENCE_MANIFEST_NOT_VERIFIED")
         if signer_ids.intersection(custodian_ids):
             reasons.add("SIGNER_CUSTODIAN_ROLE_COLLISION")
         if (
@@ -491,6 +528,8 @@ def evaluate_temporal_eligibility(
             classification = "BLOCKED_PROVENANCE"
         elif any(reason in reasons for reason in (
             "PHYSICAL_CONTINUITY_NOT_VERIFIED", "SOURCE_CONTEST_CONFLICT",
+            "CLASSIC_SEQUENCE_NOT_CONSECUTIVE", "CLASSIC_SEQUENCE_MANIFEST_INVALID",
+            "CLASSIC_SEQUENCE_MANIFEST_NOT_VERIFIED",
             "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", "PHYSICAL_SET_OR_MACHINE_CONFLICT",
             "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC",
             "BROKEN_EVIDENCE_TEMPORAL_ORDER", "MEASUREMENT_PRECEDES_SOURCE_CLOSE",
@@ -534,6 +573,7 @@ def evaluate_temporal_csv(
     declared_timestamp_refs: set[str] | frozenset[str] | None = None,
     declared_source_refs: set[str] | frozenset[str] | None = None,
     declared_continuity_targets: set[str] | frozenset[str] | None = None,
+    declared_classic_sequence_refs: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """Read bounded, single-physical-line CSV records before structural intake.
 
@@ -615,4 +655,5 @@ def evaluate_temporal_csv(
             declared_timestamp_refs=declared_timestamp_refs,
             declared_source_refs=declared_source_refs,
             declared_continuity_targets=declared_continuity_targets,
+            declared_classic_sequence_refs=declared_classic_sequence_refs,
         )
