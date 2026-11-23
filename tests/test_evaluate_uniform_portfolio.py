@@ -85,3 +85,19 @@ def test_cli_writes_json_report_atomically(tmp_path):
     assert report["status"] == "EVALUATED_CONTROL_ONLY"
     assert report["line_count"] == 5
     assert "EVALUATED_CONTROL_ONLY" in stdout.getvalue()
+
+
+def test_reports_exact_uniform_null_calibration(tmp_path):
+    portfolio = tmp_path / "portfolio.csv"
+    write_generated(portfolio, lines=30)
+    report = evaluate_uniform_portfolio(portfolio, 12390, [1, 7, 12, 21, 26])
+    null = report["uniform_null"]
+
+    assert null["method"] == "exact_hypergeometric_uniform_sample_without_replacement"
+    assert null["universe_size"] == 98280
+    assert null["line_count"] == 30
+    assert sum(null["expected_hit_distribution"].values()) == pytest.approx(30)
+    assert null["expected_exact5_count"] == pytest.approx(30 / 98280)
+    assert 0 <= null["p_value_best_hits_at_least_observed"] <= 1
+    assert 0 <= null["p_value_at_least_one_exact5"] <= 1
+    assert "not evidence of predictive lift" in null["interpretation"]
