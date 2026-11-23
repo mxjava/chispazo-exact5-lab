@@ -140,6 +140,20 @@ class TestDetachedEnvelope(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not valid at envelope issuance"):
             self.verify(envelope=canonical(env))
 
+    def test_expired_key_is_rejected_at_verification_time(self):
+        store = json.loads(self.store)
+        store["keys"][0]["not_after_utc"] = "2026-11-23T14:30:00Z"
+        raw = canonical(store)
+        with self.assertRaisesRegex(
+            ValueError,
+            "signing key is not valid at verification time",
+        ):
+            self.verify(
+                store=raw,
+                pin=hashlib.sha256(raw).hexdigest(),
+                at="2026-11-23T15:00:00Z",
+            )
+
     def test_future_envelope_is_rejected(self):
         env = json.loads(self.envelope)
         env["issued_at_utc"] = "2026-12-01T00:00:00Z"
