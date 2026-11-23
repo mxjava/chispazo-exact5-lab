@@ -1,0 +1,118 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "observation": {
+    "observed_at_local": "2026-11-23T11:52:09-06:00",
+    "observed_at_utc": "2026-11-23T17:52:09Z",
+    "timezone": "America/Mexico_City",
+    "classification": "STATUS_ONLY_PUBLIC_OFFICIAL_SNAPSHOT"
+  },
+  "sources": {
+    "official_home_index": "https://www.loterianacional.gob.mx/home/index",
+    "official_chispazo_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_chispazo_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_2026_11_22_mask_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221841",
+    "official_current_procedure": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"
+  },
+  "official_results_snapshot": {
+    "latest_published": {
+      "contest_id": 12390,
+      "draw_date": "2026-11-22",
+      "winning_numbers": [1, 6, 9, 19, 23],
+      "modality": "CLASSIC",
+      "modality_status": "OFFICIAL_MASK_VISUAL_CONFIRMED",
+      "published": true
+    },
+    "previous_contest": {
+      "contest_id": 12389,
+      "draw_date": "2026-11-22",
+      "winning_numbers": [1, 15, 17, 22, 25],
+      "modality": "DE_LAS_TRES",
+      "modality_status": "OFFICIAL_MASK_VISUAL_CONFIRMED",
+      "published": true
+    },
+    "next_draw_date_visible": "2026-11-23",
+    "result_for_2026_11_23_visible_at_observation": false,
+    "classic_contest_id_for_2026_11_23": "NOT_VISIBLE_NOT_INFERRED"
+  },
+  "official_home_index": {
+    "card_2026_11_23_15_00_visible": true,
+    "card_date": "2026-11-23",
+    "card_local_time": "15:00",
+    "displayed_draw_number": 12391,
+    "product_name_explicitly_rendered": false,
+    "schedule_slot_match": "DE_LAS_TRES",
+    "schedule_slot_match_basis": "Official Chispazo product page maps 15:00 to De las Tres and 21:00 to Clásico.",
+    "card_2026_11_23_21_00_classic_visible": false
+  },
+  "official_chispazo_schedule": {
+    "de_las_tres_local_time": "15:00",
+    "clasico_local_time": "21:00",
+    "source": "Official Chispazo product page"
+  },
+  "official_mask": {
+    "latest_index_entry": "RESULTADOS 2026-11-22",
+    "2026_11_22_pdf_visually_confirms": {
+      "contest_12389": {
+        "modality": "DE_LAS_TRES",
+        "winning_numbers": [1, 15, 17, 22, 25]
+      },
+      "contest_12390": {
+        "modality": "CLASSIC",
+        "winning_numbers": [1, 6, 9, 19, 23]
+      }
+    },
+    "result_2026_11_23_mask_visible": false,
+    "pdf_2026_11_22_original_bytes_captured": false,
+    "pdf_2026_11_22_original_sha256": "NOT_CAPTURED"
+  },
+  "official_procedure": {
+    "document": "SGVO-PRO-05 — Procedimiento Sorteos Electrónicos",
+    "classification": "PUBLIC / NORMATECA VIGENTES",
+    "revision": 39,
+    "footer_version": "DN-07 Version 09",
+    "publication_date": "2026-03-20",
+    "draw_close_slots_local": {
+      "de_las_tres": "15:00",
+      "nocturnal_classic": "21:00"
+    },
+    "source_pdf_original_bytes_captured": false,
+    "source_pdf_sha256": "NOT_CAPTURED"
+  },
+  "physical_evidence": {
+    "new_2026_11_23_draw_specific_primary_records_obtained": false,
+    "signed_draw_acta": "NOT_OBTAINED",
+    "sales_close_summary": "NOT_OBTAINED",
+    "cs11_winning_numbers": "NOT_OBTAINED",
+    "post_draw_summary": "NOT_OBTAINED",
+    "original_weighing_strip_with_28_readings": "NOT_OBTAINED",
+    "scale_identity_and_calibration": "NOT_OBTAINED",
+    "equipment_urn_and_sphere_number_mapping_records": "NOT_OBTAINED",
+    "cs12_room_access_register": "NOT_OBTAINED",
+    "participation_cancellation_signature_media": "NOT_OBTAINED",
+    "segob_oic_security_box_custody_record": "NOT_OBTAINED",
+    "independent_custody_and_trusted_time_proofs": "NOT_OBTAINED",
+    "external_ledger_inclusion_proof": "NOT_OBTAINED",
+    "two_independent_preclose_output_seals": "NOT_OBTAINED",
+    "full_draw_recording": "NOT_OBTAINED",
+    "edited_draw_recording": "NOT_OBTAINED",
+    "winner_relation_report_and_signature": "NOT_OBTAINED",
+    "nightly_mjf_and_signature_form": "NOT_OBTAINED",
+    "cs02_daily_equipment_inspection": "NOT_OBTAINED"
+  },
+  "eligibility": {
+    "status": "BLOCKED_PROVENANCE",
+    "snapshot_eligible": false,
+    "prospective_oos_eligible": false,
+    "score_eligible": false,
+    "reason": "At 11:52 America/Mexico_City on 23-Nov-2026, only public schedule, result and procedure information was confirmed. The 15:00 card is schedule-matched to De las Tres; no 23-Nov result, 21:00 Clásico contest ID, original PDF bytes, draw-specific physical records or independent custody evidence was obtained."
+  },
+  "protections": {
+    "v294": "FROZEN",
+    "canonical_history": "UNCHANGED",
+    "main_writes": false,
+    "canonical_append": false,
+    "merge_or_promotion": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
