@@ -28,10 +28,20 @@ def mass_log_weights(masses_g: Sequence[float], beta_per_sd: float) -> tuple[flo
     """Return log weights exp(beta*z_mass), with z based on all 28 spheres."""
     if len(masses_g) != N_SPHERES:
         raise ValueError("exactly 28 masses are required in printed-number order")
-    values = tuple(float(value) for value in masses_g)
+    if any(isinstance(value, bool) for value in masses_g):
+        raise ValueError("all masses must be finite and positive numeric values")
+    try:
+        values = tuple(float(value) for value in masses_g)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("all masses must be finite and positive numeric values") from exc
     if any(not math.isfinite(value) or value <= 0 for value in values):
-        raise ValueError("all masses must be finite and positive")
-    beta = float(beta_per_sd)
+        raise ValueError("all masses must be finite and positive numeric values")
+    if isinstance(beta_per_sd, bool):
+        raise ValueError("beta_per_sd must be a finite numeric value")
+    try:
+        beta = float(beta_per_sd)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("beta_per_sd must be a finite numeric value") from exc
     if not math.isfinite(beta):
         raise ValueError("beta_per_sd must be finite")
     mean = math.fsum(values) / N_SPHERES
