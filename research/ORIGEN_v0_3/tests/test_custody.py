@@ -243,6 +243,37 @@ class CustodyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "non-finite JSON number"):
                 read_record(path)
 
+    def test_read_record_rejects_oversized_file_before_json_decode(self):
+        from origen.custody import MAX_CUSTODY_RECORD_BYTES
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "oversized.json"
+            path.write_bytes(b" " * (MAX_CUSTODY_RECORD_BYTES + 1))
+            with self.assertRaisesRegex(ValueError, "maximum size"):
+                read_record(path)
+
+    def test_read_record_rejects_excessive_json_nesting(self):
+        from origen.custody import MAX_CUSTODY_RECORD_JSON_DEPTH
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "deep.json"
+            depth = MAX_CUSTODY_RECORD_JSON_DEPTH + 1
+            path.write_bytes((b"[" * depth) + b"0" + (b"]" * depth) + b"\n")
+            with self.assertRaisesRegex(ValueError, "maximum nesting depth"):
+                read_record(path)
+
+    def test_read_record_ignores_brackets_inside_json_strings_for_depth(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "brackets-in-string.json"
+            path.write_bytes(b'{"value":"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[["}\n')
+            with self.assertRaisesRegex(ValueError, "canonical UTF-8 JSON"):
+                read_record(path)
+
+    def test_read_record_rejects_floating_point_numbers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "float.json"
+            path.write_bytes(b'{"value":1.25}\n')
+            with self.assertRaisesRegex(ValueError, "floating-point JSON numbers"):
+                read_record(path)
+
     def test_read_record_rejects_noncanonical_json_encoding(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "noncanonical.json"
