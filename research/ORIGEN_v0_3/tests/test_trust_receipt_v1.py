@@ -208,6 +208,16 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "generator and custodian"):
             parse_unverified_receipt(encode(document))
 
+    def test_signer_subject_cannot_claim_multiple_signer_roles(self):
+        document = valid_document()
+        second = copy.deepcopy(document["signers"][0])
+        second["role"] = "independent-reviewer"
+        second["key_id"] = "institution-key-2"
+        second["signature_sha256"] = digest("a")
+        document["signers"].append(second)
+        with self.assertRaisesRegex(ValueError, "signers contain duplicate subject IDs"):
+            parse_unverified_receipt(encode(document))
+
     def test_custodian_cannot_also_be_a_signer(self):
         document = valid_document()
         document["custodians"][0]["subject_id"] = document["signers"][0]["subject_id"]
