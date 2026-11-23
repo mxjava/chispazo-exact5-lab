@@ -30,6 +30,22 @@ No new draw-specific primary physical records were obtained: no signed draw act,
 
 SGVO-PRO-05 revision 39 remains a public procedural reference. It describes records and controls to request; it does not prove that records for a specific draw were created or independently preserved.
 
+## Official procedure baseline — draw-specific requirements, not proof
+
+The official **SGVO-PRO-05, Procedimiento Sorteos Electrónicos**, revision **39**, was published on **20-Mar-2026**; the PDF identifies 38 pages and footer **DN-07, Version 09**.
+
+The procedure states that automatic sales close at **15:00** for De las Tres and **21:00** for nocturnal draws. The separate official Chispazo product page maps De las Tres to 15:00 and Clásico to 21:00.
+
+For Chispazo, the procedure's Acta attachment matrix includes:
+- Sumario de sorteo (cierre de venta)
+- Números ganadores CS-11
+- Sumario de sorteo
+- Tira de pesaje
+
+The procedure defines the Tira de Pesaje as signed by four roles: the sphere-weighing responsible person, the representative of the Dirección de Operación de Concursos, Juegos y Sorteos, the Dirección General representative, and the SEGOB inspector. It also requires the electronic signature for participation/cancellation files to be deposited in a safe before the draw, and signed results media to be archived with the corresponding act.
+
+This gives a concrete records-request checklist. It does **not** establish that any of those records for contest 12390 were produced, signed, or independently preserved.
+
 ## ORIGEN handling
 
 - Keep 12389 classified as **De las Tres** and 12390 as **Clásico**, both visually confirmed by the 22-Nov mask.
