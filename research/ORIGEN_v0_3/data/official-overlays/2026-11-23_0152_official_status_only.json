@@ -1,0 +1,115 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "observation": {
+    "observed_at_local": "2026-11-23T01:52:41-06:00",
+    "observed_at_utc": "2026-11-23T07:52:41Z",
+    "timezone": "America/Mexico_City",
+    "classification": "STATUS_ONLY_PUBLIC_OFFICIAL_SNAPSHOT"
+  },
+  "sources": {
+    "official_chispazo_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "commercializer_results": "https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_chispazo_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "official_mask_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221841"
+  },
+  "official_results_snapshot": {
+    "official_chispazo_results_latest": {
+      "contest_id": 12390,
+      "draw_date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        6,
+        9,
+        19,
+        23
+      ],
+      "published": true
+    },
+    "previous_contest": {
+      "contest_id": 12389,
+      "draw_date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        15,
+        17,
+        22,
+        25
+      ],
+      "published": true
+    },
+    "commercializer_rendered_page": {
+      "latest_contest_id": 12389,
+      "stale_relative_to_official_chispazo_results": true,
+      "note": "The opened commercializer page rendered 12389 as latest, while the official Chispazo results page and 22-Nov mask show 12390. Its search-index snippet showed 12390; the rendered-page discrepancy is retained."
+    },
+    "next_scheduled_date_visible": "2026-11-23",
+    "2026_11_23_result_visible": false,
+    "contest_ids_for_2026_11_23": "NOT_INFERRED"
+  },
+  "official_mask": {
+    "index_latest_date": "2026-11-22",
+    "page_count": 1,
+    "visual_page_reviewed": 1,
+    "modality_labels": {
+      "12389": {
+        "modality": "DE_LAS_TRES",
+        "modality_status": "MASK_VISUALLY_CONFIRMED",
+        "printed_label": "Chispazo De las tres",
+        "official_product_slot_local": "15:00",
+        "winning_numbers": [
+          1,
+          15,
+          17,
+          22,
+          25
+        ]
+      },
+      "12390": {
+        "modality": "CLASICO",
+        "modality_status": "MASK_VISUALLY_CONFIRMED",
+        "printed_label": "Chispazo Clásico",
+        "official_product_slot_local": "21:00",
+        "winning_numbers": [
+          1,
+          6,
+          9,
+          19,
+          23
+        ]
+      }
+    },
+    "slot_source": "Official Chispazo product page; the PDF prints modality logos but does not print the clock times."
+  },
+  "source_bytes": {
+    "pdf_browser_rendered": true,
+    "original_pdf_bytes_downloaded": false,
+    "repository_copy": false,
+    "download_attempt": "FAILED",
+    "source_pdf_sha256": "NOT_CAPTURED"
+  },
+  "eligibility": {
+    "status": "BLOCKED_PROVENANCE",
+    "snapshot_eligible": false,
+    "prospective_oos_eligible": false,
+    "score_eligible": false,
+    "reason": "Public post-draw results and a public results mask do not establish pre-close independent custody, original signed evidence bytes, or trusted time."
+  },
+  "missing_primary_evidence": [
+    "Signed draw act and signed participation file",
+    "CS-11 and original weighing strip with all 28 sphere measurements",
+    "Equipment identity and valid calibration certificate",
+    "Original audiovisual/equipment records and immutable source bytes",
+    "Independent custodian identity and signed custody receipt",
+    "Trusted TSA/RFC 3161 token or independently anchored ledger proof",
+    "Two independently sealed pre-close Exact5 outputs"
+  ],
+  "protections": {
+    "v294": "FROZEN",
+    "canonical_history": "UNCHANGED",
+    "main_writes": false,
+    "canonical_append": false,
+    "merge_or_promotion": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
