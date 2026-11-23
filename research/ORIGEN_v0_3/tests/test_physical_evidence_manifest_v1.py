@@ -342,6 +342,12 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate event IDs"):
             parse_unverified_physical_manifest(encode(document))
 
+    def test_signature_digest_cannot_be_reused_across_claims(self):
+        document = valid_document()
+        document["signatures"][1]["signature_sha256"] = document["signatures"][0]["signature_sha256"]
+        with self.assertRaisesRegex(ValueError, "duplicate signature digests"):
+            parse_unverified_physical_manifest(encode(document))
+
     def test_signer_key_id_cannot_alias_two_subjects(self):
         document = valid_document()
         document["signatures"][1]["key_id"] = document["signatures"][0]["key_id"]
