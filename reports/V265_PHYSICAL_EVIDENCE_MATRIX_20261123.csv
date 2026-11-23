@@ -11,3 +11,6 @@
 "extraction_order_and_time","continuous master video / camera metadata","during draw, after close","not usable for same draw; weighing order is not extraction order","NO_MASTER_VIDEO_OBTAINED"
 "incidents_access_risks","CS-09, CS-12, CS-18","during/after event unless a specific earlier timestamp is proven","conditional only on documented pre-close knowledge","NO_CONTEST_LOGS_OBTAINED"
 "participation_file_signature","signed participation/cancellation file","generated immediately after sales close","not a physical predictor; integrity control only","NO_FILE_OR_SIGNATURE_OBTAINED"
+"tira_archive","Tira de Pesaje + expediente CS-11 (SGM-PRO-06 rev.22 copy)","generated during weighing; archived bimonthly per unindexed copy","not usable until procedure status and actual timestamps are resolved","RETENTION_RULE_UNCONFIRMED"
+"video_master","continuous master video; SGM-PRO-06 says unedited weigh-to-draw, SGVO-PRO-05 says recording weigh-to-draw and edited draw-only Acta attachment","recorded during and after close","retrospective for same draw; supports forensic reconstruction only","NO_MASTER_VIDEO_OBTAINED"
+"CS-09","Bitácora de Concursos y Sorteos CS-09","SGM-PRO-06 copy says enter events after draw and sign monthly","not pre-close unless a specific earlier timestamp is authenticated","NO_CONTEST_LOGS_OBTAINED"
