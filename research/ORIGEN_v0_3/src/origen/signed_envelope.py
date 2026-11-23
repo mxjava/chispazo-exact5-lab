@@ -26,6 +26,30 @@ _MAX_PAYLOAD_BYTES = 524288
 _TIMESTAMP_RE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?Z$")
 
 
+_MAX_JSON_DEPTH = 16
+
+def _validate_json_depth(raw: bytes, label: str) -> None:
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in raw:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:
+                escaped = True
+            elif byte == 0x22:
+                in_string = False
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x7B, 0x5B):
+            depth += 1
+            if depth > _MAX_JSON_DEPTH:
+                raise ValueError(f"{label} exceeds maximum JSON nesting depth {_MAX_JSON_DEPTH}")
+        elif byte in (0x7D, 0x5D) and depth:
+            depth -= 1
+
 def _unique_object(pairs):
     result = {}
     for key, value in pairs:
@@ -38,13 +62,17 @@ def _unique_object(pairs):
 def _canonical_object(raw: bytes, label: str) -> dict:
     if type(raw) is not bytes:
         raise TypeError(f"{label} must be exact bytes")
+    _validate_json_depth(raw, label)
     try:
         obj = json.loads(raw.decode("utf-8", "strict"), object_pairs_hook=_unique_object, parse_constant=lambda value: (_ for _ in ()).throw(json.JSONDecodeError("invalid JSON constant", value, 0)))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
         raise ValueError(f"{label} must be valid UTF-8 JSON") from exc
     if type(obj) is not dict:
         raise ValueError(f"{label} must be a JSON object")
-    canonical = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+    try:
+        canonical = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+    except RecursionError as exc:
+        raise ValueError(f"{label} exceeds maximum JSON nesting depth {_MAX_JSON_DEPTH}") from exc
     if raw != canonical:
         raise ValueError(f"{label} must use canonical JSON encoding")
     return obj
