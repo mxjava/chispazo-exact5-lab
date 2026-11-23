@@ -1,23 +1,19 @@
 {
-  "schema_version": 1,
-  "snapshot_id": "LN-SGVO-PRO-05-REV39-SOURCE-CONTRACT-2026-11-23",
+  "schema_version": 2,
+  "snapshot_id": "LN-SGVO-PRO-05-REV39-SOURCE-CONTRACT-2026-11-23-v2",
   "observation_date": "2026-11-23",
   "classification": "OFFICIAL_SOURCE_EXCERPT_AUDIT_NOT_DRAW_DATA",
   "sources": {
     "sgvo_pro_05": {
       "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
       "normateca_url": "https://loterianacional.gob.mx/Normateca/Sustantivas?id=2",
-      "normateca_status": "SUSTANTIVAS_VIGENTES",
-      "normateca_last_update": "2026-03-20",
+      "status": "PUBLIC_CURRENT",
       "revision": 39,
-      "document_type": "PUBLIC",
-      "title": "PROCEDIMIENTO SORTEOS ELECTRÓNICOS",
-      "pages": 38
+      "last_update": "2026-03-20"
     },
     "chispazo_regulation": {
       "url": "https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf",
-      "last_reform": "2012-03-07",
-      "article_9_scope": "CHISPAZO"
+      "last_reform": "2012-03-07"
     },
     "sgvo_man_02": {
       "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/PROYECTO/sgvo_man_02p.pdf",
@@ -29,19 +25,16 @@
     },
     "sgvo_pro_34": {
       "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_34.pdf",
-      "normateca_status": "SUSTANTIVAS_VIGENTES",
-      "revision": 1,
       "scope": "EXCLUSIVELY_TRADITIONAL_WOODEN_BALLS_AND_ABACUS"
     },
     "chispazo_product_page": {
       "url": "https://loterianacional.gob.mx/Chispazo/Chispazo",
-      "de_las_tres_local_time": "15:00",
-      "clasico_local_time": "21:00",
-      "product_family": "ELECTRONIC_DRAWS"
+      "de_las_tres": "15:00",
+      "clasico": "21:00",
+      "family": "ELECTRONIC_DRAWS"
     },
     "management_report": {
       "url": "https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf",
-      "period": "2018-2024",
       "machines": {
         "jupiter": 10,
         "mercury_5": 2,
@@ -49,154 +42,74 @@
         "total": 14
       },
       "rfid_declared_for_machines_and_spheres": true,
-      "sets_per_product": 10,
-      "products_named": [
-        "Tris",
-        "Chispazo",
-        "Gana Gato",
-        "Melate Retro",
-        "Melate",
-        "Revancha",
-        "Revanchita"
-      ],
-      "reported_sphere_set_total": 60,
-      "arithmetic_product_total": 70,
-      "set_total_conflict": true,
-      "proposed_additional_machines": 8,
-      "proposed_additional_rfid_systems": 2,
-      "proposed_additional_scales": 4,
-      "proposed_additional_printers": 4,
-      "additional_equipment_project_authorized_by_2024_06": false,
+      "reported_sets_total": 60,
+      "arithmetic_sets_total": 70,
       "maintenance_contract_058_2024": {
         "machines": 21,
         "includes_chispazo": true,
-        "scope": "PREVENTIVE_AND_CORRECTIVE_MAINTENANCE_OF_DRAW_MACHINES_CONTROLS_AND_CONSOLES",
         "status_by_2024_06": "CONCLUDED",
         "current_status_after_2024_06": "UNKNOWN"
       }
     },
     "procurement_2026_222": {
       "url": "https://www.loterianacional.gob.mx/Documentos/Legal/AdqLic/IA-06-HJY-006HJY001-N-222-2026.PDF",
-      "published": "2026-10-29",
-      "title": "SERVICIO DE MANTENIMIENTO PREVENTIVO Y CORRECTIVO A EQUIPOS ELÉCTRICOS INSTALADOS EN LOS INMUEBLES DE LOTERÍA NACIONAL",
-      "scope": "GENERATORS_UPS_SUBSTATIONS_TRANSFORMERS_LIGHTNING_PROTECTION_CAPACITOR_BANKS",
+      "title": "Mantenimiento preventivo y correctivo a equipos eléctricos instalados en los inmuebles de Lotería Nacional",
       "draw_machine_maintenance_evidence": false
     }
   },
   "authoritative_excerpts": {
     "policy_6_weight_spec": {
       "page": 5,
-      "source_lines": [
+      "lines": [
         204,
         209
       ],
-      "text": "El pesaje de las esferas se debe realizar para cada sorteo. Smartballs: 4.25 a 5.25 g y diferencia máxima 0.30 g. Ping Pong: 2.30 a 3.00 g y diferencia máxima 0.15 g. Si no cumple, se selecciona otro estuche y se pesa nuevamente."
+      "text": "Policy 6: Smartballs 4.25–5.25 g, maximum spread 0.30 g; Ping Pong 2.30–3.00 g, maximum spread 0.15 g."
     },
     "policy_8_electronic_signature": {
-      "page": 6,
-      "source_lines": [
+      "page": 5,
+      "lines": [
         218,
         218
       ],
-      "text": "La Firma Electrónica del archivo de participaciones será grabada en un dispositivo de almacenamiento de datos previo a la celebración del Sorteo y entregada al Inspector de SEGOB para depósito en caja de seguridad."
+      "text": "Policy 8 governs the electronic signature of the participation file and its custody with SEGOB."
     },
     "activity_5_2": {
       "page": 14,
-      "source_lines": [
+      "lines": [
         563,
         571
       ],
-      "policy_reference": 8,
-      "text": "Verifica en la tira de pesaje que cada esfera cumpla con los parámetros señalados en la Política número 8."
+      "policy_reference": 8
     },
     "quality_plan_weighing": {
-      "page": 26,
-      "source_lines": [
+      "page": 25,
+      "lines": [
         1220,
         1232
       ],
       "policy_reference": 8,
-      "weight_limits_repeat_policy_6": true,
-      "text": "La fila de pesaje vuelve a citar Política número 8, pero enumera los límites de peso Smartballs y Ping Pong establecidos en Política 6."
-    },
-    "activity_4_1_sales_close": {
-      "page": 13,
-      "source_lines": [
-        489,
-        495
-      ],
-      "text": "SICAL debe mostrar Estado de Apuestas Cerrado y se verifican fecha, hora, número de sorteo y ventas. Se imprime y rubrica el Sumario de Sorteo."
-    },
-    "activity_5_1_weighing": {
-      "page": 14,
-      "source_lines": [
-        550,
-        559
-      ],
-      "text": "El pesaje se inicia en presencia del Inspector SEGOB y representantes de Lotería; las esferas se pesan una por una y en orden numérico. El registro es la Tira de Pesaje."
-    },
-    "activity_5_3_replacement": {
-      "page": 14,
-      "source_lines": [
-        602,
-        604
-      ],
-      "text": "Si el peso no es correcto, se notifica el cambio de estuche y se regresa a la actividad 4.1 de cierre SICAL."
+      "weight_limits_repeat_policy_6": true
     },
     "activity_5_4_signatures": {
       "page": 14,
-      "source_lines": [
+      "lines": [
         608,
         610
       ],
-      "role_label": "Representante de la Subdirección General de Ventas y Operaciones",
-      "text": "La tira se firma por quien pesa y se entrega para rúbrica del representante de la Subdirección General de Ventas y Operaciones, del Inspector SEGOB y de Dirección General."
+      "role_label": "Representante de la Subdirección General de Ventas y Operaciones"
     },
-    "activity_5_6_feeder_loading": {
-      "page": 14,
-      "source_lines": [
-        617,
-        620
+    "glossary_tira_signatory_role": {
+      "page": 31,
+      "lines": [
+        1569,
+        1570
       ],
-      "text": "Las esferas se trasladan y depositan en los alimentadores de las máquinas; se colocan en orden progresivo."
-    },
-    "activity_7_electronic_signature": {
-      "page": 15,
-      "source_lines": [
-        627,
-        640
-      ],
-      "sequence": "AFTER_SALES_CLOSE_AND_WEIGHING_BEFORE_DRAW",
-      "text": "Después de pesaje y colocación, se reciben las firmas electrónicas de los archivos de participaciones y cancelaciones y se depositan en caja de seguridad antes de la realización del sorteo."
-    },
-    "activity_11_machine": {
-      "page": 16,
-      "source_lines": [
-        676,
-        682
-      ],
-      "text": "La máquina se acciona con el Inspector SEGOB frente a ella para mezclar y capturar las esferas en los exhibidores."
-    },
-    "activity_12_video_capture": {
-      "page": 16,
-      "source_lines": [
-        703,
-        711
-      ],
-      "text": "Los números expresados al capturarse las esferas en exhibidores son registrados y grabados por cámaras en la sala; se cotejan contra el testigo del presentador."
-    },
-    "activity_13_cs11": {
-      "page": 16,
-      "source_lines": [
-        713,
-        745
-      ],
-      "sequence": "AFTER_SPHERE_CAPTURE",
-      "text": "CS-11 se captura e imprime después de la captura de esferas en exhibidores; se coteja, lee, firma y anexa al acta."
+      "role_label": "Representante de la Dirección de Operación de Concursos, Juegos y Sorteos"
     },
     "quality_plan_cs11_fields": {
-      "page": 26,
-      "source_lines": [
+      "page": 25,
+      "lines": [
         1235,
         1250
       ],
@@ -208,133 +121,115 @@
         "Nombre de las personas participantes"
       ],
       "explicit_time_field_listed": false,
-      "cs11_blank_template_embedded_in_pro05": false
+      "blank_template_embedded": false
     },
-    "glossary_tira_signatory_role": {
-      "page": 31,
-      "source_lines": [
-        1569,
-        1570
+    "glossary_cs11_fields": {
+      "page": 30,
+      "lines": [
+        1476,
+        1477
       ],
-      "role_label": "Representante de la Dirección de Operación de Concursos, Juegos y Sorteos",
-      "text": "La definición de Tira de Pesaje enumera al representante de la Dirección de Operación de Concursos, Juegos y Sorteos entre los firmantes."
+      "fields": [
+        "Fecha de realización del sorteo",
+        "Nombre del sorteo",
+        "Número de sorteo",
+        "Hora de realización del sorteo",
+        "Estuche seleccionado",
+        "Resultados del sorteo",
+        "Nombre y firma de quien elabora, verifica, certifica y del representante de la Dirección General"
+      ],
+      "explicit_time_field_specified": true,
+      "blank_template_embedded": false
     },
-    "policy_24_25_30": {
+    "activity_7_electronic_signature": {
+      "page": 15,
+      "lines": [
+        627,
+        640
+      ],
+      "sequence": "AFTER_SALES_CLOSE_AND_WEIGHING_BEFORE_DRAW"
+    },
+    "activity_13_cs11": {
+      "page": 16,
+      "lines": [
+        713,
+        745
+      ],
+      "sequence": "AFTER_SPHERE_CAPTURE"
+    },
+    "policy_24_25": {
       "page": 10,
-      "source_lines": [
+      "lines": [
         395,
-        397,
-        422
+        396
       ],
-      "maintenance_calendar_required": true,
-      "scale_calibration_minimum_years": 1,
-      "video_from_weighing_through_draw": true,
-      "edited_recording_attached_to_acta_is_draw_only": true
+      "annual_maintenance_calendar": true,
+      "scale_calibration_at_least_yearly": true
     },
     "policy_30_recording": {
       "page": 11,
-      "source_lines": [
+      "lines": [
         422,
         422
       ],
-      "text": "Se contrata grabación desde el pesaje hasta la celebración del sorteo; las grabaciones editadas (sólo el sorteo) forman parte de las actas."
+      "recording_from_weighing_through_draw": true,
+      "edited_recording_attached_to_acta_is_draw_only": true
     },
     "incident_definition": {
       "page": 31,
-      "source_lines": [
+      "lines": [
         1553,
         1554
       ],
-      "text": "Un suceso que afecte resultados se registra en el Acta y en la Bitácora de Concursos y Sorteos CS-09 como incidencia."
+      "result_affecting_incident_recorded_in_acta_and_cs09": true
     }
   },
   "regulation_sequence": {
     "article_9": {
-      "source_lines": [
+      "lines": [
         254,
         284
       ],
-      "sequence": [
-        "INTRODUCE_28_SPHERES_IN_URN",
-        "CLOSE_SALES_AND_GENERATE_SIGNATURE",
-        "STORE_SIGNATURE_WITH_SEGOB",
-        "EXTRACT_5_SPHERES"
-      ],
-      "order_conflict_with_pro05": "ARTICLE_9_PLACES_URN_INTRODUCTION_BEFORE_CLOSE_WHILE_PRO05_WEIGHS_AND_LOADS_FEEDERS_AFTER_CLOSE"
-    },
-    "article_15": {
-      "source_lines": [
-        388,
-        394
-      ],
-      "acta_contents": [
-        "antecedents",
-        "results",
-        "incidents"
-      ],
-      "signed_by_segob_inspector_and_loteria_officials": true
+      "order_conflict_with_pro05": true
     }
   },
   "reserved_manual_leads_only": {
     "cs02_draft_fields": [
       "date",
-      "draw_numbers",
-      "inspection_time",
-      "operator_signature",
-      "sgvo_representative_signature"
+      "draw number",
+      "inspection time",
+      "operator signature",
+      "SGVO representative signature"
     ],
-    "cs02_draft_inspection_max_minutes_before_draw": 30,
-    "cs02_draft_substitution_recorded_in_observations": true,
+    "cs02_draft_max_minutes_before_draw": 30,
     "weigh_strip_draft_individual_weights": true,
-    "weigh_strip_draft_start_and_end_printed_times": true,
+    "weigh_strip_draft_start_end_printed_times": true,
     "weigh_strip_draft_statistics": [
       "count",
       "mean",
       "maximum",
       "minimum",
-      "max_minus_min"
+      "max-minus-min"
     ],
-    "weigh_strip_draft_signatories": [
-      "weighing_responsible",
-      "SEGOB_inspector",
-      "SGVO_representative",
-      "DG_representative"
-    ],
-    "feeder_load_draft_order_matches_weighing_order": true,
-    "chispazo_draft_sphere_color": "yellow",
-    "chispazo_draft_sphere_count": 28,
-    "authority_warning": "ALL_FIELDS_ABOVE_ARE_FROM_A_RESERVED_PROJECT_COPY_NOT_A_CURRENT_APPROVED_OPERATING_MANUAL"
-  },
-  "predictive_timing": {
-    "cs02_equipment_inspection": "BEFORE_EACH_DRAW_PER_PRO05; EXACT_LEAD_TIME_AND_CURRENT_FORM_FIELDS_NOT_PUBLICLY_SPECIFIED",
-    "machine_id_and_maintenance": "POTENTIALLY_PRE_CLOSE_ONLY_IF_ASSET_SPECIFIC_RECORD_AND_TIMESTAMP_EXIST_BEFORE_TARGET_CLOSE",
-    "scale_calibration": "POTENTIALLY_PRE_CLOSE_ONLY_IF_CERTIFICATE_AND_SCALE_ID_EXIST_BEFORE_TARGET_CLOSE",
-    "initial_case_confirmation": "PRE_CLOSE_PER_ACTIVITY_3_1",
-    "final_case_after_failed_weighing": "MAY_CHANGE; ACTIVITY_5_3_RETURNS_TO_FINAL_SICAL_CLOSE",
-    "same_draw_weights": "POST_CLOSE; NOT_ELIGIBLE_FOR_SAME_DRAW_PREDICTION",
-    "prior_draw_weights_for_later_target": "POTENTIALLY_ELIGIBLE_ONLY_WITH_AUTHENTICATED_PRE_TARGET_AVAILABILITY_AND_UNBROKEN_ASSET_AND_SPHERE_MAPPING_CONTINUITY",
-    "electronic_participation_signature": "POST_CLOSE_PRE_DRAW; PARTICIPATION_FILE_INTEGRITY_NOT_PHYSICAL_SPHERE_MEASUREMENT",
-    "cs11": "POST_EXTRACTION; RETROSPECTIVE",
-    "full_video": "POST_MEASUREMENT_AND_DRAW; RETROSPECTIVE",
-    "acta_and_cs09_incidents": "POST_EVENT_OR_DURING_EVENT; NOT_PRE_CLOSE_UNLESS_A_SEPARATE_PRIOR_RECORD_EXISTS"
+    "weigh_strip_draft_feeder_order_matches_weighing_order": true,
+    "authority_warning": "RESERVED PROJECT COPY; NOT CURRENT APPROVED OPERATING AUTHORITY"
   },
   "evidence_gaps": [
-    "No public draw-specific CS-02 records or blank controlled CS-02 template obtained.",
+    "No public draw-specific CS-02 or blank controlled CS-02 template obtained.",
     "No public draw-specific CS-11 original or controlled blank template obtained.",
-    "No public draw-specific Tira de Pesaje with individual readings obtained.",
-    "No RFID tag-to-sphere-number mapping or raw reader event log obtained.",
+    "No public draw-specific 28-sphere Tira de Pesaje obtained.",
+    "No RFID tag-to-sphere-number map or raw reader event log obtained.",
     "No machine serial-to-contest assignment obtained.",
     "No scale serial and draw-specific calibration certificate obtained.",
-    "No asset-level maintenance work orders after contract 058-2024 were obtained.",
-    "No original continuous audiovisual master, camera metadata or trusted timecode chain obtained.",
-    "No signed acta annex package, CS-09 entries, or original electronic signature media/custody log obtained."
+    "No asset-level maintenance work orders after contract 058-2024 obtained.",
+    "No continuous audiovisual master/timecode/custody chain obtained.",
+    "No original Acta annex package, CS-09 entries or electronic-signature custody media obtained."
   ],
   "analysis_scope": {
-    "uses_public_authentic_source_text": true,
-    "uses_draw_specific_physical_records": false,
-    "recomputes_frequency_pair_triple_or_transition_analysis": false,
-    "claims_physical_bias": false,
-    "claims_predictive_advantage": false,
+    "draw_specific_physical_data_used": false,
+    "frequency_pair_triple_transition_analysis_run": false,
+    "physical_bias_claim": false,
+    "predictive_advantage_claim": false,
     "classification": "MECHANISM_EVIDENCE_ONLY"
   }
 }
