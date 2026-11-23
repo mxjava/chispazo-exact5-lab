@@ -168,6 +168,11 @@ def reject_non_predictive_portfolio(df: pd.DataFrame) -> None:
     non_predictive = modes.str.endswith("_NOT_PREDICTIVE")
     if non_predictive.any():
         found = sorted(set(modes[non_predictive].tolist()))
+        if "UNIFORM_COVERAGE_NOT_PREDICTIVE" in found:
+            raise ValueError(
+                "uniform coverage output is explicitly non-predictive and cannot be frozen "
+                "as a predictive registration"
+            )
         raise ValueError(
             "non-predictive portfolio mode(s) cannot be frozen as a predictive registration: "
             + ", ".join(found)
