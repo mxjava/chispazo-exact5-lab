@@ -10,5 +10,5 @@ SPEC.loader.exec_module(MODULE)
 def test_document_reconciliation_is_consistent_and_non_predictive():
     result = MODULE.validate()
     assert result["valid"] is True
-    assert result["matrix_rows"] == 12
+    assert result["matrix_rows"] == 15
     assert result["classification"] == "MECHANISM_DOCUMENTATION_ONLY"
