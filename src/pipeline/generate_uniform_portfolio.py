@@ -64,7 +64,7 @@ def format_combo(combo: Iterable[int]) -> str:
 
 
 def write_portfolio(rows: list[tuple[int, ...]], seed: int, stream) -> None:
-    writer = csv.writer(stream, lineterminator="\\n")
+    writer = csv.writer(stream, lineterminator="\n")
     writer.writerow(["rank", "combo", "mode", "seed"])
     for rank, combo in enumerate(rows, start=1):
         writer.writerow([rank, format_combo(combo), "UNIFORM_COVERAGE_NOT_PREDICTIVE", seed])
