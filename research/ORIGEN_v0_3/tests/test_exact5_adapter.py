@@ -27,22 +27,22 @@ class Exact5AdapterTests(unittest.TestCase):
  def test_duplicate_header_rejected_before_dictreader_overwrite(self):
   with tempfile.TemporaryDirectory() as d:
    p=Path(d)/"h.csv"
-   p.write_text("CONCURSO,R1,R2,R3,R4,R5,FECHA,R1\\n1,1,2,3,4,5,x,28\\n",encoding="utf-8")
+   p.write_text("CONCURSO,R1,R2,R3,R4,R5,FECHA,R1\n1,1,2,3,4,5,x,28\n",encoding="utf-8")
    with self.assertRaisesRegex(ValueError,"history_duplicate_header"): load_and_audit_history(p,None)
  def test_whitespace_padded_header_rejected(self):
   with tempfile.TemporaryDirectory() as d:
    p=Path(d)/"h.csv"
-   p.write_text("CONCURSO,R1,R2,R3,R4,R5, FECHA\\n1,1,2,3,4,5,x\\n",encoding="utf-8")
+   p.write_text("CONCURSO,R1,R2,R3,R4,R5, FECHA\n1,1,2,3,4,5,x\n",encoding="utf-8")
    with self.assertRaisesRegex(ValueError,"history_whitespace_padded_header"): load_and_audit_history(p,None)
  def test_blank_header_rejected(self):
   with tempfile.TemporaryDirectory() as d:
    p=Path(d)/"h.csv"
-   p.write_text("CONCURSO,R1,R2,R3,R4,R5,\\n1,1,2,3,4,5,x\\n",encoding="utf-8")
+   p.write_text("CONCURSO,R1,R2,R3,R4,R5,\n1,1,2,3,4,5,x\n",encoding="utf-8")
    with self.assertRaisesRegex(ValueError,"history_invalid_blank_header"): load_and_audit_history(p,None)
  def test_extra_row_field_rejected(self):
   with tempfile.TemporaryDirectory() as d:
    p=Path(d)/"h.csv"
-   p.write_text("CONCURSO,R1,R2,R3,R4,R5\\n1,1,2,3,4,5,unexpected\\n",encoding="utf-8")
+   p.write_text("CONCURSO,R1,R2,R3,R4,R5\n1,1,2,3,4,5,unexpected\n",encoding="utf-8")
    with self.assertRaisesRegex(ValueError,"malformed_csv_row_line_2"): load_and_audit_history(p,None)
  def test_diagnostics(self):
   r=descriptive_diagnostics([{"numbers":[1,2,3,4,5]},{"numbers":[1,3,5,7,9]}]); self.assertEqual(r["draws"],2); self.assertIn("Descriptive",r["interpretation"])
