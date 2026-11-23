@@ -1,3 +1,12 @@
+## V317 official timing compatibility blocker (2026-11-23)
+- Reconciled V317 with SGVO-PRO-05 Rev. 39 activity flow. The official sequence verifies SICAL sales as closed before the “Pesaje y Colocación de las Esferas” activity; the weighing strip is then checked, signed, attached to the Acta and the spheres are loaded before extraction.
+- Same-draw mass is therefore post-close and cannot be represented as a pre-close feature for that same draw. V2's source-to-later-target temporal split can only support a lagged experiment if exact set, sphere-ID mapping and machine continuity to the target are independently proven and the evidence is sealed before target close. Since the procedure requires weighing each draw, prior mass cannot be carried forward by assumption.
+- Added `docs/V317_OFFICIAL_TIMING_COMPATIBILITY_AUDIT_20261123.md`; V317 remains BLOCKED until a separately versioned, pre-outcome timing estimand is independently reviewed. No silent reinterpretation, beta tuning or outcome scoring.
+
+## Extreme-mass test assertion correction (2026-11-23)
+- CI on `7d5c8573f9867c433edbbee8ee83f28aeda6d283` exposed two test expectation errors: a broad text replacement had reversed the existing positive-beta monotonicity assertion and left the new extreme-mass assertion reversed.
+- Restored the existing ascending-mass expectation and changed only the extreme fixture's final 1.0 g sphere to expect a lower log weight than the 1e308 g spheres. Test commit: `d65b87e6cb0bf5add4067a68ac8eae05ed62a567`. Exact-head CI is pending.
+
 ## Stable mass centering correction after exact-head CI failure (2026-11-23)
 - Exact-head CI on `b7fcf53fbbde20ce027e40487db1b9f4145c0404` exposed an overflow in the new extreme-finite-mass regression: summing 27 finite offsets near 1e308 overflowed `math.fsum` before division.
 - Corrected the numerical path by normalizing offsets by their maximum before computing the mean and population standard deviation. This preserves the z-score under positive affine scaling and avoids the intermediate sum overflow.
