@@ -1,0 +1,133 @@
+{
+  "audit_id": "V265_DOCUMENT_RECONCILIATION_20261123",
+  "retrieved_on": "2026-11-23",
+  "audit_type": "official_document_reconciliation",
+  "uses_draw_outcomes": false,
+  "uses_synthetic_records": false,
+  "documents": {
+    "SGVO-PRO-05": {
+      "revision": 39,
+      "dn07_version": 9,
+      "last_updated": "2026-03-20",
+      "listed_current": true,
+      "url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"
+    },
+    "SGM-PRO-06": {
+      "revision": 22,
+      "dn07_version": 5,
+      "last_control_change": "2017-06",
+      "pdf_type": "PUBLIC",
+      "path_contains_vigentes": true,
+      "listed_current": false,
+      "status": "PUBLIC_UNINDEXED_COPY_STATUS_UNCONFIRMED",
+      "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgm_p0_6.pdf"
+    },
+    "SGVO-MAN-02": {
+      "listed_current": false,
+      "listed_as_project": true,
+      "project_window": "2026-02-23 to 2026-03-04"
+    }
+  },
+  "weight_specs": {
+    "SGVO-PRO-05_policy_6": {
+      "Ping Pong": {
+        "min_g": 2.3,
+        "max_g": 3,
+        "max_spread_g": 0.15
+      },
+      "Smartballs": {
+        "min_g": 4.25,
+        "max_g": 5.25,
+        "max_spread_g": 0.3
+      }
+    },
+    "SGM-PRO-06_revision_22": {
+      "min_g": 2.2,
+      "max_g": 2.9,
+      "max_spread_g": 0.15
+    },
+    "reconciled": false
+  },
+  "chronology": {
+    "official_classic_draw": "21:00",
+    "SGVO-PRO-05_nightly_close": "21:00",
+    "SGVO-PRO-05_weighing": "after SICAL closed-state verification",
+    "SGM-PRO-06_Chispazo_weighing": "preferably before sales close at 21:15",
+    "reconciled": false,
+    "same_draw_weight_eligibility": "BLOCKED_UNTIL_GOVERNING_PROCEDURE_AND_ACTUAL_TIRA_TIMESTAMPS_ARE_CONFIRMED",
+    "failed_weight_branch": "replace case and return to activity 4.1; no statement that sales reopen"
+  },
+  "Tira_schema_if_SGM_PRO_06_applies": {
+    "sphere_count": 28,
+    "colors": [
+      "yellow",
+      "blue"
+    ],
+    "color_depends_on_machine": true,
+    "weighing_order": "numeric",
+    "per_sphere_weight_printed": true,
+    "start_and_end_datetime_printed": true,
+    "aggregate_fields": [
+      "object_count",
+      "mean_g",
+      "max_g",
+      "min_g",
+      "spread_g"
+    ],
+    "signatures": [
+      "weighing_operator",
+      "SEGOB_inspector",
+      "Subdirección de Concursos y Sorteos",
+      "Dirección General"
+    ],
+    "per_sphere_RFID_or_printed_ID_confirmed": false,
+    "extraction_order_or_per_extraction_timestamp": false,
+    "applicability": "UNCONFIRMED_PUBLIC_COPY"
+  },
+  "CS02_schema_if_SGM_PRO_06_applies": {
+    "date_draw_number_inspection_time_signatures_observations": true,
+    "checks": [
+      "compressor",
+      "console",
+      "feeder",
+      "turbine",
+      "selection_traps",
+      "mixing_capsule",
+      "door",
+      "exhibitor",
+      "scale_printer",
+      "roll_battery"
+    ],
+    "numeric_thresholds": "UNCONFIRMED_FOR_CURRENT_OPERATION"
+  },
+  "RFID_public_report": {
+    "period": "2018-2024",
+    "machines": {
+      "Jupiter": 10,
+      "Mercury_5": 2,
+      "Mercury_8": 2,
+      "total": 14
+    },
+    "machine_and_sphere_RFID_recognition_reported": true,
+    "sets_per_product_reported": 10,
+    "products_listed": 7,
+    "total_sets_reported": 60,
+    "arithmetic_consistent": false,
+    "tag_IDs_reader_logs_and_sphere_number_map_obtained": false
+  },
+  "V265": {
+    "evidence_class": "ASSOCIATION_SCREEN_ONLY",
+    "physical_bias_evidence": false,
+    "per_sphere_weights_consumed": false,
+    "per_sphere_RFID_mapping_consumed": false,
+    "extraction_order_consumed": false,
+    "per_extraction_timestamps_consumed": false,
+    "source_provenance_required": false,
+    "holm_optional": true,
+    "anytime_evalue_gate_implemented": false
+  },
+  "operational_records_obtained": [],
+  "official_PDF_binary_SHA256_calculated": false,
+  "classification": "MECHANISM_DOCUMENTATION_ONLY",
+  "predictive_advantage_claimed": false
+}
