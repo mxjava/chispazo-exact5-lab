@@ -235,6 +235,21 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "restricted to CLASSIC"):
             parse_unverified_receipt(encode(document))
 
+    def test_classic_target_rejects_de_las_tres_and_non_2100_slots(self):
+        for close_at in (
+            "2026-11-22T21:00:00Z",  # 15:00 America/Mexico_City (De las Tres)
+            "2026-11-23T02:59:00Z",  # 20:59 America/Mexico_City
+            "2026-11-23T04:00:00Z",  # 22:00 America/Mexico_City
+        ):
+            with self.subTest(close_at=close_at):
+                document = valid_document()
+                document["target"]["draw_close_at_utc"] = close_at
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "CLASSIC draw_close_at_utc must resolve to the official 21:00",
+                ):
+                    parse_unverified_receipt(encode(document))
+
     def test_target_list_digest_must_bind_exact_target(self):
         document = valid_document()
         document["target"]["target_list_sha256"] = digest("a")
