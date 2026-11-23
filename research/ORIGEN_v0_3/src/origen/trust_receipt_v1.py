@@ -423,6 +423,8 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
         raise ValueError("signers contain duplicate key IDs")
     if len({item.subject_id for item in signers}) != len(signers):
         raise ValueError("signers contain duplicate subject IDs")
+    if len({item.subject_id for item in signers}) != len(signers):
+        raise ValueError("signers contain duplicate subject IDs")
     custodians = tuple(
         _parse_custodian(item, index)
         for index, item in enumerate(_array(root["custodians"], "custodians", minimum=1, maximum=64))
