@@ -42,7 +42,7 @@ def test_checked_in_csv_matches_generator_and_full_outcome_histogram():
     from itertools import combinations
 
     expected, gains = generate_portfolio(20261123)
-    artifact = Path(__file__).resolve().parents[2] / "runs" / "optimal_4hit_coverage_20261123.csv"
+    artifact = Path(__file__).resolve().parents[1] / "runs" / "optimal_4hit_coverage_20261123.csv"
     with artifact.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.DictReader(stream))
 
