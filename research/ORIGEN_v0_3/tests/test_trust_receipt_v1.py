@@ -238,6 +238,12 @@ class TestTrustReceiptV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exactly 64"):
             parse_unverified_receipt(encode(document))
 
+    def test_root_attestation_key_id_must_be_distinct_from_signer_key_ids(self):
+        document = valid_document()
+        document["receipt_attestation"]["key_id"] = document["signers"][0]["key_id"]
+        with self.assertRaisesRegex(ValueError, "separate from signer keys"):
+            parse_unverified_receipt(encode(document))
+
     def test_json_nan_is_rejected(self):
         raw = encode(valid_document()).replace(b'"byte_length":1024', b'"byte_length":NaN')
         with self.assertRaisesRegex(ValueError, "non-standard JSON constant"):
