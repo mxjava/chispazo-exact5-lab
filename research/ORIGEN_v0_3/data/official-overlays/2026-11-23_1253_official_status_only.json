@@ -1,0 +1,142 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "observation": {
+    "observed_at_local": "2026-11-23T12:53:40-06:00",
+    "observed_at_utc": "2026-11-23T18:53:40Z",
+    "timezone": "America/Mexico_City",
+    "classification": "STATUS_ONLY_PUBLIC_OFFICIAL_SNAPSHOT"
+  },
+  "sources": {
+    "official_home_index": "https://www.loterianacional.gob.mx/home/index",
+    "official_chispazo_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_chispazo_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "official_electronic_draw_procedure": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+    "prior_reviewed_2026_11_22_mask": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221841"
+  },
+  "official_results_snapshot": {
+    "official_chispazo_results_latest": {
+      "contest_id": 12390,
+      "draw_date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        6,
+        9,
+        19,
+        23
+      ],
+      "published": true
+    },
+    "previous_contest": {
+      "contest_id": 12389,
+      "draw_date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        15,
+        17,
+        22,
+        25
+      ],
+      "published": true
+    },
+    "next_draw_date_visible": "2026-11-23",
+    "result_for_2026_11_23_visible": false,
+    "classic_contest_id_for_2026_11_23": "NOT_VISIBLE"
+  },
+  "official_home_index_schedule_card": {
+    "date": "2026-11-23",
+    "local_time": "15:00",
+    "displayed_draw_number": 12391,
+    "displayed_title": "Ilumina tu suerte",
+    "product_identity_explicit_in_rendered_card": false,
+    "chispazo_modality_assignment": "NOT_INFERRED",
+    "note": "The card is a future 15:00 draw card but does not explicitly name Chispazo or its modality. Do not bind contest 12391 to the Chispazo register from this card alone."
+  },
+  "official_chispazo_schedule": {
+    "de_las_tres_local_time": "15:00",
+    "clasico_local_time": "21:00",
+    "source": "Official Chispazo product page",
+    "note": "This establishes the product's usual slots, not the identity of the generic 12391 home-index card or a contest ID for the 23-Nov Classic draw."
+  },
+  "official_mask": {
+    "index_latest_date": "2026-11-22",
+    "new_2026_11_23_mask_visible": false,
+    "prior_2026_11_22_visual_review": {
+      "observation_reference": "2026-11-23T04:56:00-06:00",
+      "page_count": 1,
+      "visual_page_reviewed": 1,
+      "modality_labels": {
+        "12389": {
+          "modality": "DE_LAS_TRES",
+          "modality_status": "MASK_VISUALLY_CONFIRMED",
+          "printed_label": "Chispazo De las tres",
+          "official_product_slot_local": "15:00",
+          "winning_numbers": [
+            1,
+            15,
+            17,
+            22,
+            25
+          ]
+        },
+        "12390": {
+          "modality": "CLASICO",
+          "modality_status": "MASK_VISUALLY_CONFIRMED",
+          "printed_label": "Chispazo Clásico",
+          "official_product_slot_local": "21:00",
+          "winning_numbers": [
+            1,
+            6,
+            9,
+            19,
+            23
+          ]
+        }
+      },
+      "slot_source": "Official Chispazo product page; the mask itself prints modality labels, not clock times."
+    }
+  },
+  "physical_evidence": {
+    "2026_11_23_draw_specific_primary_records_obtained": false,
+    "reason": "At observation time 12:53 local, the generic 15:00 card is still in the future and no 23-Nov result or mask is published in the inspected official endpoints.",
+    "signed_draw_act": "NOT_OBTAINED",
+    "signed_participation_file_and_signature": "NOT_OBTAINED",
+    "cs11": "NOT_OBTAINED",
+    "original_weighing_strip_and_28_measurements": "NOT_OBTAINED",
+    "scale_identity_and_calibration": "NOT_OBTAINED",
+    "equipment_and_urn_records": "NOT_OBTAINED",
+    "independent_custody_receipt": "NOT_OBTAINED",
+    "trusted_timestamp_or_external_ledger_proof": "NOT_OBTAINED",
+    "two_independent_preclose_output_seals": "NOT_OBTAINED"
+  },
+  "source_bytes": {
+    "official_mask_original_bytes_downloaded": false,
+    "official_mask_sha256": "NOT_CAPTURED",
+    "procedure_pdf_direct_download_attempt": "FAILED",
+    "procedure_pdf_original_bytes_downloaded": false,
+    "procedure_pdf_sha256": "NOT_CAPTURED",
+    "note": "Search/rendered page content is not a substitute for original PDF bytes or a cryptographic source hash."
+  },
+  "procedure_baseline": {
+    "document": "SGVO-PRO-05",
+    "revision": 39,
+    "status": "PUBLIC_PROCEDURAL_REFERENCE",
+    "draw_specific_compliance_proven": false,
+    "note": "The public procedure remains a checklist/reference for required records and roles, not evidence that any draw-specific records were created or independently preserved."
+  },
+  "eligibility": {
+    "status": "BLOCKED_PROVENANCE",
+    "snapshot_eligible": false,
+    "prospective_oos_eligible": false,
+    "score_eligible": false,
+    "reason": "Only public status/schedule information was observed; no original signed physical evidence, trusted timestamp, or independent custody was obtained."
+  },
+  "protections": {
+    "v294": "FROZEN",
+    "canonical_history": "UNCHANGED",
+    "main_writes": false,
+    "canonical_append": false,
+    "merge_or_promotion": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
