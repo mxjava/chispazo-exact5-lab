@@ -20,6 +20,9 @@ def rows_for_target(available="2026-11-20T21:15:00-06:00",
     for number in range(1, 29):
         rows.append({
             "source_contest_id": "12300", "target_contest_id": "12301",
+            "source_classic_sequence": "410", "target_classic_sequence": "411",
+            "official_classic_sequence_manifest_ref": "CLASSIC-SEQ-2026",
+            "official_classic_sequence_manifest_sha256": "d" * 64,
             "contest_id": "12300", "draw_date": "2026-11-20",
             "modality": "CLASSIC",
             "draw_close_at": "2026-11-20T21:00:00-06:00",
@@ -55,6 +58,7 @@ VERIFIED = dict(
     declared_timestamp_refs={"TSA-1"},
     declared_source_refs={"DOC-12300"},
     declared_continuity_targets={"12301"},
+    declared_classic_sequence_refs={"CLASSIC-SEQ-2026"},
 )
 
 
@@ -365,6 +369,33 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                 self.assertIn("CONTEST_ID_ORDER_INVALID", target["reasons"])
                 self.assertEqual(target["predictive_eligibility"], "BLOCKED_CONTINUITY")
 
+    def test_lagged_target_must_be_next_official_classic_sequence(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["target_classic_sequence"] = "412"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        target = result["targets"]["12301"]
+        self.assertIn("CLASSIC_SEQUENCE_NOT_CONSECUTIVE", target["reasons"])
+        self.assertEqual(target["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
+    def test_official_classic_sequence_manifest_must_be_declared(self):
+        rows = rows_for_target()
+        declarations = dict(VERIFIED)
+        declarations.pop("declared_classic_sequence_refs")
+        result = evaluate_temporal_eligibility(rows, **declarations)
+        target = result["targets"]["12301"]
+        self.assertIn("CLASSIC_SEQUENCE_MANIFEST_NOT_VERIFIED", target["reasons"])
+        self.assertEqual(target["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
+    def test_classic_sequence_manifest_digest_must_be_valid(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["official_classic_sequence_manifest_sha256"] = "not-a-sha256"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        target = result["targets"]["12301"]
+        self.assertIn("CLASSIC_SEQUENCE_MANIFEST_INVALID", target["reasons"])
+        self.assertEqual(target["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
     def test_caller_supplied_reference_strings_are_declarations_not_authentication(self):
         # These deliberately fabricated identifiers satisfy only structural membership.
         result = evaluate_temporal_eligibility(
@@ -373,6 +404,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             declared_timestamp_refs={"TSA-1"},
             declared_source_refs={"DOC-12300"},
             declared_continuity_targets={"12301"},
+            declared_classic_sequence_refs={"CLASSIC-SEQ-2026"},
         )
         self.assertEqual(result["status"], "STRUCTURAL_REVIEW_ONLY")
         self.assertEqual(
