@@ -1,3 +1,8 @@
+## Custody timestamp unknown-offset rejection (2026-11-23)
+- Closed a temporal-interpretation gap: RFC 3339 `-00:00` denotes an unknown local offset, not a known UTC offset. The custody parser now rejects it rather than normalizing it to UTC.
+- Added adversarial coverage for all three custody timestamps at both record-build and record-verification boundaries.
+- Structural timestamp semantics only; this does not authenticate the clock, trusted-time token, signer, or custodian identity.
+
 ## Bounded custody record reads (2026-11-23)
 - Closed a reproducible resource-boundary gap in `read_record`: the prior `stat()` then `read_bytes()` sequence could read an unbounded file if it grew after the size check.
 - The parser now performs one bounded binary read of at most `MAX_CUSTODY_RECORD_BYTES + 1` and rejects the extra byte before JSON depth scanning or decoding.
