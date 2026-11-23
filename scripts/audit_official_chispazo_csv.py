@@ -70,6 +70,52 @@ def post_baseline_ids_are_contiguous(draw_ids, baseline_last: int = 12249) -> bo
         return True
     return observed == list(range(baseline_last + 1, observed[-1] + 1))
 
+def analyze_daily_pair_structure(rows, draw_id_index, date_index, transition_date="25/09/2017"):
+    """Describe the post-transition two-draw daily ID structure without assigning modalities."""
+    from collections import defaultdict
+    from datetime import datetime
+
+    transition = datetime.strptime(transition_date, "%d/%m/%Y").date()
+    by_date = defaultdict(list)
+    for row in rows:
+        try:
+            draw_id = int(row[draw_id_index])
+            draw_date = datetime.strptime(row[date_index].strip(), "%d/%m/%Y").date()
+        except (ValueError, IndexError):
+            continue
+        if draw_date >= transition:
+            by_date[draw_date].append(draw_id)
+
+    anomalies = []
+    all_ids = []
+    for draw_date, ids in sorted(by_date.items()):
+        ordered = sorted(ids)
+        all_ids.extend(ordered)
+        if len(ordered) != 2 or ordered[1] != ordered[0] + 1 or ordered[0] % 2 != 1:
+            anomalies.append({
+                "date": draw_date.isoformat(),
+                "draw_ids": ordered,
+                "reason": "EXPECTED_TWO_CONSECUTIVE_IDS_ODD_THEN_EVEN",
+            })
+
+    unique_ids = sorted(set(all_ids))
+    contiguous = bool(unique_ids) and unique_ids == list(range(unique_ids[0], unique_ids[-1] + 1))
+    return {
+        "transition_date_inclusive": transition.isoformat(),
+        "observed_dates": len(by_date),
+        "dates_with_exactly_two_rows": sum(len(ids) == 2 for ids in by_date.values()),
+        "dates_with_other_row_count": sum(len(ids) != 2 for ids in by_date.values()),
+        "post_transition_unique_draw_ids": len(unique_ids),
+        "post_transition_draw_id_min": unique_ids[0] if unique_ids else None,
+        "post_transition_draw_id_max": unique_ids[-1] if unique_ids else None,
+        "post_transition_ids_contiguous": contiguous,
+        "dates_matching_two_consecutive_odd_even_ids": len(by_date) - len(anomalies),
+        "anomaly_count": len(anomalies),
+        "anomalies": anomalies[:100],
+        "classification": "STRUCTURAL_PATTERN_ONLY_NO_MODALITY_ASSERTION",
+    }
+
+
 normalized = [norm(x) for x in header]
 aliases = {
     "draw_id": {"concurso", "sorteo", "numerodesorteo", "nosorteo", "draw", "drawid"},
@@ -136,6 +182,7 @@ official_gaps = [
     [a + 1, b - 1] for a, b in zip(official_ids_sorted, official_ids_sorted[1:]) if b != a + 1
 ]
 post_baseline_ids = sorted(draw for draw in official_index if draw > 12249)
+daily_pair_structure = analyze_daily_pair_structure(data_rows, mapping["draw_id"], mapping["date"])
 audit_status = "BLOCKED_CANONICAL_CONFLICTS" if (conflicts or official_invalid or canonical_invalid or official_gaps or canonical_not_in_official) else "SOURCE_RECONCILIATION_CLEAN"
 with (OUT / "canonical_official_conflicts.csv").open("w", newline="", encoding="utf-8") as conflict_file:
     writer = csv.writer(conflict_file)
@@ -185,6 +232,7 @@ report = {
     "first_rows": data_rows[:5],
     "last_rows": data_rows[-5:],
     "candidate_column_mapping_zero_based": mapping,
+    "daily_pair_structure": daily_pair_structure,
     "reconciliation": reconciliation,
     "canonical_history_modified": False,
     "v294_modified": False,
