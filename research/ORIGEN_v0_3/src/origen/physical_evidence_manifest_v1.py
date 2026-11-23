@@ -574,6 +574,8 @@ def parse_unverified_physical_manifest(raw: bytes) -> UnverifiedPhysicalEvidence
 
     signer_subjects = {item.subject_id for item in signatures}
     custodian_subjects = {item.custodian_subject_id for item in custody_events}
+    if signer_subjects.intersection(custodian_subjects):
+        raise ValueError("signer and custodian claims must be separate")
     time_authorities = {item.authority_id for item in time_proofs}
     if time_authorities.intersection(signer_subjects | custodian_subjects):
         raise ValueError("trusted time authority IDs must be distinct from signers and custodians")
