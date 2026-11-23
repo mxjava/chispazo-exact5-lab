@@ -1,3 +1,8 @@
+## Official 22-Nov mask status refresh (observed 2026-11-23 01:52 America/Mexico_City)
+- The official mask index now lists the 22-Nov PDF. Visual review confirms contest 12389 is Chispazo De las tres (15:00 slot) and contest 12390 is Chispazo Clásico (21:00 slot); the clock times come from the official product schedule, not printed PDF times.
+- The official Chispazo results page shows 12390 = 01 06 09 19 23 and 12389 = 01 15 17 22 25. The opened commercializer page rendered 12389 as latest, so the endpoint discrepancy is retained.
+- No 23-Nov result or contest ID was visible; no ID was inferred. Original PDF bytes could not be downloaded; SHA-256 remains NOT_CAPTURED. Public mask data is status-only, not authenticated physical provenance or pre-close evidence.
+
 ## Trusted-time authority identity separation (2026-11-23)
 - The unverified receipt parser now rejects exact identifier collisions between any declared trusted-time authority and the receipt issuer, signers, custodians, or output generators.
 - Added adversarial coverage for all four collision classes and documented the rule in the adapter specification.
