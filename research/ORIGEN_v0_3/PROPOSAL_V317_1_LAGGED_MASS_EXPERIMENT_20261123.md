@@ -14,11 +14,12 @@ The initial proposal is a **one-contest lag** (t = s + 1 in the official Classic
 ## 2. Frozen feature and timing contract
 
 For each target t:
-- Source s is the immediately preceding official Classic contest, not De las Tres and not a retrospectively selected contest.
+- Source s is the immediately preceding official Classic contest, not De las Tres and not a retrospectively selected contest. The evidence bundle must carry source and target ordinals from an official Classic-only sequence manifest; numeric contest IDs alone are insufficient because De las Tres is also held daily.
 - The source feature is the 28 individual masses measured on the official source-draw weighing strip after source close and before source extraction.
 - Sphere IDs are mapped to printed numbers using the source mapping register.
 - The full source evidence bundle, original-byte hashes, source signatures, custody receipts and trusted-time proofs must be independently verified and received before target t's 21:00 Mexico City sales close.
 - Before target close, there must already be independently verifiable evidence that the exact 28 sphere IDs, their printed-number mapping, the sphere set, machine and feeder geometry assigned for target t are unchanged and scheduled for target use. A caller-supplied declaration or membership in V2's declared-reference sets is not authentication.
+- The official Classic-only sequence manifest must identify both source and target and prove target ordinal = source ordinal + 1. The manifest's original bytes, SHA-256, issuing authority and publication time must be independently verified; a sequence number typed into the CSV is not proof.
 - The target's own post-close weighing strip, inspection, draw acta and outcome are never features for predicting target t.
 
 If target assignment/continuity is only documented after target close, that target is **not eligible**. No post-close evidence may retroactively turn a failed pre-close gate into an eligible prediction.
@@ -59,7 +60,7 @@ The e-process claim additionally depends on the conditional uniform-null assumpt
 6. Two independent pre-close sealing services and a tamper-evident audit trail.
 7. Adversarial tests and independent security/statistical review of the final evaluator.
 
-V2 currently checks structural temporal ordering and caller-declared reference membership; it explicitly does not authenticate those declarations or prove physical continuity. It is not a substitute for items 2–6.
+V2 now requires an explicit Classic-only sequence ordinal pair and a manifest reference/digest, and rejects non-consecutive ordinal pairs. Its declared-manifest membership check is still caller-supplied and structural only; it does not authenticate the official manifest, its issuer, its completeness, or physical continuity. It is not a substitute for items 2–6.
 
 ## 7. Explicit non-claims
 
