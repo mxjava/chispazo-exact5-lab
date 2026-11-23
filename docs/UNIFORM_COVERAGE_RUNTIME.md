@@ -64,3 +64,21 @@ portfolio. A small tail probability from one observed portfolio is not by itself
 evidence of a predictive model: repeated prospective testing, preregistration,
 multiple-testing control, independent custody, and the protocol's evidence gates
 remain mandatory. The output never upgrades the mode from control-only.
+
+## Aggregate multiple completed control evaluations
+
+Once each contest has its own completed evaluation JSON, summarize them without
+editing the original reports:
+
+```powershell
+python -m src.pipeline.aggregate_uniform_controls --reports runs/eval_12390.json runs/eval_12391.json --out runs/uniform_controls_aggregate.json
+```
+
+The aggregator validates control-only status, the non-predictive flags, contest
+uniqueness, portfolio SHA-256 format, hit-distribution totals, exact-5 count,
+best-hit consistency, and compatible null-calibration metadata. It rejects duplicate
+contest IDs and reused portfolio hashes rather than treating them as independent
+observations. The aggregate reports observed versus expected 0–5 hit counts across
+the supplied contests. It is descriptive only: it does not compute a predictive
+edge p-value, does not append to the official prospective ledger, and cannot upgrade
+any model's evidence status. Preserve each original report and portfolio CSV.
