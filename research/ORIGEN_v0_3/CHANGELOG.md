@@ -2,7 +2,7 @@
 - The V1 trust-receipt parser now requires a declared `CLASSIC` target close timestamp to resolve to the official **21:00 America/Mexico_City** slot. Previously, the parser accepted any valid UTC close time while still labeling the target CLASSIC; that allowed a 15:00 De las Tres time or an arbitrary late close to satisfy the structural pre-close comparison.
 - Added an adversarial test covering 15:00, 20:59 and 22:00 local close claims. This aligns the V1 receipt target boundary with the existing V2 physical-intake schedule check.
 - The check is a schedule-consistency guard only. It does not authenticate the contest ID, official schedule source, clock, timestamp token, receipt signature, or physical evidence.
-- Code commit: `f5ac7da6c424149c62f7de9f66b70546ca1d3958`; test commit: `ab035c87e5289ebad6f86060816b9469ea530844`. CI pending at the time of this entry.
+- Code commit: `f5ac7da6c424149c62f7de9f66b70546ca1d3958`; test commit: `ab035c87e5289ebad6f86060816b9469ea530844`. CI on test commit `ab035c87e5289ebad6f86060816b9469ea530844` passed: isolated ORIGEN run `45170098787` (**332 tests**); root CI run `45170099100` passed `compileall` and `pytest -q` (**534 passed, 2 skipped, 99 subtests passed**). Subsequent commits in this entry add only status documentation and do not change executable code.
 
 ## Official status refresh — 2026-11-23 05:57 America/Mexico_City
 - Official results page still publishes 12390 = 01 06 09 19 23 and 12389 = 01 15 17 22 25; it shows 23-Nov as the next draw date but no 23-Nov result.
