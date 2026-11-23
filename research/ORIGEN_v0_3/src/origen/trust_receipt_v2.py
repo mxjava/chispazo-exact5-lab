@@ -32,6 +32,35 @@ from .trust_receipt_v1 import (
 )
 
 SCHEMA_VERSION_V2 = "origen.trust-receipt.v2"
+MAX_TRUST_RECEIPT_JSON_DEPTH_V2 = 64
+
+
+def _validate_json_nesting_depth_v2(raw: bytes) -> None:
+    """Bound nested JSON containers before recursive V2 decoder/encoder work."""
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in raw:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:
+                escaped = True
+            elif byte == 0x22:
+                in_string = False
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x7B, 0x5B):
+            depth += 1
+            if depth > MAX_TRUST_RECEIPT_JSON_DEPTH_V2:
+                raise ValueError(
+                    "trust receipt exceeds maximum JSON nesting depth "
+                    f"{MAX_TRUST_RECEIPT_JSON_DEPTH_V2}"
+                )
+        elif byte in (0x7D, 0x5D) and depth:
+            depth -= 1
+
 _TIME_PROOF_FIELDS = {
     "authority_id", "event_id", "event_at_utc", "proof_sha256", "subject_sha256"
 }
@@ -78,6 +107,7 @@ def parse_unverified_receipt_v2(raw: bytes) -> UnverifiedTrustReceiptV2:
         raise TypeError("trust receipt input must be exact bytes")
     if not raw or len(raw) > MAX_TRUST_RECEIPT_BYTES:
         raise ValueError(f"trust receipt must contain 1..{MAX_TRUST_RECEIPT_BYTES} bytes")
+    _validate_json_nesting_depth_v2(raw)
     try:
         text = raw.decode("utf-8", errors="strict")
     except UnicodeDecodeError as exc:
