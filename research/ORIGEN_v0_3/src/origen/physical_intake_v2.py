@@ -43,7 +43,7 @@ MAX_V2_CSV_RECORD_BYTES = (
     2 * MAX_V2_ROW_TEXT_BYTES + 4 * len(V2_REQUIRED_COLUMNS) + 4
 )
 CHISPAZO_LOCAL_TIMEZONE = ZoneInfo("America/Mexico_City")
-CLASSIC_DRAW_SLOT = (21, 0)
+CLASSIC_DRAW_SLOT = (21, 0, 0, 0)
 _DECIMAL_TEXT = re.compile(r"(?:0|[1-9][0-9]{0,2})(?:\.[0-9]{1,6})?\Z")
 SPHERE_MASS_SPECS = {
     "SMARTBALLS": (Decimal("4.25"), Decimal("5.25"), Decimal("0.30")),
@@ -130,7 +130,7 @@ def _parse_time(value: Any, field: str) -> datetime:
 def _is_classic_draw_slot(value: datetime) -> bool:
     """Check the official 21:00 Classic slot in Mexico City local time."""
     local = value.astimezone(CHISPAZO_LOCAL_TIMEZONE)
-    return (local.hour, local.minute) == CLASSIC_DRAW_SLOT
+    return (local.hour, local.minute, local.second, local.microsecond) == CLASSIC_DRAW_SLOT
 
 
 def evaluate_temporal_eligibility(
