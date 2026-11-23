@@ -30,6 +30,17 @@ This is a structural analysis only. The CSV does not include a modality column. 
 
 The published Lotería Nacional schedule lists De las Tres at 15:00 and Clásico at 21:00. Official daily results/masks identify both named modalities and provide anchors for independent review. These facts make an odd/even modality mapping a plausible *candidate*, but this structural report itself does not prove the mapping for every historical row.
 
+## Snapshot freshness and independent daily-result anchor
+
+The preserved CSV snapshot ends on 2026-11-21 at contest IDs 12387 and 12388. It does not include the two draws published for 2026-11-22. Lotería Nacional's official 2026-11-22 result mask explicitly identifies:
+- De las Tres, contest 12389: 01 15 17 22 25.
+- Clásico, contest 12390: 01 06 09 19 23.
+
+This is a newer primary anchor consistent with the candidate odd/even ordering, but it is outside the captured CSV snapshot and does not by itself authenticate every historical row. Refresh and fingerprint the CSV again after its next official publication before using it as a current-history source.
+
+Official mask: https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221508
+Official results page: https://www.loterianacional.gob.mx/Chispazo/Resultados
+
 ## Required next validation
 
 1. Collect official daily result masks across the transition boundary and representative/full coverage thereafter.
