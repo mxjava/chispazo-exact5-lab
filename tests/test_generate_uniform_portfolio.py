@@ -1,5 +1,9 @@
+import contextlib
 import io
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from src.pipeline.generate_uniform_portfolio import (
     UNIVERSE,
@@ -7,6 +11,7 @@ from src.pipeline.generate_uniform_portfolio import (
     generate_uniform_portfolio,
     unrank_combination,
     write_portfolio,
+    main,
 )
 
 
@@ -54,6 +59,32 @@ class UniformPortfolioTests(unittest.TestCase):
         self.assertEqual(len(output.getvalue().strip().splitlines()), 3)
         self.assertEqual(format_combo((1, 2, 3, 4, 5)), "01-02-03-04-05")
 
+
+    def test_cli_writes_reproducible_csv_artifact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "portfolio.csv"
+            stdout = io.StringIO()
+            with patch("sys.argv", [
+                "generate_uniform_portfolio", "--seed", "20261122",
+                "--lines", "5", "--out", str(output_path),
+            ]), contextlib.redirect_stdout(stdout):
+                self.assertEqual(main(), 0)
+
+            rows = output_path.read_text(encoding="utf-8").strip().splitlines()
+            self.assertEqual(len(rows), 6)
+            self.assertEqual(rows[0], "rank,combo,mode,seed")
+            self.assertTrue(all("UNIFORM_COVERAGE_NOT_PREDICTIVE" in row for row in rows[1:]))
+            self.assertIn("lines=5", stdout.getvalue())
+
+    def test_cli_stdout_mode_emits_valid_csv(self):
+        stdout = io.StringIO()
+        with patch("sys.argv", [
+            "generate_uniform_portfolio", "--seed", "11", "--lines", "3",
+        ]), contextlib.redirect_stdout(stdout):
+            self.assertEqual(main(), 0)
+        rows = stdout.getvalue().strip().splitlines()
+        self.assertEqual(len(rows), 4)
+        self.assertEqual(rows[0], "rank,combo,mode,seed")
 
 if __name__ == "__main__":
     unittest.main()
