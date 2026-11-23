@@ -478,6 +478,7 @@ def evaluate_temporal_eligibility(
         if "EVIDENCE_NOT_AVAILABLE_PRE_CLOSE" in reasons:
             classification = "INELIGIBLE_POST_CLOSE"
         elif any(reason in reasons for reason in (
+            "TARGET_CLOSE_CONFLICT",
             "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "INVALID_SOURCE_SHA256",
             "INVALID_CUSTODY_RECEIPT_SHA256", "INVALID_CALIBRATION_SHA256",
             "CUSTODY_NOT_INDEPENDENTLY_VERIFIED", "TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",

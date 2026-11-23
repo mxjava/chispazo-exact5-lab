@@ -693,7 +693,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_measurement_cannot_follow_source_draw(self):
         rows = rows_for_target()
         for row in rows:
-            row["measurement_at"] = "2026-11-20T21:01:00-06:00"
+            row["measurement_at"] = "2026-11-20T21:11:00-06:00"
             row["evidence_available_at"] = "2026-11-20T21:15:00-06:00"
             row["custody_received_at"] = "2026-11-20T21:16:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
@@ -736,8 +736,8 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
     def test_evidence_available_before_source_draw_is_allowed_after_signature(self):
         rows = rows_for_target(
-            available="2026-11-20T20:59:00-06:00",
-            received="2026-11-20T20:59:30-06:00",
+            available="2026-11-20T21:09:00-06:00",
+            received="2026-11-20T21:09:30-06:00",
         )
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         self.assertEqual(
@@ -748,7 +748,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
     def test_source_signature_must_follow_measurement_and_precede_source_draw(self):
         rows = rows_for_target()
         for row in rows:
-            row["source_signed_at"] = "2026-11-20T21:01:00-06:00"
+            row["source_signed_at"] = "2026-11-20T21:11:00-06:00"
         result = evaluate_temporal_eligibility(rows, **VERIFIED)
         reasons = result["targets"]["12301"]["reasons"]
         self.assertIn("SOURCE_SIGNED_AFTER_SOURCE_DRAW", reasons)
