@@ -78,6 +78,24 @@ class TestDetachedEnvelope(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown, revoked"):
             self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
 
+    def test_inverted_key_validity_window_is_rejected(self):
+        store = json.loads(self.store)
+        store["keys"][0]["not_before_utc"] = "2027-01-01T00:00:00Z"
+        store["keys"][0]["not_after_utc"] = "2026-01-01T00:00:00Z"
+        raw = canonical(store)
+        with self.assertRaisesRegex(ValueError, "validity window is inverted"):
+            self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
+
+    def test_malformed_unused_trust_store_key_is_rejected(self):
+        store = json.loads(self.store)
+        unused = dict(store["keys"][0])
+        unused["key_id"] = "unused-authority-02"
+        unused["public_key_b64"] = "not-base64!"
+        store["keys"].append(unused)
+        raw = canonical(store)
+        with self.assertRaisesRegex(ValueError, "invalid public-key base64"):
+            self.verify(store=raw, pin=hashlib.sha256(raw).hexdigest())
+
     def test_key_outside_validity_window_is_rejected(self):
         env = json.loads(self.envelope)
         env["issued_at_utc"] = "2025-12-31T23:59:59Z"
