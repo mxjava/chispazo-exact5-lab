@@ -72,6 +72,12 @@ class PlackettLuceTests(unittest.TestCase):
             mass_log_weights([4.7] * 27 + [float("nan")], 1.0)
         with self.assertRaisesRegex(ValueError, "beta_per_sd"):
             mass_log_weights([4.7 + i / 100 for i in range(28)], float("inf"))
+        with self.assertRaisesRegex(ValueError, "numeric values"):
+            mass_log_weights([4.7] * 27 + [True], 1.0)
+        with self.assertRaisesRegex(ValueError, "beta_per_sd"):
+            mass_log_weights([4.7 + i / 100 for i in range(28)], True)
+        with self.assertRaisesRegex(ValueError, "numeric values"):
+            mass_log_weights([4.7] * 27 + [None], 1.0)
 
     def test_prequential_e_process_crosses_threshold_at_twenty(self):
         result = prequential_e_process([math.log(4), math.log(5)])
