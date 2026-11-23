@@ -1,100 +1,128 @@
 # SGVO-PRO-05 Rev. 39 — ORIGEN evidence matrix
 
-**Observation:** 2026-11-23 08:53:45 America/Mexico_City  
+**Observation:** 2026-11-23 09:56:49 America/Mexico_City  
 **Classification:** official public procedure and status review; not draw-specific physical evidence  
-**Branch:** `research/origen-trust-adapter-spec-20261121`
+**Branch:** research/origen-trust-adapter-spec-20261121
 
-## 1. Current official procedure located
+## 1. Current official procedure
 
-The Lotería Nacional Normateca publishes **SGVO-PRO-05, Procedimiento Sorteos Electrónicos**, in the `SUSTANTIVAS/VIGENTES` path. The PDF identifies:
+The Lotería Nacional Normateca exposes SGVO-PRO-05, Procedimiento Sorteos Electrónicos, under its SUSTANTIVAS/VIGENTES path. The PDF identifies revision 39 and DN-07 Version 09. The cover also retains the original emission field OCTUBRE 2003; this matrix does not infer a separate revision-publication date from the PDF.
 
-- Public internal norm, 38 pages
-- Revision **39**, footer **DN-07 Version 09**
-- Publication date **20-Mar-2026**
-- Issuing area: Subdirección General de Ventas y Operaciones
+Official PDF:
+https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
 
-Source: https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
-
-The official Chispazo product page separately maps **De las Tres to 15:00** and **Clásico to 21:00**:
+The official Chispazo product page maps De las Tres to 15:00 and Clásico to 21:00:
 https://www.loterianacional.gob.mx/Chispazo/Chispazo
 
-SGVO-PRO-05 policy 9 specifies automatic sales closure at 15:00 for De las Tres and 21:00 for nocturnal draws. This aligns the current official schedule with the V2 Clásico close-slot check; it does not make the actual extraction timestamp equal to the sales-close timestamp.
+Policy 9 of SGVO-PRO-05 sets automatic sales close at 15:00 for De las Tres and 21:00 for nocturnal draws. The product page supplies the Chispazo product-name mapping. The close slot is not the actual extraction timestamp.
 
-## 2. Physical controls and exact mass tolerances
+## 2. Physical controls and metrology
 
-SGVO-PRO-05 policy 6 specifies two sphere types:
+Policy 6 specifies:
 
 | Sphere type | Minimum | Maximum | Maximum set spread |
 |---|---:|---:|---:|
 | Smartballs | 4.25 g | 5.25 g | 0.30 g |
 | Ping Pong | 2.30 g | 3.00 g | 0.15 g |
 
-The constants in `src/origen/physical_intake_v2.py` match these values exactly. This confirms the current V2 mass limits against the public revision-39 procedure; it is not proof that any particular draw's spheres were weighed or met those limits.
+The constants in physical_intake_v2.py match these values. This is a policy-to-code comparison, not evidence that a particular draw's spheres were weighed or passed.
 
-## 3. Mandatory Chispazo record bundle
+Policy 25 requires calibration of the scales used to weigh the spheres at least once per year. Policy 24 separately covers preventive/corrective maintenance of draw equipment. The manifest therefore distinguishes a scale calibration certificate from equipment/urn identity records.
 
-The procedure's Acta attachment matrix lists these Chispazo records:
+Activity 5.1 says the spheres are weighed one by one and in numerical order in the presence of the SEGOB inspector and the representatives of the Dirección General and Subdirección General de Ventas y Operaciones.
 
-1. **Sumario de sorteo (cierre de venta)**
-2. **Números Ganadores de los Sorteos CS-11**
-3. **Sumario de sorteo** (post-result)
-4. **Tira de pesaje**
+## 3. Chispazo Acta attachments and exact weighing-strip roles
 
-The Tira de Pesaje is defined as signed by four roles:
-- responsible sphere-weighing person;
-- representative of the Dirección de Operación de Concursos, Juegos y Sorteos;
-- representative of the Dirección General;
-- SEGOB inspector.
+Policy 11's attachment matrix lists these four records for Chispazo:
 
-The Acta must record the place, date and time, names/roles/signatures of Lotería Nacional representatives, and the SEGOB inspector's name, signature and commission number; incidents must also be recorded when present.
+1. SUMARIO DE SORTEO (CIERRE DE VENTA)
+2. NÚMEROS GANADORES DE LOS SORTEOS CS-11
+3. SUMARIO DE SORTEO
+4. TIRA DE PESAJE
 
-The procedure also specifies an electronic signature for participation/cancellation files, generated after automatic sales close, copied to controlled media, checked against the printed signature form, signed by responsible representatives, and deposited by the SEGOB inspector in the security box for Órgano Interno de Control custody.
+The Acta itself must include place, date and event time; names, roles and signatures of the public servants commissioned under policy 2; the SEGOB inspector's name, signature and commission number; and incidents when present.
 
-These are **records to request and verify**, not records shown to have been produced for the 23-Nov draw.
+**Role correction:** the prior matrix mislabeled the SGVO reviewer as the Dirección de Operación de Concursos, Juegos y Sorteos. Activity 5.4 instead says the person responsible for weighing signs the Tira de Pesaje, which is then reviewed/rubricated by:
+- representative of the Subdirección General de Ventas y Operaciones;
+- SEGOB inspector;
+- representative of the Dirección General.
 
-## 4. Modality and result status — 23-Nov-2026
+Together with the weighing-responsible signer, those are the four activity-5.4 roles enforced by the new structural manifest schema. The Acta signer roles are separately derived from policy 2 plus the SEGOB inspector; they are not conflated with the weighing-strip roles.
 
-The official product page states:
-- **De las Tres:** 15:00
-- **Clásico:** 21:00
+## 4. Participation/cancellation files, custody and room access
 
-The opened official home index displays a 23-Nov 15:00 card numbered **12391**, but the card does not print the product name. Its match to De las Tres is therefore a schedule-slot match using the official product page, not an explicit product label on the card. No 23-Nov 21:00 Clásico card or Clásico contest ID is inferred.
+Policy 8 states that the electronic signature of the participation file is recorded to a storage device before the draw, delivered by the IT representative to the designated SEGOB inspector, and deposited in the security box accessible only to the Órgano Interno de Control.
 
-The official results endpoint still publishes:
-- **12390, 22-Nov, Clásico:** 01 06 09 19 23
-- **12389, 22-Nov, De las Tres:** 01 15 17 22 25
+Policy 16's activity note says its validation sequence is performed only for nocturnal draws. This is relevant to the 21:00 Clásico target and must not be generalized to the 15:00 De las Tres workflow without checking the applicable steps.
 
-The official mask index's latest entry is **RESULTADOS 2026-11-22**. The opened 22-Nov PDF labels both modalities. No 23-Nov result or mask was visible in this observation.
+Policy 19 requires people participating in an electronic draw to register in CS-12, the room-attendance form. The ORIGEN manifest includes the CS-12 record as a supporting access-control artifact.
 
-## 5. Contract gap for the future independent adapter
+## 5. Versioned physical-evidence manifest
 
-The current V2 CSV is a per-sphere structural intake and has no dedicated typed slot for each of the four Acta attachments, the participation/cancellation signature media, the inspector commission evidence, or the safe-deposit/OIC custody record.
+The new physical-evidence manifest v1 requires one original-byte entry for each of:
+- the draw Acta;
+- the four Chispazo Acta attachments listed above;
+- participation/cancellation signature media;
+- scale calibration certificate;
+- equipment/urn record;
+- sphere-to-number mapping register;
+- CS-12 room-access register;
+- SEGOB/OIC custody record.
 
-The V1 trust-receipt parser currently accepts a generic artifact array with a minimum of one item; it does not enforce a mandatory Chispazo artifact set. This is **not an authentication bypass today**: the returned type is `UnverifiedTrustReceipt`, and `verify_independent_provenance` remains hard-wired to `BLOCKED_PROVENANCE`. It is a required design gate before any future adapter can issue an authenticated status.
+Only the four attachment names above are stated as Chispazo Acta attachments by policy 11. The remaining entries are ORIGEN supporting-evidence requirements for reconstructing equipment, mapping, access and custody; they are not represented as verbatim SGVO attachment names.
 
-Next safe implementation boundary is a versioned artifact manifest that binds each required artifact type to original bytes, exact byte length and digest, signer/role, time proof, custody record and contest/modality. The manifest must be verified against trust roots provisioned outside the submitted evidence. Do not add caller-controlled booleans, reference sets or keys.
+The schema also requires:
+- exact target contest ID, local draw date and 21:00 Mexico City close;
+- source ID, immutable source-object ID, media type, original-byte SHA-256 and byte length for every artifact;
+- explicit signature claims for the Acta, weighing strip and participation/cancellation signature media;
+- exactly four distinct weighing-strip signers with the activity-5.4 roles;
+- a custody event for every artifact;
+- each custody event's time-proof reference to resolve to the same declared UTC event time;
+- an advancing ledger-head claim.
 
-## 6. Source-byte and provenance limitations
+The parser returns UnverifiedPhysicalEvidenceManifest. It does not open or hash source bytes, validate detached signature bytes, prove signer identities/roles, validate trusted timestamp tokens, verify ledger inclusion, or authenticate custody. A digest, timestamp string, signer label, URL or internally consistent ledger claim remains an untrusted declaration.
 
-The official 22-Nov result mask and SGVO-PRO-05 PDF were opened and text-extracted in the browser. Attempts to capture the original PDF bytes in this working environment were unsuccessful. Their original source SHA-256 values remain **NOT_CAPTURED**; no hash of extracted text or rendered content is substituted.
+The independent adapter remains hard-wired to BLOCKED_PROVENANCE. This manifest cannot issue AUTHENTICATED and is not wired into temporal eligibility.
 
-No draw-specific 23-Nov physical evidence was obtained:
-- signed Acta and CS-11;
-- sales-close and post-result summaries;
-- original Tira de Pesaje with all 28 readings;
-- scale identity and calibration;
-- equipment/urn records;
-- signed participation/cancellation files and proof of secure deposit;
-- independent custody and trusted-time/ledger proof;
-- two independent pre-close Exact5 seals.
+## 6. Official status — 23-Nov-2026, 09:56 local
 
-## 7. ORIGEN disposition
+Official pages checked:
+- Results: https://www.loterianacional.gob.mx/Chispazo/Resultados
+- Product schedule: https://www.loterianacional.gob.mx/Chispazo/Chispazo
+- Home index: https://www.loterianacional.gob.mx/home/index
+- Mask index: https://www.loterianacional.gob.mx/Mascarillas/Mascarillas
 
-- Keep the 15:00 draw separate from the 21:00 Clásico target.
+The results endpoint still shows:
+- 12390, 22-Nov, Clásico: 01 06 09 19 23
+- 12389, 22-Nov, De las Tres: 01 15 17 22 25
+
+The home index shows a 23-Nov 15:00 card numbered 12391, but the card rendering does not explicitly print the product name. Its association with De las Tres is a schedule-slot match only. No 23-Nov 21:00 Clásico card or Clásico contest ID is inferred.
+
+The mask index's latest visible entry remains RESULTADOS 2026-11-22. No 23-Nov result or mask was visible at observation time.
+
+## 7. Source-byte and physical-evidence limitations
+
+The official SGVO-PRO-05 PDF was opened and text-extracted in the browser. The original PDF bytes could not be downloaded into this run's working environment; the attempted download failed. Its original SHA-256 therefore remains NOT_CAPTURED. No hash of extracted text or rendered PDF content is substituted.
+
+No draw-specific primary physical records for 23-Nov were obtained:
+- signed draw Acta and CS-11;
+- sales-close and post-draw summaries;
+- original weighing strip with 28 readings and four activity-5.4 roles;
+- scale identity and valid calibration certificate;
+- equipment/urn and sphere-to-number mapping records;
+- CS-12 room-access record;
+- participation/cancellation signature media;
+- SEGOB/OIC security-box deposit and independent custody record;
+- trusted timestamp and external ledger inclusion proofs;
+- two independent pre-close Exact5 output seals.
+
+## 8. ORIGEN disposition
+
+- Keep the 15:00 De las Tres slot separate from the 21:00 Clásico target.
 - Do not infer a 23-Nov Clásico contest ID from the 12391 card.
-- Keep V294 frozen and the canonical history untouched.
-- No prospective score or OOS eligibility is added.
-- Production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+- Keep V294 frozen and the canonical history byte-for-byte untouched.
+- Do not grant snapshot, prospective OOS or score eligibility from this public status review.
+- Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
 
 ## Official sources
 
@@ -102,5 +130,4 @@ No draw-specific 23-Nov physical evidence was obtained:
 - https://www.loterianacional.gob.mx/Chispazo/Resultados
 - https://www.loterianacional.gob.mx/Chispazo/Chispazo
 - https://www.loterianacional.gob.mx/Mascarillas/Mascarillas
-- https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221841
 - https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
