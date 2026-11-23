@@ -128,6 +128,19 @@ def verify_detached_ed25519_envelope(
             raise ValueError("trust store roles contain duplicates")
         if type(row["revoked"]) is not bool:
             raise ValueError("trust store revoked must be boolean")
+        not_before = _utc(row["not_before_utc"], f"trust store key {kid} not_before_utc")
+        not_after = _utc(row["not_after_utc"], f"trust store key {kid} not_after_utc")
+        if not_before > not_after:
+            raise ValueError("trust store key validity window is inverted")
+        try:
+            public_key = base64.b64decode(row["public_key_b64"], validate=True)
+        except (ValueError, TypeError) as exc:
+            raise ValueError("trust store contains invalid public-key base64") from exc
+        if (
+            len(public_key) != 32
+            or base64.b64encode(public_key).decode("ascii") != row["public_key_b64"]
+        ):
+            raise ValueError("trust store public key must be canonical 32-byte Ed25519 base64")
         key_map[kid] = row
 
     env = _canonical_object(envelope_bytes, "signed envelope")
