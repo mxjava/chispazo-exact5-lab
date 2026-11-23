@@ -223,6 +223,15 @@ class TestTrustReceiptV1(unittest.TestCase):
         ):
             parse_unverified_receipt(encode(document))
 
+    def test_receipt_issuer_cannot_also_be_a_generator(self):
+        document = valid_document()
+        document["receipt_attestation"]["issuer_id"] = document["output_seals"][0]["generator_id"]
+        with self.assertRaisesRegex(
+            ValueError,
+            "issuer must be separate from signers, custodians, and generators",
+        ):
+            parse_unverified_receipt(encode(document))
+
     def test_receipt_issuer_cannot_also_be_a_custodian(self):
         document = valid_document()
         document["receipt_attestation"]["issuer_id"] = document["custodians"][0]["subject_id"]
