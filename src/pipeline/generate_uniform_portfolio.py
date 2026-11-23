@@ -2,13 +2,15 @@
 
 This is a coverage/control mode, not a predictive model. It deliberately does
 not read or modify the canonical history, V294, rankings, or prospective ledger.
+The rank sampler is versioned and uses SHA-256 counter expansion plus rejection
+sampling, so a seed maps to the same ordered portfolio across Python versions.
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import math
-import random
 import sys
 from pathlib import Path
 from typing import Iterable
@@ -16,6 +18,38 @@ from typing import Iterable
 N = 28
 R = 5
 UNIVERSE = math.comb(N, R)
+_SAMPLER_DOMAIN = b"Exact5UniformPortfolio/v1\0"
+
+
+class _DeterministicRankSampler:
+    """Versioned deterministic stream with unbiased bounded-integer sampling."""
+
+    def __init__(self, seed: int) -> None:
+        if isinstance(seed, bool) or not isinstance(seed, int):
+            raise TypeError("seed must be an integer")
+        self._seed = str(seed).encode("ascii")
+        self._counter = 0
+
+    def randbelow(self, upper: int) -> int:
+        if isinstance(upper, bool) or not isinstance(upper, int):
+            raise TypeError("upper must be an integer")
+        if upper <= 0:
+            raise ValueError("upper must be positive")
+        bits = upper.bit_length()
+        byte_count = (bits + 7) // 8
+        mask = (1 << bits) - 1
+        while True:
+            message = (
+                _SAMPLER_DOMAIN
+                + len(self._seed).to_bytes(4, "big")
+                + self._seed
+                + self._counter.to_bytes(16, "big")
+            )
+            self._counter += 1
+            block = hashlib.sha256(message).digest()
+            candidate = int.from_bytes(block[:byte_count], "big") & mask
+            if candidate < upper:
+                return candidate
 
 
 def unrank_combination(index: int, n: int = N, r: int = R) -> tuple[int, ...]:
@@ -42,15 +76,25 @@ def unrank_combination(index: int, n: int = N, r: int = R) -> tuple[int, ...]:
 
 
 def generate_uniform_portfolio(seed: int, lines: int = 30) -> list[tuple[int, ...]]:
-    """Sample distinct exact sets uniformly without replacement."""
+    """Sample distinct exact sets uniformly without replacement.
+
+    Floyd's algorithm chooses an ordered uniform sample of distinct ranks.
+    Each bounded draw uses rejection sampling, avoiding modulo bias.
+    """
     if isinstance(seed, bool) or not isinstance(seed, int):
         raise TypeError("seed must be an integer")
     if isinstance(lines, bool) or not isinstance(lines, int):
         raise TypeError("lines must be an integer")
     if not 1 <= lines <= UNIVERSE:
         raise ValueError(f"lines must be between 1 and {UNIVERSE}")
-    rng = random.Random(seed)
-    ranks = rng.sample(range(UNIVERSE), k=lines)
+    sampler = _DeterministicRankSampler(seed)
+    selected: set[int] = set()
+    ranks: list[int] = []
+    for upper in range(UNIVERSE - lines + 1, UNIVERSE + 1):
+        candidate = sampler.randbelow(upper)
+        rank = upper - 1 if candidate in selected else candidate
+        selected.add(rank)
+        ranks.append(rank)
     return [unrank_combination(rank) for rank in ranks]
 
 
