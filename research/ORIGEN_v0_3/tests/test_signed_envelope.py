@@ -35,7 +35,7 @@ class TestDetachedEnvelope(unittest.TestCase):
         })
         self.pin = hashlib.sha256(self.store).hexdigest()
         self.payload = b'{"artifact_sha256":"' + b"a" * 64 + b'"}'
-        signed_input = b"ORIGEN-DETACHED-ED25519-ENVELOPE-V1\\x00" + canonical({
+        signed_input = b"ORIGEN-DETACHED-ED25519-ENVELOPE-V1\x00" + canonical({
             "domain": "ORIGEN-DETACHED-ED25519-ENVELOPE-V1",
             "issued_at_utc": "2026-11-23T14:00:00Z",
             "key_id": "test-authority-01",
