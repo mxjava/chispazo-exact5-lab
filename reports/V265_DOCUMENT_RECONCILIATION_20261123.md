@@ -66,3 +66,13 @@ No se modificó el algoritmo V265. Su contrato actual sigue sin consumir los 28 
 6. [Reglamento Chispazo](https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf)
 7. [Reglamento de Sorteos Tradicionales 2026, SIDOF/SEGOB](https://sidof.segob.gob.mx/notas/docFuente/5777789)
 8. [Informe de Gestión Gubernamental 2018–2024, p. 43](https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf)
+
+
+## Detalle adicional de trazabilidad encontrado en SGM-PRO-06 rev.22 (aplicabilidad no confirmada)
+
+- **CS-02:** el anexo 1 especifica para el compresor un rango de 27–30 psi; revisa consola, alimentador RELEASE, turbina BLOWER, trampas SELECT/ALL, cápsula, puerta, exhibidor, báscula, rollo, impresora y batería. Se registra número de sorteo, hora de revisión y firmas; las anomalías se anotan y el equipo/báscula se sustituye. Este umbral de 27–30 psi pertenece a la copia pública no indexada de 2017, no se adopta como estándar vigente sin confirmación.
+- **Archivo de la Tira:** SGM-PRO-06 indica que la Tira se integra al expediente junto con CS-11, se conserva bimestralmente en la sala de sorteos y después pasa a la Subdirección de Concursos y Sorteos. Es una ruta concreta para pedir los registros históricos, pero su vigencia archivística debe confirmarse.
+- **Video máster:** SGM-PRO-06 describe grabación sin edición desde el pesaje hasta el sorteo, verificada y resguardada por la Subdirección. SGVO-PRO-05 rev.39 también exige grabación desde pesaje hasta sorteo; sólo la versión editada (el sorteo) se adjunta al Acta. Por tanto, la solicitud debe pedir expresamente el archivo continuo original y sus metadatos, no sólo el DVD/USB editado del Acta.
+- **CS-09:** la copia SGM-PRO-06 sitúa el registro de sucesos después de concluir el sorteo y su firma al cierre del mes. No debe usarse como variable pre-cierre sin timestamp individual anterior al cierre.
+
+El anexo 1 de CS-02 y el anexo 3 de Tira son descripciones de SGM-PRO-06 rev.22, cuyo estatus actual no está confirmado; no se convierten en umbrales operativos vigentes por estar en una ruta llamada VIGENTES.
