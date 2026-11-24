@@ -16,6 +16,7 @@ It is **not** an autonomous truth engine, a lottery predictor, or a model-promot
 - Empirical adversarial-null benchmarking with finite-simulation +1 correction.
 - Search diversity diagnostics based on lenses, representations and observable Jaccard overlap.
 - SHA-256 file manifests and tamper verification.
+- Detached Ed25519 envelope verification against a deployment-pinned trust-store digest, with role, validity-window and revocation checks. This primitive is not wired to the provenance boundary and does not establish institutional identity or external custody.
 - Pre-close custody record verification and ordered hash-chain audit (without pretending to provide signatures or trusted timestamps).
 - V316 identity-resolved persistence omnibus across 8,140 preregistered statistics, with packed-bit pair counting and reference-oracle tests.
 - MetaObserver search-path audit: checks timestamp ordering, protocol-before-outcome access and flags post-outcome adaptation.
@@ -23,7 +24,11 @@ It is **not** an autonomous truth engine, a lottery predictor, or a model-promot
 
 ## Installation / execution
 
-Python 3.10+, standard library only.
+Python 3.10+. Install the declared project dependencies (including `cryptography`) before running ORIGEN:
+
+```powershell
+python -m pip install -e .
+```
 
 ```powershell
 $env:PYTHONPATH = '.\src'
@@ -84,7 +89,7 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 ## Known limitations
 
 - No automatic access to official data or the user's GitHub repository.
-- No cryptographic signing, trusted timestamping, or external independent custody.
+- No RFC 3161/CMS timestamp-token verification, TSA certificate-chain/revocation validation, cryptographic signing service, or external independent custody. The detached Ed25519 verifier checks signatures against a supplied trust-store pin and verification clock; production trust requires both to be provisioned outside the evidence package by a controlled deployment.
 - No guarantee that supplied p-values represent the complete search family; the protocol and search ledger must be independently audited.
 - The exact sign test checks direction consistency, not model calibration or stationarity.
 - Adversarial-null quality depends on the null generators and full discovery pipeline supplied by the research team.
