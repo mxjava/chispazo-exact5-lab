@@ -1,0 +1,24 @@
+variable,primary_document,known_relative_to_final_sales_close,prospective_same_draw,limitation_or_required_proof,status
+equipment_condition,CS-02 / SGVO-PRO-05 rev39,before each draw,conditional,"signed CS-02 plus machine and scale IDs plus trusted timestamp before final close",NO_CONTEST_RECORD_OBTAINED
+machine_identity,asset inventory / RFID report,not specified per draw,conditional,"asset tag/serial and per-contest assignment available before close",NO_PER_DRAW_ASSIGNMENT
+initial_case,SGVO-PRO-05 activity 3.1,before close,conditional,"initial case is confirmed before close but a failed weighing can trigger a replacement after close; need final-case history",NO_CHANGE_HISTORY
+final_case,CS-11 / Tira,recorded after draw,NO,"CS-11 reports selected case retrospectively; no timestamp for final selection in public form",NO_ORIGINAL_CS11
+SICAL_close,Sumario de Sorteo,after automatic close and before winner entry,NO,"contains close date/time, contest, gross sales, cancellations and net sales",NO_CONTEST_SUMARIO
+sphere_weights_01_to_28,Tira de Pesaje / SGVO-PRO-05,after SICAL closed-state verification,NO,"current procedure defines per-sphere weight but public schema lacks start/end timestamp and per-sphere IDs",NO_AUTHENTIC_TIRA
+weight_limits,SGVO-PRO-05 Policy 6,known as normative limits,NOT_A_DRAW_FEATURE,"Ping Pong 2.30-3.00 g spread <=0.15 g; Smartballs 4.25-5.25 g spread <=0.30 g; Chispazo machine/type mapping absent",NO_MACHINE_TYPE_MAP
+legacy_weight_timestamps,SGM-PRO-06 rev22 unindexed copy,legacy text prefers Chispazo weigh before 21:15,NOT_CURRENT_AUTHORITY,"old Tira instructions print start and end time and aggregate count/mean/min/max/spread; not in current Normateca list",LEGACY_SCHEMA_ONLY
+scale_calibration,annual calibration calendar/certificate,may predate close,conditional,"certificate, scale serial, validity period and availability timestamp",NO_CERTIFICATE
+maintenance,annual maintenance calendar/work orders,may predate close,conditional,"machine serial, work performed, completion timestamp and pre-close availability",NO_WORK_ORDER
+machine_RFID,2018-2024 management report / reader logs,system presence reported; per-draw time unknown,NO,"no individual tag IDs, reader logs or draw assignment published",NO_TAG_LOGS
+sphere_RFID,2018-2024 management report / reader logs,system presence reported; per-draw time unknown,NO,"no RFID-to-sphere-number map or per-sphere tag IDs published",NO_SPHERE_MAP
+case_RFID,no official case tag record found,unknown,NO,"do not infer that a case has its own RFID from the number printed in CS-11",NO_EVIDENCE
+CS11,Números Ganadores de los Sorteos CS-11,after extraction,NO,"CS-11 is a form attached to the Acta, not the Acta; records draw time, selected case, results and signatures",NO_ORIGINAL_CS11
+Acta,Acta de Sorteo,after ceremony,NO,"official result record; includes results and incidents; signed by LN representatives and SEGOB inspector",NO_ORIGINAL_ACTA
+extraction_order,continuous video master,during draw after close,NO,"weighing order is numeric and is not extraction order; CS-11 does not expose extraction sequence",NO_MASTER_VIDEO
+per_extraction_timestamp,continuous video master/timecode,during draw after close,NO,"no individual extraction timestamps in public CS-11 schema",NO_MASTER_VIDEO_METADATA
+video_master,SGVO-PRO-05 policy 30,from weighing through draw,NO,"only edited draw-only recording is attached to Acta; request continuous master and original metadata",NO_MASTER_VIDEO
+CS09,Bitácora de Concursos y Sorteos CS-09,after draw when qualifying incident is in Acta,NO,"retrospective event log; no contest-level logs obtained",NO_CS09
+CS18,Comunicación de Riesgo CS-18,timestamp unspecified,conditional,"only if the specific entry is authenticated as available before final close",NO_CS18
+CS12,Registro de asistencia CS-12,during event,NO,"attendance is not a pre-close physical state",NO_CS12
+participation_file_signature,participation/cancellation file plus electronic signature,after close and before ceremony,NO,"integrity control for sales file; not a physical sphere variable",NO_SIGNED_FILE
+public_result_page,official Chispazo results page,after draw,NO,"Regulation article 8 says website/mascarilla results are informative; Acta is official",PUBLIC_RESULTS_ONLY
