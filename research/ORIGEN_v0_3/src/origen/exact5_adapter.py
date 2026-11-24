@@ -8,6 +8,22 @@ from .manifest import sha256_file
 
 CANONICAL_SHA256="5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a"
 NUMBER_COLUMNS=("R1","R2","R3","R4","R5")
+REQUIRED_COLUMNS={"CONCURSO",*NUMBER_COLUMNS}
+
+
+def _validate_history_header(fieldnames):
+    """Reject ambiguous CSV headers before DictReader can overwrite columns."""
+    if not fieldnames:
+        raise ValueError("history_missing_required_columns")
+    if any(name is None or not name.strip() for name in fieldnames):
+        raise ValueError("history_invalid_blank_header")
+    if any(name != name.strip() for name in fieldnames):
+        raise ValueError("history_whitespace_padded_header")
+    if len(fieldnames) != len(set(fieldnames)):
+        raise ValueError("history_duplicate_header")
+    if not REQUIRED_COLUMNS.issubset(set(fieldnames)):
+        raise ValueError("history_missing_required_columns")
+
 
 def load_and_audit_history(path,expected_sha256=CANONICAL_SHA256):
     p=Path(path)
@@ -17,8 +33,10 @@ def load_and_audit_history(path,expected_sha256=CANONICAL_SHA256):
     rows=[]
     with p.open("r",encoding="utf-8-sig",newline="") as f:
         reader=csv.DictReader(f)
-        if not reader.fieldnames or not {"CONCURSO",*NUMBER_COLUMNS}.issubset(set(reader.fieldnames)): raise ValueError("history_missing_required_columns")
+        _validate_history_header(reader.fieldnames)
         for line,row in enumerate(reader,2):
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError(f"malformed_csv_row_line_{line}")
             try: contest=int(row["CONCURSO"]); nums=[int(row[c]) for c in NUMBER_COLUMNS]
             except Exception as exc: raise ValueError(f"invalid_numeric_value_line_{line}") from exc
             if contest<=0 or len(set(nums))!=5 or any(n<1 or n>28 for n in nums): raise ValueError(f"invalid_draw_line_{line}")

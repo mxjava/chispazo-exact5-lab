@@ -217,12 +217,26 @@ def validate_physical_csv(path: str | Path) -> dict[str, Any]:
     """Read a UTF-8 CSV and validate its rows without modifying the source."""
     with Path(path).open("r", encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
-        if reader.fieldnames is None:
+        headers = reader.fieldnames
+        if headers is None:
             raise ValueError("CSV has no header")
-        missing = sorted(set(REQUIRED_COLUMNS) - set(reader.fieldnames))
+        if any(name is None or not name.strip() for name in headers):
+            raise ValueError("CSV headers must be non-empty canonical strings")
+        if any(name != name.strip() for name in headers):
+            raise ValueError("CSV headers must not contain leading or trailing whitespace")
+        if len(headers) != len(set(headers)):
+            raise ValueError("CSV headers must be unique; duplicate column names are ambiguous")
+        missing = sorted(set(REQUIRED_COLUMNS) - set(headers))
         if missing:
             raise ValueError("missing required columns: " + ", ".join(missing))
-        return validate_physical_rows(reader)
+
+        def strict_rows():
+            for line, row in enumerate(reader, start=2):
+                if None in row or any(value is None for value in row.values()):
+                    raise ValueError(f"CSV row {line} has more or fewer fields than its header")
+                yield row
+
+        return validate_physical_rows(strict_rows())
 
 
 def file_sha256(path: str | Path) -> str:
