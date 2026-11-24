@@ -749,6 +749,28 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "BLOCKED_CONTINUITY",
         )
 
+    def test_shared_source_and_provenance_events_require_consistent_timestamps(self):
+        cases = (
+            ("source_draw_at", "2026-11-20T21:11:00-06:00", "SOURCE_DRAW_EVENT_TIME_CONFLICT"),
+            ("source_signed_at", "2026-11-20T21:09:00-06:00", "SOURCE_SIGNATURE_TIME_CONFLICT"),
+            ("evidence_available_at", "2026-11-20T21:14:00-06:00", "EVIDENCE_AVAILABILITY_TIME_CONFLICT"),
+            ("custody_received_at", "2026-11-20T21:17:00-06:00", "CUSTODY_RECEIPT_TIME_CONFLICT"),
+        )
+        for field, changed_time, expected_reason in cases:
+            with self.subTest(field=field):
+                rows = rows_for_target()
+                # All 28 rows claim the same source document, signature, custody
+                # receipt, and timestamp reference. A single-row event-time fork
+                # must not be classified as a coherent 28-sphere evidence set.
+                rows[0][field] = changed_time
+                result = evaluate_temporal_eligibility(rows, **VERIFIED)
+                target = result["targets"]["12301"]
+                self.assertIn(expected_reason, target["reasons"])
+                self.assertEqual(
+                    target["predictive_eligibility"],
+                    "BLOCKED_CONTINUITY",
+                )
+
     def test_source_draw_cannot_precede_source_close(self):
         rows = rows_for_target()
         for row in rows:
