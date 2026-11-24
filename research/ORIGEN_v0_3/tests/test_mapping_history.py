@@ -119,6 +119,17 @@ class MappingHistoryTests(unittest.TestCase):
         report = audit_mapping_history(data)
         self.assertNotIn("Q_REMAP", report["quarantined"].get("1001", []))
 
+    def test_unknown_rfc3339_offset_is_rejected_for_every_mapping_event(self):
+        for field in (
+            "mapping_valid_from", "mapping_valid_to", "set_assigned_at", "draw_at",
+        ):
+            with self.subTest(field=field):
+                data = rows()
+                data[0][field] = "2026-01-01T00:00:00-00:00"
+                report = audit_mapping_history(data)
+                self.assertIn("Q_REMAP", report["quarantined"]["1001"])
+                self.assertEqual(report["status"], "MAPPING_CONFLICTS")
+
     def test_mapping_timestamp_string_subclass_is_rejected(self):
         class SpoofedTimestamp(str):
             def replace(self, old, new, *args):
