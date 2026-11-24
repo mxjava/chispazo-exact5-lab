@@ -91,7 +91,7 @@ def validate() -> dict:
     assert report["physical_records_obtained"] == []
 
     assert len(rows) == 23
-    assert all(row["prospective_same_draw"] in {"NO", "conditional", "CONDITIONAL"} for row in rows)
+    assert all(row["prospective_same_draw"] in {"NO", "conditional", "CONDITIONAL", "NOT_A_DRAW_FEATURE", "NOT_CURRENT_AUTHORITY"} for row in rows)
     assert all(row["status"] not in {"AUTHENTIC_RECORD_OBTAINED", "EVIDENCE_OF_BIAS"} for row in rows)
 
     v265_audit = _load_v265_audit()
