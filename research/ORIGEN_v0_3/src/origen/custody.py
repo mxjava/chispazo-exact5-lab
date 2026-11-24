@@ -84,7 +84,7 @@ def _require_classic_close_slot(closes: datetime) -> None:
 def validate_portfolio(portfolio: bytes, expected_lines: int = CLASSIC_PORTFOLIO_LINES) -> list[str]:
     if expected_lines != CLASSIC_PORTFOLIO_LINES:
         raise ValueError(f"Classic custody portfolios must contain exactly {CLASSIC_PORTFOLIO_LINES} lines")
-    if not isinstance(portfolio, bytes):
+    if type(portfolio) is not bytes:
         raise TypeError("portfolio must be supplied as exact bytes")
     if not isinstance(expected_lines, int) or isinstance(expected_lines, bool) or expected_lines <= 0:
         raise ValueError("expected_lines must be a positive integer")

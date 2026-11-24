@@ -62,6 +62,26 @@ class CustodyTests(unittest.TestCase):
         record, raw = self.make_record()
         self.assertEqual(verify_seal_record(record, raw), (True, "seal verified; external identity, timestamp, and custody assertions remain unverified"))
 
+    def test_bytes_subclass_cannot_spoof_portfolio_structure(self):
+        valid = portfolio_bytes()
+
+        class SpoofedPortfolio(bytes):
+            def endswith(self, suffix, *args, **kwargs):
+                return True
+
+            def decode(self, *args, **kwargs):
+                return valid.decode(*args, **kwargs)
+
+        forged = SpoofedPortfolio(b"not-a-canonical-portfolio")
+        with self.assertRaisesRegex(TypeError, "exact bytes"):
+            self.make_record(portfolio=forged)
+
+        record, raw = self.make_record()
+        spoofed_valid = SpoofedPortfolio(raw)
+        ok, reason = verify_seal_record(record, spoofed_valid)
+        self.assertFalse(ok)
+        self.assertIn("exact bytes", reason)
+
     def test_tampered_portfolio_rejected(self):
         record, raw = self.make_record()
         changed = raw.replace(b"\n", b"\n", 1) + b" "
