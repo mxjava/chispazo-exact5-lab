@@ -40,7 +40,7 @@ def test_post_baseline_continuity_fails_closed_on_gaps():
     script = Path(__file__).parents[1] / "scripts" / "audit_official_chispazo_csv.py"
     check = _load_pure_function(script, "post_baseline_ids_are_contiguous")
     assert check([12250, 12252, 12253]) is False
-    assert check([]) is True
+    assert check([]) is False
 
 
 def test_daily_pair_structure_accepts_two_consecutive_odd_even_ids():
@@ -100,3 +100,32 @@ def test_daily_pair_structure_does_not_project_rule_before_transition():
     )
     assert result["observed_dates"] == 1
     assert result["anomaly_count"] == 0
+
+
+def test_schema_mapping_requires_unique_required_columns():
+    script = Path(__file__).parents[1] / "scripts" / "audit_official_chispazo_csv.py"
+    resolve = _load_pure_function(script, "resolve_column_mapping")
+    aliases = {
+        "draw_id": {"concurso"},
+        "date": {"fecha"},
+        "n1": {"r1"}, "n2": {"r2"}, "n3": {"r3"},
+        "n4": {"r4"}, "n5": {"r5"},
+    }
+    mapping, missing = resolve(["CONCURSO", "FECHA", "R1", "R2", "R3", "R4", "R5"], aliases)
+    assert missing == []
+    assert mapping == {"draw_id": 0, "date": 1, "n1": 2, "n2": 3, "n3": 4, "n4": 5, "n5": 6}
+
+
+def test_schema_mapping_rejects_ambiguous_and_missing_required_columns():
+    script = Path(__file__).parents[1] / "scripts" / "audit_official_chispazo_csv.py"
+    resolve = _load_pure_function(script, "resolve_column_mapping")
+    aliases = {
+        "draw_id": {"concurso"}, "date": {"fecha"},
+        "n1": {"r1"}, "n2": {"r2"}, "n3": {"r3"},
+        "n4": {"r4"}, "n5": {"r5"},
+    }
+    mapping, missing = resolve(["CONCURSO", "FECHA", "R1", "R1", "R3", "R4", "R5"], aliases)
+    assert "n1" in missing
+    assert "n2" in missing
+    assert "n1" not in mapping
+    assert "n2" not in mapping
