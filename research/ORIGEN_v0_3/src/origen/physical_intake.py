@@ -24,6 +24,11 @@ MASS_LIMITS = {
     "ping-pong": (2.30, 3.00, 0.15),
 }
 DRAW_TIMEZONE = ZoneInfo("America/Mexico_City")
+MAX_PHYSICAL_INTAKE_ROWS = 28_000
+OFFICIAL_SALES_CLOSE_SLOTS = {
+    "TRES": (15, 0, 0, 0),
+    "CLASSIC": (21, 0, 0, 0),
+}
 REQUIRED_COLUMNS = (
     "contest_id", "draw_date", "modality", "draw_close_at",
     "sphere_set_id", "set_assigned_at", "sphere_type", "machine_id",
@@ -40,7 +45,7 @@ QUARANTINE_CODES = {
 
 
 def _timestamp(value: str, field: str) -> datetime:
-    if not isinstance(value, str) or not value.strip():
+    if type(value) is not str or not value.strip():
         raise ValueError(f"{field}: missing timestamp")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -52,6 +57,8 @@ def _timestamp(value: str, field: str) -> datetime:
 
 
 def _positive_float(value: str, field: str) -> float:
+    if type(value) is not str:
+        raise ValueError(f"{field}: must be exact text")
     try:
         number = float(value)
     except (TypeError, ValueError) as exc:
@@ -62,7 +69,7 @@ def _positive_float(value: str, field: str) -> float:
 
 
 def _positive_int(value: str, field: str) -> int:
-    if not isinstance(value, str) or not value.isdecimal():
+    if type(value) is not str or not value.isdecimal():
         raise ValueError(f"{field}: must be a positive integer")
     number = int(value)
     if number <= 0:
@@ -70,34 +77,70 @@ def _positive_int(value: str, field: str) -> int:
     return number
 
 
+def _official_sales_close_slot(modality: str, close_at: datetime) -> bool:
+    """Require the modality's official Mexico City sales-close slot."""
+    expected = OFFICIAL_SALES_CLOSE_SLOTS.get(modality)
+    if expected is None:
+        return False
+    local = close_at.astimezone(DRAW_TIMEZONE)
+    return (local.hour, local.minute, local.second, local.microsecond) == expected
+
+
 def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
-    """Validate long-form rows; return per-contest quarantine labels and metrics."""
-    materialized = list(rows)
+    """Validate source-draw records; target pre-close eligibility is handled by V2."""
+    materialized = []
+    for row_number, row in enumerate(rows, start=1):
+        if row_number > MAX_PHYSICAL_INTAKE_ROWS:
+            raise ValueError(
+                f"physical intake exceeds maximum {MAX_PHYSICAL_INTAKE_ROWS} rows"
+            )
+        # Snapshot exact built-in dictionaries as they are yielded; a generator
+        # may mutate a previously yielded row before list materialization ends.
+        materialized.append(row.copy() if type(row) is dict else row)
     if not materialized:
         return {"status": "EMPTY", "contest_count": 0, "usable_contests": [],
                 "quarantined": {}, "row_count": 0}
 
-    missing = sorted(set(REQUIRED_COLUMNS) - set(materialized[0].keys()))
+    if type(materialized[0]) is not dict or any(
+        type(key) is not str for key in materialized[0]
+    ):
+        raise ValueError("rows must be exact built-in dict objects with built-in string keys")
+    missing = sorted(set(REQUIRED_COLUMNS) - set(materialized[0]))
     if missing:
         raise ValueError("missing required columns: " + ", ".join(missing))
+    unexpected = sorted(set(materialized[0]) - set(REQUIRED_COLUMNS))
+    if unexpected:
+        raise ValueError("unexpected columns: " + ", ".join(unexpected))
 
     grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    mapping_rows: list[dict[str, Any]] = []
     row_errors: dict[int, set[str]] = defaultdict(set)
     masses_by_contest: dict[int, list[float]] = defaultdict(list)
     for index, raw in enumerate(materialized, start=2):
+        if type(raw) is not dict or any(type(key) is not str for key in raw):
+            row_errors[-index].add("Q_CONTEST_LINK")
+            continue
+        if set(raw) != set(REQUIRED_COLUMNS):
+            row_errors[-index].add("Q_CONTEST_LINK")
+            continue
+        if any(type(value) is not str for value in raw.values()):
+            row_errors[-index].add("Q_SOURCE_UNVERIFIED")
+            continue
         try:
-            contest = _positive_int(str(raw.get("contest_id", "")), "contest_id")
+            contest = _positive_int(raw.get("contest_id", ""), "contest_id")
         except ValueError:
             row_errors[-index].add("Q_CONTEST_LINK")
             continue
-        row = dict(raw)
+        row = raw
+        mapping_rows.append(row)
         grouped[contest].append(row)
         try:
-            if row["modality"] not in {"CLASSIC", "TRES"}:
+            modality = row["modality"]
+            if modality not in {"CLASSIC", "TRES"}:
                 raise ValueError("unknown modality")
             if not str(row["draw_date"]).strip() or not str(row["source_document_ref"]).strip():
                 row_errors[contest].add("Q_CONTEST_LINK")
-            draw_date = str(row["draw_date"])
+            draw_date = row["draw_date"]
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", draw_date):
                 row_errors[contest].add("Q_CONTEST_LINK")
             else:
@@ -108,18 +151,26 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             for field in ("source_document_sha256", "calibration_certificate_sha256"):
                 if not HEX64.fullmatch(str(row[field])):
                     row_errors[contest].add("Q_SOURCE_UNVERIFIED" if field == "source_document_sha256" else "Q_METROLOGY")
-            close = _timestamp(str(row["draw_close_at"]), "draw_close_at")
+            close = _timestamp(row["draw_close_at"], "draw_close_at")
+            if not _official_sales_close_slot(modality, close):
+                row_errors[contest].add("Q_TIME")
             if re.fullmatch(r"\d{4}-\d{2}-\d{2}", draw_date):
                 if close.astimezone(DRAW_TIMEZONE).date().isoformat() != draw_date:
                     row_errors[contest].add("Q_CONTEST_LINK")
-            assigned = _timestamp(str(row["set_assigned_at"]), "set_assigned_at")
-            measured = _timestamp(str(row["measurement_at"]), "measurement_at")
-            mapped = _timestamp(str(row["mapping_valid_from"]), "mapping_valid_from")
-            mapped_to = _timestamp(str(row["mapping_valid_to"]), "mapping_valid_to")
-            draw_at = _timestamp(str(row["draw_at"]), "draw_at")
-            cal_from = _timestamp(str(row["calibration_valid_from"]), "calibration_valid_from")
-            cal_to = _timestamp(str(row["calibration_valid_to"]), "calibration_valid_to")
-            if not (assigned < close and measured < close and mapped < close and close < draw_at):
+            assigned = _timestamp(row["set_assigned_at"], "set_assigned_at")
+            measured = _timestamp(row["measurement_at"], "measurement_at")
+            mapped = _timestamp(row["mapping_valid_from"], "mapping_valid_from")
+            mapped_to = _timestamp(row["mapping_valid_to"], "mapping_valid_to")
+            draw_at = _timestamp(row["draw_at"], "draw_at")
+            cal_from = _timestamp(row["calibration_valid_from"], "calibration_valid_from")
+            cal_to = _timestamp(row["calibration_valid_to"], "calibration_valid_to")
+            # SGVO-PRO-05 Rev. 39 closes sales before the weighing activity.
+            # This V1 validator checks the source draw's event chronology only;
+            # it cannot certify pre-close availability for a later target.
+            if not (
+                assigned < close and mapped < close and close < draw_at
+                and close <= measured <= draw_at
+            ):
                 row_errors[contest].add("Q_TIME")
             if not (mapped <= assigned <= mapped_to and mapped <= draw_at <= mapped_to):
                 row_errors[contest].add("Q_REMAP")
@@ -134,10 +185,10 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             sphere_type = str(row["sphere_type"]).strip().casefold()
             if sphere_type not in MASS_LIMITS:
                 row_errors[contest].add("Q_METROLOGY")
-            mass = _positive_float(str(row["mass_value"]), "mass_value")
+            mass = _positive_float(row["mass_value"], "mass_value")
             masses_by_contest[contest].append(mass)
-            _positive_float(str(row["measurement_resolution"]), "measurement_resolution")
-            number = _positive_int(str(row["printed_number"]), "printed_number")
+            _positive_float(row["measurement_resolution"], "measurement_resolution")
+            number = _positive_int(row["printed_number"], "printed_number")
             if number > 28:
                 row_errors[contest].add("Q_MAPPING")
         except (ValueError, TypeError, KeyError):
@@ -193,7 +244,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         if key < 0:
             quarantined[f"row:{-key}"] = sorted(labels)
 
-    mapping_report = audit_mapping_history(materialized)
+    mapping_report = audit_mapping_history(mapping_rows)
     for contest_key, codes in mapping_report["quarantined"].items():
         quarantined[contest_key] = sorted(set(quarantined.get(contest_key, [])) | set(codes))
         try:
@@ -209,7 +260,14 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "mapping_history_conflicts": mapping_report["overlapping_conflicts"],
         "usable_contests": usable,
         "quarantined": quarantined,
-        "scope_warning": "Structural validation only; source authenticity, clock trust, signatures and predictive value are not established.",
+        "scope_warning": (
+            "V1 validates source-draw structure and event chronology only. SGVO-PRO-05 "
+            "weighing occurs after source sales close; this output does not establish "
+            "pre-close availability or eligibility for a later target. Use the V2 "
+            "source-to-target gate for target availability, custody and continuity. "
+            "Source authenticity, clock trust, signatures and predictive value remain "
+            "unestablished."
+        ),
     }
 
 
@@ -219,9 +277,14 @@ def validate_physical_csv(path: str | Path) -> dict[str, Any]:
         reader = csv.DictReader(stream)
         if reader.fieldnames is None:
             raise ValueError("CSV has no header")
+        if len(reader.fieldnames) != len(set(reader.fieldnames)):
+            raise ValueError("CSV headers must be unique; duplicate column names are ambiguous")
         missing = sorted(set(REQUIRED_COLUMNS) - set(reader.fieldnames))
         if missing:
             raise ValueError("missing required columns: " + ", ".join(missing))
+        unexpected = sorted(set(reader.fieldnames) - set(REQUIRED_COLUMNS))
+        if unexpected:
+            raise ValueError("unexpected columns: " + ", ".join(unexpected))
         return validate_physical_rows(reader)
 
 

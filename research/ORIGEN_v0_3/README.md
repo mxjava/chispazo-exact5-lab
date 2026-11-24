@@ -93,7 +93,8 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 
 ### Physical evidence intake v1
 - Added a long-form 28-sphere-per-contest template at `data/physical-metadata/PHYSICAL_EVIDENCE_LONG_FORM_TEMPLATE_V1.csv`; it is header-only and contains no observations.
-- Added `origen.physical_intake` and CLI command `origen validate-physical --file <csv>` to enforce mapping, timestamps, calibration interval, source hashes, 28-row completeness and quarantine rules.
+- Added `origen.physical_intake` and CLI command `origen validate-physical --file <csv>` to validate source-draw chronology, official modality-specific sales-close slots (De las Tres 15:00; Clásico 21:00), calibration interval, source hashes, 28-row completeness and quarantine rules.
+- V1 is a source-record structure check only. Official weighing follows the source draw's sales close, so a V1-usable record is not a same-draw pre-close feature and does not establish later-target eligibility. Use V2 for target availability, independent custody and physical continuity.
 - Legacy wide template is unchanged and is insufficient by itself for physical-sphere identity linkage. Structural validity does not authenticate records or establish bias.
 - See `docs/PHYSICAL_SPHERE_INTAKE_VALIDATOR_V1.md` and `docs/PHYSICAL_EVIDENCE_INTAKE_PROTOCOL_V1.md`.
 

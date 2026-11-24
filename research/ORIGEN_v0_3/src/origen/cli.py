@@ -32,7 +32,7 @@ def main():
     v=sub.add_parser("validate-protocol"); v.add_argument("--file",required=True)
     l=sub.add_parser("audit-ledger"); l.add_argument("--ledger",required=True)
     ml=sub.add_parser("audit-search-path"); ml.add_argument("--ledger",required=True)
-    pi=sub.add_parser("validate-physical",help="validate provenance and structure of long-form physical sphere CSV"); pi.add_argument("--file",required=True)
+    pi=sub.add_parser("validate-physical",help="validate V1 source-draw structure; not target pre-close eligibility"); pi.add_argument("--file",required=True)
     h=sub.add_parser("holm"); h.add_argument("--file",required=True)
     s=sub.add_parser("split"); s.add_argument("--n",type=int,required=True); s.add_argument("--warmup",type=int,required=True); s.add_argument("--evaluation-size",type=int); s.add_argument("--rolling",action="store_true"); s.add_argument("--horizon",type=int,default=100)
     e=sub.add_parser("evaluate"); e.add_argument("--file",required=True)

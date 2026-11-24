@@ -26,8 +26,9 @@ print(report)
 ```
 
 The validator:
-- requires timezone-aware ISO-8601 timestamps;
-- requires assignment, measurement and number-mapping availability strictly before sales close;
+- requires timezone-aware ISO-8601 timestamps and the official sales-close slot (TRES 15:00; CLASSIC 21:00, America/Mexico_City);
+- validates source-draw chronology: assignment and mapping precede sales close, weighing occurs at/after sales close, and extraction follows weighing;
+- bounds intake at 28,000 rows and rejects custom row mappings, non-text cells, and non-canonical field shapes;
 - checks that the calibration interval covers the measurement time;
 - checks positive finite masses and resolution in grams;
 - checks valid SHA-256-shaped document/certificate identifiers;
@@ -35,14 +36,14 @@ The validator:
 - checks within-contest consistency for modality, date, set, sphere type, machine and source/certificate references;
 - emits quarantine labels rather than guessing or silently repairing records.
 
-Quarantine labels follow `PHYSICAL_EVIDENCE_INTAKE_PROTOCOL_V1.md`. A structurally usable contest is not proof that the source, timestamps, signature, scale or calibration certificate is authentic. Independent documentary verification is still mandatory.
+Quarantine labels follow `PHYSICAL_EVIDENCE_INTAKE_PROTOCOL_V1.md`. A structurally usable source contest is not a pre-close prediction snapshot and is not proof that the source, timestamps, signature, scale or calibration certificate is authentic. V1 does not evaluate evidence availability or custody for a later target; use the V2 source-to-target gate for that purpose. Independent documentary verification is still mandatory.
 
 ## Statistical firewall
 
 Do not use any measurements to rank numbers at this stage. In particular:
 - no tolerance envelope is a measured effect;
 - no missing mapping may be inferred from printed-number order;
-- no post-close record may be treated as pre-close;
+- no source-draw weighing performed after its own sales close may be treated as a same-draw pre-close feature;
 - no historical association is prospective evidence;
 - no result may alter V294 or the canonical history.
 
@@ -50,4 +51,4 @@ After authentic records arrive, publish a hashed source manifest and quarantine 
 
 ## Tests
 
-`tests/test_physical_intake.py` covers complete 28-sphere intake, incomplete sets, post-close measurements, duplicate/missing mappings, duplicate physical IDs, calibration validity, timezone enforcement, conflicting machine identity, invalid mass/unit, source hashes, missing schema and read-only CSV hashing.
+`tests/test_physical_intake.py` covers complete post-close source-draw intake, pre-close/after-extraction measurement rejection, CLASSIC 21:00 vs. TRES 15:00 slots, custom input spoofing, row bounds, incomplete sets, duplicate/missing mappings, calibration validity, timezone enforcement, conflicting machine identity, invalid mass/unit, source hashes, missing schema and read-only CSV hashing.
