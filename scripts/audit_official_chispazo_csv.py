@@ -129,7 +129,7 @@ aliases = {
 }
 def resolve_column_mapping(header, aliases):
     """Resolve unique source columns; ambiguous or missing required fields fail closed."""
-    normalized_header = [norm(value) for value in header]
+    normalized_header = ["".join(char.lower() for char in value if char.isalnum()) for value in header]
     mapping = {}
     for key, choices in aliases.items():
         matches = [i for i, name in enumerate(normalized_header) if name in choices]
