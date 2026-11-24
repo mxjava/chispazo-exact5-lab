@@ -22,3 +22,4 @@ CS18,Comunicación de Riesgo CS-18,timestamp unspecified,conditional,"only if th
 CS12,Registro de asistencia CS-12,during event,NO,"attendance is not a pre-close physical state",NO_CS12
 participation_file_signature,participation/cancellation file plus electronic signature,after close and before ceremony,NO,"integrity control for sales file; not a physical sphere variable",NO_SIGNED_FILE
 public_result_page,official Chispazo results page,after draw,NO,"Regulation article 8 says website/mascarilla results are informative; Acta is official",PUBLIC_RESULTS_ONLY
+"winner_report_signature","SGVO-PRO-05 activities 14 and 15 / Acta annex","after winning numbers are captured","NO","Separate signature of Relación de Ganadores; included in Acta after results, distinct from the post-close participation/cancellation file signature","NO_SIGNED_WINNER_REPORT"
