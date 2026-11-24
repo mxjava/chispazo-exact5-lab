@@ -1,0 +1,235 @@
+{
+  "schema_version": 2,
+  "snapshot_id": "LN-SGVO-PRO-05-REV39-SOURCE-CONTRACT-2026-11-23-v2",
+  "observation_date": "2026-11-23",
+  "classification": "OFFICIAL_SOURCE_EXCERPT_AUDIT_NOT_DRAW_DATA",
+  "sources": {
+    "sgvo_pro_05": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+      "normateca_url": "https://loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+      "status": "PUBLIC_CURRENT",
+      "revision": 39,
+      "last_update": "2026-03-20"
+    },
+    "chispazo_regulation": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf",
+      "last_reform": "2012-03-07"
+    },
+    "sgvo_man_02": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/PROYECTO/sgvo_man_02p.pdf",
+      "normateca_bucket": "PROYECTOS_NORMATIVOS",
+      "cover_type": "RESERVADO",
+      "issue_date": "2011-06",
+      "revision": 9,
+      "use_as_current_operational_authority": false
+    },
+    "sgvo_pro_34": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_34.pdf",
+      "scope": "EXCLUSIVELY_TRADITIONAL_WOODEN_BALLS_AND_ABACUS"
+    },
+    "chispazo_product_page": {
+      "url": "https://loterianacional.gob.mx/Chispazo/Chispazo",
+      "de_las_tres": "15:00",
+      "clasico": "21:00",
+      "family": "ELECTRONIC_DRAWS"
+    },
+    "management_report": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf",
+      "machines": {
+        "jupiter": 10,
+        "mercury_5": 2,
+        "mercury_8": 2,
+        "total": 14
+      },
+      "rfid_declared_for_machines_and_spheres": true,
+      "reported_sets_total": 60,
+      "arithmetic_sets_total": 70,
+      "maintenance_contract_058_2024": {
+        "machines": 21,
+        "includes_chispazo": true,
+        "status_by_2024_06": "CONCLUDED",
+        "current_status_after_2024_06": "UNKNOWN"
+      }
+    },
+    "procurement_2026_222": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/Legal/AdqLic/IA-06-HJY-006HJY001-N-222-2026.PDF",
+      "title": "Mantenimiento preventivo y correctivo a equipos eléctricos instalados en los inmuebles de Lotería Nacional",
+      "draw_machine_maintenance_evidence": false
+    }
+  },
+  "authoritative_excerpts": {
+    "policy_6_weight_spec": {
+      "page": 5,
+      "lines": [
+        204,
+        209
+      ],
+      "text": "Policy 6: Smartballs 4.25–5.25 g, maximum spread 0.30 g; Ping Pong 2.30–3.00 g, maximum spread 0.15 g."
+    },
+    "policy_8_electronic_signature": {
+      "page": 5,
+      "lines": [
+        218,
+        218
+      ],
+      "text": "Policy 8 governs the electronic signature of the participation file and its custody with SEGOB."
+    },
+    "activity_5_2": {
+      "page": 14,
+      "lines": [
+        563,
+        571
+      ],
+      "policy_reference": 8
+    },
+    "quality_plan_weighing": {
+      "page": 25,
+      "lines": [
+        1220,
+        1232
+      ],
+      "policy_reference": 8,
+      "weight_limits_repeat_policy_6": true
+    },
+    "activity_5_4_signatures": {
+      "page": 14,
+      "lines": [
+        608,
+        610
+      ],
+      "role_label": "Representante de la Subdirección General de Ventas y Operaciones"
+    },
+    "glossary_tira_signatory_role": {
+      "page": 31,
+      "lines": [
+        1569,
+        1570
+      ],
+      "role_label": "Representante de la Dirección de Operación de Concursos, Juegos y Sorteos"
+    },
+    "quality_plan_cs11_fields": {
+      "page": 25,
+      "lines": [
+        1235,
+        1250
+      ],
+      "fields": [
+        "Fecha",
+        "Número de sorteo",
+        "Número de estuche",
+        "Esferas vs. números anotados",
+        "Nombre de las personas participantes"
+      ],
+      "explicit_time_field_listed": false,
+      "blank_template_embedded": false
+    },
+    "glossary_cs11_fields": {
+      "page": 30,
+      "lines": [
+        1476,
+        1477
+      ],
+      "fields": [
+        "Fecha de realización del sorteo",
+        "Nombre del sorteo",
+        "Número de sorteo",
+        "Hora de realización del sorteo",
+        "Estuche seleccionado",
+        "Resultados del sorteo",
+        "Nombre y firma de quien elabora, verifica, certifica y del representante de la Dirección General"
+      ],
+      "explicit_time_field_specified": true,
+      "blank_template_embedded": false
+    },
+    "activity_7_electronic_signature": {
+      "page": 15,
+      "lines": [
+        627,
+        640
+      ],
+      "sequence": "AFTER_SALES_CLOSE_AND_WEIGHING_BEFORE_DRAW"
+    },
+    "activity_13_cs11": {
+      "page": 16,
+      "lines": [
+        713,
+        745
+      ],
+      "sequence": "AFTER_SPHERE_CAPTURE"
+    },
+    "policy_24_25": {
+      "page": 10,
+      "lines": [
+        395,
+        396
+      ],
+      "annual_maintenance_calendar": true,
+      "scale_calibration_at_least_yearly": true
+    },
+    "policy_30_recording": {
+      "page": 11,
+      "lines": [
+        422,
+        422
+      ],
+      "recording_from_weighing_through_draw": true,
+      "edited_recording_attached_to_acta_is_draw_only": true
+    },
+    "incident_definition": {
+      "page": 31,
+      "lines": [
+        1553,
+        1554
+      ],
+      "result_affecting_incident_recorded_in_acta_and_cs09": true
+    }
+  },
+  "regulation_sequence": {
+    "article_9": {
+      "lines": [
+        254,
+        284
+      ],
+      "order_conflict_with_pro05": true
+    }
+  },
+  "reserved_manual_leads_only": {
+    "cs02_draft_fields": [
+      "date",
+      "draw number",
+      "inspection time",
+      "operator signature",
+      "SGVO representative signature"
+    ],
+    "cs02_draft_max_minutes_before_draw": 30,
+    "weigh_strip_draft_individual_weights": true,
+    "weigh_strip_draft_start_end_printed_times": true,
+    "weigh_strip_draft_statistics": [
+      "count",
+      "mean",
+      "maximum",
+      "minimum",
+      "max-minus-min"
+    ],
+    "weigh_strip_draft_feeder_order_matches_weighing_order": true,
+    "authority_warning": "RESERVED PROJECT COPY; NOT CURRENT APPROVED OPERATING AUTHORITY"
+  },
+  "evidence_gaps": [
+    "No public draw-specific CS-02 or blank controlled CS-02 template obtained.",
+    "No public draw-specific CS-11 original or controlled blank template obtained.",
+    "No public draw-specific 28-sphere Tira de Pesaje obtained.",
+    "No RFID tag-to-sphere-number map or raw reader event log obtained.",
+    "No machine serial-to-contest assignment obtained.",
+    "No scale serial and draw-specific calibration certificate obtained.",
+    "No asset-level maintenance work orders after contract 058-2024 obtained.",
+    "No continuous audiovisual master/timecode/custody chain obtained.",
+    "No original Acta annex package, CS-09 entries or electronic-signature custody media obtained."
+  ],
+  "analysis_scope": {
+    "draw_specific_physical_data_used": false,
+    "frequency_pair_triple_transition_analysis_run": false,
+    "physical_bias_claim": false,
+    "predictive_advantage_claim": false,
+    "classification": "MECHANISM_EVIDENCE_ONLY"
+  }
+}
