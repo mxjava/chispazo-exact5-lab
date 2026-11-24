@@ -16,8 +16,8 @@ from .physical_evidence_manifest_v1 import (
     UnverifiedPhysicalEvidenceManifest,
 )
 
-_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
-_CONTEST_ID = re.compile(r"[1-9][0-9]{0,11}\\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_CONTEST_ID = re.compile(r"[1-9][0-9]{0,11}\Z")
 
 
 @dataclass(frozen=True, slots=True)
