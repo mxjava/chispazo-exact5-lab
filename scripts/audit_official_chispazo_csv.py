@@ -63,6 +63,11 @@ def norm(value: str) -> str:
     return re.sub(r"[^a-z0-9]", "", value.lower())
 
 
+def row_width_is_valid(row, header) -> bool:
+    """Require every source CSV record to have exactly the declared field count."""
+    return len(row) == len(header)
+
+
 def post_baseline_ids_are_contiguous(draw_ids, baseline_last: int = 12249) -> bool:
     """Check continuity from the first post-baseline draw through the observed maximum."""
     observed = sorted(set(draw_ids))
@@ -165,18 +170,29 @@ if missing_mapping_fields:
     raise SystemExit("BLOCKED: official CSV schema cannot be mapped unambiguously")
 
 # Read the frozen canonical baseline as a comparison target only.
+CANONICAL_BASELINE_SHA256 = "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a"
+CANONICAL_BASELINE_COMMIT = "8fc7d6fd503e1ac7be6b504daef099404c8ca064"
 CANONICAL_URL = (
     "https://raw.githubusercontent.com/mxjava/chispazo-exact5-lab/"
-    "research/operational-lab-run-20261121/data/history/Chispazo_through_12249.csv"
+    + CANONICAL_BASELINE_COMMIT
+    + "/data/history/Chispazo_through_12249.csv"
 )
 with urllib.request.urlopen(CANONICAL_URL, timeout=45) as response:
     canonical_raw = response.read()
+canonical_sha256 = hashlib.sha256(canonical_raw).hexdigest()
+if canonical_sha256 != CANONICAL_BASELINE_SHA256:
+    raise SystemExit(
+        "BLOCKED: pinned canonical baseline SHA-256 mismatch; "
+        f"expected={CANONICAL_BASELINE_SHA256} actual={canonical_sha256}"
+    )
 canonical_text = canonical_raw.decode("utf-8-sig")
 canonical_rows = list(csv.DictReader(io.StringIO(canonical_text)))
 official_index = {}
 official_invalid = []
 for line_no, row in enumerate(data_rows, start=2):
     try:
+        if not row_width_is_valid(row, header):
+            raise ValueError("CSV row field count does not match source header")
         draw = int(row[mapping["draw_id"]])
         nums = tuple(int(row[mapping[f"n{i}"]]) for i in range(1, 6))
         date = datetime.strptime(row[mapping["date"]].strip(), "%d/%m/%Y").date().isoformat()
@@ -223,7 +239,7 @@ with (OUT / "canonical_official_conflicts.csv").open("w", newline="", encoding="
 
 reconciliation = {
     "canonical_source_url": CANONICAL_URL,
-    "canonical_sha256": hashlib.sha256(canonical_raw).hexdigest(),
+    "canonical_sha256": canonical_sha256,
     "canonical_rows": len(canonical_rows),
     "canonical_unique_draw_ids": len(canonical_index),
     "official_unique_draw_ids": len(official_index),
