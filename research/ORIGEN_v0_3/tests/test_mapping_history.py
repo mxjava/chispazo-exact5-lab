@@ -113,6 +113,12 @@ class MappingHistoryTests(unittest.TestCase):
                 report = audit_mapping_history(data)
                 self.assertIn("Q_REMAP", report["quarantined"]["1001"])
 
+    def test_mapping_timestamps_accept_canonical_fractional_seconds(self):
+        data = rows()
+        data[0]["mapping_valid_from"] = "2026-01-01T00:00:00.123456-06:00"
+        report = audit_mapping_history(data)
+        self.assertNotIn("Q_REMAP", report["quarantined"].get("1001", []))
+
     def test_mapping_timestamp_string_subclass_is_rejected(self):
         class SpoofedTimestamp(str):
             def replace(self, old, new, *args):
