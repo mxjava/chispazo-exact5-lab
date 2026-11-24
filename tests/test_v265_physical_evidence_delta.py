@@ -25,5 +25,5 @@ def test_current_and_legacy_timing_are_not_collapsed():
 def test_no_physical_contest_records_are_fabricated():
     report = MODULE.json.loads(MODULE.REPORT.read_text(encoding="utf-8"))
     assert report["physical_records_obtained"] == []
-    assert report["analysis"]["uses_synthetic_records"] is False
+    assert report["uses_synthetic_records"] is False
     assert report["analysis"]["physical_effect_estimated"] is False
