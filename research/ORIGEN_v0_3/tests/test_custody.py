@@ -398,5 +398,108 @@ class CustodyTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertEqual(reason, "portfolio_line_count must equal 30")
 
+
+    def test_verifier_rejects_dict_subclass_at_untrusted_record_boundary(self):
+        record, raw = self.make_record()
+
+        class SpoofedRecord(dict):
+            def get(self, key, default=None):
+                return super().get(key, default)
+
+            def items(self):
+                return super().items()
+
+        ok, reason = verify_seal_record(SpoofedRecord(record), raw)
+        self.assertFalse(ok)
+        self.assertEqual(reason, "record must be an exact dict")
+
+    def test_verifier_rejects_mutable_or_subclassed_portfolio_bytes(self):
+        record, raw = self.make_record()
+
+        class SpoofedPortfolio(bytes):
+            def decode(self, *args, **kwargs):
+                return raw.decode(*args, **kwargs)
+
+        for candidate in (bytearray(raw), memoryview(raw), SpoofedPortfolio(raw)):
+            with self.subTest(input_type=type(candidate).__name__):
+                ok, reason = verify_seal_record(record, candidate)
+                self.assertFalse(ok)
+                self.assertEqual(reason, "portfolio must be exact bytes")
+
+    def test_chain_rejects_subclassed_containers_and_boolean_portfolio_keys(self):
+        first, raw = self.make_record()
+
+        class SpoofedRecords(list):
+            pass
+
+        class SpoofedPortfolioMap(dict):
+            pass
+
+        cases = (
+            (SpoofedRecords([first]), {12250: raw}, "records must be an exact list"),
+            ([first], SpoofedPortfolioMap({12250: raw}), "portfolios_by_target must be an exact dict"),
+            ([first], {True: raw}, "portfolio map keys must be positive exact integers"),
+        )
+        for records, portfolios, expected in cases:
+            with self.subTest(expected=expected):
+                ok, reason = verify_record_chain(records, portfolios)
+                self.assertFalse(ok)
+                self.assertEqual(reason, expected)
+
+    def test_exclusive_writer_rejects_dict_subclass(self):
+        record, _ = self.make_record()
+
+        class SpoofedRecord(dict):
+            pass
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "exact dict"):
+                write_record_exclusive(Path(tmp) / "subclass.json", SpoofedRecord(record))
+
+
+    def test_verifier_rejects_scalar_subclasses_at_the_record_boundary(self):
+        import hashlib
+
+        record, raw = self.make_record()
+
+        class SpoofedTimestamp(str):
+            def strip(self):
+                return "2026-11-20T17:00:00Z"
+
+            def replace(self, old, new):
+                return "2026-11-20T17:00:00+00:00"
+
+        class SpoofedContestId(int):
+            pass
+
+        class SpoofedDigest(str):
+            pass
+
+        def rehash():
+            unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
+            record["record_sha256"] = hashlib.sha256(
+                json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+            ).hexdigest()
+
+        record["generated_at_utc"] = SpoofedTimestamp("not-a-timestamp")
+        rehash()
+        ok, reason = verify_seal_record(record, raw)
+        self.assertFalse(ok)
+        self.assertIn("generated_at_utc must be a non-empty", reason)
+
+        record, raw = self.make_record()
+        record["target_contest_id"] = SpoofedContestId(12250)
+        rehash()
+        ok, reason = verify_seal_record(record, raw)
+        self.assertFalse(ok)
+        self.assertEqual(reason, "target_contest_id must be an integer")
+
+        record, raw = self.make_record()
+        record["candidate_spec_sha256"] = SpoofedDigest("f" * 64)
+        rehash()
+        ok, reason = verify_seal_record(record, raw)
+        self.assertFalse(ok)
+        self.assertIn("candidate_spec_sha256 must be 64 lowercase", reason)
+
 if __name__ == "__main__":
     unittest.main()

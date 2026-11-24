@@ -50,12 +50,12 @@ def canonical_json_bytes(value: Mapping[str, Any]) -> bytes:
 
 
 def _require_sha(value: Any, field: str) -> None:
-    if not isinstance(value, str) or not _HEX64.fullmatch(value):
+    if type(value) is not str or not _HEX64.fullmatch(value):
         raise ValueError(f"{field} must be 64 lowercase hexadecimal characters")
 
 
 def parse_utc(value: str, field: str) -> datetime:
-    if not isinstance(value, str) or not value.strip():
+    if type(value) is not str or not value.strip():
         raise ValueError(f"{field} must be a non-empty ISO-8601 timestamp")
     # RFC 3339 -00:00 means the local offset is unknown, not UTC.
     # Treating it as UTC would manufacture certainty in custody chronology.
@@ -82,11 +82,11 @@ def _require_classic_close_slot(closes: datetime) -> None:
 
 
 def validate_portfolio(portfolio: bytes, expected_lines: int = CLASSIC_PORTFOLIO_LINES) -> list[str]:
-    if expected_lines != CLASSIC_PORTFOLIO_LINES:
+    if type(expected_lines) is not int or expected_lines != CLASSIC_PORTFOLIO_LINES:
         raise ValueError(f"Classic custody portfolios must contain exactly {CLASSIC_PORTFOLIO_LINES} lines")
     if type(portfolio) is not bytes:
         raise TypeError("portfolio must be supplied as exact bytes")
-    if not isinstance(expected_lines, int) or isinstance(expected_lines, bool) or expected_lines <= 0:
+    if type(expected_lines) is not int or expected_lines <= 0:
         raise ValueError("expected_lines must be a positive integer")
     if not portfolio or not portfolio.endswith(b"\n"):
         raise ValueError("portfolio must be non-empty and end with LF")
@@ -146,14 +146,13 @@ def build_seal_record(
     expected_lines: int = 30,
 ) -> dict[str, Any]:
     """Build a hash-bound record; caller must retain an independent receipt."""
-    if not isinstance(target_contest_id, int) or isinstance(target_contest_id, bool) or target_contest_id <= 0:
+    if type(target_contest_id) is not int or target_contest_id <= 0:
         raise ValueError("target_contest_id must be a positive integer")
-    if expected_lines != CLASSIC_PORTFOLIO_LINES:
+    if type(expected_lines) is not int or expected_lines != CLASSIC_PORTFOLIO_LINES:
         raise ValueError(f"Classic custody portfolios must contain exactly {CLASSIC_PORTFOLIO_LINES} lines")
-    if (not isinstance(history_max_contest_id, int) or isinstance(history_max_contest_id, bool)
-            or history_max_contest_id != target_contest_id - 1):
+    if type(history_max_contest_id) is not int or history_max_contest_id != target_contest_id - 1:
         raise ValueError("history cutoff must be an integer exactly target_contest_id - 1")
-    if modality != "CLASSIC":
+    if type(modality) is not str or modality != "CLASSIC":
         raise ValueError("only CLASSIC modality is eligible")
     for field, value in (
         ("candidate_spec_sha256", candidate_spec_sha256),
@@ -163,7 +162,7 @@ def build_seal_record(
         ("previous_record_sha256", previous_record_sha256),
     ):
         _require_sha(value, field)
-    if not isinstance(source_commit, str) or not _SHA40.fullmatch(source_commit):
+    if type(source_commit) is not str or not _SHA40.fullmatch(source_commit):
         raise ValueError("source_commit must be a full 40-character Git SHA")
     for field, value in (
         ("candidate_id", candidate_id), ("generator_id", generator_id),
@@ -171,7 +170,7 @@ def build_seal_record(
         ("custodian_clock_source", custodian_clock_source),
         ("official_draw_close_source", official_draw_close_source),
     ):
-        if not isinstance(value, str) or not value.strip():
+        if type(value) is not str or not value.strip():
             raise ValueError(f"{field} must be non-empty")
     if generator_id == custodian_id:
         raise ValueError("generator and custodian identities must be distinct")
@@ -222,33 +221,47 @@ def verify_seal_record(
 ) -> tuple[bool, str]:
     """Verify schema, digest, byte binding, temporal order, and optional chain link."""
     try:
-        if not isinstance(record, dict) or record.get("schema_version") != "exact5.custody.v1":
+        # These are public untrusted-object boundaries. Subclasses can override
+        # get/items/decode/strip and make validation inspect a different view.
+        if type(record) is not dict:
+            return False, "record must be an exact dict"
+        if type(portfolio) is not bytes:
+            return False, "portfolio must be exact bytes"
+        if expected_previous is not None and type(expected_previous) is not str:
+            return False, "expected_previous must be an exact string"
+        if type(record.get("schema_version")) is not str or record["schema_version"] != "exact5.custody.v1":
             return False, "unsupported record schema"
         if set(record) != _RECORD_FIELDS:
             return False, "record fields do not match exact v1 schema"
-        if not isinstance(record.get("target_contest_id"), int) or isinstance(record.get("target_contest_id"), bool):
+        if type(record.get("target_contest_id")) is not int:
             return False, "target_contest_id must be an integer"
-        if not isinstance(record.get("history_max_contest_id"), int) or isinstance(record.get("history_max_contest_id"), bool):
+        if type(record.get("history_max_contest_id")) is not int:
             return False, "history_max_contest_id must be an integer"
         if record["target_contest_id"] <= 0:
             return False, "target_contest_id must be positive"
         count = record.get("portfolio_line_count")
-        if not isinstance(count, int) or isinstance(count, bool) or count != CLASSIC_PORTFOLIO_LINES:
+        if type(count) is not int or count != CLASSIC_PORTFOLIO_LINES:
             return False, f"portfolio_line_count must equal {CLASSIC_PORTFOLIO_LINES}"
-        for field in ("candidate_spec_sha256", "history_sha256", "environment_manifest_sha256",
-                      "portfolio_sha256", "custodian_recomputed_sha256",
-                      "previous_record_sha256", "record_sha256"):
+        for field in (
+            "candidate_spec_sha256", "history_sha256", "environment_manifest_sha256",
+            "portfolio_sha256", "custodian_recomputed_sha256",
+            "previous_record_sha256", "record_sha256",
+        ):
             _require_sha(record.get(field), field)
-        if not isinstance(record.get("source_commit"), str) or not _SHA40.fullmatch(record["source_commit"]):
+        if type(record.get("source_commit")) is not str or not _SHA40.fullmatch(record["source_commit"]):
             return False, "source_commit must be a full 40-character Git SHA"
-        for field in ("candidate_id", "generator_id", "custodian_id",
-                      "generator_clock_source", "custodian_clock_source",
-                      "official_draw_close_source"):
-            if not isinstance(record.get(field), str) or not record[field].strip():
+        for field in (
+            "candidate_id", "generator_id", "custodian_id",
+            "generator_clock_source", "custodian_clock_source",
+            "official_draw_close_source",
+        ):
+            if type(record.get(field)) is not str or not record[field].strip():
                 return False, f"{field} must be non-empty"
         if record["generator_id"] == record["custodian_id"]:
             return False, "generator and custodian identities are not independent"
-        if record.get("seal_status") != "SEALED" or record.get("modality") != "CLASSIC":
+        if type(record.get("seal_status")) is not str or record["seal_status"] != "SEALED":
+            return False, "record is not a sealed Classic registration"
+        if type(record.get("modality")) is not str or record["modality"] != "CLASSIC":
             return False, "record is not a sealed Classic registration"
         if record["record_sha256"] != _record_digest(record):
             return False, "record digest mismatch"
@@ -277,16 +290,26 @@ def verify_record_chain(
     expected_final_hash: str | None = None,
 ) -> tuple[bool, str]:
     """Verify ordered ledger; optional external head anchor detects tail truncation."""
+    # Reject user-defined containers: their iteration, lookup, or length methods
+    # can present a different view from the underlying values being verified.
+    if type(records) is not list:
+        return False, "records must be an exact list"
+    if type(portfolios_by_target) is not dict:
+        return False, "portfolios_by_target must be an exact dict"
+    if any(type(target) is not int or target <= 0 for target in portfolios_by_target):
+        return False, "portfolio map keys must be positive exact integers"
+    if any(type(value) is not bytes for value in portfolios_by_target.values()):
+        return False, "portfolio map values must be exact bytes"
     if not records:
         return False, "custody chain must contain at least one record"
     previous = GENESIS
     seen: set[int] = set()
     last_target = 0
     for index, record in enumerate(records):
-        if not isinstance(record, dict):
-            return False, f"record {index} is not an object"
+        if type(record) is not dict:
+            return False, f"record {index} must be an exact dict"
         target = record.get("target_contest_id")
-        if not isinstance(target, int) or isinstance(target, bool) or target <= last_target:
+        if type(target) is not int or target <= last_target:
             return False, f"record {index} target is duplicate, invalid, or out of order"
         if target in seen:
             return False, f"duplicate target {target}"
@@ -309,8 +332,8 @@ def verify_record_chain(
 
 def write_record_exclusive(path: str | Path, record: dict[str, Any]) -> None:
     """Create a record file without replacement; this is not tamper-proof storage."""
-    if not isinstance(record, dict) or set(record) != _RECORD_FIELDS:
-        raise ValueError("record does not match exact v1 schema")
+    if type(record) is not dict or set(record) != _RECORD_FIELDS:
+        raise ValueError("record must be an exact dict matching the exact v1 schema")
     if record.get("record_sha256") != _record_digest(record):
         raise ValueError("record digest mismatch; refusing to write")
     destination = Path(path)
@@ -390,8 +413,8 @@ def read_record(path: str | Path) -> dict[str, Any]:
         parse_constant=_reject_json_constant,
         parse_float=_reject_record_json_float,
     )
-    if not isinstance(value, dict):
-        raise ValueError("record JSON must be an object")
+    if type(value) is not dict:
+        raise ValueError("record JSON must be an exact object")
     if raw != canonical_json_bytes(value) + b"\n":
         raise ValueError("record JSON must use canonical UTF-8 JSON encoding")
     return value
