@@ -498,10 +498,14 @@ def parse_unverified_physical_manifest(raw: bytes) -> UnverifiedPhysicalEvidence
     if len(set(signature_subject_artifacts)) != len(signature_subject_artifacts):
         raise ValueError("a subject may declare only one signature per artifact")
     key_subjects: dict[str, str] = {}
+    key_algorithms: dict[str, str] = {}
     for claim in signatures:
         prior_subject = key_subjects.setdefault(claim.key_id, claim.subject_id)
         if prior_subject != claim.subject_id:
             raise ValueError("a signer key_id cannot be bound to multiple subject IDs")
+        prior_algorithm = key_algorithms.setdefault(claim.key_id, claim.algorithm)
+        if prior_algorithm != claim.algorithm:
+            raise ValueError("a signer key_id cannot be bound to multiple signature algorithms")
     signatures_by_artifact: dict[str, list[PhysicalSignatureClaim]] = {}
     for claim in signatures:
         signatures_by_artifact.setdefault(claim.artifact_sha256, []).append(claim)
