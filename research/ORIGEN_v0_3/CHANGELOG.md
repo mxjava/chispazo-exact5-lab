@@ -1,8 +1,9 @@
-## Official 24-Nov pre-draw schedule status (2026-11-24 12:55 America/Mexico_City)
-- Added a corrected status-only overlay and review. The dedicated results page still ended at 12392 (23-Nov) and showed no 24-Nov outcome; the mask index still listed 23-Nov as newest.
-- The official home index separately displayed the “Ilumina tu suerte” Chispazo card for 24-Nov at 15:00, contest 12393. The official Chispazo product page maps 15:00 to De las Tres, so 12393 is **schedule-inferred De las Tres**, not mask/result-confirmed. No 24-Nov Clásico contest ID was visible or inferred.
-- The 23-Nov official mask visually labels 12391 as De las Tres (03 07 19 20 24) and 12392 as Clásico (06 11 16 23 28). Its original PDF bytes were not captured; SHA-256 remains `NOT_CAPTURED`.
-- This is public schedule/publication evidence only, not an Acta, CS-11, Tira de Pesaje, measurement, calibration, custody receipt, trusted timestamp, or pre-close seal.
+## Official home-index schedule supplement — 2026-11-24 13:05 America/Mexico_City
+- Added status-only overlay `data/official-overlays/2026-11-24_1305_official_status_only.json` and review `docs/OFFICIAL_STATUS_REFRESH_20261124_1305.md`.
+- The official home index displayed the “Ilumina tu suerte” Chispazo card for 24-Nov at 15:00, contest **12393**. The official product schedule maps 15:00 to **De las Tres**, so 12393 is **schedule-inferred**, not result- or mask-confirmed. No 24-Nov Clásico contest ID was visible or inferred.
+- The dedicated results page still ended at 12392 (23-Nov) and showed no 24-Nov outcome; the mask index still listed 23-Nov as newest.
+- The 23-Nov official mask visually labels 12391 as De las Tres (03 07 19 20 24) and 12392 as Clásico (06 11 16 23 28). Original PDF bytes were not captured; SHA-256 remains `NOT_CAPTURED`.
+- No Acta, CS-11, Tira de Pesaje, sphere measurements, calibration, independent custody, trusted timestamp or pre-close seal was obtained.
 
 ## One calibration certificate, one validity window in V2 intake (2026-11-24)
 - Reproduced a structural inconsistency: 28 sphere rows could share one `scale_id` and one `calibration_certificate_sha256` while declaring different calibration-validity windows. Each row independently covered its measurement, so the target incorrectly remained `STRUCTURAL_PRE_CLOSE_ONLY`.

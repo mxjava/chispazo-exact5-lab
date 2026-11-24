@@ -41,7 +41,7 @@
       "displayed_next_draw_date": "2026-11-24",
       "current_day_result_published_at_observation": false,
       "status": "OFFICIAL_PAGE_REFRESHED_NO_2026_11_24_RESULT_VISIBLE",
-      "modality_note": "The dedicated result block does not label modality. The official home index separately displays the 'Ilumina tu suerte' card for 24-Nov at 15:00 as contest 12393; the official product page maps 15:00 to De las Tres. This is schedule-inferred, not mask/result confirmed. No 24-Nov Classic contest ID is visible; do not infer one."
+      "modality_note": "The dedicated results block does not label modality. The official 2026-11-23 mask visually labels 12391 as Chispazo De las tres and 12392 as Chispazo Clásico. Do not infer a 2026-11-24 contest ID or modality before official publication."
     },
     "official_mask_index": {
       "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
@@ -85,17 +85,6 @@
       "de_las_tres_local": "15:00",
       "classic_local": "21:00",
       "current_day_draws_completed_at_observation": false
-    },
-    "official_home_index": {
-      "url": "https://www.loterianacional.gob.mx/home/index",
-      "chispazo_card_label": "Ilumina tu suerte",
-      "scheduled_date": "2026-11-24",
-      "scheduled_time_local": "15:00",
-      "displayed_contest_id": 12393,
-      "status": "SCHEDULE_CARD_VISIBLE_NO_RESULT",
-      "modality_classification": "DE_LAS_TRES",
-      "modality_basis": "Schedule-inferred from the official Chispazo product page mapping 15:00 to De las Tres; the home-index card itself does not print the modality name.",
-      "classic_21_00_contest_id_visible": false
     }
   },
   "draws": [],
@@ -126,17 +115,6 @@
     "dedicated_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
     "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
     "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
-    "prior_visual_mask_review": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757",
-    "official_home_index": "https://www.loterianacional.gob.mx/home/index"
-  },
-  "scheduled_contests": [
-    {
-      "contest_id": 12393,
-      "date": "2026-11-24",
-      "time_local": "15:00",
-      "modality": "DE_LAS_TRES",
-      "classification": "SCHEDULE_INFERRED_NOT_MASK_OR_RESULT_CONFIRMED",
-      "source": "Official home-index 'Ilumina tu suerte' card plus official Chispazo product schedule"
-    }
-  ]
+    "prior_visual_mask_review": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757"
+  }
 }
