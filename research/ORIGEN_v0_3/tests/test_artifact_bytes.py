@@ -76,6 +76,25 @@ class TestArtifactByteIntegrity(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "exact dict"):
             verify_declared_artifact_bytes(manifest, payloads.items())
 
+    def test_string_subclass_digest_keys_are_rejected_before_set_or_lookup(self):
+        manifest, payloads = self.make_case()
+        digest, payload = next(iter(payloads.items()))
+
+        class AdversarialDigest(str):
+            def __hash__(self):
+                raise AssertionError("caller-controlled __hash__ must not run")
+
+            def __eq__(self, other):
+                raise AssertionError("caller-controlled __eq__ must not run")
+
+        supplied = {AdversarialDigest(digest): payload}
+        # Keep the manifest's full artifact set represented without invoking
+        # the adversarial key methods during construction.
+        for other_digest, other_payload in list(payloads.items())[1:]:
+            supplied[other_digest] = other_payload
+        with self.assertRaisesRegex(TypeError, "keys must be exact str"):
+            verify_declared_artifact_bytes(manifest, supplied)
+
 
 if __name__ == "__main__":
     unittest.main()
