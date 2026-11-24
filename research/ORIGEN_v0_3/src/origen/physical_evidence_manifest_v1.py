@@ -515,20 +515,6 @@ def parse_unverified_physical_manifest(raw: bytes) -> UnverifiedPhysicalEvidence
     acta_roles = {item.role for item in signatures_by_artifact.get(acta_digest, [])}
     if not _ACTA_REQUIRED_ROLES.issubset(acta_roles):
         raise ValueError("DRAW-ACTA signatures are missing policy-2 or SEGOB roles")
-    acta_signatures = signatures_by_artifact.get(acta_digest, [])
-    acta_subject_by_role = {
-        item.role: item.subject_id
-        for item in acta_signatures
-        if item.role in _ACTA_REQUIRED_ROLES
-    }
-    if (
-        len(acta_subject_by_role) != len(_ACTA_REQUIRED_ROLES)
-        or len(set(acta_subject_by_role.values())) != len(_ACTA_REQUIRED_ROLES)
-    ):
-        raise ValueError(
-            "DRAW-ACTA must declare distinct subjects for the four required roles"
-        )
-
     for artifact_type, required_roles in _REQUIRED_ROLES_BY_ARTIFACT.items():
         artifact_digest = artifact_by_type[artifact_type].sha256
         declared_roles = {
