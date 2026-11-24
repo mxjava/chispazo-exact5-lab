@@ -268,6 +268,13 @@ def evaluate_temporal_eligibility(
         target_draws: set[datetime] = set()
         assignments: set[datetime] = set()
         source_closes: set[datetime] = set()
+        # A target group represents one source draw, one signed source document,
+        # one availability event, and one custody receipt. Their timestamps must
+        # not fork across the 28 sphere rows that share those references.
+        source_draws: set[datetime] = set()
+        source_signature_times: set[datetime] = set()
+        evidence_available_times: set[datetime] = set()
+        custody_received_times: set[datetime] = set()
         sphere_types: set[str] = set()
         machine_models: set[str] = set()
         scales: set[str] = set()
@@ -305,6 +312,10 @@ def evaluate_temporal_eligibility(
                 target_draws.add(target_draw)
                 assignments.add(assignment)
                 source_closes.add(source_close)
+                source_draws.add(source_draw)
+                source_signature_times.add(signed)
+                evidence_available_times.add(available)
+                custody_received_times.add(received)
                 sphere_types.add(_canonical_identifier(row["sphere_type"]).upper())
                 machine_models.add(_canonical_identifier(row["machine_model"]))
                 scales.add(_canonical_identifier(row["scale_id"]))
@@ -453,6 +464,14 @@ def evaluate_temporal_eligibility(
             reasons.add("TARGET_DRAW_TIME_CONFLICT")
         if len(assignments) != 1 or len(source_closes) != 1:
             reasons.add("SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT")
+        if len(source_draws) != 1:
+            reasons.add("SOURCE_DRAW_EVENT_TIME_CONFLICT")
+        if len(source_signature_times) != 1:
+            reasons.add("SOURCE_SIGNATURE_TIME_CONFLICT")
+        if len(evidence_available_times) != 1:
+            reasons.add("EVIDENCE_AVAILABILITY_TIME_CONFLICT")
+        if len(custody_received_times) != 1:
+            reasons.add("CUSTODY_RECEIPT_TIME_CONFLICT")
         if len(sphere_types) != 1 or "" in sphere_types or len(machine_models) != 1 or "" in machine_models or len(scales) != 1 or "" in scales:
             reasons.add("METROLOGY_CONFIGURATION_CONFLICT")
         if len(sphere_types) == 1 and "" not in sphere_types:
@@ -536,7 +555,9 @@ def evaluate_temporal_eligibility(
             "MEASUREMENT_AFTER_SOURCE_DRAW", "SOURCE_SIGNED_PRECEDES_MEASUREMENT",
             "SOURCE_SIGNED_AFTER_SOURCE_DRAW", "BROKEN_SOURCE_SIGNATURE_TEMPORAL_ORDER",
             "BROKEN_EVIDENCE_AVAILABILITY_ORDER", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
-            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
+            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "SOURCE_DRAW_EVENT_TIME_CONFLICT",
+            "SOURCE_SIGNATURE_TIME_CONFLICT", "EVIDENCE_AVAILABILITY_TIME_CONFLICT",
+            "CUSTODY_RECEIPT_TIME_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
             "EVIDENCE_DOCUMENT_SET_CONFLICT", "CONTEST_ID_ALIAS_MISMATCH",
             "CONTEST_ID_ORDER_INVALID", "INVALID_DRAW_DATE", "DRAW_DATE_SOURCE_DRAW_MISMATCH",
             "CLASSIC_SCHEDULE_TIME_MISMATCH"
