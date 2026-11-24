@@ -200,6 +200,22 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "DRAW-ACTA signatures are missing"):
             parse_unverified_physical_manifest(encode(document))
 
+    def test_acta_required_roles_cannot_be_claimed_by_one_subject(self):
+        document = valid_document()
+        acta_sha = next(
+            item["sha256"] for item in document["artifacts"]
+            if item["artifact_type"] == "DRAW-ACTA"
+        )
+        acta_signatures = [
+            item for item in document["signatures"]
+            if item["artifact_sha256"] == acta_sha
+        ]
+        self.assertEqual(len(acta_signatures), 4)
+        for item in acta_signatures:
+            item["subject_id"] = "ONE-CLAIMED-SUBJECT"
+        with self.assertRaisesRegex(ValueError, "distinct subjects for the four required roles"):
+            parse_unverified_physical_manifest(encode(document))
+
     def test_cs02_inspection_requires_operator_and_sgvo_roles(self):
         document = valid_document()
         artifact_sha = next(
