@@ -517,5 +517,54 @@ class CustodyTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("candidate_spec_sha256 must be 64 lowercase", reason)
 
+    def test_verifier_rejects_string_subclass_key_before_hash_or_equality(self):
+        record, raw = self.make_record()
+
+        class HostileKey(str):
+            armed = False
+
+            def __hash__(self):
+                return hash("target_contest_id")
+
+            def __eq__(self, other):
+                if self.armed:
+                    raise RuntimeError("hostile key equality executed")
+                return False
+
+        key = HostileKey("untrusted-extra")
+        record[key] = "ignored"
+        key.armed = True
+
+        ok, reason = verify_seal_record(record, raw)
+        self.assertFalse(ok)
+        self.assertEqual(reason, "record keys must be exact built-in strings")
+
+    def test_chain_rejects_hostile_key_before_target_lookup(self):
+        record, raw = self.make_record()
+        record.pop("target_contest_id")
+
+        class HostileKey(str):
+            armed = False
+
+            def __hash__(self):
+                return hash("target_contest_id")
+
+            def __eq__(self, other):
+                if self.armed:
+                    raise RuntimeError("hostile target-key equality executed")
+                return False
+
+        key = HostileKey("target_contest_id")
+        record[key] = 12250
+        key.armed = True
+
+        ok, reason = verify_record_chain([record], {12250: raw})
+        self.assertFalse(ok)
+        self.assertEqual(
+            reason,
+            "record 0 keys must be exact built-in strings",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
