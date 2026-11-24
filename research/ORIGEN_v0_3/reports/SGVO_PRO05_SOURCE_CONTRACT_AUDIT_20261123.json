@@ -1,0 +1,45 @@
+{
+  "snapshot_id": "LN-SGVO-PRO-05-REV39-SOURCE-CONTRACT-2026-11-23-v2",
+  "status": "DOCUMENTARY_SOURCE_AUDIT_COMPLETE",
+  "classification": "MECHANISM_EVIDENCE_ONLY",
+  "findings": {
+    "POLICY_5_2_AND_QUALITY_PLAN_CROSS_REFERENCE_MISMATCH": true,
+    "TIRA_SIGNATORY_ROLE_LABEL_MISMATCH": true,
+    "CS11_TEMPLATE_NOT_OBTAINED": true,
+    "CS11_QUALITY_PLAN_CHECKLIST_OMITS_DRAW_HOUR": true,
+    "CS11_GLOSSARY_SPECIFIES_DRAW_HOUR": true,
+    "SGVO_MAN_02_IS_RESERVED_PROJECT_LEAD_ONLY": true,
+    "REGULATION_ARTICLE_9_VS_PRO05_SEQUENCE_REQUIRES_CLARIFICATION": true,
+    "ELECTRONIC_SIGNATURE_IS_POST_CLOSE_PRE_DRAW": true,
+    "CURRENT_MACHINE_MAINTENANCE_STATUS_UNKNOWN": true,
+    "RFID_EXISTS_BUT_DRAW_LEVEL_TRACE_IS_MISSING": true,
+    "PRO34_TRADITIONAL_SCOPE_EXCLUDED_FROM_CHISPAZO": true,
+    "2026_222_BUILDING_ELECTRICAL_TENDER_EXCLUDED": true
+  },
+  "finding_codes": [
+    "2026_222_BUILDING_ELECTRICAL_TENDER_EXCLUDED",
+    "CS11_GLOSSARY_SPECIFIES_DRAW_HOUR",
+    "CS11_QUALITY_PLAN_CHECKLIST_OMITS_DRAW_HOUR",
+    "CS11_TEMPLATE_NOT_OBTAINED",
+    "CURRENT_MACHINE_MAINTENANCE_STATUS_UNKNOWN",
+    "ELECTRONIC_SIGNATURE_IS_POST_CLOSE_PRE_DRAW",
+    "POLICY_5_2_AND_QUALITY_PLAN_CROSS_REFERENCE_MISMATCH",
+    "PRO34_TRADITIONAL_SCOPE_EXCLUDED_FROM_CHISPAZO",
+    "REGULATION_ARTICLE_9_VS_PRO05_SEQUENCE_REQUIRES_CLARIFICATION",
+    "RFID_EXISTS_BUT_DRAW_LEVEL_TRACE_IS_MISSING",
+    "SGVO_MAN_02_IS_RESERVED_PROJECT_LEAD_ONLY",
+    "TIRA_SIGNATORY_ROLE_LABEL_MISMATCH"
+  ],
+  "physical_bias_claim": false,
+  "predictive_advantage_claim": false,
+  "draw_specific_physical_data_used": false,
+  "frequency_pair_triple_transition_analysis_run": false,
+  "reserved_manual_fields_authoritative": false,
+  "notes": [
+    "Audit is over a frozen transcript of official excerpts, not source PDF binary authentication.",
+    "CS-11 glossary specifies the draw hour; the Quality Plan checklist omits it; the blank form and completed records were not obtained.",
+    "SGVO-MAN-02 is a reserved project copy and is not treated as current approved authority.",
+    "No draw-specific weights, RFID events, asset assignments, maintenance work orders or audiovisual masters were obtained."
+  ],
+  "source_snapshot_sha256": "6f91b0bd52156635403459d30e6acaa32e00ed012954b2bff4956304d21c380b"
+}
