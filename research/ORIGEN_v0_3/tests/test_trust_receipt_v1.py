@@ -571,5 +571,34 @@ class TestTrustReceiptV1(unittest.TestCase):
             parse_unverified_receipt(encode(document))
 
 
+    def test_receipt_attestation_must_use_a_distinct_time_proof_from_output_seals(self):
+        document = valid_document()
+        document["receipt_attestation"]["timestamp_proof_sha256"] = digest("9")
+        document["receipt_attestation"]["signed_at_utc"] = "2026-11-23T02:50:00Z"
+        with self.assertRaisesRegex(
+            ValueError,
+            "receipt attestation must reference a distinct trusted time proof from output seals",
+        ):
+            parse_unverified_receipt(encode(document))
+
+    def test_receipt_attestation_must_not_predate_output_seals(self):
+        document = valid_document()
+        document["trusted_time_proofs"].append(
+            {
+                "authority_id": "tsa-test",
+                "event_id": "event-receipt-early",
+                "event_at_utc": "2026-11-23T02:49:59Z",
+                "proof_sha256": digest("c"),
+            }
+        )
+        document["receipt_attestation"]["timestamp_proof_sha256"] = digest("c")
+        document["receipt_attestation"]["signed_at_utc"] = "2026-11-23T02:49:59Z"
+        with self.assertRaisesRegex(
+            ValueError,
+            "receipt attestation signed_at_utc must not predate output seal creation",
+        ):
+            parse_unverified_receipt(encode(document))
+
+
 if __name__ == "__main__":
     unittest.main()
