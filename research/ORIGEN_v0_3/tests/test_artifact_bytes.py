@@ -106,6 +106,32 @@ class TestArtifactByteIntegrity(unittest.TestCase):
         self.assertEqual(AdversarialDigest.hash_calls, 0)
         self.assertEqual(AdversarialDigest.eq_calls, 0)
 
+    def test_frozen_manifest_artifact_tuple_mutation_is_rejected(self):
+        manifest, payloads = self.make_case()
+        object.__setattr__(manifest, "artifacts", manifest.artifacts[:-1])
+        with self.assertRaisesRegex(TypeError, "exact tuple of all required claims"):
+            verify_declared_artifact_bytes(manifest, payloads)
+
+    def test_frozen_manifest_nested_claim_boolean_length_mutation_is_rejected(self):
+        manifest, payloads = self.make_case()
+        object.__setattr__(manifest.artifacts[0], "byte_length", True)
+        with self.assertRaisesRegex(ValueError, "invalid byte length"):
+            verify_declared_artifact_bytes(manifest, payloads)
+
+    def test_frozen_manifest_target_mutation_is_rejected(self):
+        manifest, payloads = self.make_case()
+        object.__setattr__(manifest, "target", object())
+        with self.assertRaisesRegex(TypeError, "exact PhysicalManifestTarget"):
+            verify_declared_artifact_bytes(manifest, payloads)
+
+    def test_frozen_manifest_duplicate_digest_mutation_is_rejected(self):
+        manifest, payloads = self.make_case()
+        object.__setattr__(
+            manifest.artifacts[1], "sha256", manifest.artifacts[0].sha256
+        )
+        with self.assertRaisesRegex(ValueError, "duplicate SHA-256 digests"):
+            verify_declared_artifact_bytes(manifest, payloads)
+
 
 if __name__ == "__main__":
     unittest.main()
