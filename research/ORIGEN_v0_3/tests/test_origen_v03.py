@@ -2,6 +2,7 @@ import json
 import math
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 from origen.multiplicity import holm_bonferroni
 from origen.evaluation import chronological_split, rolling_origin_folds, evaluate_log_scores
@@ -422,6 +423,83 @@ class TestORIGENV03(unittest.TestCase):
             self.assertEqual(result["state"], "BLOCKED")
             self.assertTrue(any(
                 item["type"] == "timestamp_not_utc"
+                for item in result["findings"]
+            ))
+
+
+    def test_meta_audit_malformed_json_returns_blocked_without_crashing(self):
+        from origen.meta_audit import audit_search_path
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "ledger.jsonl"
+            path.write_bytes(b'{"broken":\n')
+            result = audit_search_path(path)
+
+            self.assertEqual(result["state"], "BLOCKED")
+            self.assertEqual(result["ledger_integrity"], "BLOCKED")
+            self.assertIsNone(result["first_outcome_access_index"])
+            self.assertTrue(any(
+                item["type"] == "ledger_integrity_blocked"
+                for item in result["findings"]
+            ))
+
+    def test_meta_audit_invalid_utf8_returns_blocked_without_crashing(self):
+        from origen.meta_audit import audit_search_path
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "ledger.jsonl"
+            path.write_bytes(b"\xff\xfe\n")
+            result = audit_search_path(path)
+
+            self.assertEqual(result["state"], "BLOCKED")
+            self.assertEqual(result["ledger_integrity"], "BLOCKED")
+            self.assertEqual(
+                result["ledger_errors"],
+                [{"line": 1, "error": "ledger_not_valid_utf8"}],
+            )
+
+    def test_meta_audit_uses_the_same_bytes_that_were_integrity_audited(self):
+        from origen import meta_audit
+        from origen.search_ledger import audit_ledger_bytes
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "ledger.jsonl"
+            replacement = Path(directory) / "replacement.jsonl"
+            append_event(path, {
+                "event_id": "original-prereg",
+                "timestamp_utc": "2026-01-01T00:00:00Z",
+                "event_type": "protocol_sealed",
+                "frame_id": "f",
+                "details": {},
+            })
+            append_event(replacement, {
+                "event_id": "replacement-access",
+                "timestamp_utc": "2026-01-01T00:01:00Z",
+                "event_type": "outcome_access",
+                "frame_id": "f",
+                "details": {},
+            })
+            replacement_bytes = replacement.read_bytes()
+
+            def audit_then_replace(raw):
+                result = audit_ledger_bytes(raw)
+                path.write_bytes(replacement_bytes)
+                return result
+
+            with patch(
+                "origen.meta_audit.audit_ledger_bytes",
+                side_effect=audit_then_replace,
+            ):
+                result = meta_audit.audit_search_path(path)
+
+            self.assertEqual(result["ledger_integrity"], "PASS")
+            self.assertIsNone(result["first_outcome_access_index"])
+            self.assertTrue(any(
+                item["type"] == "no_outcome_access_event_recorded"
+                for item in result["findings"]
+            ))
+            self.assertFalse(any(
+                item["type"] == "outcome_access_before_preregistration"
                 for item in result["findings"]
             ))
 

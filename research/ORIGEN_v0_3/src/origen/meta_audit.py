@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import re
 
-from .search_ledger import audit_ledger
+from .search_ledger import audit_ledger_bytes
 
 OUTCOME_ACCESS = {"outcome_access", "result_viewed", "test_outcome_access"}
 ADAPTIVE_CHANGES = {
@@ -22,10 +22,32 @@ _TIMESTAMP_RE = re.compile(
 
 
 def audit_search_path(path: str | Path) -> dict:
-    integrity = audit_ledger(path)
+    # Read once, then audit and interpret this exact immutable snapshot. A
+    # second path read after a successful audit would create a TOCTOU gap.
+    raw = Path(path).read_bytes()
+    integrity = audit_ledger_bytes(raw)
+    if integrity["state"] != "PASS":
+        return {
+            "state": "BLOCKED",
+            "ledger_integrity": integrity["state"],
+            "events": integrity["events"],
+            "first_outcome_access_index": None,
+            "findings": [{
+                "severity": "BLOCKER",
+                "type": "ledger_integrity_blocked",
+            }],
+            "ledger_errors": integrity["errors"],
+            "interpretation": (
+                "Search-path semantics were not evaluated because ledger "
+                "integrity did not pass. The auditor fails closed and does not "
+                "parse malformed or tampered records. A valid local hash chain "
+                "still does not prove that every real-world action was logged."
+            ),
+        }
+    text = raw.decode("utf-8", errors="strict")
     events = [
         json.loads(line)["event"]
-        for line in Path(path).read_text(encoding="utf-8").splitlines()
+        for line in text.splitlines()
         if line.strip()
     ]
     findings = []

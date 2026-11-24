@@ -154,6 +154,17 @@ def audit_ledger(path: str | Path) -> dict:
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(p)
+    return audit_ledger_bytes(p.read_bytes())
+
+
+def audit_ledger_bytes(raw: bytes) -> dict:
+    """Audit one immutable byte snapshot, so callers can reuse the same bytes.
+
+    This prevents a caller from validating a path and then accidentally parsing
+    a different file version after a replacement between two reads.
+    """
+    if type(raw) is not bytes:
+        raise TypeError("ledger_input_must_be_exact_bytes")
 
     errors = []
     count = 0
@@ -161,7 +172,7 @@ def audit_ledger(path: str | Path) -> dict:
     previous = GENESIS
     legacy = False
     try:
-        text = p.read_text(encoding="utf-8")
+        text = raw.decode("utf-8", errors="strict")
     except UnicodeDecodeError:
         return {
             "events": 0,
