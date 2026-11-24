@@ -30,6 +30,16 @@ class TestORIGENV03(unittest.TestCase):
         self.assertAlmostEqual(r["results"]["c"]["p_adjusted"],.06)
     def test_holm_rejects_bad(self):
         with self.assertRaises(ValueError): holm_bonferroni({"x":1.2})
+    def test_holm_rejects_boolean_p_values(self):
+        for value in (False, True):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "invalid_p_value"):
+                    holm_bonferroni({"boolean": value})
+
+    def test_holm_rejects_non_string_hypothesis_ids(self):
+        with self.assertRaisesRegex(ValueError, "invalid_p_value"):
+            holm_bonferroni({1: 0.01})
+
     def test_chronological_split(self):
         s=chronological_split(10,6,2); self.assertEqual(s["evaluation_indices"],[6,7]); self.assertEqual(s["unused_future_indices"],[8,9])
     def test_rolling_origin(self):
@@ -53,6 +63,50 @@ class TestORIGENV03(unittest.TestCase):
         self.assertFalse(r["edge_certified"]); self.assertFalse(r["promotion_authorized"])
     def test_bad_probability(self):
         with self.assertRaises(ValueError): evaluate_log_scores([{"p_alt":0,"p_null":P0}],protocol_status="DRAFT",family_p_values={"p":.5},primary_test_id="p",gates={})
+    def test_boolean_probabilities_are_not_numeric_probabilities(self):
+        for field, value in (("p_alt", True), ("p_alt", False), ("p_null", True), ("p_null", False)):
+            with self.subTest(field=field, value=value):
+                row = {"p_alt": 2 * P0, "p_null": P0}
+                row[field] = value
+                with self.assertRaisesRegex(ValueError, "must_be_finite"):
+                    evaluate_log_scores(
+                        [row], protocol_status="DRAFT",
+                        family_p_values={"p": 0.5}, primary_test_id="p", gates={}
+                    )
+
+    def test_boolean_holm_p_value_cannot_manufacture_statistical_candidate(self):
+        rows = [{"p_alt": 2 * P0, "p_null": P0} for _ in range(120)]
+        gates = {key: True for key in REQUIRED_EDGE_GATES}
+        with self.assertRaisesRegex(ValueError, "invalid_p_value"):
+            evaluate_log_scores(
+                rows, protocol_status="PREREGISTERED",
+                family_p_values={"primary": False}, primary_test_id="primary",
+                gates=gates, exact5_max_log_e_value=math.log(20)
+            )
+
+    def test_observation_dict_subclass_is_rejected(self):
+        class SpoofedObservation(dict):
+            pass
+
+        with self.assertRaisesRegex(ValueError, "exact_dict"):
+            evaluate_log_scores(
+                [SpoofedObservation(p_alt=2 * P0, p_null=P0)],
+                protocol_status="DRAFT", family_p_values={"p": 0.5},
+                primary_test_id="p", gates={}
+            )
+
+    def test_gate_dict_subclass_is_rejected(self):
+        class SpoofedGates(dict):
+            def get(self, key, default=None):
+                return True
+
+        with self.assertRaisesRegex(ValueError, "exact_dict"):
+            evaluate_log_scores(
+                [{"p_alt": 2 * P0, "p_null": P0}],
+                protocol_status="DRAFT", family_p_values={"p": 0.5},
+                primary_test_id="p", gates=SpoofedGates()
+            )
+
     def test_primary_family_required(self):
         with self.assertRaises(ValueError): evaluate_log_scores([{"p_alt":2*P0,"p_null":P0}],protocol_status="DRAFT",family_p_values={"x":.5},primary_test_id="p",gates={})
     def test_null_must_be_exact_uniform_five_of_28(self):

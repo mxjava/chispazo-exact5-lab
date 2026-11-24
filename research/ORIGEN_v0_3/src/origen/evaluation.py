@@ -53,18 +53,34 @@ def evaluate_log_scores(
     if (not isinstance(min_observations, int) or isinstance(min_observations, bool)
             or min_observations < 1):
         raise ValueError("min_observations_must_be_positive_integer")
-    if not isinstance(gates, dict):
-        raise ValueError("gates_must_be_a_mapping")
+    if type(gates) is not dict:
+        raise ValueError("gates_must_be_an_exact_dict")
+    if type(family_p_values) is not dict:
+        raise ValueError("family_p_values_must_be_an_exact_dict")
+    if type(primary_test_id) is not str or not primary_test_id:
+        raise ValueError("primary_test_id_must_be_non_empty_exact_text")
+    if type(protocol_status) is not str:
+        raise ValueError("protocol_status_must_be_exact_text")
     if primary_test_id not in family_p_values:
         raise ValueError("primary_test_missing_from_full_hypothesis_family")
 
     lifts = []
     for index, row in enumerate(rows):
+        if type(row) is not dict or any(type(key) is not str for key in row):
+            raise ValueError(f"observation_must_be_exact_dict_with_text_keys_at_row_{index}")
         try:
-            p_alt = float(row["p_alt"])
-            p_null = float(row["p_null"])
-        except (KeyError, TypeError, ValueError) as exc:
+            raw_alt = row["p_alt"]
+            raw_null = row["p_null"]
+        except KeyError as exc:
             raise ValueError(f"invalid_probability_at_row_{index}") from exc
+        # bool is a subclass of int, and float(True) == 1.0. Reject booleans,
+        # numeric subclasses and text coercions before probability arithmetic.
+        if type(raw_alt) not in (int, float) or not 0 < raw_alt <= 1:
+            raise ValueError(f"alternative_probability_must_be_finite_and_in_(0,1]_at_row_{index}")
+        if type(raw_null) not in (int, float) or not 0 < raw_null <= 1:
+            raise ValueError(f"null_probability_must_be_finite_and_in_(0,1]_at_row_{index}")
+        p_alt = float(raw_alt)
+        p_null = float(raw_null)
         if not (isfinite(p_alt) and 0.0 < p_alt <= 1.0):
             raise ValueError(f"alternative_probability_must_be_finite_and_in_(0,1]_at_row_{index}")
         if not (isfinite(p_null) and p_null > 0.0 and p_null <= 1.0):
