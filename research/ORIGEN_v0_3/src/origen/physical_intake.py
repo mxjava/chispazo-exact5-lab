@@ -69,6 +69,11 @@ def _timestamp(value: str, field: str) -> datetime:
 def _positive_decimal(value: str, field: str) -> Decimal:
     if type(value) is not str:
         raise ValueError(f"{field}: must be exact text")
+    # Accept one unambiguous decimal spelling only. Decimal() itself also
+    # accepts whitespace, underscores, leading signs and exponent notation;
+    # those alternate spellings are not part of the physical CSV contract.
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", value):
+        raise ValueError(f"{field}: must use canonical unsigned decimal text")
     try:
         number = Decimal(value)
     except (InvalidOperation, ValueError) as exc:
@@ -84,8 +89,8 @@ def _positive_decimal(value: str, field: str) -> Decimal:
 
 
 def _positive_int(value: str, field: str) -> int:
-    if type(value) is not str or not value.isdecimal():
-        raise ValueError(f"{field}: must be a positive integer")
+    if type(value) is not str or not re.fullmatch(r"[0-9]+", value):
+        raise ValueError(f"{field}: must be a positive ASCII integer")
     number = int(value)
     if number <= 0:
         raise ValueError(f"{field}: must be a positive integer")
