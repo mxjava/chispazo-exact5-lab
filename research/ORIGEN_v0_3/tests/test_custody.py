@@ -248,6 +248,33 @@ class CustodyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "digest mismatch"):
                 write_record_exclusive(Path(tmp) / "forged.json", record)
 
+    def test_exclusive_writer_rejects_rehashed_classic_record_at_1500_slot(self):
+        record, _ = self.make_record()
+        # 21:00 UTC is 15:00 in America/Mexico_City: De las Tres, not Classic.
+        record["official_draw_close_at_utc"] = "2026-11-22T21:00:00Z"
+        unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
+        record["record_sha256"] = sha256_bytes(
+            json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "wrong-slot.json"
+            with self.assertRaisesRegex(ValueError, "official_draw_close_at_utc must resolve to the 21:00"):
+                write_record_exclusive(path, record)
+            self.assertFalse(path.exists())
+
+    def test_exclusive_writer_rejects_rehashed_nonprior_history_cutoff(self):
+        record, _ = self.make_record()
+        record["history_max_contest_id"] = record["target_contest_id"]
+        unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
+        record["record_sha256"] = sha256_bytes(
+            json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "nonprior-history.json"
+            with self.assertRaisesRegex(ValueError, "history cutoff is not strictly prior"):
+                write_record_exclusive(path, record)
+            self.assertFalse(path.exists())
+
     def test_record_file_is_exclusive(self):
         record, _ = self.make_record()
         with tempfile.TemporaryDirectory() as tmp:
