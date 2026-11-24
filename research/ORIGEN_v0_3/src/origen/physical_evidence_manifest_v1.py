@@ -587,16 +587,20 @@ def parse_unverified_physical_manifest(raw: bytes) -> UnverifiedPhysicalEvidence
     if time_authorities.intersection(signer_subjects | custodian_subjects):
         raise ValueError("trusted time authority IDs must be distinct from signers and custodians")
 
+    source_ids = {item.source_id for item in artifacts}
+    if source_ids.intersection(signer_subjects | custodian_subjects | time_authorities):
+        raise ValueError(
+            "artifact source IDs must be distinct from signers, custodians, "
+            "and trusted time authorities"
+        )
+
     ledger = _parse_ledger_anchor(root["ledger_anchor"])
     # A ledger is a separate trust participant, not merely another label in
     # the manifest. Reject aliases with the artifact source, any signer,
     # any custodian, or any trusted-time authority before exposing the
     # explicitly unverified parsed object.
     ledger_participants = (
-        {item.source_id for item in artifacts}
-        | signer_subjects
-        | custodian_subjects
-        | time_authorities
+        source_ids | signer_subjects | custodian_subjects | time_authorities
     )
     if ledger.ledger_id in ledger_participants:
         raise ValueError(
