@@ -69,6 +69,9 @@ def validate() -> dict:
 
     rfid = report["sources"]["RFID_management_report"]
     assert rfid["reported_machines"]["total"] == 14
+    assert rfid["product_specific_assignment_published"] is False
+    assert report["rfid_limits"]["reported_fleet_mapped_to_chispazo"] is False
+    assert report["sources"]["SGVO-MAN-02_project_pdf"]["chispazo_models_listed"] == ["Jupiter", "Emerald", "Unicorn"]
     assert rfid["sets_reported"]["arithmetic_consistent"] is False
     assert rfid["expansion_project"]["status_at_2024-06"] == "NOT_AUTHORIZED"
     assert report["rfid_limits"]["case_RFID_confirmed"] is False
