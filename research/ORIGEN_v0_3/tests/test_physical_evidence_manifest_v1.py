@@ -404,6 +404,23 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must advance"):
             parse_unverified_physical_manifest(encode(document))
 
+    def test_ledger_id_cannot_alias_any_declared_trust_participant(self):
+        aliases = (
+            ("artifact source", lambda document: document["artifacts"][0]["source_id"]),
+            ("signer", lambda document: document["signatures"][0]["subject_id"]),
+            ("custodian", lambda document: document["custody_events"][0]["custodian_subject_id"]),
+            ("trusted time authority", lambda document: document["trusted_time_proofs"][0]["authority_id"]),
+        )
+        for label, identity in aliases:
+            with self.subTest(alias=label):
+                document = valid_document()
+                document["ledger_anchor"]["ledger_id"] = identity(document)
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "ledger ID must be distinct from artifact sources, signers, custodians, and trusted time authorities",
+                ):
+                    parse_unverified_physical_manifest(encode(document))
+
     def test_boolean_is_not_accepted_as_byte_length(self):
         document = valid_document()
         document["artifacts"][0]["byte_length"] = True
