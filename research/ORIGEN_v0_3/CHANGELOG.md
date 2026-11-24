@@ -1,3 +1,9 @@
+## One calibration certificate, one validity window in V2 intake (2026-11-24)
+- Reproduced a structural inconsistency: 28 sphere rows could share one `scale_id` and one `calibration_certificate_sha256` while declaring different calibration-validity windows. Each row independently covered its measurement, so the target incorrectly remained `STRUCTURAL_PRE_CLOSE_ONLY`.
+- Regression-only commit `b68b86d8e75a7b151a1a39f52367b77424dcc59c` failed the isolated suite on `test_one_scale_certificate_cannot_claim_conflicting_validity_windows` (424 tests, one expected red test; run [45465355219](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/45465355219)).
+- Fix commit `366ed75d49625fbb9995401c2fd376747b58a160` now requires one distinct parsed calibration-validity window per target group. A conflict maps to `METROLOGY_CONFIGURATION_CONFLICT` / `BLOCKED_CONTINUITY`.
+- This binds declarations to one scale/certificate pair only. The parser still does not read or authenticate the certificate bytes, issuer, metrology traceability, or calibration validity.
+
 ## Custody writer rejects rehashed structurally invalid records (2026-11-24)
 - Found that `write_record_exclusive()` checked only the exact field set and record digest. A caller could mutate a built record to claim a 15:00 Mexico City close under CLASSIC (or a non-prior history cutoff), recompute the public digest, and occupy an exclusive ledger path with a record that the verifier would later reject.
 - Added writer-side structural validation before directory creation/file creation: schema and exact scalar types, Classic modality and 21:00:00 Mexico City slot, pre-close timestamp ordering, prior-history cutoff, fixed 30-line declaration, hash declaration consistency, generator/custodian separation and canonical record digest.
