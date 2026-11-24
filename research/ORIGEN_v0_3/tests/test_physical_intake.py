@@ -340,7 +340,7 @@ class PhysicalIntakeTests(unittest.TestCase):
                 writer = csv.DictWriter(stream, fieldnames=REQUIRED_COLUMNS)
                 writer.writeheader()
                 writer.writerows(rows)
-            with self.assertRaisesRegex(ValueError, "CSV multiline fields are not supported"):
+            with self.assertRaisesRegex(ValueError, "CSV record syntax is invalid"):
                 validate_physical_csv(path)
 
     def test_csv_rejects_decoded_row_text_over_limit(self):
