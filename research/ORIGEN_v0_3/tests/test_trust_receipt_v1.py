@@ -354,6 +354,30 @@ class TestTrustReceiptV1(unittest.TestCase):
         ):
             parse_unverified_receipt(encode(document))
 
+    def test_same_artifact_digest_cannot_declare_conflicting_byte_lengths(self):
+        document = valid_document()
+        duplicate_bytes = copy.deepcopy(document["artifacts"][0])
+        duplicate_bytes["artifact_type"] = "draw-act"
+        duplicate_bytes["byte_length"] += 1
+        document["artifacts"].append(duplicate_bytes)
+        with self.assertRaisesRegex(
+            ValueError,
+            "reuse a SHA-256 digest with inconsistent byte lengths",
+        ):
+            parse_unverified_receipt(encode(document))
+
+    def test_same_artifact_digest_may_be_catalogued_under_two_types_at_same_length(self):
+        document = valid_document()
+        second_type = copy.deepcopy(document["artifacts"][0])
+        second_type["artifact_type"] = "draw-act"
+        document["artifacts"].append(second_type)
+        parsed = parse_unverified_receipt(encode(document))
+        self.assertEqual(len(parsed.artifacts), 2)
+        self.assertEqual(
+            parsed.artifacts[0].byte_length,
+            parsed.artifacts[1].byte_length,
+        )
+
     def test_artifact_cannot_claim_another_contest(self):
         document = valid_document()
         document["artifacts"][0]["contest_id"] = "12390"
