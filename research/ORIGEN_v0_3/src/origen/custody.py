@@ -341,7 +341,14 @@ def verify_record_chain(
 
 def write_record_exclusive(path: str | Path, record: dict[str, Any]) -> None:
     """Create a record file without replacement; this is not tamper-proof storage."""
-    if type(record) is not dict or set(record) != _RECORD_FIELDS:
+    if type(record) is not dict:
+        raise ValueError("record must be an exact dict matching the exact v1 schema")
+    # This writer is also a public untrusted-object boundary. A str subclass
+    # can override __hash__ or __eq__; reject it before set construction,
+    # dictionary lookup, or digest serialization can invoke caller code.
+    if any(type(key) is not str for key in record):
+        raise ValueError("record keys must be exact built-in strings")
+    if set(record) != _RECORD_FIELDS:
         raise ValueError("record must be an exact dict matching the exact v1 schema")
     if record.get("record_sha256") != _record_digest(record):
         raise ValueError("record digest mismatch; refusing to write")
