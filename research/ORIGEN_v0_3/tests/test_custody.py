@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 from origen.custody import (
-    GENESIS, build_seal_record, read_record, sha256_bytes,
+    GENESIS, MAX_CUSTODY_RECORD_BYTES, build_seal_record, read_record, sha256_bytes,
     verify_seal_record, verify_record_chain, write_record_exclusive,
 )
 
@@ -283,6 +283,16 @@ class CustodyTests(unittest.TestCase):
             self.assertEqual(read_record(path), record)
             with self.assertRaises(FileExistsError):
                 write_record_exclusive(path, record)
+
+    def test_writer_rejects_record_larger_than_reader_limit_before_creating_file(self):
+        record, _ = self.make_record(candidate_id="x" * MAX_CUSTODY_RECORD_BYTES)
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp) / "new-parent"
+            path = directory / "oversized.json"
+            with self.assertRaisesRegex(ValueError, "maximum size of"):
+                write_record_exclusive(path, record)
+            self.assertFalse(path.exists())
+            self.assertFalse(directory.exists())
 
     def test_duplicate_portfolio_lines_rejected(self):
         raw = portfolio_bytes()

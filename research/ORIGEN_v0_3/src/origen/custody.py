@@ -413,9 +413,14 @@ def _validate_record_for_write(record: dict[str, Any]) -> None:
 def write_record_exclusive(path: str | Path, record: dict[str, Any]) -> None:
     """Create a record file without replacement; this is not tamper-proof storage."""
     _validate_record_for_write(record)
+    payload = canonical_json_bytes(record) + b"\n"
+    if len(payload) > MAX_CUSTODY_RECORD_BYTES:
+        raise ValueError(
+            "record file exceeds maximum size of "
+            + str(MAX_CUSTODY_RECORD_BYTES) + " bytes"
+        )
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    payload = canonical_json_bytes(record) + b"\n"
     fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     try:
         with os.fdopen(fd, "wb") as stream:
