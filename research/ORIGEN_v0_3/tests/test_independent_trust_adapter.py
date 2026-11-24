@@ -12,7 +12,12 @@ from origen.trust_receipt_v1 import (
     MAX_TRUST_RECEIPT_BYTES,
     parse_unverified_receipt,
 )
+from origen.trust_receipt_v2 import (
+    UnverifiedTrustReceiptV2,
+    parse_unverified_receipt_v2,
+)
 from test_trust_receipt_v1 import encode, valid_document
+from test_trust_receipt_v2 import valid_v2_document
 
 
 class TestIndependentTrustAdapter(unittest.TestCase):
@@ -29,6 +34,19 @@ class TestIndependentTrustAdapter(unittest.TestCase):
         raw = encode(valid_document())
         parsed = parse_unverified_receipt(raw)
         self.assertEqual(parsed.declared_status, "AUTHENTICATED")
+        self.assertIs(
+            verify_independent_provenance(raw),
+            ProvenanceStatus.BLOCKED_PROVENANCE,
+        )
+
+    def test_structurally_valid_v2_with_unverified_timestamp_claims_still_blocks(self):
+        # The fixture contains only declared proof digests, not TSA token bytes
+        # or externally provisioned TSA trust roots. Structural consistency
+        # must never be mistaken for authenticated provenance at this boundary.
+        raw = encode(valid_v2_document())
+        parsed = parse_unverified_receipt_v2(raw)
+        self.assertIsInstance(parsed, UnverifiedTrustReceiptV2)
+        self.assertEqual(len(parsed.output_seal_time_bindings), 2)
         self.assertIs(
             verify_independent_provenance(raw),
             ProvenanceStatus.BLOCKED_PROVENANCE,
