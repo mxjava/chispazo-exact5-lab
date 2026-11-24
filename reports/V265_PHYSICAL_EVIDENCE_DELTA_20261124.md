@@ -107,7 +107,7 @@ No se publican IDs de tags, eventos de lectores, mapeo etiqueta→número de esf
 - **Riesgos:** CS-18 Comunicación de Riesgo permite reportar debilidades y riesgos, pero el procedimiento público no fija un timestamp universal. Sólo sería prospectivo si la entrada concreta estuviera firmada y disponible antes del cierre.
 - **Accesos:** CS-12 registra a quienes ingresan a la sala durante el evento; no es por defecto una variable pre-cierre.
 - **Video:** SGVO-PRO-05 exige grabación desde el pesaje hasta la celebración. La versión editada (sólo el sorteo) se integra al Acta. Para reconstruir pesaje y preparación se requiere el máster continuo, metadatos originales, timecodes y cadena de custodia.
-- **Firma electrónica:** el archivo de participaciones se firma después del cierre y se resguarda antes de la ceremonia. Es control de integridad del archivo de ventas, no evidencia física de las esferas ni variable pre-cierre.
+- **Firmas electrónicas:** son dos objetos distintos. (1) El archivo de participaciones/cancelaciones recibe firma inmediatamente después del cierre y se resguarda antes de la ceremonia: control de integridad de ventas, no dato físico ni pre-cierre. (2) La Relación de Ganadores recibe su propia firma electrónica después de capturar los resultados y se incorpora al Acta: evidencia de integridad postresultado.
 
 ## 9. V265 — revisión del contrato real
 
