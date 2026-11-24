@@ -404,6 +404,29 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must advance"):
             parse_unverified_physical_manifest(encode(document))
 
+    def test_artifact_source_cannot_alias_signer_custodian_or_time_authority(self):
+        aliases = (
+            ("signer", lambda document: document["signatures"][0]["subject_id"]),
+            ("custodian", lambda document: document["custody_events"][0]["custodian_subject_id"]),
+            ("trusted time authority", lambda document: document["trusted_time_proofs"][0]["authority_id"]),
+        )
+        for label, identity in aliases:
+            with self.subTest(alias=label):
+                document = valid_document()
+                document["artifacts"][0]["source_id"] = identity(document)
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "artifact source IDs must be distinct from signers, custodians, and trusted time authorities",
+                ):
+                    parse_unverified_physical_manifest(encode(document))
+
+    def test_repeated_source_id_across_artifacts_remains_valid(self):
+        document = valid_document()
+        for artifact in document["artifacts"]:
+            artifact["source_id"] = "LOTERIA-NACIONAL"
+        parsed = parse_unverified_physical_manifest(encode(document))
+        self.assertEqual({item.source_id for item in parsed.artifacts}, {"LOTERIA-NACIONAL"})
+
     def test_ledger_id_cannot_alias_any_declared_trust_participant(self):
         aliases = (
             ("artifact source", lambda document: document["artifacts"][0]["source_id"]),
