@@ -282,12 +282,12 @@
     "V294_modified": false
   },
   "ci_validation": {
-    "code_test_commit": "3dc1ea7d0aa00892edbed12f15b5f09d46d0f3cb",
+    "code_test_commit": "e826d5c7341a3b51f9b59d67341af46ac9d4e476",
     "status": "SUCCESS",
     "compileall": "PASS",
     "pytest_passed": 262,
     "pytest_skipped": 2,
-    "pytest_duration_seconds": 38.71,
-    "workflow_run": "https://github.com/mxjava/chispazo-exact5-lab/actions/runs/45413957473"
+    "pytest_duration_seconds": 39.64,
+    "workflow_run": "https://github.com/mxjava/chispazo-exact5-lab/actions/runs/45414890943"
   }
 }
