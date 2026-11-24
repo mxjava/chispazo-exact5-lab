@@ -639,10 +639,19 @@ def evaluate_temporal_csv(
             raise ValueError("unexpected columns: " + ", ".join(unexpected))
 
         def rows() -> Iterable[dict[str, Any]]:
+            # Multiline cells are rejected and blank physical lines are skipped.
+            # Count every physical record so blank-line-only feeds cannot bypass
+            # the intake row ceiling and force unbounded file scanning.
+            physical_record_count = 0
             while True:
                 raw_line = stream.readline(MAX_V2_CSV_RECORD_BYTES + 1)
                 if not raw_line:
                     return
+                physical_record_count += 1
+                if physical_record_count > MAX_V2_INTAKE_ROWS:
+                    raise csv.Error(
+                        f"CSV exceeds maximum {MAX_V2_INTAKE_ROWS} physical records"
+                    )
                 if len(raw_line) > MAX_V2_CSV_RECORD_BYTES:
                     raise csv.Error(
                         f"CSV record exceeds maximum {MAX_V2_CSV_RECORD_BYTES} bytes"
