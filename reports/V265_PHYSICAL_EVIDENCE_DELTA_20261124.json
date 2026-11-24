@@ -1,0 +1,275 @@
+{
+  "audit_id": "V265_PHYSICAL_EVIDENCE_DELTA_20261124",
+  "retrieved_on": "2026-11-24",
+  "audit_type": "deterministic_official_document_reconciliation",
+  "uses_draw_outcomes": false,
+  "uses_synthetic_records": false,
+  "classification": "MECHANISM_DOCUMENTATION_ONLY",
+  "predictive_advantage_claimed": false,
+  "sources": {
+    "normateca_current": {
+      "url": "https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+      "claim": "SGVO-PRO-05 is listed among current substantive norms with last update 2026-03-20; traditional-draw procedures are listed separately."
+    },
+    "SGVO-PRO-05": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+      "revision": 39,
+      "dn07_version": 9,
+      "last_updated": "2026-03-20",
+      "status": "CURRENT_LISTED",
+      "pages": {
+        "policy_6_weights": 4,
+        "policy_8_electronic_signature": 4,
+        "activity_3_case_confirmation": 12,
+        "activity_4_sales_close": 12,
+        "activity_5_weighing_and_feeders": 13,
+        "activity_13_CS11": 16,
+        "acta_incidents_CS09_video_CS12_CS18": "8-11",
+        "maintenance_calibration": 10,
+        "CS11_glossary": 30,
+        "Tira_glossary": 31,
+        "quality_plan": "24-25"
+      }
+    },
+    "Reglamento_Chispazo": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/ChizpasoDOF18062003.pdf",
+      "last_amendment": "2012-03-07",
+      "articles": {
+        "8": "web and other published results are informative; official result is the one in the Acta",
+        "9": "28 spheres are introduced into the urn before the sales close; the system then closes, creates and signs the participation file; five spheres are drawn afterwards",
+        "15": "Acta is prepared after the ceremony and records background, results and incidents"
+      }
+    },
+    "Chispazo_product_page": {
+      "url": "https://loterianacional.gob.mx/Chispazo/Chispazo",
+      "claim": "Chispazo is classified under Sorteos Electrónicos; De las Tres is scheduled at 15:00 and Clásico at 21:00."
+    },
+    "Normateca_projects": {
+      "url": "https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0",
+      "claim": "SGVO-MAN-02 Manual de Apoyo para la Operación de Sorteos y Equipos Electrónicos appears in the project list for 2026-02-23 to 2026-03-04."
+    },
+    "SGVO-MAN-02_project_pdf": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/PROYECTO/sgvo_man_02p.pdf",
+      "revision": 9,
+      "document_type": "RESERVADO",
+      "status": "PROJECT_NOT_CURRENT_LISTED",
+      "use": "Do not use as current public operating specification."
+    },
+    "SGM-PRO-06_legacy_copy": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgm_p0_6.pdf",
+      "revision": 22,
+      "dn07_version": 5,
+      "last_change": "2017-06",
+      "status": "LEGACY_UNINDEXED_COPY_NOT_IN_CURRENT_NORMATECA_LIST",
+      "claims_only_if_historically_applicable": {
+        "Chispazo_weighing_preference": "preferably before a stated 21:15 sales close",
+        "Tira": "individual sphere weights, start and finish date/time stamps, count, mean, min, max and spread",
+        "CS02": "detailed component checklist and 27-30 psi compressor range",
+        "sphere_set": "28 spheres; yellow or blue according to machine"
+      },
+      "caution": "The current Normateca list does not list SGM-PRO-06 as current. Its 21:15 wording and technical details cannot override SGVO-PRO-05 revision 39."
+    },
+    "RFID_management_report": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf",
+      "report_date": "2024-08-30",
+      "page": 43,
+      "reported_machines": {
+        "Jupiter": 10,
+        "Mercury_5": 2,
+        "Mercury_8": 2,
+        "total": 14
+      },
+      "reported_RFID": "All machines and spheres are described as RFID-recognized.",
+      "sets_reported": {
+        "sets_per_product": 10,
+        "products_listed": 7,
+        "reported_total": 60,
+        "arithmetic_consistent": false
+      },
+      "delivery_date": "2022-03-07",
+      "installation_complete": "2022-03-10",
+      "expansion_project": {
+        "planned_additional_machines": 8,
+        "planned_RFID_systems": 2,
+        "status_at_2024-06": "NOT_AUTHORIZED"
+      },
+      "limits": "No tag identifiers, reader logs, per-contest machine assignment, sphere-number map, or evidence of RFID on cases is published."
+    },
+    "SEGOB_inspection": {
+      "url": "https://www.juegosysorteos.gob.mx/es/Juegos_y_Sorteos/inspecciones_lotenal_pronosticos",
+      "claim": "DGJS Inspection and Surveillance states it gives faith/legal certainty/transparency to draws by institutions including Lotería Nacional."
+    }
+  },
+  "normative_status": {
+    "SGVO-PRO-05": "CURRENT_LISTED_REV39",
+    "SGVO-MAN-02": "PROJECT_AND_DOCUMENT_TYPE_RESERVED",
+    "SGM-PRO-06": "LEGACY_PUBLIC_COPY_NOT_LISTED_CURRENT"
+  },
+  "current_SGVO_chronology": [
+    "CS-02 equipment inspection before each draw",
+    "activity 3.1 confirms draw number and initial sphere case with SEGOB and DG representative",
+    "activity 4.1 verifies SICAL sales status Closed and records date, time, draw number and sales in the Sumario",
+    "activity 5.1 weighs spheres one by one in numerical order after the closed-state verification",
+    "activity 5.2 checks weights; it mistakenly references Policy 8",
+    "activity 5.3 replaces a failed case and returns to activity 4.1; it does not state that sales reopen",
+    "activity 5.4 signs the Tira; activity 5.5 attaches it to the Acta",
+    "activity 5.6 places spheres in feeders in progressive order",
+    "activity 6.1 verifies the deposited spheres",
+    "the draw is conducted and the numbers are captured and checked",
+    "activity 13 records, verifies and signs CS-11",
+    "the Acta is prepared, records any incident, signed and archived with annexes"
+  ],
+  "weight_policy_cross_reference": {
+    "actual_weight_policy": 6,
+    "activity_5_2_reference": 8,
+    "quality_plan_item_2_reference": 8,
+    "policy_8_subject": "electronic signature of participation file",
+    "defect": "The activity and quality plan cross-reference Policy 8 for weight, although the weight limits are in Policy 6."
+  },
+  "weight_limits_in_current_policy_6": {
+    "Ping_Pong": {
+      "minimum_g": 2.3,
+      "maximum_g": 3.0,
+      "maximum_set_spread_g": 0.15
+    },
+    "Smartballs": {
+      "minimum_g": 4.25,
+      "maximum_g": 5.25,
+      "maximum_set_spread_g": 0.3
+    },
+    "Chispazo_type_by_machine": "NOT_PUBLISHED_IN_SGVO-PRO-05"
+  },
+  "chronology_reconciliation": {
+    "SGVO_same_draw_weighing": "POST_CLOSE",
+    "Regulation_article_9_urn_loading": "PRE_CLOSE",
+    "legacy_SGM-PRO-06_preclose_preference": "PREFERABLY_BEFORE_21_15_BUT_NOT_CURRENT_LISTED",
+    "status": "UNRESOLVED_PHYSICAL_SEQUENCE",
+    "interpretation": "The regulation's urn-loading wording, current procedure's post-close weighing and feeder-loading sequence, and the old procedure's preferred pre-close weighing must be reconciled in writing. Do not infer that urn and feeders are the same operation or that the old 21:15 time governs current Clásico."
+  },
+  "CS02": {
+    "current_requirement": "Daily equipment inspection before each draw; nonconforming equipment or scale is replaced.",
+    "current_public_schema_detail": "SGVO-PRO-05 references the Manual of Support but does not expose the complete current CS-02 field list or technical checklist.",
+    "legacy_detail": "Detailed components and 27-30 psi appear in SGM-PRO-06 rev22 only.",
+    "actual_contest_records_obtained": false
+  },
+  "Tira_de_Pesaje": {
+    "current_SGVO_definition": "Records the weight of each sphere and is signed by the weighing responsible, Operations representative, DG representative and SEGOB inspector.",
+    "current_public_schema": {
+      "per_sphere_weight": true,
+      "signature_roles": 4,
+      "explicit_start_timestamp": false,
+      "explicit_end_timestamp": false,
+      "per_sphere_RFID_or_ID": false,
+      "extraction_order": false,
+      "per_sphere_extraction_timestamp": false
+    },
+    "legacy_SGM-PRO-06_schema": {
+      "per_sphere_weight": true,
+      "start_and_end_datetime": true,
+      "aggregate_count_mean_min_max_spread": true,
+      "per_sphere_RFID_or_ID": false,
+      "per_sphere_extraction_timestamp": false,
+      "status": "NOT_CURRENT_LISTED"
+    }
+  },
+  "CS11": {
+    "official_name": "Números Ganadores de los Sorteos CS-11",
+    "is_the_Acta": false,
+    "role": "A results form attached to the Acta.",
+    "fields": [
+      "date",
+      "draw name",
+      "draw number",
+      "draw time",
+      "selected case",
+      "results",
+      "elaborator signature",
+      "verifier signature",
+      "certifier signature",
+      "DG representative signature"
+    ],
+    "plan_quality_additional_checks": [
+      "date",
+      "draw number",
+      "case number",
+      "spheres versus recorded numbers",
+      "names of participants"
+    ],
+    "timing": "After extraction; not a same-draw pre-close input."
+  },
+  "other_operational_records": {
+    "maintenance": "Annual equipment maintenance calendar required; no contest-level calendar or work orders obtained.",
+    "scale_calibration": "At least annual calibration required; no certificates or scale serial mapping obtained.",
+    "incidents": "Acta records incidents affecting results; CS-09 Bitácora records qualifying events after completion; no logs obtained.",
+    "risk": "CS-18 Communication of Risk; timestamp is not fixed by the public procedure, so only a proven pre-close entry could be prospective.",
+    "access": "CS-12 records persons attending the room during the event; not a same-draw pre-close input.",
+    "video": "SGVO-PRO-05 requires recording from weighing through the draw; only the edited draw-only copy is attached to the Acta. The continuous master is required for forensic reconstruction.",
+    "participation_signature": "The participation/cancellation file is electronically signed after closure and before the ceremony; this is an integrity control, not physical evidence."
+  },
+  "rfid_limits": {
+    "machine_and_sphere_RFID_reported": true,
+    "individual_machine_tag_ids_obtained": false,
+    "individual_sphere_tag_ids_obtained": false,
+    "RFID_to_sphere_number_map_obtained": false,
+    "reader_event_logs_obtained": false,
+    "per_draw_machine_case_assignment_obtained": false,
+    "case_RFID_confirmed": false
+  },
+  "prospective_eligibility": {
+    "CS02": "CONDITIONAL_IF_SIGNED_RECORD_MACHINE_ID_AND_KNOWN_TIME_PRECEDE_FINAL_CLOSE",
+    "machine_id": "CONDITIONAL_IF_AUTHENTICATED_ASSIGNMENT_PRECEDES_FINAL_CLOSE",
+    "initial_case": "PRE_CLOSE_CONFIRMATION_EXISTS_BUT_FINAL_CASE_CAN_CHANGE_AFTER_WEIGHING",
+    "same_draw_sphere_weights": "NO_UNDER_CURRENT_SGVO_SEQUENCE",
+    "lagged_weights": "CONDITIONAL_ONLY_IF_SPHERE_CASE_IDENTITY_AND_CONTINUITY_TO_NEXT_DRAW_ARE_PROVEN",
+    "maintenance_and_calibration": "CONDITIONAL_IF_CERTIFICATE_OR_WORK_ORDER_IS_AUTHENTICATED_AND_AVAILABLE_PRE_CLOSE",
+    "RFID": "BLOCKED_UNTIL_TAG_TO_NUMBER_MAP_AND_PRE_CLOSE_READER_LOGS_EXIST",
+    "CS11_Acta_video_CS09_CS12": "RETROSPECTIVE_FOR_SAME_DRAW",
+    "CS18": "UNKNOWN_UNTIL_ENTRY_TIMESTAMP_IS_PROVEN",
+    "participation_file_signature": "POST_CLOSE_INTEGRITY_ONLY"
+  },
+  "V265": {
+    "required_metadata": [
+      "CONCURSO",
+      "sphere_set_id",
+      "machine_id",
+      "available_before_close",
+      "close_time_local",
+      "metadata_known_time_local"
+    ],
+    "template_has_28_weight_columns": true,
+    "template_has_only_rfid_verified_flag_not_per_sphere_tag_map": true,
+    "evaluator_consumes": {
+      "machine_id": true,
+      "sphere_set_id": true,
+      "per_sphere_weights": false,
+      "per_sphere_RFID_mapping": false,
+      "extraction_order": false,
+      "per_extraction_timestamps": false,
+      "source_provenance": false
+    },
+    "one_sided_t_test": true,
+    "holm_adjustment": true,
+    "holm_family_optional": true,
+    "anytime_evalue_gate": false,
+    "evidence_class": "ASSOCIATION_SCREEN_ONLY",
+    "physical_bias_evidence": false,
+    "actionable_for_betting": false
+  },
+  "physical_records_obtained": [],
+  "analysis": {
+    "method": "Deterministic cross-document chronology and schema reconciliation using official public sources and checked-in V265 source/template.",
+    "draw_frequency_pair_triple_transition_analysis": false,
+    "synthetic_records_created": false,
+    "physical_effect_estimated": false,
+    "OOS_gate_passed": false,
+    "multiplicity_gate_passed": false,
+    "anytime_evalue_gate_passed": false
+  },
+  "repository_safety": {
+    "branch": "research/v249-snapshot-integrity-20261119",
+    "main_writes": false,
+    "promotion_or_merge": false,
+    "canonical_history_modified": false,
+    "V294_modified": false
+  }
+}
