@@ -297,8 +297,8 @@ def validate_physical_csv(path: str | Path) -> dict[str, Any]:
                 f"CSV header exceeds maximum {MAX_PHYSICAL_CSV_HEADER_BYTES} bytes"
             )
         if (
-            (raw_header.endswith(b"\\r\\n") and b"\\r" in raw_header[:-2])
-            or (not raw_header.endswith(b"\\r\\n") and b"\\r" in raw_header)
+            (raw_header.endswith(b"\r\n") and b"\r" in raw_header[:-2])
+            or (not raw_header.endswith(b"\r\n") and b"\r" in raw_header)
         ):
             raise ValueError("CSV header contains an embedded or unsupported carriage return")
         try:
@@ -345,8 +345,8 @@ def validate_physical_csv(path: str | Path) -> dict[str, Any]:
                         f"CSV input exceeds maximum {MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES} bytes"
                     )
                 if (
-                    (raw_line.endswith(b"\\r\\n") and b"\\r" in raw_line[:-2])
-                    or (not raw_line.endswith(b"\\r\\n") and b"\\r" in raw_line)
+                    (raw_line.endswith(b"\r\n") and b"\r" in raw_line[:-2])
+                    or (not raw_line.endswith(b"\r\n") and b"\r" in raw_line)
                 ):
                     raise ValueError(
                         "CSV record contains an embedded or unsupported carriage return"
