@@ -56,3 +56,28 @@ Se localizó una copia pública adicional de SGM-PRO-06 Preparación de Sorteos,
 La copia SGM-PRO-06 describe pesaje individual de 28 esferas Chispazo en orden numérico, valores y estadísticos impresos, fecha/hora al inicio y al final, y colores amarillo/azul según máquina. Su anexo dice preferentemente antes del cierre de 21:15. Esto entra en conflicto con SGVO-PRO-05 revisión 39, listado vigente y actualizado 20-03-2026, que describe pesaje después de verificar SICAL cerrado a las 21:00 y tiene otros rangos de peso en Política 6. No usar SGM-PRO-06 como norma operativa hasta recibir confirmación escrita.
 
 SGVO-PRO-05 actividad 5.2 y Plan de Calidad remiten erróneamente a Política 8 para los pesos; Política 8 trata de la firma electrónica del archivo de participaciones. Los rangos están en Política 6. La rama de sustitución de estuche regresa a actividad 4.1; el texto no dice que se reabran ventas. Ver el informe y matriz V265_DOCUMENT_RECONCILIATION_20261123.
+
+
+## Reconciliación documental actual — 2026-11-24
+
+Se añade el informe determinista `reports/V265_PHYSICAL_EVIDENCE_DELTA_20261124.md`, la matriz `reports/V265_PHYSICAL_EVIDENCE_MATRIX_20261124.csv`, el JSON de hechos normalizados, el validador y sus pruebas.
+
+Correcciones y precisiones:
+- La Normateca actual lista SGVO-PRO-05 revisión 39 (20-03-2026) como vigente.
+- SGVO-MAN-02 aparece en Proyectos Normativos y el PDF visible se identifica como tipo RESERVADO, revisión 09. No usar sus detalles técnicos como manual vigente.
+- SGM-PRO-06 revisión 22 es una copia pública accesible en un directorio llamado VIGENTES, pero no figura en la lista actual. Su última modificación registrada es junio de 2017. Sus campos de Tira (hora inicial/final, estadísticos) y la preferencia de pesaje Chispazo antes de 21:15 son históricos/no vigentes confirmados.
+- En SGVO-PRO-05, el CS-11 se denomina “Números Ganadores de los Sorteos”; es un formato anexo al Acta, no el Acta misma.
+- La Tira vigente se define como registro del peso individual de cada esfera y cuatro firmas. El esquema público actual no especifica timestamps de inicio/fin, IDs individuales, RFID, orden ni hora de extracción por esfera.
+- La actividad 5.2 y el punto 2 del Plan de Calidad remiten a Política 8 para peso; los límites están en Política 6. Política 8 trata de la firma electrónica del archivo de participaciones.
+- El artículo 9 del Reglamento dice que las 28 esferas se introducen en una urna antes del cierre; SGVO-PRO-05 verifica cierre SICAL y después pesa/coloca en alimentadores. No se equiparan “urna” y “alimentadores”; la secuencia física debe aclararse por escrito.
+- El Informe de Gestión 2018–2024 reporta 14 máquinas RFID y RFID en esferas, pero también una ampliación de 8 máquinas y 2 sistemas RFID no autorizada al cierre de junio de 2024. No se infiere el inventario actual ni asignaciones por concurso.
+- El validador V265 confirma que el evaluador no consume pesos individuales, RFID→número, orden/timestamps de extracción ni procedencia; permanece `ASSOCIATION_SCREEN_ONLY`.
+
+Fuentes adicionales:
+- [Normateca vigente](https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2)
+- [Proyectos Normativos](https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0)
+- [SGVO-MAN-02 reservado en Proyectos](https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/PROYECTO/sgvo_man_02p.pdf)
+- [SGM-PRO-06 rev22, copia histórica no listada](https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgm_p0_6.pdf)
+- [Informe de Gestión 2018–2024, p. 43](https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf)
+
+No se obtuvieron CS-02, Tiras, CS-11, Actas, logs RFID, calibraciones, órdenes de mantenimiento, CS-09/12/18 ni video máster de concursos concretos. No se generaron registros sintéticos ni se estimó un efecto físico. OOS, multiplicidad y anytime e-value siguen sin superar.
