@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
-import math
+from decimal import Decimal, InvalidOperation, localcontext
 import re
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -20,8 +20,8 @@ from .mapping_history import audit_mapping_history
 
 HEX64 = re.compile(r"[0-9a-f]{64}")
 MASS_LIMITS = {
-    "smartballs": (4.25, 5.25, 0.30),
-    "ping-pong": (2.30, 3.00, 0.15),
+    "smartballs": (Decimal("4.25"), Decimal("5.25"), Decimal("0.30")),
+    "ping-pong": (Decimal("2.30"), Decimal("3.00"), Decimal("0.15")),
 }
 DRAW_TIMEZONE = ZoneInfo("America/Mexico_City")
 MAX_PHYSICAL_INTAKE_ROWS = 28_000
@@ -66,15 +66,20 @@ def _timestamp(value: str, field: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def _positive_float(value: str, field: str) -> float:
+def _positive_decimal(value: str, field: str) -> Decimal:
     if type(value) is not str:
         raise ValueError(f"{field}: must be exact text")
     try:
-        number = float(value)
-    except (TypeError, ValueError) as exc:
+        number = Decimal(value)
+    except (InvalidOperation, ValueError) as exc:
         raise ValueError(f"{field}: must be numeric") from exc
-    if not math.isfinite(number) or number <= 0:
+    if not number.is_finite() or number <= 0:
         raise ValueError(f"{field}: must be finite and positive")
+    # Bound precision and scale so exact comparisons/subtraction remain
+    # deterministic and cannot be affected by ambient Decimal context.
+    parts = number.as_tuple()
+    if len(parts.digits) > 18 or abs(parts.exponent) > 9:
+        raise ValueError(f"{field}: decimal precision or scale exceeds supported bounds")
     return number
 
 
@@ -125,7 +130,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
     mapping_rows: list[dict[str, Any]] = []
     row_errors: dict[int, set[str]] = defaultdict(set)
-    masses_by_contest: dict[int, list[float]] = defaultdict(list)
+    masses_by_contest: dict[int, list[Decimal]] = defaultdict(list)
     for index, raw in enumerate(materialized, start=2):
         if type(raw) is not dict or any(type(key) is not str for key in raw):
             row_errors[-index].add("Q_CONTEST_LINK")
@@ -195,9 +200,9 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             sphere_type = str(row["sphere_type"]).strip().casefold()
             if sphere_type not in MASS_LIMITS:
                 row_errors[contest].add("Q_METROLOGY")
-            mass = _positive_float(row["mass_value"], "mass_value")
+            mass = _positive_decimal(row["mass_value"], "mass_value")
             masses_by_contest[contest].append(mass)
-            _positive_float(row["measurement_resolution"], "measurement_resolution")
+            _positive_decimal(row["measurement_resolution"], "measurement_resolution")
             number = _positive_int(row["printed_number"], "printed_number")
             if number > 28:
                 row_errors[contest].add("Q_MAPPING")
@@ -243,8 +248,10 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
                 lower, upper, max_spread = limits
                 if any(mass < lower or mass > upper for mass in masses):
                     labels.add("Q_METROLOGY")
-                if max(masses) - min(masses) > max_spread:
-                    labels.add("Q_METROLOGY")
+                with localcontext() as decimal_context:
+                    decimal_context.prec = 40
+                    if max(masses) - min(masses) > max_spread:
+                        labels.add("Q_METROLOGY")
         if labels:
             quarantined[str(contest)] = sorted(labels)
         else:
