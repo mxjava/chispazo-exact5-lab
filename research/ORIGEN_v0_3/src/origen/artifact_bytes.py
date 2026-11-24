@@ -33,6 +33,11 @@ def verify_declared_artifact_bytes(
         raise TypeError("manifest must be an exact UnverifiedPhysicalEvidenceManifest")
     if type(artifacts_by_sha256) is not dict:
         raise TypeError("artifacts_by_sha256 must be an exact dict")
+    # A str subclass can override hashing/equality. Reject it before set
+    # construction or dictionary lookup so key comparison cannot execute
+    # caller-controlled methods at this integrity boundary.
+    if any(type(key) is not str for key in artifacts_by_sha256):
+        raise TypeError("artifact digest keys must be exact str")
     expected = {item.sha256: item for item in manifest.artifacts}
     supplied = set(artifacts_by_sha256)
     if supplied != set(expected):
