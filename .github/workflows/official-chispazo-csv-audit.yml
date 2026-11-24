@@ -1,0 +1,33 @@
+name: Official Chispazo CSV schema audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research/official-csv-schema-audit-20261122
+    paths:
+      - scripts/audit_official_chispazo_csv.py
+      - .github/workflows/official-chispazo-csv-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch and fingerprint official CSV
+        run: python scripts/audit_official_chispazo_csv.py
+      - name: Retain raw source and schema report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-chispazo-csv-audit-${{ github.run_id }}
+          path: official_csv_audit/
+          if-no-files-found: error
+          retention-days: 90
