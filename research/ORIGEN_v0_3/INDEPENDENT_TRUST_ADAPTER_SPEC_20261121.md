@@ -76,6 +76,8 @@ The adapter returns a signed/attested verification receipt with:
 
 The structural parser requires each output-seal signature digest to resolve to a declared signer signature digest, and signer signature digests must be unique. This only removes ambiguous/unbound references; it does not verify signature bytes, key ownership, signer role authorization, or institutional identity.
 
+Each output seal must also carry `timestamp_proof_sha256`, resolving to exactly one declared trusted-time proof whose `event_at_utc` exactly equals that seal's `created_at_utc`. The two output seals must reference distinct proof digests. The receipt attestation continues to reference its own trusted-time proof. This is structural binding only: the parser does not authenticate the timestamp token, its authority, its signature, or its claimed event time.
+
 The parser also rejects literal identifier aliasing between trusted-time authority IDs and the receipt issuer, signers, custodians, or generators. This is only a structural collision guard: distinct strings do not establish distinct legal entities, independent services, or authenticated time authority. It also rejects a ledger anchor whose resulting head digest equals its previous head digest: a claimed append must advance the committed ledger state. This is a structural transition check only; it does not verify the ledger, entry, or inclusion proof.
 
 The downstream evaluator accepts only an `AUTHENTICATED` receipt whose digests exactly match the run inputs. It must not accept caller-created booleans or arbitrary string sets as a substitute.
