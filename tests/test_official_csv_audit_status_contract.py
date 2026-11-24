@@ -129,3 +129,19 @@ def test_schema_mapping_rejects_ambiguous_and_missing_required_columns():
     assert "n2" in missing
     assert "n1" not in mapping
     assert "n2" not in mapping
+
+
+def test_official_csv_rows_must_match_header_width():
+    script = Path(__file__).parents[1] / "scripts" / "audit_official_chispazo_csv.py"
+    check = _load_pure_function(script, "row_width_is_valid")
+    assert check(["1", "2", "3"], ["a", "b", "c"]) is True
+    assert check(["1", "2", "3", "extra"], ["a", "b", "c"]) is False
+    assert check(["1", "2"], ["a", "b", "c"]) is False
+
+
+def test_canonical_baseline_is_pinned_to_immutable_commit_and_digest():
+    script = Path(__file__).parents[1] / "scripts" / "audit_official_chispazo_csv.py"
+    source = script.read_text(encoding="utf-8")
+    assert "CANONICAL_BASELINE_COMMIT = \"8fc7d6fd503e1ac7be6b504daef099404c8ca064\"" in source
+    assert "CANONICAL_BASELINE_SHA256 = \"5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a\"" in source
+    assert "if canonical_sha256 != CANONICAL_BASELINE_SHA256" in source
