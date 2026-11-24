@@ -1,3 +1,10 @@
+## Acta required-role subject separation (2026-11-24)
+- Added an adversarial regression showing that the unverified physical-manifest parser accepted all four required Acta roles when every role reused the same declared subject_id.
+- The parser now requires distinct declared subjects for the four Acta roles: General Directorate, Subdirectorate General Sales Operations, Information Technology, and SEGOB Inspector.
+- This is a structural anti-aliasing rule only. It does not authenticate any signer, role, signature bytes, institutional identity, or independence.
+- Test commit: `3e1384b76db02319c44f9de88baf28ed04197726`; implementation commit: `d8c7b0e8e5ed433f25549aecddb374424d64d41a`.
+- Exact-head CI verification is pending.
+
 ## Official home-index schedule supplement — 2026-11-24 13:05 America/Mexico_City
 - Added status-only overlay `data/official-overlays/2026-11-24_1305_official_status_only.json` and review `docs/OFFICIAL_STATUS_REFRESH_20261124_1305.md`.
 - The official home index displayed the “Ilumina tu suerte” Chispazo card for 24-Nov at 15:00, contest **12393**. The official product schedule maps 15:00 to **De las Tres**, so 12393 is **schedule-inferred**, not result- or mask-confirmed. No 24-Nov Clásico contest ID was visible or inferred.
