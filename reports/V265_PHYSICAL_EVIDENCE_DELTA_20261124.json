@@ -53,7 +53,13 @@
       "revision": 9,
       "document_type": "RESERVADO",
       "status": "PROJECT_NOT_CURRENT_LISTED",
-      "use": "Do not use as current public operating specification."
+      "use": "Do not use as current public operating specification.",
+      "chispazo_models_listed": [
+        "Jupiter",
+        "Emerald",
+        "Unicorn"
+      ],
+      "chispazo_model_mapping_status": "RESERVED_PROJECT_ONLY_NOT_DEPLOYMENT_EVIDENCE"
     },
     "SGM-PRO-06_legacy_copy": {
       "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgm_p0_6.pdf",
@@ -93,7 +99,8 @@
         "planned_RFID_systems": 2,
         "status_at_2024-06": "NOT_AUTHORIZED"
       },
-      "limits": "No tag identifiers, reader logs, per-contest machine assignment, sphere-number map, or evidence of RFID on cases is published."
+      "limits": "No tag identifiers, reader logs, per-contest machine assignment, sphere-number map, or evidence of RFID on cases is published.",
+      "product_specific_assignment_published": false
     },
     "SEGOB_inspection": {
       "url": "https://www.juegosysorteos.gob.mx/es/Juegos_y_Sorteos/inspecciones_lotenal_pronosticos",
@@ -214,7 +221,8 @@
     "RFID_to_sphere_number_map_obtained": false,
     "reader_event_logs_obtained": false,
     "per_draw_machine_case_assignment_obtained": false,
-    "case_RFID_confirmed": false
+    "case_RFID_confirmed": false,
+    "reported_fleet_mapped_to_chispazo": false
   },
   "prospective_eligibility": {
     "CS02": "CONDITIONAL_IF_SIGNED_RECORD_MACHINE_ID_AND_KNOWN_TIME_PRECEDE_FINAL_CLOSE",
