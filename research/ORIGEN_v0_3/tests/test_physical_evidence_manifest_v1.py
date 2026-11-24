@@ -213,7 +213,7 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         self.assertEqual(len(acta_signatures), 4)
         for item in acta_signatures:
             item["subject_id"] = "ONE-CLAIMED-SUBJECT"
-        with self.assertRaisesRegex(ValueError, "distinct subjects for the four required roles"):
+        with self.assertRaisesRegex(ValueError, "a subject may declare only one signature per artifact"):
             parse_unverified_physical_manifest(encode(document))
 
     def test_cs02_inspection_requires_operator_and_sgvo_roles(self):
