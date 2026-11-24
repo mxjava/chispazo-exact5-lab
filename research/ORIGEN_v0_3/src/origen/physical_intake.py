@@ -24,6 +24,11 @@ MASS_LIMITS = {
     "ping-pong": (2.30, 3.00, 0.15),
 }
 DRAW_TIMEZONE = ZoneInfo("America/Mexico_City")
+MAX_PHYSICAL_INTAKE_ROWS = 28_000
+OFFICIAL_SALES_CLOSE_SLOTS = {
+    "TRES": (15, 0, 0, 0),
+    "CLASSIC": (21, 0, 0, 0),
+}
 REQUIRED_COLUMNS = (
     "contest_id", "draw_date", "modality", "draw_close_at",
     "sphere_set_id", "set_assigned_at", "sphere_type", "machine_id",
@@ -33,6 +38,16 @@ REQUIRED_COLUMNS = (
     "calibration_certificate_sha256", "mapping_valid_from", "mapping_valid_to", "draw_at",
     "source_document_sha256", "source_document_ref",
 )
+
+# V1 CSV input is single-line/scalar: bound header, each physical record,
+# decoded field payload, and total bytes before CSV objects are materialized.
+MAX_PHYSICAL_CSV_ROW_TEXT_BYTES = 32_768
+MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES = 64_000_000
+MAX_PHYSICAL_CSV_HEADER_BYTES = 4_096
+MAX_PHYSICAL_CSV_RECORD_BYTES = (
+    2 * MAX_PHYSICAL_CSV_ROW_TEXT_BYTES + 4 * len(REQUIRED_COLUMNS) + 4
+)
+
 QUARANTINE_CODES = {
     "Q_SOURCE_UNVERIFIED", "Q_CONTEST_LINK", "Q_MAPPING", "Q_TIME",
     "Q_METROLOGY", "Q_INCOMPLETE_SET", "Q_REMAP", "Q_CONFLICT",
@@ -40,7 +55,7 @@ QUARANTINE_CODES = {
 
 
 def _timestamp(value: str, field: str) -> datetime:
-    if not isinstance(value, str) or not value.strip():
+    if type(value) is not str or not value.strip():
         raise ValueError(f"{field}: missing timestamp")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -52,6 +67,8 @@ def _timestamp(value: str, field: str) -> datetime:
 
 
 def _positive_float(value: str, field: str) -> float:
+    if type(value) is not str:
+        raise ValueError(f"{field}: must be exact text")
     try:
         number = float(value)
     except (TypeError, ValueError) as exc:
@@ -62,7 +79,7 @@ def _positive_float(value: str, field: str) -> float:
 
 
 def _positive_int(value: str, field: str) -> int:
-    if not isinstance(value, str) or not value.isdecimal():
+    if type(value) is not str or not value.isdecimal():
         raise ValueError(f"{field}: must be a positive integer")
     number = int(value)
     if number <= 0:
@@ -70,34 +87,70 @@ def _positive_int(value: str, field: str) -> int:
     return number
 
 
+def _official_sales_close_slot(modality: str, close_at: datetime) -> bool:
+    """Require the modality's official Mexico City sales-close slot."""
+    expected = OFFICIAL_SALES_CLOSE_SLOTS.get(modality)
+    if expected is None:
+        return False
+    local = close_at.astimezone(DRAW_TIMEZONE)
+    return (local.hour, local.minute, local.second, local.microsecond) == expected
+
+
 def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
-    """Validate long-form rows; return per-contest quarantine labels and metrics."""
-    materialized = list(rows)
+    """Validate source-draw records; target pre-close eligibility is handled by V2."""
+    materialized = []
+    for row_number, row in enumerate(rows, start=1):
+        if row_number > MAX_PHYSICAL_INTAKE_ROWS:
+            raise ValueError(
+                f"physical intake exceeds maximum {MAX_PHYSICAL_INTAKE_ROWS} rows"
+            )
+        # Snapshot exact built-in dictionaries as they are yielded; a generator
+        # may mutate a previously yielded row before list materialization ends.
+        materialized.append(row.copy() if type(row) is dict else row)
     if not materialized:
         return {"status": "EMPTY", "contest_count": 0, "usable_contests": [],
                 "quarantined": {}, "row_count": 0}
 
-    missing = sorted(set(REQUIRED_COLUMNS) - set(materialized[0].keys()))
+    if type(materialized[0]) is not dict or any(
+        type(key) is not str for key in materialized[0]
+    ):
+        raise ValueError("rows must be exact built-in dict objects with built-in string keys")
+    missing = sorted(set(REQUIRED_COLUMNS) - set(materialized[0]))
     if missing:
         raise ValueError("missing required columns: " + ", ".join(missing))
+    unexpected = sorted(set(materialized[0]) - set(REQUIRED_COLUMNS))
+    if unexpected:
+        raise ValueError("unexpected columns: " + ", ".join(unexpected))
 
     grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    mapping_rows: list[dict[str, Any]] = []
     row_errors: dict[int, set[str]] = defaultdict(set)
     masses_by_contest: dict[int, list[float]] = defaultdict(list)
     for index, raw in enumerate(materialized, start=2):
+        if type(raw) is not dict or any(type(key) is not str for key in raw):
+            row_errors[-index].add("Q_CONTEST_LINK")
+            continue
+        if set(raw) != set(REQUIRED_COLUMNS):
+            row_errors[-index].add("Q_CONTEST_LINK")
+            continue
+        if any(type(value) is not str for value in raw.values()):
+            row_errors[-index].add("Q_SOURCE_UNVERIFIED")
+            continue
         try:
-            contest = _positive_int(str(raw.get("contest_id", "")), "contest_id")
+            contest = _positive_int(raw.get("contest_id", ""), "contest_id")
         except ValueError:
             row_errors[-index].add("Q_CONTEST_LINK")
             continue
-        row = dict(raw)
+        row = raw
+        mapping_rows.append(row)
         grouped[contest].append(row)
         try:
-            if row["modality"] not in {"CLASSIC", "TRES"}:
+            modality = row["modality"]
+            if modality not in {"CLASSIC", "TRES"}:
                 raise ValueError("unknown modality")
             if not str(row["draw_date"]).strip() or not str(row["source_document_ref"]).strip():
                 row_errors[contest].add("Q_CONTEST_LINK")
-            draw_date = str(row["draw_date"])
+            draw_date = row["draw_date"]
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", draw_date):
                 row_errors[contest].add("Q_CONTEST_LINK")
             else:
@@ -108,18 +161,26 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             for field in ("source_document_sha256", "calibration_certificate_sha256"):
                 if not HEX64.fullmatch(str(row[field])):
                     row_errors[contest].add("Q_SOURCE_UNVERIFIED" if field == "source_document_sha256" else "Q_METROLOGY")
-            close = _timestamp(str(row["draw_close_at"]), "draw_close_at")
+            close = _timestamp(row["draw_close_at"], "draw_close_at")
+            if not _official_sales_close_slot(modality, close):
+                row_errors[contest].add("Q_TIME")
             if re.fullmatch(r"\d{4}-\d{2}-\d{2}", draw_date):
                 if close.astimezone(DRAW_TIMEZONE).date().isoformat() != draw_date:
                     row_errors[contest].add("Q_CONTEST_LINK")
-            assigned = _timestamp(str(row["set_assigned_at"]), "set_assigned_at")
-            measured = _timestamp(str(row["measurement_at"]), "measurement_at")
-            mapped = _timestamp(str(row["mapping_valid_from"]), "mapping_valid_from")
-            mapped_to = _timestamp(str(row["mapping_valid_to"]), "mapping_valid_to")
-            draw_at = _timestamp(str(row["draw_at"]), "draw_at")
-            cal_from = _timestamp(str(row["calibration_valid_from"]), "calibration_valid_from")
-            cal_to = _timestamp(str(row["calibration_valid_to"]), "calibration_valid_to")
-            if not (assigned < close and measured < close and mapped < close and close < draw_at):
+            assigned = _timestamp(row["set_assigned_at"], "set_assigned_at")
+            measured = _timestamp(row["measurement_at"], "measurement_at")
+            mapped = _timestamp(row["mapping_valid_from"], "mapping_valid_from")
+            mapped_to = _timestamp(row["mapping_valid_to"], "mapping_valid_to")
+            draw_at = _timestamp(row["draw_at"], "draw_at")
+            cal_from = _timestamp(row["calibration_valid_from"], "calibration_valid_from")
+            cal_to = _timestamp(row["calibration_valid_to"], "calibration_valid_to")
+            # SGVO-PRO-05 Rev. 39 closes sales before the weighing activity.
+            # This V1 validator checks the source draw's event chronology only;
+            # it cannot certify pre-close availability for a later target.
+            if not (
+                assigned < close and mapped < close and close < draw_at
+                and close <= measured <= draw_at
+            ):
                 row_errors[contest].add("Q_TIME")
             if not (mapped <= assigned <= mapped_to and mapped <= draw_at <= mapped_to):
                 row_errors[contest].add("Q_REMAP")
@@ -134,10 +195,10 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             sphere_type = str(row["sphere_type"]).strip().casefold()
             if sphere_type not in MASS_LIMITS:
                 row_errors[contest].add("Q_METROLOGY")
-            mass = _positive_float(str(row["mass_value"]), "mass_value")
+            mass = _positive_float(row["mass_value"], "mass_value")
             masses_by_contest[contest].append(mass)
-            _positive_float(str(row["measurement_resolution"]), "measurement_resolution")
-            number = _positive_int(str(row["printed_number"]), "printed_number")
+            _positive_float(row["measurement_resolution"], "measurement_resolution")
+            number = _positive_int(row["printed_number"], "printed_number")
             if number > 28:
                 row_errors[contest].add("Q_MAPPING")
         except (ValueError, TypeError, KeyError):
@@ -193,7 +254,7 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         if key < 0:
             quarantined[f"row:{-key}"] = sorted(labels)
 
-    mapping_report = audit_mapping_history(materialized)
+    mapping_report = audit_mapping_history(mapping_rows)
     for contest_key, codes in mapping_report["quarantined"].items():
         quarantined[contest_key] = sorted(set(quarantined.get(contest_key, [])) | set(codes))
         try:
@@ -209,20 +270,119 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "mapping_history_conflicts": mapping_report["overlapping_conflicts"],
         "usable_contests": usable,
         "quarantined": quarantined,
-        "scope_warning": "Structural validation only; source authenticity, clock trust, signatures and predictive value are not established.",
+        "scope_warning": (
+            "V1 validates source-draw structure and event chronology only. SGVO-PRO-05 "
+            "weighing occurs after source sales close; this output does not establish "
+            "pre-close availability or eligibility for a later target. Use the V2 "
+            "source-to-target gate for target availability, custody and continuity. "
+            "Source authenticity, clock trust, signatures and predictive value are "
+            "not established."
+        ),
     }
 
 
 def validate_physical_csv(path: str | Path) -> dict[str, Any]:
-    """Read a UTF-8 CSV and validate its rows without modifying the source."""
-    with Path(path).open("r", encoding="utf-8-sig", newline="") as stream:
-        reader = csv.DictReader(stream)
-        if reader.fieldnames is None:
+    """Read bounded, single-physical-line CSV records without modifying the source.
+
+    V1 fields are scalar. Multiline CSV cells are rejected so one physical record
+    can be bounded before the parser allocates its field strings. The aggregate
+    byte limit and row-count limit independently bound total work and memory.
+    """
+    with Path(path).open("rb") as stream:
+        raw_header = stream.readline(MAX_PHYSICAL_CSV_HEADER_BYTES + 1)
+        if not raw_header:
             raise ValueError("CSV has no header")
-        missing = sorted(set(REQUIRED_COLUMNS) - set(reader.fieldnames))
+        if len(raw_header) > MAX_PHYSICAL_CSV_HEADER_BYTES:
+            raise ValueError(
+                f"CSV header exceeds maximum {MAX_PHYSICAL_CSV_HEADER_BYTES} bytes"
+            )
+        if (
+            (raw_header.endswith(b"\r\n") and b"\r" in raw_header[:-2])
+            or (not raw_header.endswith(b"\r\n") and b"\r" in raw_header)
+        ):
+            raise ValueError("CSV header contains an embedded or unsupported carriage return")
+        try:
+            header_line = raw_header.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise ValueError("CSV header is not valid UTF-8") from exc
+        try:
+            headers = next(csv.reader([header_line], strict=True))
+        except (csv.Error, StopIteration) as exc:
+            raise ValueError("CSV header syntax is invalid") from exc
+        if any(
+            type(name) is not str or not name or name != name.strip()
+            for name in headers
+        ):
+            raise ValueError("CSV headers must be non-empty canonical strings")
+        if len(headers) != len(set(headers)):
+            raise ValueError("CSV headers must be unique; duplicate column names are ambiguous")
+        missing = sorted(set(REQUIRED_COLUMNS) - set(headers))
         if missing:
             raise ValueError("missing required columns: " + ", ".join(missing))
-        return validate_physical_rows(reader)
+        unexpected = sorted(set(headers) - set(REQUIRED_COLUMNS))
+        if unexpected:
+            raise ValueError("unexpected columns: " + ", ".join(unexpected))
+
+        total_bytes = len(raw_header)
+        if total_bytes > MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES:
+            raise ValueError(
+                f"CSV input exceeds maximum {MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES} bytes"
+            )
+
+        def rows() -> Iterable[dict[str, Any]]:
+            nonlocal total_bytes
+            while True:
+                raw_line = stream.readline(MAX_PHYSICAL_CSV_RECORD_BYTES + 1)
+                if not raw_line:
+                    return
+                if len(raw_line) > MAX_PHYSICAL_CSV_RECORD_BYTES:
+                    raise ValueError(
+                        f"CSV record exceeds maximum {MAX_PHYSICAL_CSV_RECORD_BYTES} bytes"
+                    )
+                total_bytes += len(raw_line)
+                if total_bytes > MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES:
+                    raise ValueError(
+                        f"CSV input exceeds maximum {MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES} bytes"
+                    )
+                if (
+                    (raw_line.endswith(b"\r\n") and b"\r" in raw_line[:-2])
+                    or (not raw_line.endswith(b"\r\n") and b"\r" in raw_line)
+                ):
+                    raise ValueError(
+                        "CSV record contains an embedded or unsupported carriage return"
+                    )
+                try:
+                    line = raw_line.decode("utf-8")
+                except UnicodeDecodeError as exc:
+                    raise ValueError("CSV record is not valid UTF-8") from exc
+                try:
+                    values = next(csv.reader([line], strict=True))
+                except StopIteration:
+                    continue
+                except csv.Error as exc:
+                    raise ValueError("CSV record syntax is invalid") from exc
+                if not values:
+                    continue
+                if any(
+                    type(value) is str and ("\r" in value or "\n" in value)
+                    for value in values
+                ):
+                    raise ValueError("CSV multiline fields are not supported")
+                if len(values) > len(headers):
+                    raise ValueError("CSV record has more fields than its header")
+                if len(values) < len(headers):
+                    values.extend([None] * (len(headers) - len(values)))
+                row_text_bytes = 0
+                for value in values:
+                    if type(value) is str:
+                        row_text_bytes += len(value.encode("utf-8"))
+                        if row_text_bytes > MAX_PHYSICAL_CSV_ROW_TEXT_BYTES:
+                            raise ValueError(
+                                f"CSV row text exceeds maximum {MAX_PHYSICAL_CSV_ROW_TEXT_BYTES} bytes"
+                            )
+                yield dict(zip(headers, values))
+
+        return validate_physical_rows(rows())
 
 
 def file_sha256(path: str | Path) -> str:

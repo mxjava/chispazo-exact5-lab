@@ -25,11 +25,15 @@ A usable observation must identify:
 
 A row missing the physical-ID-to-number mapping is not usable for a number-level predictive feature. A row missing modality or act linkage is quarantined, not guessed from an odd/even contest pattern alone.
 
-## 3. Time-availability rule
+## 3. Source-event chronology vs. target availability
 
-For prediction of contest t, a feature is eligible only if evidence proves it was available before that contest's sales close. A timestamp written on a later report is not proof of pre-close availability. If the assignment or measurement timestamp is unknown, mark it unavailable and exclude it from the prediction feature set.
+SGVO-PRO-05 Rev. 39 closes sales before the weighing activity for that source draw. Therefore, for a source contest, the physical event sequence is assignment/mapping before close, then sales close, then weighing, strip signature/delivery, and extraction. A source measurement at or after its own close is expected; it is not a pre-close feature for that same contest.
 
-Post-draw measurements, winning-number-derived fields and records whose timing cannot be established are prohibited as pre-draw predictors.
+V1 validates only the source contest's structural/event chronology. Its `usable_contests` output must never be interpreted as predictive eligibility. It has no target-contest, evidence-availability, custody-receipt or continuity fields.
+
+For a later target contest, the evidence bytes and independent custody must be verified as available before the target's sales close, and the same sphere set, machine and sphere-to-number mapping must be proven continuous through that target draw. Those checks belong to the V2 source-to-target intake. A timestamp written on a later report is not proof of pre-close availability. If target availability or continuity is unknown, block the target.
+
+Post-draw measurements, winning-number-derived fields and records whose target availability cannot be established are prohibited as pre-draw predictors.
 
 ## 4. Measurement and identity checks
 
@@ -48,7 +52,7 @@ Use one or more:
 - Q_SOURCE_UNVERIFIED: no authenticated source/folio or incomplete document.
 - Q_CONTEST_LINK: cannot link strip to exact contest and modality.
 - Q_MAPPING: physical sphere to printed number mapping missing/ambiguous.
-- Q_TIME: pre-close availability not established.
+- Q_TIME: source-event chronology or the official modality-specific sales-close slot is invalid; V2 separately blocks evidence not available before the target close.
 - Q_METROLOGY: calibration, units or precision unresolved.
 - Q_INCOMPLETE_SET: fewer/more than 28 valid sphere measurements.
 - Q_REMAP: mapping changed without complete event chain.
@@ -70,7 +74,7 @@ Before examining any association with winning numbers:
 ## 7. Decision rule
 
 No number ranking or actionable recommendation may be generated from physical data unless:
-- the row-level mapping and pre-close availability are established;
+- source-event chronology and row-level mapping pass; and V2 independently proves target pre-close availability, custody and physical continuity;
 - metrology and chain of custody pass;
 - the candidate is frozen before evaluation;
 - at least 100 untouched prospective Classic draws are evaluated;

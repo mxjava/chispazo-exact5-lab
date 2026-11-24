@@ -1,0 +1,99 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "observed_at_local": "2026-11-24T01:55:45-06:00",
+  "timezone": "America/Mexico_City",
+  "classification": "OFFICIAL_PUBLIC_RESULTS_AND_MASK_STATUS_ONLY_NOT_PHYSICAL_PROVENANCE",
+  "results_page": {
+    "source": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "latest_visible_contest_id": "12392",
+    "latest_visible_date_local": "2026-11-23",
+    "latest_visible_result": [
+      "06",
+      "11",
+      "16",
+      "23",
+      "28"
+    ],
+    "previous_visible_contest_id": "12391",
+    "previous_visible_result": [
+      "03",
+      "07",
+      "19",
+      "20",
+      "24"
+    ],
+    "next_draw_date_local": "2026-11-24",
+    "no_2026_11_24_contest_id_or_result_visible_at_observation": true
+  },
+  "mask_index": {
+    "source": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "latest_visible_date_local": "2026-11-23",
+    "linked_pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757",
+    "linked_pdf_page_count": 1,
+    "text_extraction_contest_ids": [
+      "12391",
+      "12392"
+    ],
+    "text_extraction_combinations": {
+      "12391": [
+        "03",
+        "07",
+        "19",
+        "20",
+        "24"
+      ],
+      "12392": [
+        "06",
+        "11",
+        "16",
+        "23",
+        "28"
+      ]
+    },
+    "pdf_explicitly_labels_chispazo_modalities": true,
+    "original_pdf_bytes_captured": false,
+    "original_pdf_sha256": null,
+    "pdf_text_extraction_labels_modalities": false,
+    "pdf_visual_review_confirmed_modalities": true,
+    "pdf_visual_review_basis": "Official one-page PDF visual: Chispazo De las tres logo and contest 12391 appear together; Chispazo Clásico logo and contest 12392 appear together"
+  },
+  "schedule": {
+    "source": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "de_las_tres_local_time": "15:00",
+    "classic_local_time": "21:00",
+    "modality_assignment_basis": "Direct visual modality labels and contest IDs in the official 2026-11-23 mask PDF, cross-checked against the official daily schedule"
+  },
+  "procedure_source": {
+    "name": "SGVO-PRO-05",
+    "revision": 39,
+    "publication_date": "2026-03-20",
+    "url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+    "scope_note": "Public procedure only; it does not prove draw-specific records or physical custody"
+  },
+  "capture_limits": {
+    "original_results_html_bytes_captured": false,
+    "original_mask_index_html_bytes_captured": false,
+    "original_pdf_bytes_captured": false,
+    "capture_time_is_self_reported_not_trusted_timestamp": true
+  },
+  "physical_provenance": {
+    "signed_draw_act_obtained": false,
+    "signed_participation_file_obtained": false,
+    "cs11_original_obtained": false,
+    "weighing_strip_with_28_measurements_obtained": false,
+    "scale_calibration_obtained": false,
+    "machine_contest_link_obtained": false,
+    "sphere_id_to_number_mapping_obtained": false,
+    "rfid_trace_obtained": false,
+    "independent_custody_receipt_obtained": false,
+    "trusted_timestamp_obtained": false,
+    "two_independent_preclose_output_seals_obtained": false
+  },
+  "eligibility": {
+    "prospective_classic_snapshot": false,
+    "preclose_seal": false,
+    "physical_provenance_authenticated": false,
+    "score_eligible": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}

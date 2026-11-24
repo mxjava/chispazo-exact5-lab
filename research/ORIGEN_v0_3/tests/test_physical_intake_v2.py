@@ -1273,5 +1273,24 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         )
 
 
+    def test_in_memory_rows_reject_untrusted_authentication_claims(self):
+        # The mapping API must enforce the same closed schema as the CSV path.
+        # A caller cannot smuggle future trust-state fields alongside the
+        # structural measurements and have them ignored or reflected as status.
+        for field, value in (
+            ("authenticated", True),
+            ("authentication_status", "AUTHENTICATED"),
+            ("provenance_status", "AUTHENTICATED"),
+            ("predictive_eligibility", "EDGE_SUPPORTED"),
+        ):
+            with self.subTest(field=field):
+                rows = rows_for_target()
+                rows[0][field] = value
+                with self.assertRaisesRegex(
+                    ValueError,
+                    rf"row 1 has unexpected columns: {field}",
+                ):
+                    evaluate_temporal_eligibility(rows, **VERIFIED)
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,80 @@
+{
+  "schema": "ORIGEN_OFFICIAL_SOURCE_STATUS_OVERLAY_V1",
+  "observed_at_utc": "2026-11-24T09:55:41Z",
+  "classification": "PUBLICATION_STATUS_ONLY_NOT_PHYSICAL_AUTHENTICATION",
+  "official_results_page": {
+    "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "latest_contest_id": "12392",
+    "latest_draw_date": "2026-11-23",
+    "latest_winning_numbers": [
+      "06",
+      "11",
+      "16",
+      "23",
+      "28"
+    ],
+    "prior_same_day_contest_id": "12391",
+    "prior_same_day_winning_numbers": [
+      "03",
+      "07",
+      "19",
+      "20",
+      "24"
+    ],
+    "next_draw_date_displayed": "2026-11-24",
+    "no_2026_11_24_result_visible": true
+  },
+  "official_mask_index": {
+    "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "latest_listed_publication_date": "2026-11-23",
+    "no_2026_11_24_mask_listed": true
+  },
+  "latest_mask_pdf": {
+    "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757",
+    "date": "2026-11-23",
+    "visual_review": "The one-page PDF visually labels contest 12391 as Chispazo De las tres and contest 12392 as Chispazo Clásico.",
+    "contest_12391": {
+      "modality": "DE_LAS_TRES",
+      "scheduled_local_time": "15:00",
+      "numbers": [
+        "03",
+        "07",
+        "19",
+        "20",
+        "24"
+      ]
+    },
+    "contest_12392": {
+      "modality": "CLASSIC",
+      "scheduled_local_time": "21:00",
+      "numbers": [
+        "06",
+        "11",
+        "16",
+        "23",
+        "28"
+      ]
+    },
+    "original_pdf_bytes_captured": false,
+    "pdf_sha256": "NOT_CAPTURED"
+  },
+  "official_schedule": {
+    "url": "https://loterianacional.gob.mx/Chispazo/Chispazo",
+    "de_las_tres_local_time": "15:00",
+    "classic_local_time": "21:00"
+  },
+  "physical_provenance": {
+    "draw_specific_signed_acta_obtained": false,
+    "signed_participation_file_obtained": false,
+    "cs11_original_obtained": false,
+    "weighing_strip_28_measurements_obtained": false,
+    "scale_calibration_certificate_obtained": false,
+    "machine_to_contest_linkage_obtained": false,
+    "sphere_to_number_mapping_obtained": false,
+    "rfid_log_obtained": false,
+    "independent_custody_receipt_obtained": false,
+    "trusted_timestamp_token_obtained": false,
+    "two_independent_preclose_output_seals_obtained": false,
+    "interpretation": "Public results and mask establish publication content and schedule labeling only; they do not authenticate the draw's physical chain of custody or operational records."
+  }
+}
