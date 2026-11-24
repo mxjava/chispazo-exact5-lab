@@ -72,7 +72,7 @@ def _positive_decimal(value: str, field: str) -> Decimal:
     # Accept one unambiguous decimal spelling only. Decimal() itself also
     # accepts whitespace, underscores, leading signs and exponent notation;
     # those alternate spellings are not part of the physical CSV contract.
-    if not re.fullmatch(r"[0-9]+(?:\\.[0-9]+)?", value):
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", value):
         raise ValueError(f"{field}: must use canonical unsigned decimal text")
     try:
         number = Decimal(value)
