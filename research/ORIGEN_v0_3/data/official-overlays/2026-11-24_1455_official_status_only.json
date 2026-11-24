@@ -1,0 +1,107 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-24T14:55:00-06:00",
+  "timezone": "America/Mexico_City",
+  "classification": "OFFICIAL_PUBLIC_STATUS_ONLY_NOT_DRAW_SPECIFIC_PHYSICAL_EVIDENCE",
+  "sources": {
+    "chispazo_product_page": {
+      "url": "https://loterianacional.gob.mx/Chispazo/Chispazo",
+      "observed": {
+        "de_las_tres_local": "15:00",
+        "classic_local": "21:00"
+      }
+    },
+    "dedicated_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "latest_published_contest": 12392,
+      "latest_published_date": "2026-11-23",
+      "latest_published_numbers": ["06", "11", "16", "23", "28"],
+      "previous_same_day_contest": 12391,
+      "previous_same_day_numbers": ["03", "07", "19", "20", "24"],
+      "next_draw_date_displayed": "2026-11-24",
+      "no_2026_11_24_result_visible": true
+    },
+    "mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_date": "2026-11-23",
+      "latest_mask_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757",
+      "original_pdf_bytes_captured": false,
+      "original_pdf_sha256": null,
+      "visual_review": {
+        "page_count": 1,
+        "contest_12391": {
+          "modality": "DE_LAS_TRES",
+          "numbers": ["03", "07", "19", "20", "24"],
+          "label": "explicit on official mask"
+        },
+        "contest_12392": {
+          "modality": "CLASSIC",
+          "numbers": ["06", "11", "16", "23", "28"],
+          "label": "explicit on official mask"
+        }
+      }
+    },
+    "official_home_index": {
+      "url": "https://loterianacional.gob.mx/home/index",
+      "search_snapshot": {
+        "date": "2026-11-24",
+        "advertised_chispazo_contest_id": 12393,
+        "advertised_local_time": "15:00"
+      },
+      "opened_rendering": {
+        "last_chispazo_card_seen": {
+          "date": "2026-11-23",
+          "time": "15:00",
+          "contest_id": 12391
+        }
+      },
+      "classification": "CACHE_OR_RENDERING_DISCREPANCY",
+      "schedule_inference": {
+        "contest_id": 12393,
+        "modality": "DE_LAS_TRES",
+        "basis": "official_product_schedule",
+        "result_confirmed": false
+      },
+      "classic_21_00_contest_id_inferred": false
+    },
+    "normateca": {
+      "url": "https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+      "document": "SGVO-PRO-05",
+      "title": "PROCEDIMIENTO SORTEOS ELECTRÓNICOS",
+      "revision": 39,
+      "last_updated": "2026-03-20",
+      "pdf_url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"
+    }
+  },
+  "procedure_required_draw_records": [
+    "DRAW-ACTA",
+    "SALES-CLOSE-SUMMARY",
+    "CS11-WINNING-NUMBERS",
+    "POST-DRAW-SUMMARY",
+    "WEIGHING-STRIP"
+  ],
+  "draw_specific_primary_evidence_obtained": {
+    "signed_draw_act": false,
+    "signed_participation_file": false,
+    "sales_close_summary_original": false,
+    "cs11_original": false,
+    "post_draw_summary_original": false,
+    "weighing_strip_original": false,
+    "28_sphere_measurements": false,
+    "scale_calibration_certificate": false,
+    "machine_contest_link": false,
+    "rfid_trace": false,
+    "independent_custody_receipt": false,
+    "trusted_timestamp_proof": false,
+    "two_independent_preclose_output_seals": false
+  },
+  "integrity_and_eligibility": {
+    "official_mask_original_sha256": "NOT_CAPTURED",
+    "official_procedure_original_sha256": "NOT_CAPTURED",
+    "canonical_history_appended": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "prospective_classic_score_eligible": false
+  }
+}
