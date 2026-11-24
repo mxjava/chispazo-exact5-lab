@@ -89,17 +89,28 @@ class TestTrustVerifierV1(unittest.TestCase):
     def test_root_signature_covers_attestation_metadata(self):
         raw, public_bytes, _ = signed_receipt()
         original = json.loads(raw)
-        for field, replacement in (
-            ("signed_at_utc", "2026-11-23T03:06:00Z"),
-            ("timestamp_proof_sha256", "b" * 64),
-        ):
-            with self.subTest(field=field):
-                altered = copy.deepcopy(original)
-                altered["receipt_attestation"][field] = replacement
-                with self.assertRaisesRegex(ValueError, "signature verification failed"):
-                    verify_receipt_attestation(
-                        encode(altered), policy(public_bytes), verification_time=NOW
-                    )
+        # Keep each mutated document structurally valid so rejection reaches
+        # Ed25519 verification rather than the unverified receipt parser.
+        altered_time = copy.deepcopy(original)
+        altered_time["receipt_attestation"]["signed_at_utc"] = "2026-11-23T03:06:00Z"
+        altered_time["trusted_time_proofs"][0]["event_at_utc"] = "2026-11-23T03:06:00Z"
+        with self.assertRaisesRegex(ValueError, "signature verification failed"):
+            verify_receipt_attestation(
+                encode(altered_time), policy(public_bytes), verification_time=NOW
+            )
+
+        altered_proof = copy.deepcopy(original)
+        altered_proof["trusted_time_proofs"].append({
+            "authority_id": "tsa-test",
+            "event_id": "event-attestation-alias",
+            "event_at_utc": original["receipt_attestation"]["signed_at_utc"],
+            "proof_sha256": "b" * 64,
+        })
+        altered_proof["receipt_attestation"]["timestamp_proof_sha256"] = "b" * 64
+        with self.assertRaisesRegex(ValueError, "signature verification failed"):
+            verify_receipt_attestation(
+                encode(altered_proof), policy(public_bytes), verification_time=NOW
+            )
 
     def test_unknown_key_is_rejected(self):
         raw, public_bytes, _ = signed_receipt()
