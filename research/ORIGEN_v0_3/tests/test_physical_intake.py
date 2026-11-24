@@ -400,5 +400,27 @@ class PhysicalIntakeTests(unittest.TestCase):
                 self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
 
 
+    def test_decimal_measurements_reject_noncanonical_numeric_spellings(self):
+        for value in (" 4.700", "4.700 ", "+4.700", "4_700", "4.7e0"):
+            with self.subTest(value=value):
+                rows = make_rows()
+                rows[0]["mass_value"] = value
+                report = validate_physical_rows(rows)
+                self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
+
+    def test_integer_identifiers_and_numbers_require_ascii_digits(self):
+        rows = make_rows()
+        rows[0]["contest_id"] = "１２３００"
+        report = validate_physical_rows(rows)
+        self.assertIn("row:2", report["quarantined"])
+        self.assertNotIn(12300, report["usable_contests"])
+
+        rows = make_rows()
+        rows[0]["printed_number"] = "１"
+        report = validate_physical_rows(rows)
+        self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
+        self.assertNotIn(12300, report["usable_contests"])
+
+
 if __name__ == "__main__":
     unittest.main()
