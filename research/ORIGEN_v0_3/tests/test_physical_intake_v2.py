@@ -868,6 +868,16 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         self.assertIn("EVIDENCE_DOCUMENT_SET_CONFLICT", result["targets"]["12301"]["reasons"])
         self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
 
+    def test_one_scale_certificate_cannot_claim_conflicting_validity_windows(self):
+        rows = rows_for_target()
+        # Both windows individually cover the measurement, but one exact
+        # certificate digest for one scale cannot declare two validity periods.
+        rows[0]["calibration_valid_to"] = "2026-11-30T23:59:59-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        target = result["targets"]["12301"]
+        self.assertIn("METROLOGY_CONFIGURATION_CONFLICT", target["reasons"])
+        self.assertEqual(target["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
     def test_mapping_must_cover_set_assignment_as_well_as_draw(self):
         rows = rows_for_target()
         for row in rows:
