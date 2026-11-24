@@ -242,7 +242,7 @@
       "machine_id": true,
       "sphere_set_id": true,
       "per_sphere_weights": false,
-      "per_sphere_RFID_mapping": false,
+      "per_sphere_rfid_mapping": false,
       "extraction_order": false,
       "per_extraction_timestamps": false,
       "source_provenance": false
