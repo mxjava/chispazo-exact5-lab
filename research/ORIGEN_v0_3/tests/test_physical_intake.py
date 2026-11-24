@@ -3,8 +3,11 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from origen.physical_intake import (
+    MAX_PHYSICAL_CSV_HEADER_BYTES, MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES,
+    MAX_PHYSICAL_CSV_RECORD_BYTES, MAX_PHYSICAL_CSV_ROW_TEXT_BYTES,
     MAX_PHYSICAL_INTAKE_ROWS, REQUIRED_COLUMNS, file_sha256,
     validate_physical_csv, validate_physical_rows,
 )
@@ -309,6 +312,76 @@ class PhysicalIntakeTests(unittest.TestCase):
             report = validate_physical_csv(path)
             self.assertEqual(report["usable_contests"], [12300])
             self.assertEqual(file_sha256(path), before)
+
+
+    def test_csv_rejects_oversized_header_before_parsing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "oversized-header.csv"
+            path.write_bytes(b"x" * (MAX_PHYSICAL_CSV_HEADER_BYTES + 1) + b"\\n")
+            with self.assertRaisesRegex(ValueError, "CSV header exceeds maximum"):
+                validate_physical_csv(path)
+
+    def test_csv_rejects_oversized_record_before_parsing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "oversized-record.csv"
+            header = ",".join(REQUIRED_COLUMNS).encode("utf-8") + b"\\n"
+            record = b'"' + b"x" * MAX_PHYSICAL_CSV_RECORD_BYTES + b'"\\n'
+            path.write_bytes(header + record)
+            with self.assertRaisesRegex(ValueError, "CSV record exceeds maximum"):
+                validate_physical_csv(path)
+
+    def test_csv_rejects_multiline_scalar_fields(self):
+        rows = make_rows()
+        rows[0]["sphere_set_id"] = "SET-A\\nINJECTED"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "multiline.csv"
+            import csv
+            with path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.DictWriter(stream, fieldnames=REQUIRED_COLUMNS)
+                writer.writeheader()
+                writer.writerows(rows)
+            with self.assertRaisesRegex(ValueError, "CSV record syntax is invalid"):
+                validate_physical_csv(path)
+
+    def test_csv_rejects_decoded_row_text_over_limit(self):
+        rows = make_rows()
+        rows[0]["sphere_set_id"] = "x" * (MAX_PHYSICAL_CSV_ROW_TEXT_BYTES + 1)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "oversized-payload.csv"
+            import csv
+            with path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.DictWriter(stream, fieldnames=REQUIRED_COLUMNS)
+                writer.writeheader()
+                writer.writerows(rows)
+            with self.assertRaisesRegex(ValueError, "CSV row text exceeds maximum"):
+                validate_physical_csv(path)
+
+    def test_csv_rejects_aggregate_byte_limit(self):
+        rows = make_rows()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "aggregate-limit.csv"
+            import csv
+            with path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.DictWriter(stream, fieldnames=REQUIRED_COLUMNS)
+                writer.writeheader()
+                writer.writerows(rows)
+            header_bytes = len((",".join(REQUIRED_COLUMNS) + "\\r\\n").encode("utf-8"))
+            with patch(
+                "origen.physical_intake.MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES",
+                header_bytes + 1,
+            ):
+                with self.assertRaisesRegex(ValueError, "CSV input exceeds maximum"):
+                    validate_physical_csv(path)
+
+    def test_csv_rejects_records_with_more_fields_than_header(self):
+        row = make_rows()[0]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "extra-field.csv"
+            header = ",".join(REQUIRED_COLUMNS)
+            record = ",".join(row[column] for column in REQUIRED_COLUMNS) + ",EXTRA"
+            path.write_text(header + "\\n" + record + "\\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "more fields than its header"):
+                validate_physical_csv(path)
 
 
 if __name__ == "__main__":
