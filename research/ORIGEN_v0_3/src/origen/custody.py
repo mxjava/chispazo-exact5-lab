@@ -14,6 +14,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+from zoneinfo import ZoneInfo
 
 GENESIS = "0" * 64
 CLASSIC_PORTFOLIO_LINES = 30
@@ -21,6 +22,9 @@ MAX_CUSTODY_RECORD_BYTES = 65_536
 MAX_CUSTODY_RECORD_JSON_DEPTH = 16
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 _SHA40 = re.compile(r"[0-9a-f]{40}")
+_CHISPAZO_LOCAL_TIMEZONE = ZoneInfo("America/Mexico_City")
+_CLASSIC_CLOSE_SLOT = (21, 0, 0, 0)
+
 _RECORD_FIELDS = {
     "schema_version", "candidate_id", "candidate_spec_sha256",
     "target_contest_id", "modality", "history_max_contest_id",
@@ -64,6 +68,17 @@ def parse_utc(value: str, field: str) -> datetime:
     if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
         raise ValueError(f"{field} must have an explicit UTC offset (+00:00 or Z)")
     return parsed.astimezone(timezone.utc)
+
+
+def _require_classic_close_slot(closes: datetime) -> None:
+    """Reject a CLASSIC label whose declared close is not the official 21:00 slot."""
+    local = closes.astimezone(_CHISPAZO_LOCAL_TIMEZONE)
+    slot = (local.hour, local.minute, local.second, local.microsecond)
+    if slot != _CLASSIC_CLOSE_SLOT:
+        raise ValueError(
+            "official_draw_close_at_utc must resolve to the 21:00 "
+            "America/Mexico_City Classic slot"
+        )
 
 
 def validate_portfolio(portfolio: bytes, expected_lines: int = CLASSIC_PORTFOLIO_LINES) -> list[str]:
@@ -167,6 +182,7 @@ def build_seal_record(
     generated = parse_utc(generated_at_utc, "generated_at_utc")
     received = parse_utc(received_at_utc, "received_at_utc")
     closes = parse_utc(official_draw_close_at_utc, "official_draw_close_at_utc")
+    _require_classic_close_slot(closes)
     if received <= generated:
         raise ValueError("custodian receipt must strictly follow generation")
     if generated >= closes or received >= closes:
@@ -245,6 +261,7 @@ def verify_seal_record(
         generated = parse_utc(record["generated_at_utc"], "generated_at_utc")
         received = parse_utc(record["received_at_utc"], "received_at_utc")
         closes = parse_utc(record["official_draw_close_at_utc"], "official_draw_close_at_utc")
+        _require_classic_close_slot(closes)
         if not (generated < received < closes):
             return False, "generation/receipt timestamps are not strictly ordered pre-close"
         if record["history_max_contest_id"] != record["target_contest_id"] - 1:
