@@ -13,7 +13,7 @@ import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any
 from zoneinfo import ZoneInfo
 
 GENESIS = "0" * 64
@@ -42,7 +42,7 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def canonical_json_bytes(value: Mapping[str, Any]) -> bytes:
+def canonical_json_bytes(value: dict[str, Any]) -> bytes:
     return json.dumps(
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
         allow_nan=False,
@@ -117,7 +117,7 @@ def validate_portfolio(portfolio: bytes, expected_lines: int = CLASSIC_PORTFOLIO
     return normalized
 
 
-def _record_digest(record: Mapping[str, Any]) -> str:
+def _record_digest(record: dict[str, Any]) -> str:
     unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
     return sha256_bytes(canonical_json_bytes(unsigned))
 
@@ -285,8 +285,8 @@ def verify_seal_record(
 
 
 def verify_record_chain(
-    records: Sequence[dict[str, Any]],
-    portfolios_by_target: Mapping[int, bytes],
+    records: list[dict[str, Any]],
+    portfolios_by_target: dict[int, bytes],
     expected_final_hash: str | None = None,
 ) -> tuple[bool, str]:
     """Verify ordered ledger; optional external head anchor detects tail truncation."""

@@ -399,17 +399,33 @@ class CustodyTests(unittest.TestCase):
         self.assertEqual(reason, "portfolio_line_count must equal 30")
 
 
-    def test_verifier_rejects_dict_subclass_at_untrusted_record_boundary(self):
+    def test_verifier_rejects_dict_subclass_that_spoofs_its_validation_view(self):
         record, raw = self.make_record()
+        presented_view = dict(record)
+        forged_storage = dict(record)
+        forged_storage["target_contest_id"] = True
+        forged_storage["record_sha256"] = "0" * 64
 
         class SpoofedRecord(dict):
+            def __init__(self, stored, presented):
+                super().__init__(stored)
+                self.presented = presented
+
             def get(self, key, default=None):
-                return super().get(key, default)
+                return self.presented.get(key, default)
 
             def items(self):
-                return super().items()
+                return self.presented.items()
 
-        ok, reason = verify_seal_record(SpoofedRecord(record), raw)
+            def __getitem__(self, key):
+                return self.presented[key]
+
+        forged = SpoofedRecord(forged_storage, presented_view)
+        # The backing dict is invalid, but every overridable accessor presents
+        # a valid shadow record. The old isinstance(dict) boundary accepted it.
+        self.assertIs(dict.__getitem__(forged, "target_contest_id"), True)
+        self.assertEqual(forged["target_contest_id"], 12250)
+        ok, reason = verify_seal_record(forged, raw)
         self.assertFalse(ok)
         self.assertEqual(reason, "record must be an exact dict")
 
