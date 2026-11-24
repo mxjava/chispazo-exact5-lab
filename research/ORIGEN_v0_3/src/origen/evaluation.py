@@ -50,8 +50,7 @@ def evaluate_log_scores(
     rows = list(observations)
     if not rows:
         raise ValueError("no_observations")
-    if (not isinstance(min_observations, int) or isinstance(min_observations, bool)
-            or min_observations < 1):
+    if type(min_observations) is not int or min_observations < 1:
         raise ValueError("min_observations_must_be_positive_integer")
     if type(gates) is not dict:
         raise ValueError("gates_must_be_an_exact_dict")
@@ -114,8 +113,7 @@ def evaluate_log_scores(
     failed_gates = sorted(key for key in required if gates.get(key) is not True)
 
     e_value_valid = (
-        isinstance(exact5_max_log_e_value, (int, float))
-        and not isinstance(exact5_max_log_e_value, bool)
+        type(exact5_max_log_e_value) in (int, float)
         and isfinite(exact5_max_log_e_value)
         and exact5_max_log_e_value >= EXACT5_LOG_E_THRESHOLD
     )
