@@ -265,8 +265,8 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             "weighing occurs after source sales close; this output does not establish "
             "pre-close availability or eligibility for a later target. Use the V2 "
             "source-to-target gate for target availability, custody and continuity. "
-            "Source authenticity, clock trust, signatures and predictive value remain "
-            "unestablished."
+            "Source authenticity, clock trust, signatures and predictive value are "
+            "not established."
         ),
     }
 
