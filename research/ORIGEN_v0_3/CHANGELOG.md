@@ -6,12 +6,11 @@
 - No primary physical evidence was obtained. The 13:10 overlay is status-only and must not be treated as a draw result or appended to canonical history.
 - GitHub Contents API commits from the connected app did not yield workflow-run records for the new HEAD in the available Actions query; exact-head CI remains unverified in this execution.
 
-## Acta required-role subject separation (2026-11-24)
-- Added an adversarial regression showing that the unverified physical-manifest parser accepted all four required Acta roles when every role reused the same declared subject_id.
-- The parser now requires distinct declared subjects for the four Acta roles: General Directorate, Subdirectorate General Sales Operations, Information Technology, and SEGOB Inspector.
-- This is a structural anti-aliasing rule only. It does not authenticate any signer, role, signature bytes, institutional identity, or independence.
-- Test commit: `3e1384b76db02319c44f9de88baf28ed04197726`; implementation commit: `d8c7b0e8e5ed433f25549aecddb374424d64d41a`.
-- Exact-head CI verification is pending.
+## Acta subject-uniqueness regression correction (2026-11-24)
+- The new regression initially expected a later Acta role-separation error, but CI demonstrated that the existing earlier invariant already rejects a subject declaring multiple signatures for the same artifact (`a subject may declare only one signature per artifact`). The purported gap was therefore not reproducible; the added parser check was redundant and has been removed.
+- Retained the adversarial test with the assertion aligned to the actual existing guard.
+- Removed redundant parser change commit: `76b32ab4093f0c3f555f842709076ea2533a3925`; corrected test commit: `a3ed13081c489fd873259af0e940e3f4c3633328`.
+- This cycle does not claim a new security defect was closed.
 
 ## Official home-index schedule supplement — 2026-11-24 13:05 America/Mexico_City
 - Added status-only overlay `data/official-overlays/2026-11-24_1305_official_status_only.json` and review `docs/OFFICIAL_STATUS_REFRESH_20261124_1305.md`.
