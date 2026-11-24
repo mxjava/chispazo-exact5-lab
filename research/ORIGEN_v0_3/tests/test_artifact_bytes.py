@@ -81,19 +81,30 @@ class TestArtifactByteIntegrity(unittest.TestCase):
         digest, payload = next(iter(payloads.items()))
 
         class AdversarialDigest(str):
+            hash_calls = 0
+            eq_calls = 0
+
             def __hash__(self):
-                raise AssertionError("caller-controlled __hash__ must not run")
+                type(self).hash_calls += 1
+                return str.__hash__(self)
 
             def __eq__(self, other):
-                raise AssertionError("caller-controlled __eq__ must not run")
+                type(self).eq_calls += 1
+                return str.__eq__(self, other)
 
-        supplied = {AdversarialDigest(digest): payload}
-        # Keep the manifest's full artifact set represented without invoking
-        # the adversarial key methods during construction.
+        # Dict insertion necessarily hashes the key. Reset counters after
+        # construction so the assertion isolates verifier behavior.
+        adversarial_key = AdversarialDigest(digest)
+        supplied = {adversarial_key: payload}
         for other_digest, other_payload in list(payloads.items())[1:]:
             supplied[other_digest] = other_payload
+        AdversarialDigest.hash_calls = 0
+        AdversarialDigest.eq_calls = 0
+
         with self.assertRaisesRegex(TypeError, "keys must be exact str"):
             verify_declared_artifact_bytes(manifest, supplied)
+        self.assertEqual(AdversarialDigest.hash_calls, 0)
+        self.assertEqual(AdversarialDigest.eq_calls, 0)
 
 
 if __name__ == "__main__":
