@@ -354,6 +354,28 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "key_id cannot be bound to multiple subject IDs"):
             parse_unverified_physical_manifest(encode(document))
 
+    def test_signer_key_id_cannot_change_signature_algorithm(self):
+        document = valid_document()
+        # Reuse one subject/key across two artifacts, but change the algorithm.
+        # A key identifier denotes one key and therefore cannot change key type.
+        document["signatures"][4]["subject_id"] = document["signatures"][0]["subject_id"]
+        document["signatures"][4]["key_id"] = document["signatures"][0]["key_id"]
+        document["signatures"][4]["algorithm"] = "ecdsa-p256-sha256"
+        with self.assertRaisesRegex(
+            ValueError,
+            "key_id cannot be bound to multiple signature algorithms",
+        ):
+            parse_unverified_physical_manifest(encode(document))
+
+    def test_same_signer_key_may_sign_multiple_artifacts_with_same_algorithm(self):
+        document = valid_document()
+        document["signatures"][4]["subject_id"] = document["signatures"][0]["subject_id"]
+        document["signatures"][4]["key_id"] = document["signatures"][0]["key_id"]
+        document["signatures"][4]["algorithm"] = document["signatures"][0]["algorithm"]
+        parsed = parse_unverified_physical_manifest(encode(document))
+        self.assertEqual(parsed.signatures[0].key_id, parsed.signatures[4].key_id)
+        self.assertEqual(parsed.signatures[0].algorithm, parsed.signatures[4].algorithm)
+
     def test_invalid_media_type_is_rejected(self):
         document = valid_document()
         document["artifacts"][0]["media_type"] = "application"
