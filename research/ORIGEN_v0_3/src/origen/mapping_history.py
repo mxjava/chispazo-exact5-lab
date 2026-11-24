@@ -7,16 +7,24 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import datetime, timezone
+import re
 from typing import Any, Iterable, Mapping
 
 
+_RFC3339_TIMESTAMP = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+    r"(?:\.[0-9]{1,6})?(?:Z|[+-][0-9]{2}:[0-9]{2})"
+)
+
+
 def _aware_utc(value: Any, field: str) -> datetime:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{field}: missing timestamp")
+    if type(value) is not str or not _RFC3339_TIMESTAMP.fullmatch(value):
+        raise ValueError(f"{field}: must be canonical RFC3339 with an explicit offset")
+    normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(normalized)
     except ValueError as exc:
-        raise ValueError(f"{field}: invalid ISO-8601 timestamp") from exc
+        raise ValueError(f"{field}: invalid RFC3339 timestamp") from exc
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError(f"{field}: timezone offset is required")
     return parsed.astimezone(timezone.utc)
@@ -55,18 +63,24 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
 
     for index, raw in enumerate(rows, start=2):
         row_count += 1
-        contest_raw = str(raw.get("contest_id", "")).strip()
-        if not contest_raw.isdecimal() or int(contest_raw) <= 0:
+        contest_value = raw.get("contest_id")
+        if type(contest_value) is not str or not re.fullmatch(r"[0-9]+", contest_value):
             quarantined[f"row:{index}"].add("Q_REMAP")
             continue
-        contest = str(int(contest_raw))
+        if int(contest_value) <= 0:
+            quarantined[f"row:{index}"].add("Q_REMAP")
+            continue
+        contest = str(int(contest_value))
         try:
             set_id = str(raw["sphere_set_id"]).strip()
             sphere_id = str(raw["sphere_id"]).strip()
-            number_raw = str(raw["printed_number"]).strip()
+            number_value = raw["printed_number"]
             if not set_id or not sphere_id:
                 raise ValueError("missing sphere identity")
-            if not number_raw.isdecimal() or not 1 <= int(number_raw) <= 28:
+            if type(number_value) is not str or not re.fullmatch(r"[0-9]+", number_value):
+                raise ValueError("printed number must use ASCII digits")
+            number_raw = number_value
+            if not 1 <= int(number_raw) <= 28:
                 raise ValueError("invalid printed number")
             start = _aware_utc(raw["mapping_valid_from"], "mapping_valid_from")
             end = _aware_utc(raw["mapping_valid_to"], "mapping_valid_to")
