@@ -578,6 +578,25 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
         raise ValueError(
             "receipt attestation signed_at_utc must match its referenced trusted time proof"
         )
+    # The receipt attestation covers the completed receipt, including both
+    # output seals. It therefore needs its own timestamp proof and cannot
+    # claim a signing instant earlier than either seal. These are structural
+    # chronology checks only; the proof itself remains unauthenticated here.
+    if attestation.timestamp_proof_sha256 in seal_time_proof_digests:
+        raise ValueError(
+            "receipt attestation must reference a distinct trusted time proof from output seals"
+        )
+    attestation_signed_at = datetime.fromisoformat(
+        attestation.signed_at_utc[:-1] + "+00:00"
+    )
+    latest_seal_created_at = max(
+        datetime.fromisoformat(item.created_at_utc[:-1] + "+00:00")
+        for item in seals
+    )
+    if attestation_signed_at < latest_seal_created_at:
+        raise ValueError(
+            "receipt attestation signed_at_utc must not predate output seal creation"
+        )
     declared_participants = signer_subjects | custodian_subjects | generator_ids
     if attestation.issuer_id in declared_participants:
         raise ValueError(
