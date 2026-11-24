@@ -225,6 +225,11 @@ def verify_seal_record(
         # get/items/decode/strip and make validation inspect a different view.
         if type(record) is not dict:
             return False, "record must be an exact dict"
+        # Exact dict containers may still hold str subclasses as keys. Their
+        # equality/hash hooks can execute during set construction or lookup.
+        # Reject them before the first mapping access at this public boundary.
+        if any(type(key) is not str for key in record):
+            return False, "record keys must be exact built-in strings"
         if type(portfolio) is not bytes:
             return False, "portfolio must be exact bytes"
         if expected_previous is not None and type(expected_previous) is not str:
@@ -308,6 +313,10 @@ def verify_record_chain(
     for index, record in enumerate(records):
         if type(record) is not dict:
             return False, f"record {index} must be an exact dict"
+        # Check keys before record.get(): a hostile str subclass can collide
+        # with "target_contest_id" and run caller code during dictionary lookup.
+        if any(type(key) is not str for key in record):
+            return False, f"record {index} keys must be exact built-in strings"
         target = record.get("target_contest_id")
         if type(target) is not int or target <= last_target:
             return False, f"record {index} target is duplicate, invalid, or out of order"
