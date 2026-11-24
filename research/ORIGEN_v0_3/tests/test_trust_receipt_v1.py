@@ -65,7 +65,19 @@ def valid_document() -> dict:
                 "event_id": "event-1",
                 "event_at_utc": "2026-11-23T03:05:00Z",
                 "proof_sha256": digest("4"),
-            }
+            },
+            {
+                "authority_id": "tsa-test",
+                "event_id": "event-seal-a",
+                "event_at_utc": "2026-11-23T02:50:00Z",
+                "proof_sha256": digest("9"),
+            },
+            {
+                "authority_id": "tsa-test",
+                "event_id": "event-seal-b",
+                "event_at_utc": "2026-11-23T02:51:00Z",
+                "proof_sha256": digest("a"),
+            },
         ],
         "ledger_anchor": {
             "ledger_id": "ledger-test",
@@ -94,6 +106,7 @@ def valid_document() -> dict:
                 "portfolio_sha256": digest("c"),
                 "seal_sha256": digest("d"),
                 "signature_sha256": digest("e"),
+                "timestamp_proof_sha256": digest("9"),
             },
             {
                 "target_contest_id": contest_id,
@@ -102,6 +115,7 @@ def valid_document() -> dict:
                 "portfolio_sha256": digest("f"),
                 "seal_sha256": digest("1"),
                 "signature_sha256": digest("2"),
+                "timestamp_proof_sha256": digest("a"),
             },
         ],
         "failure_codes": [],
@@ -527,6 +541,34 @@ class TestTrustReceiptV1(unittest.TestCase):
                     "ledger ID must be distinct from receipt issuer, signers, custodians, generators, and trusted time authorities",
                 ):
                     parse_unverified_receipt(encode(document))
+
+
+    def test_output_seal_must_reference_a_declared_trusted_time_proof(self):
+        document = valid_document()
+        document["output_seals"][0]["timestamp_proof_sha256"] = digest("b")
+        with self.assertRaisesRegex(
+            ValueError,
+            "timestamp proof must reference a declared trusted time proof",
+        ):
+            parse_unverified_receipt(encode(document))
+
+    def test_output_seal_time_must_match_its_referenced_trusted_time_proof(self):
+        document = valid_document()
+        document["trusted_time_proofs"][1]["event_at_utc"] = "2026-11-23T02:49:59Z"
+        with self.assertRaisesRegex(
+            ValueError,
+            "created_at_utc must match its referenced trusted time proof",
+        ):
+            parse_unverified_receipt(encode(document))
+
+    def test_two_output_seals_must_not_reuse_one_time_proof(self):
+        document = valid_document()
+        document["output_seals"][1]["timestamp_proof_sha256"] = digest("9")
+        with self.assertRaisesRegex(
+            ValueError,
+            "two output seals must reference distinct trusted time proofs",
+        ):
+            parse_unverified_receipt(encode(document))
 
 
 if __name__ == "__main__":
