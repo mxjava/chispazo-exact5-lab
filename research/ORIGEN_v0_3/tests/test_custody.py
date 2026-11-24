@@ -386,12 +386,14 @@ class CustodyTests(unittest.TestCase):
             "2026-11-20T17:00:00z",          # lowercase UTC designator
             "2026-11-20T17:00:00+00:00:00",  # non-RFC3339 offset seconds
             "2026-11-20T17:00:00,1Z",        # comma decimal separator
-            "2026-02-30T17:00:00Z",          # invalid calendar date
         )
         for value in invalid:
             with self.subTest(value=value):
                 with self.assertRaisesRegex(ValueError, "extended UTC timestamp syntax"):
                     self.make_record(generated_at_utc=value)
+
+        with self.assertRaisesRegex(ValueError, "not a valid ISO-8601 timestamp"):
+            self.make_record(generated_at_utc="2026-02-30T17:00:00Z")
 
     def test_custody_timestamps_accept_canonical_utc_forms(self):
         for value in (
