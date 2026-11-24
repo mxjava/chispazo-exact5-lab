@@ -38,6 +38,16 @@ REQUIRED_COLUMNS = (
     "calibration_certificate_sha256", "mapping_valid_from", "mapping_valid_to", "draw_at",
     "source_document_sha256", "source_document_ref",
 )
+
+# V1 CSV input is single-line/scalar: bound header, each physical record,
+# decoded field payload, and total bytes before CSV objects are materialized.
+MAX_PHYSICAL_CSV_ROW_TEXT_BYTES = 32_768
+MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES = 64_000_000
+MAX_PHYSICAL_CSV_HEADER_BYTES = 4_096
+MAX_PHYSICAL_CSV_RECORD_BYTES = (
+    2 * MAX_PHYSICAL_CSV_ROW_TEXT_BYTES + 4 * len(REQUIRED_COLUMNS) + 4
+)
+
 QUARANTINE_CODES = {
     "Q_SOURCE_UNVERIFIED", "Q_CONTEST_LINK", "Q_MAPPING", "Q_TIME",
     "Q_METROLOGY", "Q_INCOMPLETE_SET", "Q_REMAP", "Q_CONFLICT",
@@ -272,20 +282,102 @@ def validate_physical_rows(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
 
 
 def validate_physical_csv(path: str | Path) -> dict[str, Any]:
-    """Read a UTF-8 CSV and validate its rows without modifying the source."""
-    with Path(path).open("r", encoding="utf-8-sig", newline="") as stream:
-        reader = csv.DictReader(stream)
-        if reader.fieldnames is None:
+    """Read bounded, single-physical-line CSV records without modifying the source.
+
+    V1 fields are scalar. Multiline CSV cells are rejected so one physical record
+    can be bounded before the parser allocates its field strings. The aggregate
+    byte limit and row-count limit independently bound total work and memory.
+    """
+    with Path(path).open("rb") as stream:
+        raw_header = stream.readline(MAX_PHYSICAL_CSV_HEADER_BYTES + 1)
+        if not raw_header:
             raise ValueError("CSV has no header")
-        if len(reader.fieldnames) != len(set(reader.fieldnames)):
+        if len(raw_header) > MAX_PHYSICAL_CSV_HEADER_BYTES:
+            raise ValueError(
+                f"CSV header exceeds maximum {MAX_PHYSICAL_CSV_HEADER_BYTES} bytes"
+            )
+        if (
+            (raw_header.endswith(b"\\r\\n") and b"\\r" in raw_header[:-2])
+            or (not raw_header.endswith(b"\\r\\n") and b"\\r" in raw_header)
+        ):
+            raise ValueError("CSV header contains an embedded or unsupported carriage return")
+        try:
+            header_line = raw_header.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise ValueError("CSV header is not valid UTF-8") from exc
+        try:
+            headers = next(csv.reader([header_line], strict=True))
+        except (csv.Error, StopIteration) as exc:
+            raise ValueError("CSV header syntax is invalid") from exc
+        if any(
+            type(name) is not str or not name or name != name.strip()
+            for name in headers
+        ):
+            raise ValueError("CSV headers must be non-empty canonical strings")
+        if len(headers) != len(set(headers)):
             raise ValueError("CSV headers must be unique; duplicate column names are ambiguous")
-        missing = sorted(set(REQUIRED_COLUMNS) - set(reader.fieldnames))
+        missing = sorted(set(REQUIRED_COLUMNS) - set(headers))
         if missing:
             raise ValueError("missing required columns: " + ", ".join(missing))
-        unexpected = sorted(set(reader.fieldnames) - set(REQUIRED_COLUMNS))
+        unexpected = sorted(set(headers) - set(REQUIRED_COLUMNS))
         if unexpected:
             raise ValueError("unexpected columns: " + ", ".join(unexpected))
-        return validate_physical_rows(reader)
+
+        total_bytes = len(raw_header)
+        if total_bytes > MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES:
+            raise ValueError(
+                f"CSV input exceeds maximum {MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES} bytes"
+            )
+
+        def rows() -> Iterable[dict[str, Any]]:
+            nonlocal total_bytes
+            while True:
+                raw_line = stream.readline(MAX_PHYSICAL_CSV_RECORD_BYTES + 1)
+                if not raw_line:
+                    return
+                if len(raw_line) > MAX_PHYSICAL_CSV_RECORD_BYTES:
+                    raise ValueError(
+                        f"CSV record exceeds maximum {MAX_PHYSICAL_CSV_RECORD_BYTES} bytes"
+                    )
+                total_bytes += len(raw_line)
+                if total_bytes > MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES:
+                    raise ValueError(
+                        f"CSV input exceeds maximum {MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES} bytes"
+                    )
+                if (
+                    (raw_line.endswith(b"\\r\\n") and b"\\r" in raw_line[:-2])
+                    or (not raw_line.endswith(b"\\r\\n") and b"\\r" in raw_line)
+                ):
+                    raise ValueError(
+                        "CSV record contains an embedded or unsupported carriage return"
+                    )
+                try:
+                    line = raw_line.decode("utf-8")
+                except UnicodeDecodeError as exc:
+                    raise ValueError("CSV record is not valid UTF-8") from exc
+                try:
+                    values = next(csv.reader([line], strict=True))
+                except StopIteration:
+                    continue
+                except csv.Error as exc:
+                    raise ValueError("CSV record syntax is invalid") from exc
+                if not values:
+                    continue
+                if len(values) > len(headers):
+                    raise ValueError("CSV record has more fields than its header")
+                if len(values) < len(headers):
+                    values.extend([None] * (len(headers) - len(values)))
+                row_text_bytes = 0
+                for value in values:
+                    if type(value) is str:
+                        row_text_bytes += len(value.encode("utf-8"))
+                        if row_text_bytes > MAX_PHYSICAL_CSV_ROW_TEXT_BYTES:
+                            raise ValueError(
+                                f"CSV row text exceeds maximum {MAX_PHYSICAL_CSV_ROW_TEXT_BYTES} bytes"
+                            )
+                yield dict(zip(headers, values))
+
+        return validate_physical_rows(rows())
 
 
 def file_sha256(path: str | Path) -> str:
