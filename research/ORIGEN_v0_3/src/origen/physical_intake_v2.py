@@ -283,6 +283,7 @@ def evaluate_temporal_eligibility(
         custody_refs: set[str] = set()
         custody_hashes: set[str] = set()
         calibration_hashes: set[str] = set()
+        calibration_validity_windows: set[tuple[datetime, datetime]] = set()
         signature_refs: set[str] = set()
         signer_ids: set[str] = set()
         custodian_ids: set[str] = set()
@@ -390,6 +391,7 @@ def evaluate_temporal_eligibility(
                 mapping_end = _parse_time(row["mapping_valid_to"], "mapping_valid_to")
                 calibration_start = _parse_time(row["calibration_valid_from"], "calibration_valid_from")
                 calibration_end = _parse_time(row["calibration_valid_to"], "calibration_valid_to")
+                calibration_validity_windows.add((calibration_start, calibration_end))
                 if mapping_start >= mapping_end or not (mapping_start <= assignment <= target_draw <= mapping_end):
                     reasons.add("MAPPING_NOT_VALID_AT_TARGET_DRAW")
                 if calibration_start >= calibration_end or not (calibration_start <= measurement <= calibration_end):
@@ -472,7 +474,12 @@ def evaluate_temporal_eligibility(
             reasons.add("EVIDENCE_AVAILABILITY_TIME_CONFLICT")
         if len(custody_received_times) != 1:
             reasons.add("CUSTODY_RECEIPT_TIME_CONFLICT")
-        if len(sphere_types) != 1 or "" in sphere_types or len(machine_models) != 1 or "" in machine_models or len(scales) != 1 or "" in scales:
+        if (
+            len(sphere_types) != 1 or "" in sphere_types
+            or len(machine_models) != 1 or "" in machine_models
+            or len(scales) != 1 or "" in scales
+            or len(calibration_validity_windows) != 1
+        ):
             reasons.add("METROLOGY_CONFIGURATION_CONFLICT")
         if len(sphere_types) == 1 and "" not in sphere_types:
             sphere_type = next(iter(sphere_types))
