@@ -54,13 +54,26 @@ QUARANTINE_CODES = {
 }
 
 
+_RFC3339_TIMESTAMP = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+    r"(?:\\.[0-9]{1,6})?(?:Z|[+-][0-9]{2}:[0-9]{2})\\Z"
+)
+
+
 def _timestamp(value: str, field: str) -> datetime:
-    if type(value) is not str or not value.strip():
-        raise ValueError(f"{field}: missing timestamp")
+    # The CSV is a provenance boundary: accept one canonical RFC3339 form,
+    # not every relaxed spelling that datetime.fromisoformat happens to parse.
+    if type(value) is not str or not _RFC3339_TIMESTAMP.fullmatch(value):
+        raise ValueError(f"{field}: must be canonical RFC3339 with an explicit offset")
+    # RFC3339 -00:00 means the local offset is unknown, not UTC. Treating it
+    # as UTC could falsely satisfy the Classic/De las Tres local-time gate.
+    if value.endswith("-00:00"):
+        raise ValueError(f"{field}: unknown UTC offset -00:00 is not accepted")
+    normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(normalized)
     except ValueError as exc:
-        raise ValueError(f"{field}: invalid ISO-8601 timestamp") from exc
+        raise ValueError(f"{field}: invalid RFC3339 calendar timestamp") from exc
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError(f"{field}: timezone offset is required")
     return parsed.astimezone(timezone.utc)
