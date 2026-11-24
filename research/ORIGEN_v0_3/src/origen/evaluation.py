@@ -161,6 +161,11 @@ def evaluate_log_scores(
         "exact5_max_log_e_value": exact5_max_log_e_value,
         "exact5_log_threshold": EXACT5_LOG_E_THRESHOLD,
         "exact5_threshold_20_crossed": e_value_valid,
+        "exact5_e_value_provenance": (
+            "CALLER_DECLARED_UNVERIFIED"
+            if exact5_max_log_e_value is not None
+            else "NOT_PROVIDED"
+        ),
         "gates_missing": missing_gates,
         "gates_failed": sorted(set(failed_gates)),
         "protocol_status": protocol_status,
@@ -168,7 +173,9 @@ def evaluate_log_scores(
             "Positive-log-lift frequency is descriptive, not a sign-test p-value. "
             "The null is fixed at exactly 1/98280. A statistical candidate still "
             "requires independent audit of sealed PMFs, the complete target ledger, "
-            "pre-close chronology, modality, custody and raw outputs. This function "
+            "pre-close chronology, modality, custody and raw outputs. The supplied "
+            "anytime e-value is caller-declared and remains unverified until independently "
+            "recomputed from sealed pre-close artifacts. This function "
             "never certifies EDGE_SUPPORTED or authorizes promotion."
         ),
     }

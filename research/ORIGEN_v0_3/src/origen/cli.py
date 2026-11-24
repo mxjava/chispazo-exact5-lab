@@ -84,7 +84,7 @@ def main():
     elif args.command == "split":
         result = rolling_origin_folds(args.n, args.warmup, args.horizon) if args.rolling else chronological_split(args.n, args.warmup, args.evaluation_size)
     elif args.command == "evaluate":
-        obj = _load(args.file); result = evaluate_log_scores(obj["observations"], protocol_status=obj["protocol_status"], family_p_values=obj["family_p_values"], primary_test_id=obj["primary_test_id"], gates=obj.get("gates", {}), min_observations=obj.get("min_observations", 100), alpha=obj.get("alpha", 0.05))
+        obj = _load(args.file); result = evaluate_log_scores(obj["observations"], protocol_status=obj["protocol_status"], family_p_values=obj["family_p_values"], primary_test_id=obj["primary_test_id"], gates=obj.get("gates", {}), exact5_max_log_e_value=obj.get("exact5_max_log_e_value"), min_observations=obj.get("min_observations", 100), alpha=obj.get("alpha", 0.05))
     elif args.command == "benchmark-nulls":
         obj = _load(args.file); result = benchmark_nulls(obj["observed_statistic"], obj["null_statistics"], obj.get("direction", "greater"))
     elif args.command == "diversity": result = frame_diversity(_frames(args.registry))
