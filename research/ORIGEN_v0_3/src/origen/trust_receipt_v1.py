@@ -480,6 +480,17 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
     artifact_keys = [(item.artifact_type, item.sha256) for item in artifacts]
     if len(set(artifact_keys)) != len(artifact_keys):
         raise ValueError("artifacts contain duplicate type/digest pairs")
+    # A SHA-256 digest identifies one exact byte string. Even when the same
+    # bytes are intentionally catalogued under multiple artifact types, their
+    # declared byte length must be invariant across every occurrence.
+    artifact_lengths_by_digest: dict[str, int] = {}
+    for artifact in artifacts:
+        previous_length = artifact_lengths_by_digest.get(artifact.sha256)
+        if previous_length is not None and previous_length != artifact.byte_length:
+            raise ValueError(
+                "artifacts reuse a SHA-256 digest with inconsistent byte lengths"
+            )
+        artifact_lengths_by_digest[artifact.sha256] = artifact.byte_length
     signers = tuple(
         _parse_signer(item, index)
         for index, item in enumerate(_array(root["signers"], "signers", minimum=1, maximum=64))
