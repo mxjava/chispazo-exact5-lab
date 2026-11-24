@@ -107,6 +107,40 @@ class TestORIGENV03(unittest.TestCase):
                 primary_test_id="p", gates=SpoofedGates()
             )
 
+    def test_min_observations_rejects_comparison_overriding_int_subclass(self):
+        class SpoofedMinimum(int):
+            def __lt__(self, other):
+                return False
+
+        with self.assertRaisesRegex(ValueError, "positive_integer"):
+            evaluate_log_scores(
+                [{"p_alt": 2 * P0, "p_null": P0}],
+                protocol_status="PREREGISTERED",
+                family_p_values={"primary": 0.001},
+                primary_test_id="primary",
+                gates={key: True for key in REQUIRED_EDGE_GATES},
+                exact5_max_log_e_value=math.log(20),
+                min_observations=SpoofedMinimum(0),
+            )
+
+    def test_anytime_evalue_rejects_comparison_overriding_float_subclass(self):
+        class SpoofedEValue(float):
+            def __ge__(self, other):
+                return True
+
+        rows = [{"p_alt": 2 * P0, "p_null": P0} for _ in range(120)]
+        result = evaluate_log_scores(
+            rows,
+            protocol_status="PREREGISTERED",
+            family_p_values={"primary": 0.001},
+            primary_test_id="primary",
+            gates={key: True for key in REQUIRED_EDGE_GATES},
+            exact5_max_log_e_value=SpoofedEValue(0.0),
+        )
+        self.assertFalse(result["exact5_threshold_20_crossed"])
+        self.assertIn("exact5_anytime_e_value_ge_20", result["gates_failed"])
+        self.assertEqual(result["state"], "NO_EDGE_EVIDENCE")
+
     def test_primary_family_required(self):
         with self.assertRaises(ValueError): evaluate_log_scores([{"p_alt":2*P0,"p_null":P0}],protocol_status="DRAFT",family_p_values={"x":.5},primary_test_id="p",gates={})
     def test_null_must_be_exact_uniform_five_of_28(self):
