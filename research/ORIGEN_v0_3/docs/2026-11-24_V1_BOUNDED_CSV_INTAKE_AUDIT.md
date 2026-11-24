@@ -38,7 +38,7 @@ Sources:
 - https://www.loterianacional.gob.mx/Chispazo/Chispazo
 - https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
 
-No original HTML/PDF bytes were captured in this cycle, so no source-byte SHA-256 is claimed. No 24-Nov draw result, signed Acta, signed participation file, CS-11 original, 28-measurement strip, calibration record, machine/contest linkage, sphere mapping, RFID trace, independent custody receipt, trusted timestamp, or two independent pre-close output seals were obtained. Public results and procedure must not be upgraded to physical provenance.
+The rendered official PDF page was visually inspected, but the original PDF byte stream could not be downloaded into the working artifact store during this cycle; no source-byte SHA-256 is claimed. Original HTML bytes were also not captured. No 24-Nov draw result, signed Acta, signed participation file, CS-11 original, 28-measurement strip, calibration record, machine/contest linkage, sphere mapping, RFID trace, independent custody receipt, trusted timestamp, or two independent pre-close output seals were obtained. Public results and procedure must not be upgraded to physical provenance.
 
 ## Safety state
 
