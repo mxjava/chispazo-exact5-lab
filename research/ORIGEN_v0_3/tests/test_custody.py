@@ -83,7 +83,7 @@ class CustodyTests(unittest.TestCase):
 
     def test_late_receipt_rejected(self):
         with self.assertRaisesRegex(ValueError, "precede draw close"):
-            self.make_record(received_at_utc="2026-11-20T18:00:00Z")
+            self.make_record(received_at_utc="2026-11-21T03:00:00Z")
 
     def test_builder_rejects_de_las_tres_1500_slot_labeled_classic(self):
         with self.assertRaisesRegex(ValueError, "21:00 America/Mexico_City"):
