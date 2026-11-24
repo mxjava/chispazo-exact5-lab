@@ -95,7 +95,7 @@ El Informe de Gestión Gubernamental 2018–2024 (p. 43) declara:
 - reconocimiento RFID en máquinas y esferas;
 - 10 juegos para cada uno de siete productos, pero total reportado 60, aunque 10 × 7 = 70.
 
-El mismo informe describe un proyecto posterior de 8 máquinas y 2 sistemas RFID que **no estaba autorizado al cierre de junio de 2024**. Esto no demuestra el inventario actual después de esa fecha; sólo impide afirmar que esa ampliación se hubiera aprobado entonces.
+El mismo informe describe un proyecto posterior de 8 máquinas y 2 sistemas RFID que **no estaba autorizado al cierre de junio de 2024**. Esto no demuestra el inventario actual después de esa fecha; sólo impide afirmar que esa ampliación se hubiera aprobado entonces. Tampoco asigna las 14 máquinas a Chispazo. El SGVO-MAN-02 reservado/proyecto enumera Júpiter, Emerald y Unicorn en apartados de equipos Chispazo, mientras que el informe institucional sólo da el inventario agregado y no la asignación por producto. Es una pista para solicitar inventario y bitácoras, no prueba de despliegue por concurso.
 
 No se publican IDs de tags, eventos de lectores, mapeo etiqueta→número de esfera, asignación máquina-estuche por concurso ni evidencia de un tag RFID independiente en cada estuche. El número de estuche de CS-11 no equivale a RFID.
 
