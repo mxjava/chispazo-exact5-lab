@@ -24,6 +24,28 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+_REGISTRATION_TIMESTAMP = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+    r"(?:\.[0-9]{1,6})?(?:Z|[+-](?:0[0-9]|1[0-4]):[0-5][0-9])\Z"
+)
+
+
+def _parse_registration_timestamp(value: object) -> datetime:
+    """Parse one unambiguous RFC3339 timestamp; -00:00 is an unknown offset."""
+    if type(value) is not str or not _REGISTRATION_TIMESTAMP.fullmatch(value):
+        raise ValueError("registration timestamp must use canonical RFC3339 syntax")
+    if value.endswith("-00:00"):
+        raise ValueError("registration timestamp must not use unknown UTC offset -00:00")
+    normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        raise ValueError("registration timestamp is not a valid calendar instant") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError("registration timestamp requires an explicit UTC offset")
+    return parsed
+
+
 def publish_immutable_registration(dest: Path, serialized: str) -> None:
     """Atomically publish a complete registration without replacing an existing target.
 
@@ -139,8 +161,8 @@ def verify_registration_payload(payload: dict) -> bool:
     if len(set(normalized)) != 30:
         return False
     try:
-        utc_dt = datetime.fromisoformat(str(payload.get("registered_at_utc", "")).replace("Z", "+00:00"))
-        local_dt = datetime.fromisoformat(str(payload.get("registered_at_mexico_city", "")).replace("Z", "+00:00"))
+        utc_dt = _parse_registration_timestamp(payload.get("registered_at_utc"))
+        local_dt = _parse_registration_timestamp(payload.get("registered_at_mexico_city"))
         mexico_zone = ZoneInfo("America/Mexico_City")
         if utc_dt.tzinfo is None or local_dt.tzinfo is None:
             return False

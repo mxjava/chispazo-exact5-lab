@@ -62,3 +62,23 @@ def test_registration_verifier_rejects_mismatched_timestamp_instants():
         json.dumps(p, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     ).hexdigest()
     assert not verify_registration_payload(p)
+
+
+@pytest.mark.parametrize(
+    "timestamp",
+    [
+        "2026-01-01T12:00:00-00:00",
+        "2026-01-01 12:00:00+00:00",
+        "2026-01-01T12:00:00+0000",
+        "2026-01-01T12:00Z",
+        "2026-01-01T12:00:00.1234567Z",
+    ],
+)
+def test_evaluator_rejects_noncanonical_or_unknown_utc_timestamp(timestamp):
+    p = fixture()
+    p["registered_at_utc"] = timestamp
+    p.pop("registration_sha256")
+    p["registration_sha256"] = hashlib.sha256(
+        json.dumps(p, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    ).hexdigest()
+    assert not verify_registration_payload(p)
