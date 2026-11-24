@@ -167,6 +167,26 @@ class TestSignedTrustPolicyEnvelopeV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "32 immutable bytes"):
             self.verify(raw, bytearray(root_public))
 
+
+    def test_excessive_json_nesting_is_rejected_before_decode(self):
+        raw, root_public, _ = fixture()
+        deeply_nested = b"[" * 33 + b"]" * 33
+        with self.assertRaisesRegex(ValueError, "maximum JSON nesting depth"):
+            self.verify(deeply_nested, root_public)
+
+    def test_policy_sequence_outside_signed_64_bit_range_is_rejected(self):
+        raw, root_public, document = fixture()
+        document["policy_sequence"] = 9223372036854775808
+        with self.assertRaisesRegex(ValueError, "signed 64-bit range"):
+            self.verify(canonical(document), root_public)
+
+    def test_issue_time_after_not_before_is_rejected(self):
+        raw, root_public, document = fixture()
+        document["issued_at_utc"] = "2026-11-24T11:30:00Z"
+        document["not_before_utc"] = "2026-11-24T11:00:00Z"
+        with self.assertRaisesRegex(ValueError, "validity chronology is inverted"):
+            self.verify(canonical(document), root_public)
+
     def test_non_utc_timestamp_form_is_rejected(self):
         raw, root_public, document = fixture()
         document["expires_at_utc"] = "2026-12-01T00:00:00+00:00"
