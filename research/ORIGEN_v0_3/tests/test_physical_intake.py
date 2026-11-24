@@ -384,5 +384,21 @@ class PhysicalIntakeTests(unittest.TestCase):
                 validate_physical_csv(path)
 
 
+    def test_decimal_mass_boundaries_do_not_round_over_limit_values_into_compliance(self):
+        cases = (
+            ("upper envelope", "5.2500000000000001", "5.0", "5.0"),
+            ("maximum spread", "4.25", "4.5500000000000001", "4.4"),
+        )
+        for label, first_mass, last_mass, baseline_mass in cases:
+            with self.subTest(boundary=label):
+                rows = make_rows()
+                for row in rows:
+                    row["mass_value"] = baseline_mass
+                rows[0]["mass_value"] = first_mass
+                rows[-1]["mass_value"] = last_mass
+                report = validate_physical_rows(rows)
+                self.assertIn("Q_METROLOGY", report["quarantined"]["12300"])
+
+
 if __name__ == "__main__":
     unittest.main()
