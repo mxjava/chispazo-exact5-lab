@@ -7,9 +7,21 @@
     "source": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
     "latest_visible_contest_id": "12392",
     "latest_visible_date_local": "2026-11-23",
-    "latest_visible_result": ["06", "11", "16", "23", "28"],
+    "latest_visible_result": [
+      "06",
+      "11",
+      "16",
+      "23",
+      "28"
+    ],
     "previous_visible_contest_id": "12391",
-    "previous_visible_result": ["03", "07", "19", "20", "24"],
+    "previous_visible_result": [
+      "03",
+      "07",
+      "19",
+      "20",
+      "24"
+    ],
     "next_draw_date_local": "2026-11-24",
     "no_2026_11_24_contest_id_or_result_visible_at_observation": true
   },
@@ -19,10 +31,25 @@
     "linked_pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757",
     "linked_pdf_page_count": 1,
     "pdf_text_extraction_date": "2026-11-23",
-    "text_extraction_contest_ids": ["12391", "12392"],
+    "text_extraction_contest_ids": [
+      "12391",
+      "12392"
+    ],
     "text_extraction_combinations": {
-      "12391": ["03", "07", "19", "20", "24"],
-      "12392": ["06", "11", "16", "23", "28"]
+      "12391": [
+        "03",
+        "07",
+        "19",
+        "20",
+        "24"
+      ],
+      "12392": [
+        "06",
+        "11",
+        "16",
+        "23",
+        "28"
+      ]
     },
     "pdf_explicitly_labels_chispazo_modalities": false,
     "original_pdf_bytes_captured": false,
@@ -32,7 +59,7 @@
     "source": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
     "de_las_tres_local_time": "15:00",
     "classic_local_time": "21:00",
-    "modality_assignment_basis": "Cross-reference of the official daily schedule and official home-index slot display; the PDF text extraction itself lists contest IDs and combinations but does not label the Chispazo modality"
+    "modality_assignment_basis": "Direct contest/time slot display in the official home index, cross-checked against the official daily schedule; the mask PDF text itself does not label modalities"
   },
   "procedure_source": {
     "name": "SGVO-PRO-05",
@@ -66,5 +93,24 @@
     "physical_provenance_authenticated": false,
     "score_eligible": false,
     "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "home_index": {
+    "source": "https://www.loterianacional.gob.mx/home/index/",
+    "visible_slots": [
+      {
+        "contest_id": "12391",
+        "date_local": "2026-11-23",
+        "time_local": "15:00",
+        "modality": "DE_LAS_TRES"
+      },
+      {
+        "contest_id": "12392",
+        "date_local": "2026-11-23",
+        "time_local": "21:00",
+        "modality": "CLASSIC"
+      }
+    ],
+    "original_html_bytes_captured": false,
+    "modality_basis": "Official home-index slot display cross-checked against the official Chispazo product schedule; the linked one-page mask PDF lists contest IDs and combinations but does not label modalities"
   }
 }
