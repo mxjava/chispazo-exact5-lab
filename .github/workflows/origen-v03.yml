@@ -27,6 +27,8 @@ jobs:
           python-version: "3.13"
       - name: Install numerical runtime for Exact5 diagnostics
         run: python -m pip install numpy
+      - name: Install ORIGEN cryptographic runtime
+        run: python -m pip install "cryptography>=42.0.0,<47.0.0"
       - name: Run ORIGEN isolated tests
         working-directory: research/ORIGEN_v0_3
         env:
