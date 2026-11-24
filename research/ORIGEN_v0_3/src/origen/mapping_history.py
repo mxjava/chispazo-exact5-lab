@@ -20,6 +20,10 @@ _RFC3339_TIMESTAMP = re.compile(
 def _aware_utc(value: Any, field: str) -> datetime:
     if type(value) is not str or not _RFC3339_TIMESTAMP.fullmatch(value):
         raise ValueError(f"{field}: must be canonical RFC3339 with an explicit offset")
+    # RFC3339 -00:00 means the local offset is unknown, not UTC. Mapping
+    # interval checks must not silently manufacture a UTC instant.
+    if value.endswith("-00:00"):
+        raise ValueError(f"{field}: unknown UTC offset -00:00 is not accepted")
     normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
     try:
         parsed = datetime.fromisoformat(normalized)
