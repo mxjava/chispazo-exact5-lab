@@ -89,5 +89,42 @@ class MappingHistoryTests(unittest.TestCase):
         self.assertEqual(report["status"], "MAPPING_HISTORY_CLEAR")
 
 
+    def test_mapping_identifiers_require_ascii_decimal_text(self):
+        data = rows()
+        data[0]["contest_id"] = "１２３４"
+        report = audit_mapping_history(data)
+        self.assertIn("Q_REMAP", report["quarantined"]["row:2"])
+
+        data = rows()
+        data[0]["printed_number"] = "７"
+        report = audit_mapping_history(data)
+        self.assertIn("Q_REMAP", report["quarantined"]["1001"])
+
+    def test_mapping_timestamps_require_canonical_rfc3339(self):
+        for value in (
+            "2026-01-01 00:00:00-06:00",
+            "20260101T000000-0600",
+            "2026-01-01T00:00:00",
+            "2026-01-01T00:00:00-0600",
+        ):
+            with self.subTest(value=value):
+                data = rows()
+                data[0]["mapping_valid_from"] = value
+                report = audit_mapping_history(data)
+                self.assertIn("Q_REMAP", report["quarantined"]["1001"])
+
+    def test_mapping_timestamp_string_subclass_is_rejected(self):
+        class SpoofedTimestamp(str):
+            def replace(self, old, new, *args):
+                return "2026-01-01T00:00:00-06:00"
+
+        data = rows()
+        data[0]["mapping_valid_from"] = SpoofedTimestamp(
+            "2026-01-01T00:00:00Z"
+        )
+        report = audit_mapping_history(data)
+        self.assertIn("Q_REMAP", report["quarantined"]["1001"])
+
+
 if __name__ == "__main__":
     unittest.main()
