@@ -364,7 +364,7 @@ def validate_physical_csv(path: str | Path) -> dict[str, Any]:
                 if not values:
                     continue
                 if any(
-                    type(value) is str and ("\\r" in value or "\\n" in value)
+                    type(value) is str and ("\r" in value or "\n" in value)
                     for value in values
                 ):
                     raise ValueError("CSV multiline fields are not supported")
