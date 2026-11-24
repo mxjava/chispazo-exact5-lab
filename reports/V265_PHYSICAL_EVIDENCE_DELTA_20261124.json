@@ -129,7 +129,7 @@
   "weight_limits_in_current_policy_6": {
     "Ping_Pong": {
       "minimum_g": 2.3,
-      "maximum_g": 3.0,
+      "maximum_g": 3,
       "maximum_set_spread_g": 0.15
     },
     "Smartballs": {
@@ -271,5 +271,14 @@
     "promotion_or_merge": false,
     "canonical_history_modified": false,
     "V294_modified": false
+  },
+  "ci_validation": {
+    "code_test_commit": "3dc1ea7d0aa00892edbed12f15b5f09d46d0f3cb",
+    "status": "SUCCESS",
+    "compileall": "PASS",
+    "pytest_passed": 262,
+    "pytest_skipped": 2,
+    "pytest_duration_seconds": 38.71,
+    "workflow_run": "https://github.com/mxjava/chispazo-exact5-lab/actions/runs/45413957473"
   }
 }
