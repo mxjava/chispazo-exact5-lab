@@ -1058,7 +1058,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "blank-record-flood.csv"
             path.write_bytes(
-                ",".join(V2_REQUIRED_COLUMNS).encode("utf-8") + b"\\n\\n\\n"
+                ",".join(V2_REQUIRED_COLUMNS).encode("utf-8") + b"\n\n\n"
             )
             # One blank physical record is within the patched bound; the second
             # must fail even though no logical CSV row would otherwise be yielded.
