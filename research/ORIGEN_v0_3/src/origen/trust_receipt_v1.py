@@ -108,6 +108,7 @@ class OutputSealClaim:
     portfolio_sha256: str
     seal_sha256: str
     signature_sha256: str
+    timestamp_proof_sha256: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -389,7 +390,7 @@ def _parse_commitments(value: object) -> RunCommitments:
 def _parse_output_seal(value: object, index: int, target_id: str, close_at: str) -> OutputSealClaim:
     item = _object(
         value,
-        {"target_contest_id", "generator_id", "created_at_utc", "portfolio_sha256", "seal_sha256", "signature_sha256"},
+        {"target_contest_id", "generator_id", "created_at_utc", "portfolio_sha256", "seal_sha256", "signature_sha256", "timestamp_proof_sha256"},
         f"output_seals[{index}]",
     )
     contest_id = _contest_id(item["target_contest_id"], f"output_seals[{index}].target_contest_id")
@@ -407,6 +408,7 @@ def _parse_output_seal(value: object, index: int, target_id: str, close_at: str)
         portfolio_sha256=_digest(item["portfolio_sha256"], f"output_seals[{index}].portfolio_sha256"),
         seal_sha256=_digest(item["seal_sha256"], f"output_seals[{index}].seal_sha256"),
         signature_sha256=_digest(item["signature_sha256"], f"output_seals[{index}].signature_sha256"),
+        timestamp_proof_sha256=_digest(item["timestamp_proof_sha256"], f"output_seals[{index}].timestamp_proof_sha256"),
     )
 
 
@@ -528,6 +530,20 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
         raise ValueError("two output seals must have distinct seal digests")
     if len({item.signature_sha256 for item in seals}) != 2:
         raise ValueError("two output seals must have distinct signature digests")
+    seal_time_proof_digests = {item.timestamp_proof_sha256 for item in seals}
+    if len(seal_time_proof_digests) != 2:
+        raise ValueError("two output seals must reference distinct trusted time proofs")
+    time_proofs_by_digest = {item.proof_sha256: item for item in time_proofs}
+    for index, seal in enumerate(seals):
+        proof = time_proofs_by_digest.get(seal.timestamp_proof_sha256)
+        if proof is None:
+            raise ValueError(
+                f"output_seals[{index}] timestamp proof must reference a declared trusted time proof"
+            )
+        if proof.event_at_utc != seal.created_at_utc:
+            raise ValueError(
+                f"output_seals[{index}] created_at_utc must match its referenced trusted time proof"
+            )
     signer_signature_digests = {item.signature_sha256 for item in signers}
     if not {item.signature_sha256 for item in seals}.issubset(signer_signature_digests):
         raise ValueError(
