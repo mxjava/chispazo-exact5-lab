@@ -1,0 +1,59 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-23T20:55:46-06:00",
+  "timezone": "America/Mexico_City",
+  "classification": "OFFICIAL_PUBLIC_STATUS_ONLY_NOT_PHYSICAL_EVIDENCE",
+  "observations": [
+    {
+      "contest_id": "12391",
+      "date_local": "2026-11-23",
+      "result": [
+        "03",
+        "07",
+        "19",
+        "20",
+        "24"
+      ],
+      "observed_on": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "cross_checked_on": "https://www.loterianacional.gob.mx/Home/Resultados",
+      "modality": "DE_LAS_TRES",
+      "modality_basis": "The official home index lists contest 12391 at 15:00 on 23-Nov-2026; the official Chispazo schedule identifies 15:00 as De las Tres and 21:00 as Clasico",
+      "modality_confirmation": "OFFICIAL_HOME_INDEX_AND_SCHEDULE_CONFIRMED; MASK_2026-11-23_NOT_AVAILABLE_AT_CAPTURE"
+    },
+    {
+      "contest_id": "12392",
+      "date_local": "2026-11-23",
+      "scheduled_close_local": "21:00",
+      "observed_result": null,
+      "observed_on": "https://www.loterianacional.gob.mx/Home/Resultados",
+      "modality": "CLASSIC_PROVISIONAL_BY_SCHEDULE",
+      "result_status": "NOT_PUBLISHED_AT_CAPTURE",
+      "status_basis": "The official home index lists contest 12392 at 21:00 on 23-Nov-2026; its result field still shows placeholder hyphens at capture"
+    }
+  ],
+  "official_schedule_source": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+  "official_home_index_source": "https://www.loterianacional.gob.mx/Home/Resultados",
+  "mask_index_source": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+  "mask_index_latest_visible_date": "2026-11-22",
+  "capture_time_is_self_reported_not_trusted_timestamp": true,
+  "provenance_limits": {
+    "original_html_bytes_captured": false,
+    "pdf_bytes_captured": false,
+    "pdf_sha256": null,
+    "signed_draw_act_obtained": false,
+    "signed_participation_file_obtained": false,
+    "cs11_obtained": false,
+    "weighing_strip_28_measurements_obtained": false,
+    "scale_calibration_obtained": false,
+    "machine_contest_link_obtained": false,
+    "rfid_trace_obtained": false,
+    "independent_custody_receipt_obtained": false,
+    "trusted_timestamp_obtained": false
+  },
+  "eligibility": {
+    "prospective_classic_snapshot": false,
+    "preclose_seal": false,
+    "score_eligible": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
