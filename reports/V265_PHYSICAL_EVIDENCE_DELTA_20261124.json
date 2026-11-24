@@ -204,7 +204,8 @@
     "risk": "CS-18 Communication of Risk; timestamp is not fixed by the public procedure, so only a proven pre-close entry could be prospective.",
     "access": "CS-12 records persons attending the room during the event; not a same-draw pre-close input.",
     "video": "SGVO-PRO-05 requires recording from weighing through the draw; only the edited draw-only copy is attached to the Acta. The continuous master is required for forensic reconstruction.",
-    "participation_signature": "The participation/cancellation file is electronically signed after closure and before the ceremony; this is an integrity control, not physical evidence."
+    "participation_signature": "The participation/cancellation file is electronically signed after closure and before the ceremony; this is an integrity control, not physical evidence.",
+    "winner_report_signature": "A separate electronic signature is generated for the Relación de Ganadores report after the winning numbers are captured; it is included in the Acta. This is post-result integrity evidence, not a pre-close input."
   },
   "rfid_limits": {
     "machine_and_sphere_RFID_reported": true,
