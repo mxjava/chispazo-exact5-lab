@@ -186,6 +186,6 @@ Se requiere además:
 - Sin cambios al histórico canónico ni a V294.
 - No se alteraron parámetros predictivos.
 - La coincidencia del Git blob del histórico en `main` y en el branch se verificó antes de esta actualización: `2f5ff5bfbd779fe505736398e417b7211955958e`.
-- CI del commit de código/pruebas `3dc1ea7d0aa00892edbed12f15b5f09d46d0f3cb`: `compileall` aprobado y `pytest -q` aprobado con 262 pruebas, 2 omitidas, en 38.71 s. [Ejecución](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/45413957473).
+- CI del commit final de código/pruebas `e826d5c7341a3b51f9b59d67341af46ac9d4e476`: `compileall` aprobado y `pytest -q` aprobado con 262 pruebas, 2 omitidas, en 39.64 s. [Ejecución](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/45414890943).
 
 **Conclusión:** la evidencia pública describe un mecanismo físico y un procedimiento de control, pero no proporciona datos físicos auténticos por concurso. No se declara sesgo, señal ni ventaja predictiva. OOS, multiplicidad y anytime e-value permanecen sin superar.
