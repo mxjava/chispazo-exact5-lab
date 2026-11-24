@@ -363,6 +363,11 @@ def validate_physical_csv(path: str | Path) -> dict[str, Any]:
                     raise ValueError("CSV record syntax is invalid") from exc
                 if not values:
                     continue
+                if any(
+                    type(value) is str and ("\\r" in value or "\\n" in value)
+                    for value in values
+                ):
+                    raise ValueError("CSV multiline fields are not supported")
                 if len(values) > len(headers):
                     raise ValueError("CSV record has more fields than its header")
                 if len(values) < len(headers):
