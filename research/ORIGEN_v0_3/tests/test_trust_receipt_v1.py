@@ -587,12 +587,12 @@ class TestTrustReceiptV1(unittest.TestCase):
             {
                 "authority_id": "tsa-test",
                 "event_id": "event-receipt-early",
-                "event_at_utc": "2026-11-23T02:49:59Z",
+                "event_at_utc": "2026-11-23T02:50:30Z",
                 "proof_sha256": digest("c"),
             }
         )
         document["receipt_attestation"]["timestamp_proof_sha256"] = digest("c")
-        document["receipt_attestation"]["signed_at_utc"] = "2026-11-23T02:49:59Z"
+        document["receipt_attestation"]["signed_at_utc"] = "2026-11-23T02:50:30Z"
         with self.assertRaisesRegex(
             ValueError,
             "receipt attestation signed_at_utc must not predate output seal creation",
