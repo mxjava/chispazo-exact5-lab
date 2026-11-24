@@ -382,7 +382,11 @@ class CustodyTests(unittest.TestCase):
             "2026-11-20 17:00:00Z",       # space instead of RFC3339 T
             "2026-11-20T17:00Z",           # omitted seconds
             "2026-11-20T17:00:00+0000",   # compact offset
-            "2026-11-20T17:00:00.1234567Z",# excess fractional precision
+            "2026-11-20T17:00:00.1234567Z", # excess fractional precision
+            "2026-11-20T17:00:00z",          # lowercase UTC designator
+            "2026-11-20T17:00:00+00:00:00",  # non-RFC3339 offset seconds
+            "2026-11-20T17:00:00,1Z",        # comma decimal separator
+            "2026-02-30T17:00:00Z",          # invalid calendar date
         )
         for value in invalid:
             with self.subTest(value=value):
