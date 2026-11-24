@@ -1,0 +1,57 @@
+{
+  "schema": "ORIGEN_OFFICIAL_SOURCE_STATUS_OVERLAY_V1",
+  "observed_at_local": "2026-11-24T04:06:00-06:00",
+  "timezone": "America/Mexico_City",
+  "classification": "PUBLICATION_STATUS_ONLY_NOT_PHYSICAL_AUTHENTICATION",
+  "official_results_page": {
+    "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "latest_visible_contest_id": "12392",
+    "latest_visible_date_local": "2026-11-23",
+    "latest_visible_result": ["06", "11", "16", "23", "28"],
+    "previous_same_day_contest_id": "12391",
+    "previous_same_day_result": ["03", "07", "19", "20", "24"],
+    "next_draw_date_displayed": "2026-11-24",
+    "no_2026_11_24_result_visible_at_observation": true
+  },
+  "official_mask_index": {
+    "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "latest_listed_publication_date": "2026-11-23",
+    "no_2026_11_24_mask_listed": true,
+    "latest_pdf_original_bytes_captured": false,
+    "latest_pdf_sha256": null
+  },
+  "schedule": {
+    "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "de_las_tres_local_time": "15:00",
+    "classic_local_time": "21:00",
+    "modality_for_contest_12391": "DE_LAS_TRES",
+    "modality_for_contest_12392": "CLASSIC",
+    "assignment_basis": "Official 23-Nov mask visual review recorded in the prior overlay; official schedule independently confirms the daily 15:00 and 21:00 slots"
+  },
+  "capture_limits": {
+    "original_results_html_bytes_captured": false,
+    "original_mask_index_html_bytes_captured": false,
+    "original_pdf_bytes_captured": false,
+    "capture_time_is_self_reported_not_trusted_timestamp": true
+  },
+  "physical_provenance": {
+    "signed_draw_act_obtained": false,
+    "signed_participation_file_obtained": false,
+    "cs11_original_obtained": false,
+    "weighing_strip_with_28_measurements_obtained": false,
+    "scale_calibration_obtained": false,
+    "machine_contest_link_obtained": false,
+    "sphere_id_to_number_mapping_obtained": false,
+    "rfid_trace_obtained": false,
+    "independent_custody_receipt_obtained": false,
+    "trusted_timestamp_obtained": false,
+    "two_independent_preclose_output_seals_obtained": false
+  },
+  "eligibility": {
+    "prospective_classic_snapshot": false,
+    "preclose_seal": false,
+    "physical_provenance_authenticated": false,
+    "score_eligible": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
