@@ -1054,6 +1054,26 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
                 str(raised.exception.__cause__),
             )
 
+    def test_csv_blank_physical_records_cannot_bypass_intake_row_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "blank-record-flood.csv"
+            path.write_bytes(
+                ",".join(V2_REQUIRED_COLUMNS).encode("utf-8") + b"\\n\\n\\n"
+            )
+            # One blank physical record is within the patched bound; the second
+            # must fail even though no logical CSV row would otherwise be yielded.
+            with patch("origen.physical_intake_v2.MAX_V2_INTAKE_ROWS", 1):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    r"intake iterable failed after row 0",
+                ) as raised:
+                    evaluate_temporal_csv(path, **VERIFIED)
+            self.assertIsInstance(raised.exception.__cause__, csv.Error)
+            self.assertIn(
+                "CSV exceeds maximum 1 physical records",
+                str(raised.exception.__cause__),
+            )
+
     def test_csv_extra_columns_are_rejected_before_mapping(self):
         row = rows_for_target()[0]
         with tempfile.TemporaryDirectory() as directory:
