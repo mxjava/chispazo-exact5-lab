@@ -1,3 +1,11 @@
+## Custody writer rejects rehashed structurally invalid records (2026-11-24)
+- Found that `write_record_exclusive()` checked only the exact field set and record digest. A caller could mutate a built record to claim a 15:00 Mexico City close under CLASSIC (or a non-prior history cutoff), recompute the public digest, and occupy an exclusive ledger path with a record that the verifier would later reject.
+- Added writer-side structural validation before directory creation/file creation: schema and exact scalar types, Classic modality and 21:00:00 Mexico City slot, pre-close timestamp ordering, prior-history cutoff, fixed 30-line declaration, hash declaration consistency, generator/custodian separation and canonical record digest.
+- The writer still cannot verify actual portfolio bytes because its API receives no portfolio argument; byte binding remains the verifier's responsibility. This is structural storage hygiene, not independent provenance.
+- Implementation commit: `513cd956d135177a05a973d5f80d49e688ab7a2b`; adversarial test commit: `3090ca6f9fba202f562b873c7bd97bf340829e1a`.
+- Added regressions for a rehashed 15:00 (De las Tres) slot mislabeled as Classic and a rehashed non-prior history cutoff. Both must fail before a file is created.
+- Exact-head CI will be recorded after the documentation commit completes.
+
 ## Cross-role source identity separation and Classic custody slot binding (2026-11-23)
 - Closed a physical-manifest identity-domain gap: an artifact `source_id` could reuse a signer subject, custodian subject, or trusted-time authority ID. The parser now rejects those cross-role aliases while continuing to allow the same source organization ID across multiple artifacts.
 - Closed a custody schedule gap: `build_seal_record` and `verify_seal_record` accepted a 15:00 local close (De las Tres) under a `CLASSIC` label. Both boundaries now require exactly 21:00:00 in `America/Mexico_City`.
