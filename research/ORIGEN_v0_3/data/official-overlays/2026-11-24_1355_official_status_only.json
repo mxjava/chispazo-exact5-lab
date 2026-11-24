@@ -1,0 +1,121 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-24T13:55:00-06:00",
+  "timezone": "America/Mexico_City",
+  "classification": "OFFICIAL_PUBLIC_STATUS_ONLY_NOT_PHYSICAL_EVIDENCE",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "https://www.loterianacional.gob.mx/home/index",
+    "https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+    "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"
+  ],
+  "observations": {
+    "dedicated_results_page": {
+      "latest_contest": 12392,
+      "latest_date": "2026-11-23",
+      "latest_numbers": [
+        "06",
+        "11",
+        "16",
+        "23",
+        "28"
+      ],
+      "next_draw_date": "2026-11-24",
+      "no_2026_11_24_result_visible": true
+    },
+    "latest_public_mask": {
+      "date": "2026-11-23",
+      "pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757",
+      "page_count": 1,
+      "visually_inspected": true,
+      "original_pdf_bytes_captured": false,
+      "original_pdf_sha256": "NOT_CAPTURED",
+      "de_las_tres": {
+        "contest_id": 12391,
+        "numbers": [
+          "03",
+          "07",
+          "19",
+          "20",
+          "24"
+        ],
+        "label": "EXPLICIT_ON_OFFICIAL_MASK"
+      },
+      "classic": {
+        "contest_id": 12392,
+        "numbers": [
+          "06",
+          "11",
+          "16",
+          "23",
+          "28"
+        ],
+        "label": "EXPLICIT_ON_OFFICIAL_MASK"
+      }
+    },
+    "official_home_index": {
+      "date": "2026-11-24",
+      "advertised_chispazo_contest_id": 12393,
+      "advertised_time_local": "15:00",
+      "modality": "DE_LAS_TRES",
+      "modality_basis": "official_product_schedule",
+      "schedule_inferred_not_result_confirmed": true,
+      "no_21_00_classic_contest_id_inferred": true
+    },
+    "official_product_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00"
+    },
+    "official_procedure": {
+      "document": "SGVO-PRO-05",
+      "title": "Procedimiento Sorteos Electrónicos",
+      "revision": 39,
+      "normateca_last_updated": "2026-03-20",
+      "official_normateca_url": "https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+      "official_pdf_url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+      "relevant_records_for_chispazo": [
+        "SUMARIO_DE_SORTEO_CIERRE_DE_VENTA",
+        "CS-11",
+        "SUMARIO_DE_SORTEO",
+        "TIRA_DE_PESAJE"
+      ],
+      "tira_de_pesaje_signatory_roles": [
+        "RESPONSABLE_DEL_PESAJE",
+        "REPRESENTANTE_DIRECCION_OPERACION_CONCURSOS_JUEGOS_Y_SORTEOS",
+        "REPRESENTANTE_DIRECCION_GENERAL",
+        "INSPECTOR_SEGOB"
+      ],
+      "same_draw_weighing": "after automatic sales close; per-draw",
+      "participation_signature_custody": "electronic participation-file signature recorded before draw and deposited by SEGOB inspector in OIC-controlled safe"
+    }
+  },
+  "provenance_limits": {
+    "official_mask_is_post_draw_public_result_not_preclose_physical_custody": true,
+    "original_mask_pdf_bytes_captured": false,
+    "original_mask_pdf_sha256": null,
+    "official_procedure_pdf_bytes_captured": false,
+    "official_procedure_pdf_sha256": null,
+    "signed_draw_act_obtained": false,
+    "signed_participation_file_obtained": false,
+    "cs11_original_obtained": false,
+    "weighing_strip_original_obtained": false,
+    "per_sphere_measurements_obtained": false,
+    "scale_calibration_certificate_obtained": false,
+    "machine_contest_link_obtained": false,
+    "rfid_trace_obtained": false,
+    "independent_custody_receipt_obtained": false,
+    "trusted_timestamp_obtained": false,
+    "two_independent_preclose_output_seals_obtained": false
+  },
+  "eligibility": {
+    "current_day_2026_11_24_result_published": false,
+    "prospective_classic_snapshot": false,
+    "preclose_seal": false,
+    "score_eligible": false,
+    "canonical_history_appended": false,
+    "v294_changed": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
