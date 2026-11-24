@@ -77,7 +77,7 @@ def validate() -> dict:
     assert v265["evidence_class"] == "ASSOCIATION_SCREEN_ONLY"
     assert v265["physical_bias_evidence"] is False
     assert v265["evaluator_consumes"]["per_sphere_weights"] is False
-    assert v265["evaluator_consumes"]["per_sphere_RFID_mapping"] is False
+    assert v265["evaluator_consumes"]["per_sphere_rfid_mapping"] is False
     assert v265["evaluator_consumes"]["extraction_order"] is False
     assert v265["evaluator_consumes"]["per_extraction_timestamps"] is False
     assert v265["evaluator_consumes"]["source_provenance"] is False
