@@ -165,3 +165,27 @@ def test_registration_verifier_rejects_mismatched_timestamp_instants(tmp_path):
     canonical = json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     entry["registration_sha256"] = hashlib.sha256(canonical).hexdigest()
     assert not verify_registration_payload(entry)
+
+
+@pytest.mark.parametrize(
+    "timestamp",
+    [
+        "2026-01-01T12:00:00-00:00",
+        "2026-01-01 12:00:00+00:00",
+        "2026-01-01T12:00:00+0000",
+        "2026-01-01T12:00Z",
+        "2026-01-01T12:00:00.1234567Z",
+    ],
+)
+def test_registration_verifier_rejects_noncanonical_or_unknown_utc_timestamp(tmp_path, timestamp):
+    import hashlib
+    from src.pipeline.freeze_prediction import verify_registration_payload
+
+    result = _run(tmp_path)
+    assert result.returncode == 0, result.stderr
+    entry = json.loads((tmp_path / "ledger" / "target_12311.json").read_text(encoding="utf-8"))
+    entry["registered_at_utc"] = timestamp
+    unsigned = {key: value for key, value in entry.items() if key != "registration_sha256"}
+    canonical = json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    entry["registration_sha256"] = hashlib.sha256(canonical).hexdigest()
+    assert not verify_registration_payload(entry)
