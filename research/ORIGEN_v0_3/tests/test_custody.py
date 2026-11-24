@@ -51,7 +51,7 @@ class CustodyTests(unittest.TestCase):
             received_at_utc="2026-11-20T17:01:00Z",
             custodian_clock_source="independent-dry-run-clock",
             custodian_recomputed_sha256=sha256_bytes(data),
-            official_draw_close_at_utc="2026-11-20T18:00:00Z",
+            official_draw_close_at_utc="2026-11-21T03:00:00Z",
             official_draw_close_source="dry-run-only",
             previous_record_sha256=GENESIS,
         )
@@ -84,6 +84,22 @@ class CustodyTests(unittest.TestCase):
     def test_late_receipt_rejected(self):
         with self.assertRaisesRegex(ValueError, "precede draw close"):
             self.make_record(received_at_utc="2026-11-20T18:00:00Z")
+
+    def test_builder_rejects_de_las_tres_1500_slot_labeled_classic(self):
+        with self.assertRaisesRegex(ValueError, "21:00 America/Mexico_City"):
+            self.make_record(official_draw_close_at_utc="2026-11-20T21:00:00Z")
+
+    def test_verifier_rejects_15_slot_even_when_record_digest_is_recomputed(self):
+        record, raw = self.make_record()
+        record["official_draw_close_at_utc"] = "2026-11-20T21:00:00Z"
+        unsigned = {key: value for key, value in record.items() if key != "record_sha256"}
+        import hashlib
+        record["record_sha256"] = hashlib.sha256(
+            json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+        ok, reason = verify_seal_record(record, raw)
+        self.assertFalse(ok)
+        self.assertIn("21:00 America/Mexico_City", reason)
 
     def test_wrong_modality_rejected(self):
         with self.assertRaisesRegex(ValueError, "CLASSIC"):
@@ -143,7 +159,7 @@ class CustodyTests(unittest.TestCase):
             previous_record_sha256=first["record_sha256"],
             generated_at_utc="2026-11-20T18:01:00Z",
             received_at_utc="2026-11-20T18:02:00Z",
-            official_draw_close_at_utc="2026-11-20T19:00:00Z",
+            official_draw_close_at_utc="2026-11-21T03:00:00Z",
         )
         self.assertEqual(
             verify_record_chain([first, second], {12250: raw1, 12251: raw2}),
@@ -157,7 +173,7 @@ class CustodyTests(unittest.TestCase):
             previous_record_sha256=first["record_sha256"],
             generated_at_utc="2026-11-20T18:01:00Z",
             received_at_utc="2026-11-20T18:02:00Z",
-            official_draw_close_at_utc="2026-11-20T19:00:00Z",
+            official_draw_close_at_utc="2026-11-21T03:00:00Z",
         )
         ok, reason = verify_record_chain(
             [first], {12250: raw1}, expected_final_hash=second["record_sha256"]
@@ -172,14 +188,14 @@ class CustodyTests(unittest.TestCase):
             previous_record_sha256=first["record_sha256"],
             generated_at_utc="2026-11-20T18:01:00Z",
             received_at_utc="2026-11-20T18:02:00Z",
-            official_draw_close_at_utc="2026-11-20T19:00:00Z",
+            official_draw_close_at_utc="2026-11-21T03:00:00Z",
         )
         third, raw3 = self.make_record(
             target_contest_id=12252, history_max_contest_id=12251,
             previous_record_sha256=second["record_sha256"],
             generated_at_utc="2026-11-20T19:01:00Z",
             received_at_utc="2026-11-20T19:02:00Z",
-            official_draw_close_at_utc="2026-11-20T20:00:00Z",
+            official_draw_close_at_utc="2026-11-21T03:00:00Z",
         )
         ok, reason = verify_record_chain([first, third], {12250: raw1, 12252: raw3})
         self.assertFalse(ok)
@@ -192,7 +208,7 @@ class CustodyTests(unittest.TestCase):
             previous_record_sha256=first["record_sha256"],
             generated_at_utc="2026-11-20T18:01:00Z",
             received_at_utc="2026-11-20T18:02:00Z",
-            official_draw_close_at_utc="2026-11-20T19:00:00Z",
+            official_draw_close_at_utc="2026-11-21T03:00:00Z",
         )
         ok, reason = verify_record_chain([second, first], {12250: raw1, 12251: raw2})
         self.assertFalse(ok)
