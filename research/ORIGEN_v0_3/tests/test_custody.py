@@ -473,6 +473,40 @@ class CustodyTests(unittest.TestCase):
                 write_record_exclusive(Path(tmp) / "subclass.json", SpoofedRecord(record))
 
 
+    def test_exclusive_writer_rejects_hostile_string_key_before_hash_or_equality(self):
+        record, _ = self.make_record()
+
+        class HostileKey(str):
+            hash_calls = 0
+            eq_calls = 0
+            armed = False
+
+            def __hash__(self):
+                if type(self).armed:
+                    type(self).hash_calls += 1
+                return hash("record_sha256")
+
+            def __eq__(self, other):
+                if type(self).armed:
+                    type(self).eq_calls += 1
+                    raise RuntimeError("hostile writer-key equality executed")
+                return False
+
+        key = HostileKey("untrusted-extra")
+        record[key] = "ignored"
+        HostileKey.hash_calls = 0
+        HostileKey.eq_calls = 0
+        HostileKey.armed = True
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "record keys must be exact built-in strings"):
+                write_record_exclusive(Path(tmp) / "hostile-key.json", record)
+
+        self.assertEqual(HostileKey.hash_calls, 0)
+        self.assertEqual(HostileKey.eq_calls, 0)
+        HostileKey.armed = False
+
+
     def test_verifier_rejects_scalar_subclasses_at_the_record_boundary(self):
         import hashlib
 
