@@ -1,3 +1,11 @@
+## Acta role separation and official 13:10 status refresh (2026-11-24)
+- Physical manifest regression: all four required DRAW-ACTA roles could reuse one subject_id; parser now requires distinct declared subjects for the General Directorate, Sales Operations, IT and SEGOB roles.
+- Test commit: `3e1384b76db02319c44f9de88baf28ed04197726`; implementation commit: `d8c7b0e8e5ed433f25549aecddb374424d64d41a`.
+- Added official status-only overlay and review at 13:10 America/Mexico_City. Official home index showed Chispazo contest 12393 at 15:00 (schedule-inferred De las Tres); results page still ended at 12392 from 23-Nov; mask index still ended at 23-Nov. No 24-Nov result or mask was visible.
+- Official 23-Nov mask labels 12391 De las Tres (03 07 19 20 24) and 12392 Clásico (06 11 16 23 28). Original PDF bytes not captured; SHA-256 remains NOT_CAPTURED.
+- No primary physical evidence was obtained. The 13:10 overlay is status-only and must not be treated as a draw result or appended to canonical history.
+- GitHub Contents API commits from the connected app did not yield workflow-run records for the new HEAD in the available Actions query; exact-head CI remains unverified in this execution.
+
 ## Acta required-role subject separation (2026-11-24)
 - Added an adversarial regression showing that the unverified physical-manifest parser accepted all four required Acta roles when every role reused the same declared subject_id.
 - The parser now requires distinct declared subjects for the four Acta roles: General Directorate, Subdirectorate General Sales Operations, Information Technology, and SEGOB Inspector.
