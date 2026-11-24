@@ -366,4 +366,63 @@ class TestORIGENV03(unittest.TestCase):
                     "details": {},
                 })
 
+
+    def test_meta_audit_mixed_naive_and_aware_timestamps_blocks_without_crashing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "ledger.jsonl"
+            append_event(path, {
+                "event_id": "prereg-naive",
+                "timestamp_utc": "2026-01-01T00:00:00",
+                "event_type": "protocol_sealed",
+                "frame_id": "f",
+                "details": {},
+            })
+            append_event(path, {
+                "event_id": "access-aware",
+                "timestamp_utc": "2026-01-01T00:01:00Z",
+                "event_type": "outcome_access",
+                "frame_id": "f",
+                "details": {},
+            })
+            result = audit_search_path(path)
+            self.assertEqual(result["state"], "BLOCKED")
+            self.assertTrue(any(
+                item["type"] == "timestamp_without_timezone"
+                for item in result["findings"]
+            ))
+
+    def test_meta_audit_rejects_unknown_negative_zero_offset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "ledger.jsonl"
+            append_event(path, {
+                "event_id": "unknown-offset",
+                "timestamp_utc": "2026-01-01T00:00:00-00:00",
+                "event_type": "protocol_sealed",
+                "frame_id": "f",
+                "details": {},
+            })
+            result = audit_search_path(path)
+            self.assertEqual(result["state"], "BLOCKED")
+            self.assertTrue(any(
+                item["type"] == "timestamp_unknown_offset"
+                for item in result["findings"]
+            ))
+
+    def test_meta_audit_rejects_non_utc_offset_in_utc_field(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "ledger.jsonl"
+            append_event(path, {
+                "event_id": "local-offset",
+                "timestamp_utc": "2026-01-01T01:00:00+01:00",
+                "event_type": "protocol_sealed",
+                "frame_id": "f",
+                "details": {},
+            })
+            result = audit_search_path(path)
+            self.assertEqual(result["state"], "BLOCKED")
+            self.assertTrue(any(
+                item["type"] == "timestamp_not_utc"
+                for item in result["findings"]
+            ))
+
 if __name__=="__main__": unittest.main()
