@@ -1,0 +1,71 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-24T13:10:00-06:00",
+  "scope": "status_only_no_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://www.loterianacional.gob.mx/",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  ],
+  "observations": {
+    "dedicated_results_page": {
+      "latest_contest": 12392,
+      "latest_date": "2026-11-23",
+      "latest_numbers": [
+        6,
+        11,
+        16,
+        23,
+        28
+      ],
+      "next_draw_date": "2026-11-24",
+      "no_2026_11_24_chispazo_result_visible": true
+    },
+    "official_home_index": {
+      "chispazo_card_date": "2026-11-24",
+      "chispazo_card_time_local": "15:00",
+      "contest_id": 12393,
+      "modality": "DE_LAS_TRES",
+      "modality_basis": "official_product_schedule"
+    },
+    "modality_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00"
+    },
+    "mask_index": {
+      "newest_visible_result_date": "2026-11-23",
+      "no_2026_11_24_mask_visible": true
+    }
+  },
+  "prior_day_mask_result_confirmed": {
+    "date": "2026-11-23",
+    "de_las_tres": {
+      "contest_id": 12391,
+      "numbers": [
+        3,
+        7,
+        19,
+        20,
+        24
+      ]
+    },
+    "classic": {
+      "contest_id": 12392,
+      "numbers": [
+        6,
+        11,
+        16,
+        23,
+        28
+      ]
+    },
+    "original_pdf_bytes_captured": false,
+    "original_pdf_sha256": "NOT_CAPTURED"
+  },
+  "physical_evidence_obtained": false,
+  "limitations": [
+    "No Acta, CS-11, signed participation file, weighing strip, sphere measurements, calibration certificate, custody receipt, trusted timestamp or pre-close seal was obtained.",
+    "The 12393 modality is schedule-inferred from the official 15:00 product slot; no result or mask confirms the draw outcome in this snapshot."
+  ]
+}
