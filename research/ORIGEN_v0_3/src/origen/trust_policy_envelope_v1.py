@@ -24,10 +24,10 @@ from origen.trust_verifier_v1 import TrustPolicy, TrustedIssuerKey
 SCHEMA_VERSION = "origen.trust-policy-envelope.v1"
 MAX_POLICY_BYTES = 131_072
 MAX_POLICY_KEYS = 256
-_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\\Z")
+_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
 _UTC = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
-    r"(?:\\.[0-9]{1,6})?Z\\Z"
+    r"(?:\.[0-9]{1,6})?Z\Z"
 )
 
 
