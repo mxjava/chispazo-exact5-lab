@@ -317,22 +317,22 @@ class PhysicalIntakeTests(unittest.TestCase):
     def test_csv_rejects_oversized_header_before_parsing(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "oversized-header.csv"
-            path.write_bytes(b"x" * (MAX_PHYSICAL_CSV_HEADER_BYTES + 1) + b"\\n")
+            path.write_bytes(b"x" * (MAX_PHYSICAL_CSV_HEADER_BYTES + 1) + b"\n")
             with self.assertRaisesRegex(ValueError, "CSV header exceeds maximum"):
                 validate_physical_csv(path)
 
     def test_csv_rejects_oversized_record_before_parsing(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "oversized-record.csv"
-            header = ",".join(REQUIRED_COLUMNS).encode("utf-8") + b"\\n"
-            record = b'"' + b"x" * MAX_PHYSICAL_CSV_RECORD_BYTES + b'"\\n'
+            header = ",".join(REQUIRED_COLUMNS).encode("utf-8") + b"\n"
+            record = b'"' + b"x" * MAX_PHYSICAL_CSV_RECORD_BYTES + b'"\n'
             path.write_bytes(header + record)
             with self.assertRaisesRegex(ValueError, "CSV record exceeds maximum"):
                 validate_physical_csv(path)
 
     def test_csv_rejects_multiline_scalar_fields(self):
         rows = make_rows()
-        rows[0]["sphere_set_id"] = "SET-A\\nINJECTED"
+        rows[0]["sphere_set_id"] = "SET-A\nINJECTED"
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "multiline.csv"
             import csv
@@ -365,7 +365,7 @@ class PhysicalIntakeTests(unittest.TestCase):
                 writer = csv.DictWriter(stream, fieldnames=REQUIRED_COLUMNS)
                 writer.writeheader()
                 writer.writerows(rows)
-            header_bytes = len((",".join(REQUIRED_COLUMNS) + "\\r\\n").encode("utf-8"))
+            header_bytes = len((",".join(REQUIRED_COLUMNS) + "\r\n").encode("utf-8"))
             with patch(
                 "origen.physical_intake.MAX_PHYSICAL_CSV_INTAKE_TEXT_BYTES",
                 header_bytes + 1,
@@ -379,7 +379,7 @@ class PhysicalIntakeTests(unittest.TestCase):
             path = Path(tmp) / "extra-field.csv"
             header = ",".join(REQUIRED_COLUMNS)
             record = ",".join(row[column] for column in REQUIRED_COLUMNS) + ",EXTRA"
-            path.write_text(header + "\\n" + record + "\\n", encoding="utf-8")
+            path.write_text(header + "\n" + record + "\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "more fields than its header"):
                 validate_physical_csv(path)
 
