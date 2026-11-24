@@ -24,6 +24,7 @@ jobs:
       - name: Fetch and fingerprint official CSV
         run: python scripts/audit_official_chispazo_csv.py
       - name: Retain raw source and schema report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: official-chispazo-csv-audit-${{ github.run_id }}
