@@ -422,5 +422,30 @@ class PhysicalIntakeTests(unittest.TestCase):
         self.assertNotIn(12300, report["usable_contests"])
 
 
+    def test_source_timestamps_require_canonical_rfc3339_and_known_offset(self):
+        from origen.physical_intake import _timestamp
+
+        invalid_values = (
+            "2026-11-20 21:00:00-06:00",
+            "2026-11-20T21:00:00-0600",
+            "2026-11-20T21:00-06:00",
+            # RFC 3339 -00:00 means the local offset is unknown, not UTC.
+            "2026-11-21T03:00:00-00:00",
+        )
+        for value in invalid_values:
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "canonical RFC3339|unknown UTC offset"):
+                    _timestamp(value, "draw_close_at")
+
+        self.assertEqual(
+            _timestamp("2026-11-20T21:00:00-06:00", "draw_close_at").isoformat(),
+            "2026-11-21T03:00:00+00:00",
+        )
+        self.assertEqual(
+            _timestamp("2026-11-21T03:00:00Z", "draw_close_at").isoformat(),
+            "2026-11-21T03:00:00+00:00",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

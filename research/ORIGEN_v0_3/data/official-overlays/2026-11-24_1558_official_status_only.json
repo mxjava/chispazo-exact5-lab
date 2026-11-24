@@ -1,0 +1,99 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-24T15:58-06:00",
+  "timezone": "America/Mexico_City",
+  "classification": "OFFICIAL_RESULT_INDEX_STATUS_ONLY_NOT_DRAW_SPECIFIC_PHYSICAL_EVIDENCE",
+  "scope_date": "2026-11-24",
+  "sources": {
+    "official_product_schedule": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "observed": {
+        "de_las_tres_local": "15:00",
+        "classic_local": "21:00"
+      }
+    },
+    "official_results_index_snapshot": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxTdXBlcmlvcg%3D%3D",
+      "date_displayed": "2026-11-24",
+      "contest_12393": {
+        "numbers": ["01", "07", "08", "09", "12"],
+        "publication_state": "present_in_official_search_index_extract",
+        "modality": "DE_LAS_TRES",
+        "modality_basis": "official_product_schedule_15_00",
+        "corroborated_by_dedicated_chispazo_results_page": false,
+        "corroborated_by_2026_11_24_mask": false
+      },
+      "contest_12394": {
+        "numbers": null,
+        "publication_state": "placeholder_only_no_result_numbers",
+        "modality": "CLASSIC",
+        "modality_basis": "official_home_index_advertises_24_nov_2026_21_00"
+      },
+      "classification": "SEARCH_INDEX_SNAPSHOT_CONFLICTS_WITH_DEDICATED_RESULT_AND_MASK_PAGES"
+    },
+    "dedicated_chispazo_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "latest_published_contest": 12392,
+      "latest_published_date": "2026-11-23",
+      "latest_published_numbers": ["06", "11", "16", "23", "28"],
+      "no_2026_11_24_result_visible": true
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_date": "2026-11-23",
+      "no_2026_11_24_mask_listed": true,
+      "original_2026_11_24_pdf_bytes_captured": false,
+      "original_pdf_sha256": null
+    },
+    "official_home_index": {
+      "url": "https://loterianacional.gob.mx/home/index",
+      "search_snapshot": {
+        "date": "2026-11-24",
+        "advertised_classic_contest_id": 12394,
+        "advertised_local_time": "21:00"
+      }
+    }
+  },
+  "draw_assessment": {
+    "contest_12393": {
+      "date": "2026-11-24",
+      "scheduled_local_time": "15:00",
+      "modality": "DE_LAS_TRES",
+      "numbers_seen_in_official_results_index_snapshot": ["01", "07", "08", "09", "12"],
+      "status": "PUBLIC_INDEX_ONLY_NOT_CORROBORATED_BY_DEDICATED_RESULTS_OR_MASK"
+    },
+    "contest_12394": {
+      "date": "2026-11-24",
+      "scheduled_local_time": "21:00",
+      "modality": "CLASSIC",
+      "numbers": null,
+      "status": "SCHEDULED_FUTURE_DRAW_AT_CAPTURE_TIME_NO_RESULT_CLAIMED"
+    }
+  },
+  "draw_specific_primary_evidence_obtained": {
+    "signed_draw_act": false,
+    "signed_participation_file": false,
+    "sales_close_summary_original": false,
+    "cs11_original": false,
+    "post_draw_summary_original": false,
+    "weighing_strip_original": false,
+    "28_sphere_measurements": false,
+    "scale_calibration_certificate": false,
+    "machine_contest_link": false,
+    "rfid_trace": false,
+    "independent_custody_receipt": false,
+    "trusted_timestamp_proof": false,
+    "two_independent_preclose_output_seals": false
+  },
+  "integrity_and_eligibility": {
+    "official_mask_original_sha256": "NOT_CAPTURED",
+    "official_procedure_original_sha256": "NOT_CAPTURED",
+    "canonical_history_appended": false,
+    "canonical_history_git_blob_sha1": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_history_bytes": 505274,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE",
+    "prospective_classic_score_eligible": false
+  }
+}
