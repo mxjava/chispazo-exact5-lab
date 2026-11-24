@@ -1,3 +1,8 @@
+## V2 receipt remains blocked at unprovisioned trust boundary (2026-11-24)
+- Added an adapter-level regression proving that even a structurally valid V2 receipt declaring `AUTHENTICATED` is still returned as `BLOCKED_PROVENANCE` while independent trust infrastructure is not provisioned.
+- Documented the detached Ed25519 primitive, its external pin/clock requirements, and the actual `cryptography` installation dependency in the package README.
+- This does not authenticate an institutional key, trusted time, external ledger, physical evidence or custody; no eligibility or predictive-edge status changes.
+
 ## Acta role separation and official 13:10 status refresh (2026-11-24)
 - Physical manifest regression: all four required DRAW-ACTA roles could reuse one subject_id; parser now requires distinct declared subjects for the General Directorate, Sales Operations, IT and SEGOB roles.
 - Test commit: `3e1384b76db02319c44f9de88baf28ed04197726`; implementation commit: `d8c7b0e8e5ed433f25549aecddb374424d64d41a`.
