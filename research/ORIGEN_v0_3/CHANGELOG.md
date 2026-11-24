@@ -1,3 +1,9 @@
+## Official 24-Nov pre-draw schedule status (2026-11-24 12:55 America/Mexico_City)
+- Added a corrected status-only overlay and review. The dedicated results page still ended at 12392 (23-Nov) and showed no 24-Nov outcome; the mask index still listed 23-Nov as newest.
+- The official home index separately displayed the “Ilumina tu suerte” Chispazo card for 24-Nov at 15:00, contest 12393. The official Chispazo product page maps 15:00 to De las Tres, so 12393 is **schedule-inferred De las Tres**, not mask/result-confirmed. No 24-Nov Clásico contest ID was visible or inferred.
+- The 23-Nov official mask visually labels 12391 as De las Tres (03 07 19 20 24) and 12392 as Clásico (06 11 16 23 28). Its original PDF bytes were not captured; SHA-256 remains `NOT_CAPTURED`.
+- This is public schedule/publication evidence only, not an Acta, CS-11, Tira de Pesaje, measurement, calibration, custody receipt, trusted timestamp, or pre-close seal.
+
 ## One calibration certificate, one validity window in V2 intake (2026-11-24)
 - Reproduced a structural inconsistency: 28 sphere rows could share one `scale_id` and one `calibration_certificate_sha256` while declaring different calibration-validity windows. Each row independently covered its measurement, so the target incorrectly remained `STRUCTURAL_PRE_CLOSE_ONLY`.
 - Regression-only commit `b68b86d8e75a7b151a1a39f52367b77424dcc59c` failed the isolated suite on `test_one_scale_certificate_cannot_claim_conflicting_validity_windows` (424 tests, one expected red test; run [45465355219](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/45465355219)).
