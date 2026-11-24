@@ -41,3 +41,29 @@ No reproducible structural parser bypass was established in these inspected path
 - Two independently sealed pre-close Classic outputs.
 
 Passing CI proves the tested software contracts only; it does not authenticate any source, identity, timestamp, ledger or physical draw. Production remains **BLOCKED / RESEARCH_ONLY_NO_EDGE**.
+
+## Follow-up — 2026-11-24 00:55 America/Mexico_City
+
+### Official result and mask recheck
+
+- The dedicated Chispazo results page still displayed 12392 dated 23-Nov-2026 as latest, combination **06 11 16 23 28**, and showed 24-Nov-2026 as the next draw date.
+- Its historical table also displayed 12391 = **03 07 19 20 24** and 12392 = **06 11 16 23 28**.
+- The official Mascarillas index's newest visible entry was **RESULTADOS 2026-11-23**. Opening its linked one-page PDF showed both contest IDs and combinations. The PDF text extraction did not label the two Chispazo modalities.
+- The official Chispazo product page states De las Tres at 15:00 and Clásico at 21:00. Modality assignment is therefore schedule-cross-referenced; it is not claimed to be printed in the PDF text.
+- No 24-Nov result, contest ID, or 24-Nov mask was visible at this observation. The observation predates both daily Chispazo slots.
+
+Sources:
+- https://www.loterianacional.gob.mx/Chispazo/Resultados
+- https://www.loterianacional.gob.mx/Mascarillas/Mascarillas
+- https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757
+- https://www.loterianacional.gob.mx/Chispazo/Chispazo
+
+Original HTML and PDF response bytes were not captured; no source-byte SHA-256 is claimed. The observation timestamp is local runtime metadata, not a trusted timestamp. No signed Acta, signed participation/cancellation file, CS-11 original, 28-sphere weighing strip, calibration certificate, machine-to-contest linkage, sphere-ID mapping, RFID trace, independent custody receipt, trusted timestamp or two pre-close output seals were obtained. This is public-results status, not authenticated physical provenance.
+
+### Direct mapping-API trust-field rejection regression
+
+A focused review of `physical_intake_v2.py` and its tests confirmed that caller-provided reference sets are only structural membership declarations and that the in-memory row API enforces an exact closed column set. Added `test_in_memory_rows_reject_untrusted_authentication_claims` to exercise attempts to inject `authenticated`, `authentication_status`, `provenance_status`, and `predictive_eligibility=EDGE_SUPPORTED` into a row. Each must be rejected as an unexpected column before classification.
+
+This is regression coverage for an existing fail-closed behavior, not a new authentication feature or a claim that an exploit was present. No parser behavior, predictive model, V294, or canonical history was changed.
+
+The PR #13 exact head remains `2646bcddf52ce629a52f580f7535096a67c7ead1`; its latest exact-head workflows remain successful (ORIGEN run 45312809129: 406 tests; root run 45312809258: 608 passed, 2 skipped, 128 subtests). PR #26 was at `3716bf59d040957829a3b533753ad29bd378ce50` before this coverage commit; exact-head CI for the new commit must be checked after push.
