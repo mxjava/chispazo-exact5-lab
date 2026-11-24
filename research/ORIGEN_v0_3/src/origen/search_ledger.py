@@ -5,10 +5,18 @@ prove that an unlogged event never occurred; external custody is still required.
 """
 from pathlib import Path
 from typing import Any
+from contextlib import contextmanager
 import hashlib
 import json
 import math
 import re
+import os
+
+try:
+    import fcntl
+except ImportError:  # Windows
+    fcntl = None
+    import msvcrt
 
 GENESIS = "0" * 64
 _REQUIRED_EVENT_FIELDS = {"event_id", "timestamp_utc", "event_type", "frame_id", "details"}
@@ -118,6 +126,32 @@ def _parse_ledger_record(line: str) -> dict:
     return row
 
 
+
+@contextmanager
+def _exclusive_ledger_lock(path: Path):
+    """Serialize read/validate/append across processes; OS releases lock on exit/crash."""
+    lock_path = path.with_name(path.name + ".lock")
+    with lock_path.open("a+b") as lock_stream:
+        # msvcrt.locking locks a byte range, so ensure byte zero exists.
+        lock_stream.seek(0, os.SEEK_END)
+        if lock_stream.tell() == 0:
+            lock_stream.write(b"\0")
+            lock_stream.flush()
+        lock_stream.seek(0)
+        if fcntl is not None:
+            fcntl.flock(lock_stream.fileno(), fcntl.LOCK_EX)
+        else:  # pragma: no cover - exercised on Windows CI
+            msvcrt.locking(lock_stream.fileno(), msvcrt.LK_LOCK, 1)
+        try:
+            yield
+        finally:
+            if fcntl is not None:
+                fcntl.flock(lock_stream.fileno(), fcntl.LOCK_UN)
+            else:  # pragma: no cover - exercised on Windows CI
+                lock_stream.seek(0)
+                msvcrt.locking(lock_stream.fileno(), msvcrt.LK_UNLCK, 1)
+
+
 def append_event(path: str | Path, event: dict[str, Any]) -> str:
     _validate_event(event)
     payload = _canonical(event)
@@ -125,28 +159,31 @@ def append_event(path: str | Path, event: dict[str, Any]) -> str:
 
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    previous = GENESIS
-    if p.exists() and p.stat().st_size:
-        audit = audit_ledger(p)
-        if audit["state"] != "PASS":
-            raise ValueError("cannot_append_to_invalid_or_legacy_ledger")
-        text = p.read_text(encoding="utf-8")
-        lines = text[:-1].split("\n")
-        records = [_parse_ledger_record(line) for line in lines]
-        if any(row["event"]["event_id"] == event["event_id"] for row in records):
-            raise ValueError("duplicate_event_id")
-        previous = records[-1]["chain_sha256"]
+    # The lock must cover the complete read/validate/append transaction. Locking
+    # only the final write still permits two writers to chain from the same tail.
+    with _exclusive_ledger_lock(p):
+        previous = GENESIS
+        if p.exists() and p.stat().st_size:
+            audit = audit_ledger(p)
+            if audit["state"] != "PASS":
+                raise ValueError("cannot_append_to_invalid_or_legacy_ledger")
+            text = p.read_text(encoding="utf-8")
+            lines = text[:-1].split("\n")
+            records = [_parse_ledger_record(line) for line in lines]
+            if any(row["event"]["event_id"] == event["event_id"] for row in records):
+                raise ValueError("duplicate_event_id")
+            previous = records[-1]["chain_sha256"]
 
-    chain_digest = hashlib.sha256((previous + event_digest).encode("ascii")).hexdigest()
-    record = {
-        "event": event,
-        "event_sha256": event_digest,
-        "previous_chain_sha256": previous,
-        "chain_sha256": chain_digest,
-        "ledger_schema": "ORIGEN_CHAIN_V1",
-    }
-    with p.open("a", encoding="utf-8", newline="\n") as stream:
-        stream.write(_canonical(record) + "\n")
+        chain_digest = hashlib.sha256((previous + event_digest).encode("ascii")).hexdigest()
+        record = {
+            "event": event,
+            "event_sha256": event_digest,
+            "previous_chain_sha256": previous,
+            "chain_sha256": chain_digest,
+            "ledger_schema": "ORIGEN_CHAIN_V1",
+        }
+        with p.open("a", encoding="utf-8", newline="\n") as stream:
+            stream.write(_canonical(record) + "\n")
     return chain_digest
 
 
