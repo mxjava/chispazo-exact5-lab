@@ -24,6 +24,8 @@ from origen.trust_verifier_v1 import TrustPolicy, TrustedIssuerKey
 SCHEMA_VERSION = "origen.trust-policy-envelope.v1"
 MAX_POLICY_BYTES = 131_072
 MAX_POLICY_KEYS = 256
+MAX_POLICY_JSON_DEPTH = 32
+MAX_POLICY_SEQUENCE = (1 << 63) - 1
 _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
 _UTC = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
@@ -41,6 +43,39 @@ class VerifiedTrustPolicy:
     issued_at_utc: datetime
     expires_at_utc: datetime
 
+
+
+def _validate_json_depth(raw: bytes) -> None:
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in raw:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:
+                escaped = True
+            elif byte == 0x22:
+                in_string = False
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x7B, 0x5B):
+            depth += 1
+            if depth > MAX_POLICY_JSON_DEPTH:
+                raise ValueError("policy envelope exceeds maximum JSON nesting depth")
+        elif byte in (0x7D, 0x5D) and depth:
+            depth -= 1
+
+
+def _parse_bounded_integer(value: str) -> int:
+    digits = value[1:] if value.startswith("-") else value
+    if len(digits) > 19:
+        raise ValueError("policy JSON integer exceeds signed 64-bit range")
+    parsed = int(value)
+    if not -(1 << 63) <= parsed <= MAX_POLICY_SEQUENCE:
+        raise ValueError("policy JSON integer exceeds signed 64-bit range")
+    return parsed
 
 def _pairs_no_duplicates(pairs):
     result = {}
@@ -117,10 +152,12 @@ def verify_signed_trust_policy(
         raise ValueError("verification_time must be timezone-aware")
     now = (verification_time.replace(tzinfo=None) - offset).replace(tzinfo=timezone.utc)
 
+    _validate_json_depth(raw)
     try:
         document = json.loads(
             raw.decode("utf-8"),
             object_pairs_hook=_pairs_no_duplicates,
+            parse_int=_parse_bounded_integer,
             parse_constant=lambda value: (_ for _ in ()).throw(
                 ValueError(f"non-standard JSON constant: {value}")
             ),
@@ -143,7 +180,9 @@ def verify_signed_trust_policy(
     if document["root_key_id"] != root_key_id:
         raise ValueError("policy root_key_id does not match pinned deployment key")
     sequence = document["policy_sequence"]
-    if type(sequence) is not int or sequence < minimum_policy_sequence:
+    if type(sequence) is not int or not 1 <= sequence <= MAX_POLICY_SEQUENCE:
+        raise ValueError("policy_sequence must be a positive signed 64-bit integer")
+    if sequence < minimum_policy_sequence:
         raise ValueError("policy sequence is below the externally pinned minimum")
 
     issued = _timestamp(document["issued_at_utc"], "issued_at_utc")
@@ -151,7 +190,7 @@ def verify_signed_trust_policy(
     expires = _timestamp(document["expires_at_utc"], "expires_at_utc")
     if not (issued <= now and not_before <= now < expires):
         raise ValueError("policy envelope is not currently valid at verification time")
-    if not_before > expires or issued > expires:
+    if not (issued <= not_before <= expires):
         raise ValueError("policy envelope validity chronology is inverted")
 
     entries = document["issuer_keys"]
