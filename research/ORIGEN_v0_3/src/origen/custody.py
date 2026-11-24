@@ -54,15 +54,28 @@ def _require_sha(value: Any, field: str) -> None:
         raise ValueError(f"{field} must be 64 lowercase hexadecimal characters")
 
 
+_UTC_TIMESTAMP = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+    r"(?:\.[0-9]{1,6})?(?:Z|\+00:00)\Z"
+)
+
+
 def parse_utc(value: str, field: str) -> datetime:
-    if type(value) is not str or not value.strip():
+    if type(value) is not str or not value:
         raise ValueError(f"{field} must be a non-empty ISO-8601 timestamp")
     # RFC 3339 -00:00 means the local offset is unknown, not UTC.
     # Treating it as UTC would manufacture certainty in custody chronology.
     if value.endswith("-00:00"):
         raise ValueError(f"{field} must not use the unknown UTC offset -00:00")
+    if not _UTC_TIMESTAMP.fullmatch(value):
+        raise ValueError(
+            f"{field} must use extended UTC timestamp syntax with seconds "
+            "and an explicit UTC offset (Z or +00:00)"
+        )
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(
+            value[:-1] + "+00:00" if value.endswith("Z") else value
+        )
     except ValueError as exc:
         raise ValueError(f"{field} is not a valid ISO-8601 timestamp") from exc
     if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):

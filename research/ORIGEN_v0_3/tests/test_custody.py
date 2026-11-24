@@ -377,6 +377,28 @@ class CustodyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "canonical UTF-8 JSON"):
                 read_record(path)
 
+    def test_custody_timestamps_reject_noncanonical_iso8601_spellings(self):
+        invalid = (
+            "2026-11-20 17:00:00Z",       # space instead of RFC3339 T
+            "2026-11-20T17:00Z",           # omitted seconds
+            "2026-11-20T17:00:00+0000",   # compact offset
+            "2026-11-20T17:00:00.1234567Z",# excess fractional precision
+        )
+        for value in invalid:
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "extended UTC timestamp syntax"):
+                    self.make_record(generated_at_utc=value)
+
+    def test_custody_timestamps_accept_canonical_utc_forms(self):
+        for value in (
+            "2026-11-20T17:00:00Z",
+            "2026-11-20T17:00:00.123456Z",
+            "2026-11-20T17:00:00+00:00",
+        ):
+            with self.subTest(value=value):
+                record, raw = self.make_record(generated_at_utc=value)
+                self.assertTrue(verify_seal_record(record, raw)[0])
+
     def test_non_utc_timestamp_rejected(self):
         with self.assertRaisesRegex(ValueError, "UTC offset"):
             self.make_record(generated_at_utc="2026-11-20T11:00:00-06:00")
