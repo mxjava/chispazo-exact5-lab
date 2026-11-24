@@ -1,0 +1,95 @@
+{
+  "schema": "exact5.official_overlay.status_only.v3",
+  "observed_on_local_date": "2026-11-24",
+  "observation_time_local": "NOT_CAPTURED",
+  "purpose": "Status-only reconciliation of official public Chispazo endpoints. Do not treat the aggregate home/results card as original physical evidence, a signed result record, or a pre-close snapshot.",
+  "classification": "CONFLICTING_OFFICIAL_PUBLICATION_VIEWS",
+  "official_schedule": {
+    "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "slots": [
+      {"time_local": "15:00", "modality": "DE_LAS_TRES"},
+      {"time_local": "21:00", "modality": "CLASICO"}
+    ]
+  },
+  "observations": {
+    "aggregate_home_results_view": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxTdXBlcmlvcg%3D%3D",
+      "date_displayed": "2026-11-24",
+      "contest_12393_numbers_displayed": [1, 7, 8, 9, 12],
+      "contest_12394_displayed": true,
+      "contest_12394_numbers_displayed": null,
+      "status": "AGGREGATE_VIEW_SHOWS_12393_NUMBERS_AND_12394_WITHOUT_NUMBERS",
+      "modality_interpretation": "12393 is schedule-consistent with the 15:00 De las Tres slot; the aggregate result card itself does not display a draw-time label. 12394 is listed for the 21:00 Classic slot by the official home index, but no winning numbers are displayed in the aggregate view."
+    },
+    "official_home_index": {
+      "url": "https://www.loterianacional.gob.mx/home/index/",
+      "contest_12394_date": "2026-11-24",
+      "contest_12394_time_local": "21:00",
+      "contest_12394_numbers_displayed": false,
+      "status": "CLASSIC_12394_SCHEDULED_NO_NUMBERS_VISIBLE"
+    },
+    "dedicated_chispazo_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "displayed_latest_contest": 12392,
+      "displayed_latest_date": "2026-11-23",
+      "displayed_latest_numbers": [6, 11, 16, 23, 28],
+      "current_day_contests_displayed": false,
+      "status": "DEDICATED_RESULTS_PAGE_STALE_AT_12392"
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_document": "RESULTADOS 2026-11-23",
+      "2026_11_24_document_listed": false,
+      "source_pdf_bytes_captured": false,
+      "source_pdf_sha256": "NOT_CAPTURED",
+      "status": "NO_2026_11_24_MASK_VISIBLE"
+    }
+  },
+  "draws": [
+    {
+      "contest_id": 12393,
+      "numbers_from_aggregate_view": [1, 7, 8, 9, 12],
+      "modality": "DE_LAS_TRES",
+      "modality_basis": "SCHEDULE_INFERENCE_ONLY",
+      "result_status": "AGGREGATE_PORTAL_ONLY_NOT_CORROBORATED_BY_DEDICATED_RESULTS_OR_MASK"
+    },
+    {
+      "contest_id": 12394,
+      "numbers_from_aggregate_view": null,
+      "modality": "CLASSIC",
+      "modality_basis": "OFFICIAL_HOME_INDEX_21_00_SCHEDULE",
+      "result_status": "NO_WINNING_NUMBERS_VISIBLE_AT_OBSERVATION"
+    }
+  ],
+  "integrity_limits": {
+    "official_2026_11_24_mask_bytes_captured": false,
+    "official_act_obtained": false,
+    "signed_participation_file_obtained": false,
+    "cs11_obtained": false,
+    "weighing_strip_obtained": false,
+    "physical_sphere_measurements_obtained": false,
+    "calibration_certificate_obtained": false,
+    "independent_custody": false,
+    "trusted_source_timestamp": false,
+    "signed_preclose_snapshot": false,
+    "cross_endpoint_result_corroboration": false
+  },
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "challenger_changed": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "sources": {
+    "aggregate_results": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxTdXBlcmlvcg%3D%3D",
+    "home_index": "https://www.loterianacional.gob.mx/home/index/",
+    "dedicated_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas"
+  }
+}
