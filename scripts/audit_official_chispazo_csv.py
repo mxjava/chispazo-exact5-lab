@@ -67,7 +67,7 @@ def post_baseline_ids_are_contiguous(draw_ids, baseline_last: int = 12249) -> bo
     """Check continuity from the first post-baseline draw through the observed maximum."""
     observed = sorted(set(draw_ids))
     if not observed:
-        return True
+        return False
     return observed == list(range(baseline_last + 1, observed[-1] + 1))
 
 def analyze_daily_pair_structure(rows, draw_id_index, date_index, transition_date="25/09/2017"):
@@ -127,11 +127,42 @@ aliases = {
     "n4": {"r4", "n4", "numero4", "num4", "bolilla4"},
     "n5": {"r5", "n5", "numero5", "num5", "bolilla5"},
 }
-mapping = {}
-for key, choices in aliases.items():
-    matches = [i for i, name in enumerate(normalized) if name in choices]
-    if len(matches) == 1:
-        mapping[key] = matches[0]
+def resolve_column_mapping(header, aliases):
+    """Resolve unique source columns; ambiguous or missing required fields fail closed."""
+    normalized_header = [norm(value) for value in header]
+    mapping = {}
+    for key, choices in aliases.items():
+        matches = [i for i, name in enumerate(normalized_header) if name in choices]
+        if len(matches) == 1:
+            mapping[key] = matches[0]
+    required = ("draw_id", "date", "n1", "n2", "n3", "n4", "n5")
+    missing = [key for key in required if key not in mapping]
+    return mapping, missing
+
+
+mapping, missing_mapping_fields = resolve_column_mapping(header, aliases)
+if missing_mapping_fields:
+    failure = {
+        "status": "BLOCKED_SOURCE_SCHEMA_MAPPING",
+        "source_url": URL,
+        "final_url": final_url,
+        "content_type": content_type,
+        "last_modified": last_modified,
+        "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
+        "bytes": len(raw),
+        "sha256": sha256,
+        "encoding": encoding_used,
+        "delimiter_repr": repr(delimiter),
+        "header": header,
+        "candidate_column_mapping_zero_based": mapping,
+        "missing_required_mapping_fields": missing_mapping_fields,
+        "canonical_history_modified": False,
+        "v294_modified": False,
+        "production_authorized": False,
+    }
+    (OUT / "audit.json").write_text(json.dumps(failure, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    print(json.dumps(failure, ensure_ascii=False, indent=2))
+    raise SystemExit("BLOCKED: official CSV schema cannot be mapped unambiguously")
 
 # Read the frozen canonical baseline as a comparison target only.
 CANONICAL_URL = (
@@ -183,7 +214,7 @@ official_gaps = [
 ]
 post_baseline_ids = sorted(draw for draw in official_index if draw > 12249)
 daily_pair_structure = analyze_daily_pair_structure(data_rows, mapping["draw_id"], mapping["date"])
-audit_status = "BLOCKED_CANONICAL_CONFLICTS" if (conflicts or official_invalid or canonical_invalid or official_gaps or canonical_not_in_official) else "SOURCE_RECONCILIATION_CLEAN"
+audit_status = "BLOCKED_CANONICAL_CONFLICTS" if (conflicts or official_invalid or canonical_invalid or official_gaps or canonical_not_in_official or not daily_pair_structure["post_transition_ids_contiguous"] or daily_pair_structure["anomaly_count"] > 0) else "SOURCE_RECONCILIATION_CLEAN"
 with (OUT / "canonical_official_conflicts.csv").open("w", newline="", encoding="utf-8") as conflict_file:
     writer = csv.writer(conflict_file)
     writer.writerow(["CONCURSO", "FECHA", "CANONICAL_R1_R5", "OFFICIAL_R1_R5"])
