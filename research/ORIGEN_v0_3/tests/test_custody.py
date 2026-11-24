@@ -287,10 +287,12 @@ class CustodyTests(unittest.TestCase):
     def test_writer_rejects_record_larger_than_reader_limit_before_creating_file(self):
         record, _ = self.make_record(candidate_id="x" * MAX_CUSTODY_RECORD_BYTES)
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "oversized.json"
+            directory = Path(tmp) / "new-parent"
+            path = directory / "oversized.json"
             with self.assertRaisesRegex(ValueError, "maximum size of"):
                 write_record_exclusive(path, record)
             self.assertFalse(path.exists())
+            self.assertFalse(directory.exists())
 
     def test_duplicate_portfolio_lines_rejected(self):
         raw = portfolio_bytes()
