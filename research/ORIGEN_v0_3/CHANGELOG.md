@@ -1,3 +1,19 @@
+## Cross-role source identity separation and Classic custody slot binding (2026-11-23)
+- Closed a physical-manifest identity-domain gap: an artifact `source_id` could reuse a signer subject, custodian subject, or trusted-time authority ID. The parser now rejects those cross-role aliases while continuing to allow the same source organization ID across multiple artifacts.
+- Closed a custody schedule gap: `build_seal_record` and `verify_seal_record` accepted a 15:00 local close (De las Tres) under a `CLASSIC` label. Both boundaries now require exactly 21:00:00 in `America/Mexico_City`.
+- Added adversarial tests for source-ID aliases, legitimate repeated source IDs, builder rejection of the 15:00 slot, and verifier rejection even after an attacker recomputes the record digest.
+- Source identity implementation/test commits: `68b89643c27cf91a2eda2c02830a322d6340bbbf` / `a16f74674b2c0ad993755ab646063b104eab2711`.
+- Custody slot implementation/test commits: `745bc2e539ab0e6c62fb67d2c356f436804c74f8` / `71812c6eecc6f4170c3fbdf67a474fab7922f7f3`; late-receipt fixture correction: `2e1007da891c03ca082ebde387bf0db204e5c664`.
+- Exact-head CI on `2e1007da891c03ca082ebde387bf0db204e5c664`: isolated ORIGEN **406 tests OK**; root CI `compileall` passed and `pytest -q` **608 passed, 2 skipped, 128 subtests passed**. Push and pull-request workflow runs both succeeded.
+- These remain structural checks only. They do not authenticate identities, clock sources, timestamps, signatures, physical custody or official draw assignment.
+
+## Official status refresh — 2026-11-23 19:59 America/Mexico_City
+- Added status-only overlay `data/official-overlays/2026-11-23_1959_official_status_only.json`.
+- The dedicated results page publishes 12391 = 03 07 19 20 24; the official home index places 12391 at 15:00 and shows 12392 at 21:00 without a winning combination. The product schedule maps 15:00 to De las Tres and 21:00 to Clásico, so 12391 is schedule-inferred De las Tres and 12392 remains provisional pending its result or mask.
+- The official mask index still lists 22-Nov as latest. Visual review of the 22-Nov PDF confirms 12389 as De las Tres and 12390 as Clásico, but no 23-Nov mask or original PDF bytes were captured; PDF SHA-256 remains `NOT_CAPTURED`.
+- Direct review of SGVO-PRO-05 revision 39 confirms 15:00 close for De las Tres, 21:00 close for nocturnal draws, and per-draw weighing after automatic sales close. This is process evidence, not proof of any specific draw's physical records.
+- No signed Acta, signed participation file, CS-11, 28-measurement strip, scale calibration, machine-to-contest linkage, RFID log, independent custody receipt, trusted timestamp or two pre-close seals were obtained. Eligibility remains BLOCKED.
+
 ## V317.1 lagged intake sequence gate (2026-11-23)
 - Added explicit source/target ordinals from an official Classic-only sequence manifest to the V2 physical intake contract. Contest IDs alone are insufficient because Lotería Nacional publishes two Chispazo draws per day (De las Tres at 15:00 and Clásico at 21:00).
 - V2 now rejects a target unless its Classic-only ordinal is exactly the source ordinal plus one, requires a manifest reference and SHA-256, and checks caller-declared manifest-reference membership. This is structural validation only: the module does not authenticate the manifest issuer, completeness, signature, timestamp, or custody.
