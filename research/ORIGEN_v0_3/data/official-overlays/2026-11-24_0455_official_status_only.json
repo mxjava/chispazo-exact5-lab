@@ -1,0 +1,59 @@
+{
+  "schema": "ORIGEN_OFFICIAL_STATUS_ONLY_V1",
+  "observed_at_local": "2026-11-24T04:55:41-06:00",
+  "timezone": "America/Mexico_City",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  ],
+  "results_page": {
+    "latest_contest_id": "12392",
+    "latest_date": "2026-11-23",
+    "latest_combination": [
+      6,
+      11,
+      16,
+      23,
+      28
+    ],
+    "previous_same_day_contest_id": "12391",
+    "previous_same_day_combination": [
+      3,
+      7,
+      19,
+      20,
+      24
+    ],
+    "next_draw_date": "2026-11-24",
+    "result_for_observation_date_published": false,
+    "modality_labels_on_results_rows": false
+  },
+  "mask_index": {
+    "latest_listed_date": "2026-11-23",
+    "observation_date_mask_listed": false,
+    "latest_pdf_visual_retrieval": "TIMEOUT_NOT_REVERIFIED_THIS_CYCLE"
+  },
+  "official_schedule": {
+    "de_las_tres_local_time": "15:00",
+    "classic_local_time": "21:00"
+  },
+  "physical_primary_evidence": {
+    "signed_acta": "NOT_OBTAINED",
+    "cs11_original": "NOT_OBTAINED",
+    "weighing_strip_28_measurements": "NOT_OBTAINED",
+    "scale_calibration": "NOT_OBTAINED",
+    "machine_contest_link": "NOT_OBTAINED",
+    "sphere_number_mapping": "NOT_OBTAINED",
+    "rfid_logs": "NOT_OBTAINED",
+    "independent_custody_receipt": "NOT_OBTAINED",
+    "trusted_timestamp": "NOT_OBTAINED",
+    "two_preclose_output_seals": "NOT_OBTAINED"
+  },
+  "source_bytes": {
+    "results_html_sha256": "NOT_CAPTURED",
+    "mask_index_html_sha256": "NOT_CAPTURED",
+    "mask_pdf_sha256": "NOT_CAPTURED"
+  },
+  "interpretation": "Public status only. The results page and mask index do not authenticate draw-specific physical custody or independent provenance. Do not infer modality for a contest from the results table alone; use the official mask and schedule. Production eligibility remains BLOCKED."
+}
