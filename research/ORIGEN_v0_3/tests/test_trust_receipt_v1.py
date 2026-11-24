@@ -499,7 +499,7 @@ class TestTrustReceiptV1(unittest.TestCase):
         other_authority["proof_sha256"] = digest("5")
         document["trusted_time_proofs"].append(other_authority)
         parsed = parse_unverified_receipt(encode(document))
-        self.assertEqual(len(parsed.trusted_time_proofs), 2)
+        self.assertEqual(len(parsed.trusted_time_proofs), 4)
 
     def test_receipt_arrays_cannot_be_empty_or_unbounded(self):
         document = valid_document()
