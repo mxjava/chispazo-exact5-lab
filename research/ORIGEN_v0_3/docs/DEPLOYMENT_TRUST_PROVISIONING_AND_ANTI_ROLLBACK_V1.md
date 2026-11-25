@@ -150,3 +150,16 @@ This document does not implement a trust-anchor provider, anti-rollback backend,
 `BLOCKED / RESEARCH_ONLY_NO_EDGE`
 
 No production promotion is authorized by this specification.
+
+
+## 10. Official Lotería Nacional procedure provenance correction (2026-11-25)
+
+A source-location audit found that two different official copies of SVO-PRO-05 must not be conflated:
+
+- The Normateca **SUSTANTIVAS/VIGENTES** URL publishes SVO-PRO-05 at **revision 38** (DN-07 version 07). Its policy 16 gives Ping Pong sphere weights 2.3–3.0 g with a maximum spread of 0.15 g, and Smartballs 4.2–5.2 g with a maximum spread of 0.30 g. It also specifies weighing before each draw, the weighing strip, the signatures/review by the SEGOB inspector and Lotería representatives, and the CS-11 / sumario / weighing-strip records attached to the Acta. Source: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/svo_p_05.pdf
+- A separate PDF at **SUSTANTIVAS/PROYECTO/svo_p_05.pdf** identifies itself as revision 39 (DN-07 version 09). It changes the Smartballs interval to 4.25–5.25 g while retaining the 0.30 g spread and 2.30–3.00 g / 0.15 g Ping Pong limits. However, the PDF's first-page “FECHA DE PUBLICACIÓN” field is blank, and its location is the PROYECTO directory, not VIGENTES. Its control-of-changes table labels revision 39 “Septiembre 2025”; that is a change date in the project copy, not proof of publication/effectiveness. Source: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/PROYECTO/svo_p_05.pdf
+- The Normateca Proyectos index separately lists “PROCEDIMIENTO SORTEOS ELECTRÓNICOS” with file name `sgvo_pro_05p.pdf` and dates 23/02/2026–04/03/2026. This is a distinct filename/listing and must not be used as proof that the `svo_p_05.pdf` revision-39 project copy became effective. Source: https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0
+
+**Operational interpretation for this research:** use revision 38 as the copy the official portal currently classifies under VIGENTES. Treat revision 39 as a project/proposed copy until an official effective publication or explicit authority confirmation is obtained. Do not use the 4.25–5.25 g Smartballs interval as an operative acceptance criterion on the strength of the PROYECTO PDF alone. The earlier research note that described revision 39 as “published 20 March 2026” is unsupported by the primary PDF and is withdrawn.
+
+This correction does not establish any draw-specific physical measurement or evidence. It only fixes the provenance and status classification of the procedure copies.
