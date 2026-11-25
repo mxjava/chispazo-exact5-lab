@@ -25,7 +25,7 @@ class TestSignedTrustPolicyCanonicalBytesV1(unittest.TestCase):
 
     def test_whitespace_variants_are_rejected_even_when_signature_is_unchanged(self):
         raw, root_public, _ = fixture()
-        variants = (b" " + raw, raw + b"\\n", b"\\n" + raw)
+        variants = (b" " + raw, raw + bytes((10,)), bytes((10,)) + raw)
         for variant in variants:
             with self.subTest(prefix=variant[:8], suffix=variant[-8:]):
                 with self.assertRaisesRegex(
