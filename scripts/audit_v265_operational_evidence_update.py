@@ -67,7 +67,7 @@ def validate() -> dict:
     assert guard["extraction_order_consumed"] is False
     assert guard["per_extraction_timestamps_consumed"] is False
     assert guard["anytime_evalue_gate_implemented"] is False
-    assert len(rows) == 26
+    assert len(rows) == 27
     assert any(r["variable_or_record"] == "CS-11 winning numbers" and r["same_draw_preclose_usable"] == "No" for r in rows)
     assert any(r["variable_or_record"] == "Traditional wooden-ball procedures" and r["same_draw_preclose_usable"] == "Not applicable" for r in rows)
     assert report["analysis"]["OOS_gate_passed"] is False
