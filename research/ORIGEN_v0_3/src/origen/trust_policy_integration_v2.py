@@ -21,6 +21,13 @@ from .trust_policy_envelope_v2 import (
 from .trust_verifier_v1 import verify_receipt_attestation
 
 
+# Receipt schema V1 is explicitly restricted by trust_receipt_v1._parse_target
+# to modality CLASSIC. Its integration must therefore not accept a policy from
+# another evidence namespace, even if the caller supplies that namespace as the
+# expected domain and the envelope is correctly signed.
+CLASSIC_RECEIPT_POLICY_DOMAIN_V1 = "origen.chispazo.classic.provenance"
+
+
 @dataclass(frozen=True, slots=True)
 class RootAttestationInspectionV2:
     policy_domain: str
@@ -49,12 +56,16 @@ def inspect_signed_root_attestation_chain_v2(
     minimum_policy_sequence: int,
     verification_time: datetime,
 ) -> RootAttestationInspectionV2:
-    """Verify V2 policy and receipt signatures while retaining the kill switch.
+    """Verify V2 policy and CLASSIC receipt signatures while retaining the kill switch.
 
     The root key, root key ID, expected policy domain, sequence floor and clock
     are caller-supplied deployment inputs. Their provisioning is not proven
     here. Original policy and receipt bytes are re-verified; pre-built policy
     objects and caller-supplied booleans are not accepted.
+
+    This V1 receipt integration is intentionally bound to the canonical
+    CLASSIC policy domain. A future De las Tres receipt must use a distinct
+    receipt schema and a separately reviewed modality/domain mapping.
     """
     if type(original_receipt_bytes) is not bytes:
         raise TypeError("original_receipt_bytes must be exact bytes")
@@ -69,11 +80,22 @@ def inspect_signed_root_attestation_chain_v2(
         minimum_policy_sequence=minimum_policy_sequence,
         verification_time=verification_time,
     )
+    if verified_policy.policy_domain != CLASSIC_RECEIPT_POLICY_DOMAIN_V1:
+        raise ValueError(
+            "V1 trust receipt modality CLASSIC requires policy domain "
+            f"{CLASSIC_RECEIPT_POLICY_DOMAIN_V1}"
+        )
+
     verified_receipt = verify_receipt_attestation(
         original_receipt_bytes,
         verified_policy.policy,
         verification_time=verification_time,
     )
+    # Defense in depth: do not rely only on the V1 parser's current modality
+    # restriction when composing this boundary.
+    if verified_receipt.receipt.target.modality != "CLASSIC":
+        raise ValueError("V1 trust receipt integration accepts CLASSIC only")
+
     provenance_status = verify_independent_provenance(original_receipt_bytes)
     if provenance_status is not ProvenanceStatus.BLOCKED_PROVENANCE:
         raise RuntimeError("unexpected provenance status; fail-closed invariant violated")
