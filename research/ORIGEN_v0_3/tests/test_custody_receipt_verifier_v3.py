@@ -178,6 +178,7 @@ def bundle(*, custody_role=CUSTODY_SIGNER_ROLE, root_reused=False):
         "expected_root_key_id": ROOT_KEY_ID,
         "minimum_policy_sequence": POLICY_SEQUENCE,
         "verification_time": NOW,
+        "receipt_private": receipt_private,
     }
 
 
@@ -222,7 +223,7 @@ class CustodyReceiptVerifierV3Tests(unittest.TestCase):
     def test_mutated_custody_record_bytes_are_rejected(self):
         data = bundle()
         with self.assertRaisesRegex(ValueError, "canonical UTF-8 JSON bytes"):
-            inspect(data, custody_record_bytes=data["custody_record_bytes"][:-1] + b" ")
+            inspect(data, custody_record_bytes=data["custody_record_bytes"][:-1] + b" " + b"\n")
 
     def test_tampered_portfolio_bytes_are_rejected(self):
         data = bundle()
@@ -240,12 +241,9 @@ class CustodyReceiptVerifierV3Tests(unittest.TestCase):
         data = bundle()
         document = json.loads(data["original_receipt_bytes"])
         document["custodians"][0]["receipt_sha256"] = "d" * 64
-        receipt_private = Ed25519PrivateKey.generate()
-        # Keep the original signed policy and signature inputs; the claim mismatch
-        # is detected after the receipt itself has been authenticated.
-        document["receipt_attestation"]["signature_b64"] = base64.b64encode(b"x" * 64).decode("ascii")
-        with self.assertRaisesRegex(ValueError, "receipt root attestation signature verification failed"):
-            inspect(data, original_receipt_bytes=encode(document))
+        changed_receipt = sign_receipt(document, data["receipt_private"])
+        with self.assertRaisesRegex(ValueError, "does not bind exact original custody-record bytes"):
+            inspect(data, original_receipt_bytes=changed_receipt)
 
     def test_custody_key_id_cannot_alias_receipt_or_physical_signer_key(self):
         data = bundle()
