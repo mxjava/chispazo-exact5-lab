@@ -222,5 +222,49 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
             )
 
 
+
+    def test_independent_provenance_gate_receives_exact_original_receipt_bytes(self):
+        from unittest.mock import patch
+
+        observed = []
+
+        def gate(raw):
+            observed.append(raw)
+            return ProvenanceStatus.BLOCKED_PROVENANCE
+
+        with patch(
+            "origen.receipt_policy_integration_v3.verify_independent_provenance",
+            side_effect=gate,
+        ):
+            result = self.inspect()
+
+        self.assertEqual(observed, [self.receipt_bytes])
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_future_authenticated_provenance_status_is_rejected(self):
+        from enum import Enum
+        from unittest.mock import patch
+
+        class FutureProvenanceStatus(Enum):
+            BLOCKED_PROVENANCE = "BLOCKED_PROVENANCE"
+            AUTHENTICATED = "AUTHENTICATED"
+
+        with (
+            patch(
+                "origen.receipt_policy_integration_v3.ProvenanceStatus",
+                FutureProvenanceStatus,
+            ),
+            patch(
+                "origen.receipt_policy_integration_v3.verify_independent_provenance",
+                return_value=FutureProvenanceStatus.AUTHENTICATED,
+            ),
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "unsupported non-blocked status",
+            ):
+                self.inspect()
+
+
 if __name__ == "__main__":
     unittest.main()
