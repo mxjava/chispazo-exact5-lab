@@ -18,6 +18,7 @@ from origen.receipt_policy_integration_v3 import (
     RECEIPT_ROLE_STATUS,
     verify_receipt_attestation_with_policy_v3,
 )
+from test_physical_evidence_verifier_v2 import fixture as signed_v2_physical_fixture
 from test_trust_receipt_v1 import encode
 from test_trust_verifier_v1 import NOW, signed_receipt
 
@@ -201,10 +202,13 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
         )
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
 
-    def test_v2_envelope_is_not_implicitly_accepted(self):
-        self.policy_bytes = b'{"schema_version":"origen.trust-policy-envelope.v2"}'
-        with self.assertRaisesRegex(ValueError, "fields mismatch"):
-            self.inspect()
+    def test_validly_signed_v2_envelope_is_not_implicitly_accepted(self):
+        v2 = signed_v2_physical_fixture()
+        with self.assertRaisesRegex(ValueError, "fields mismatch|unsupported trust-policy envelope schema"):
+            self.inspect(
+                signed_policy_envelope_bytes=v2["signed_policy_envelope_bytes"],
+                pinned_root_public_key_bytes=v2["pinned_root_public_key_bytes"],
+            )
 
 
 if __name__ == "__main__":
