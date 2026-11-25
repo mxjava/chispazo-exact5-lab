@@ -229,12 +229,24 @@ def _verify_inclusion(
         raise ValueError("ledger entry is not included in the signed checkpoint root")
 
 
+def _manifest_commitment_sha256(raw_manifest_bytes: bytes) -> str:
+    """Hash the canonical manifest with its proof-digest field omitted.
+
+    This single-field omission breaks the otherwise circular dependency:
+    the manifest commits to proof bytes, while the ledger leaf commits to the
+    manifest content. Every other manifest claim remains in the commitment.
+    """
+    document = json.loads(raw_manifest_bytes.decode("utf-8"))
+    document["ledger_anchor"].pop("inclusion_proof_sha256")
+    return hashlib.sha256(_canonical(document)).hexdigest()
+
+
 def _parse_entry(
     raw_entry_bytes: bytes,
     *,
     ledger_id: str,
     entry_id: str,
-    manifest_sha256: str,
+    manifest_commitment_sha256: str,
     artifact_sha256s: tuple[str, ...],
 ) -> None:
     entry = _load_canonical_object(
@@ -246,7 +258,7 @@ def _parse_entry(
             "schema_version",
             "ledger_id",
             "entry_id",
-            "manifest_sha256",
+            "manifest_commitment_sha256",
             "artifact_sha256s",
         },
         "ledger entry",
@@ -257,8 +269,8 @@ def _parse_entry(
         raise ValueError("ledger entry ledger_id does not match manifest")
     if _identifier(entry["entry_id"], "ledger entry entry_id") != entry_id:
         raise ValueError("ledger entry entry_id does not match manifest")
-    if _digest(entry["manifest_sha256"], "ledger entry manifest_sha256") != manifest_sha256:
-        raise ValueError("ledger entry manifest_sha256 does not match exact manifest bytes")
+    if _digest(entry["manifest_commitment_sha256"], "ledger entry manifest_commitment_sha256") != manifest_commitment_sha256:
+        raise ValueError("ledger entry manifest commitment does not match normalized manifest claims")
     claimed_artifacts = entry["artifact_sha256s"]
     if type(claimed_artifacts) is not list:
         raise ValueError("ledger entry artifact_sha256s must be an array")
@@ -346,11 +358,12 @@ def verify_transparency_ledger_inclusion(
 
     manifest = parse_unverified_physical_manifest(raw_manifest_bytes)
     artifact_sha256s = tuple(sorted(item.sha256 for item in manifest.artifacts))
+    manifest_commitment = _manifest_commitment_sha256(raw_manifest_bytes)
     _parse_entry(
         raw_ledger_entry_bytes,
         ledger_id=manifest.ledger_anchor.ledger_id,
         entry_id=manifest.ledger_anchor.entry_id,
-        manifest_sha256=manifest.raw_sha256,
+        manifest_commitment_sha256=manifest_commitment,
         artifact_sha256s=artifact_sha256s,
     )
 
@@ -426,6 +439,7 @@ def verify_transparency_ledger_inclusion(
         ledger_id=manifest.ledger_anchor.ledger_id,
         entry_id=manifest.ledger_anchor.entry_id,
         manifest_sha256=manifest.raw_sha256,
+        manifest_commitment_sha256=manifest_commitment,
         ledger_entry_sha256=hashlib.sha256(raw_ledger_entry_bytes).hexdigest(),
         inclusion_proof_sha256=hashlib.sha256(raw_inclusion_proof_bytes).hexdigest(),
         log_id=log_id,
