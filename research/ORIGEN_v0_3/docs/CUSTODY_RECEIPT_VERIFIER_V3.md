@@ -46,6 +46,7 @@ A successful signature check is only a cryptographic match relative to the calle
 - that the root belongs to Lotería Nacional, SEGOB, or any other institution;
 - that the custodian is a real person/entity, was appointed, or is administratively independent;
 - that the custody system, storage, clock, receipt origin or delivery channel is controlled independently;
+- that the detached custody signature existed before the draw close; it has no RFC 3161 timestamp binding yet;
 - that the sequence floor is held in an external monotonic store;
 - RFC 3161 time, nested physical signer signatures, external ledger inclusion/consistency/witnesses, or physical-event truth;
 - that all custodian claims or both output seals have been independently covered (this verifier inspects one matching custody record);
