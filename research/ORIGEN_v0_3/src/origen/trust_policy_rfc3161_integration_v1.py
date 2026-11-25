@@ -1,11 +1,9 @@
-"""Fail-closed RFC 3161 integration for the two pre-close output-seal signatures.
+"""Fail-closed RFC 3161 integration for two pre-close output-seal signatures.
 
-This layer composes the signed policy/receipt chain with timestamp-token
-verification. It verifies only the two output-seal signature byte strings.
-The receipt-attestation timestamp proof is deliberately left unverified:
-the V1 receipt signature currently covers its own timestamp-proof digest,
-which makes timestamping that signature self-referential. No provenance
-promotion is possible through this diagnostic.
+The TSA authority ID, root-certificate fingerprint and allowed policy OIDs are
+now read from a root-signed authority policy bound to the exact verified trust
+policy envelope. The root key, verification clock, policy sequence floor and
+request nonces remain externally supplied and unauthenticated.
 """
 from __future__ import annotations
 
@@ -15,6 +13,9 @@ from datetime import datetime, timedelta
 
 from .independent_trust_adapter import ProvenanceStatus
 from .rfc3161_tsa_verifier_v1 import verify_rfc3161_timestamp_token
+from .timestamp_authority_policy_v1 import (
+    verify_signed_timestamp_authority_policy,
+)
 from .trust_policy_integration_v1 import (
     ROOT_CHAIN_REMAINING_BLOCKERS,
     RootAttestationInspection,
@@ -41,6 +42,7 @@ class OutputSealTimestampInspection:
     proof_sha256: str
     signature_sha256: str
     token_sha256: str
+    tsa_policy_oid: str
     gen_time_utc: datetime
     accuracy_microseconds: int
     tsa_certificate_sha256: str
@@ -54,6 +56,8 @@ class SignedRootAndOutputSealTimeInspection:
     output_seal_timestamps: tuple[OutputSealTimestampInspection, ...]
     timestamp_authority_id: str
     timestamp_authority_source: str
+    timestamp_authority_policy_sha256: str
+    timestamp_authority_policy_sequence: int
     tsa_root_anchor_source: str
     verification_clock_source: str
     nonce_source: str
@@ -69,25 +73,22 @@ def inspect_signed_root_attestation_chain_with_output_seal_timestamps(
     expected_root_key_id: str,
     minimum_policy_sequence: int,
     verification_time: datetime,
+    signed_timestamp_authority_policy_bytes: bytes,
     output_seal_timestamp_evidence: tuple[OutputSealTimestampEvidence, ...],
     pinned_tsa_root_certificate_der: bytes,
-    expected_tsa_root_sha256: str,
-    expected_tsa_authority_id: str,
 ) -> SignedRootAndOutputSealTimeInspection:
     """Verify policy, receipt root signature and both output-seal TSA tokens.
 
-    All trust anchors, sequence floor, verification clock, TSA authority label,
-    and request nonces are caller-supplied and unauthenticated. The function
-    accepts exact original receipt/policy/token/signature bytes only. It
-    requires the RFC 3161 token digest to match the signed receipt reference,
-    the token imprint to match the exact output-seal signature bytes, and
-    genTime plus declared accuracy to fall strictly before the Classic close.
+    The TSA authorization envelope is signed by the same externally pinned
+    Ed25519 root as the trust-policy envelope and is bound to that exact
+    envelope digest and sequence. It authorizes the receipt's TSA authority ID,
+    TSA root-certificate fingerprint and RFC 3161 policy OIDs.
 
-    The receipt-attestation timestamp token is NOT verified here. The V1
-    attestation currently signs a receipt containing its own timestamp-proof
-    digest; timestamping the signature bytes while the token digest is inside
-    the signed payload would create a cryptographic self-reference. That
-    requires a separately versioned detached-proof envelope, not a bypass.
+    The root key, sequence floor, verification clock, TSA root certificate
+    bytes and request nonces are still supplied by the caller. No institutional
+    provisioning or revocation freshness is established. The receipt-
+    attestation timestamp token remains unverified because V1 includes its own
+    proof digest in the signed payload, creating a circular commitment.
     """
     root_chain = inspect_signed_root_attestation_chain(
         original_receipt_bytes,
@@ -100,16 +101,52 @@ def inspect_signed_root_attestation_chain_with_output_seal_timestamps(
     if root_chain.provenance_status is not ProvenanceStatus.BLOCKED_PROVENANCE:
         raise RuntimeError("signed root chain did not preserve BLOCKED_PROVENANCE")
 
+    tsa_policy = verify_signed_timestamp_authority_policy(
+        signed_timestamp_authority_policy_bytes,
+        pinned_root_public_key_bytes=pinned_root_public_key_bytes,
+        expected_root_key_id=root_chain.policy_root_key_id,
+        expected_trust_policy_envelope_sha256=root_chain.policy_envelope_sha256,
+        expected_policy_sequence=root_chain.policy_sequence,
+        verification_time=root_chain.verification_time_utc,
+    )
+
     if type(output_seal_timestamp_evidence) is not tuple or len(output_seal_timestamp_evidence) != 2:
         raise ValueError("exactly two output-seal timestamp evidence items are required")
-    if type(expected_tsa_authority_id) is not str or not expected_tsa_authority_id:
-        raise ValueError("expected_tsa_authority_id must be a non-empty exact string")
+    if (
+        type(pinned_tsa_root_certificate_der) is not bytes
+        or not pinned_tsa_root_certificate_der
+    ):
+        raise TypeError("pinned_tsa_root_certificate_der must be non-empty exact bytes")
 
     receipt = parse_unverified_receipt(original_receipt_bytes)
     proofs_by_digest = {item.proof_sha256: item for item in receipt.trusted_time_proofs}
     seals_by_proof = {item.timestamp_proof_sha256: item for item in receipt.output_seals}
     if len(seals_by_proof) != 2:
         raise ValueError("receipt must bind two distinct output-seal timestamp proofs")
+
+    seal_proofs = [proofs_by_digest.get(digest) for digest in seals_by_proof]
+    if any(item is None for item in seal_proofs):
+        raise ValueError("each output seal must reference a declared trusted-time proof")
+    authority_ids = {item.authority_id for item in seal_proofs}
+    if len(authority_ids) != 1:
+        raise ValueError("both output-seal proofs must use one authorized TSA authority")
+    authority_id = next(iter(authority_ids))
+    authorities_by_id = {item.authority_id: item for item in tsa_policy.authorities}
+    authority = authorities_by_id.get(authority_id)
+    if authority is None:
+        raise ValueError("receipt TSA authority ID is not authorized by the root-signed TSA policy")
+    if authority.revoked:
+        raise ValueError("receipt TSA authority is revoked by the root-signed TSA policy")
+    if not (
+        authority.valid_from_utc
+        <= root_chain.verification_time_utc
+        <= authority.valid_until_utc
+    ):
+        raise ValueError("TSA authority is outside its signed policy validity interval")
+
+    tsa_root_digest = hashlib.sha256(pinned_tsa_root_certificate_der).hexdigest()
+    if tsa_root_digest != authority.root_certificate_sha256:
+        raise ValueError("caller-supplied TSA root certificate does not match root-signed authority policy")
 
     seen_events = set()
     seen_tokens = set()
@@ -157,8 +194,8 @@ def inspect_signed_root_attestation_chain_with_output_seal_timestamps(
             )
         if proof.event_id != evidence.event_id:
             raise ValueError("timestamp token event ID does not match the signed receipt claim")
-        if proof.authority_id != expected_tsa_authority_id:
-            raise ValueError("timestamp authority ID does not match the caller-pinned TSA authority")
+        if proof.authority_id != authority_id:
+            raise ValueError("timestamp token authority does not match the authorized TSA policy")
         signature_sha256 = hashlib.sha256(evidence.signature_bytes).hexdigest()
         if signature_sha256 != seal.signature_sha256:
             raise ValueError(
@@ -169,10 +206,19 @@ def inspect_signed_root_attestation_chain_with_output_seal_timestamps(
             evidence.token_der,
             evidence.signature_bytes,
             pinned_tsa_root_certificate_der=pinned_tsa_root_certificate_der,
-            expected_tsa_root_sha256=expected_tsa_root_sha256,
-            verification_time=verification_time,
+            expected_tsa_root_sha256=authority.root_certificate_sha256,
+            verification_time=root_chain.verification_time_utc,
             expected_nonce=evidence.expected_nonce,
         )
+        if timestamp.policy_oid not in authority.policy_oids:
+            raise ValueError("RFC3161 policy OID is not authorized for this TSA authority")
+        if not (
+            authority.valid_from_utc
+            <= timestamp.gen_time_utc
+            <= authority.valid_until_utc
+        ):
+            raise ValueError("RFC3161 genTime is outside the TSA authority policy validity interval")
+
         declared_event_time = datetime.fromisoformat(
             proof.event_at_utc[:-1] + "+00:00"
         )
@@ -200,6 +246,7 @@ def inspect_signed_root_attestation_chain_with_output_seal_timestamps(
                 proof_sha256=token_sha256,
                 signature_sha256=signature_sha256,
                 token_sha256=timestamp.token_sha256,
+                tsa_policy_oid=timestamp.policy_oid,
                 gen_time_utc=timestamp.gen_time_utc,
                 accuracy_microseconds=timestamp.accuracy_microseconds,
                 tsa_certificate_sha256=timestamp.tsa_certificate_sha256,
@@ -218,8 +265,7 @@ def inspect_signed_root_attestation_chain_with_output_seal_timestamps(
         if item != "RFC3161_TIMESTAMP_TOKENS_NOT_VERIFIED"
     ) + (
         "RECEIPT_ATTESTATION_RFC3161_TIMESTAMP_TOKEN_NOT_VERIFIED",
-        "TSA_ROOT_ANCHOR_PROVISIONING_UNVERIFIED",
-        "TSA_AUTHORITY_ID_AND_POLICY_OID_NOT_INSTITUTIONALLY_AUTHORIZED",
+        "TSA_AUTHORITY_POLICY_ROOT_PROVISIONING_UNVERIFIED",
         "TSA_REVOCATION_FRESHNESS_NOT_CHECKED",
         "TSA_PATH_VALIDATION_NOT_FULL_RFC5280",
         "NESTED_OUTPUT_SEAL_SIGNATURES_AND_SIGNER_ROLES_NOT_VERIFIED",
@@ -228,9 +274,11 @@ def inspect_signed_root_attestation_chain_with_output_seal_timestamps(
     return SignedRootAndOutputSealTimeInspection(
         root_chain=root_chain,
         output_seal_timestamps=tuple(inspections),
-        timestamp_authority_id=expected_tsa_authority_id,
-        timestamp_authority_source="CALLER_SUPPLIED_UNAUTHENTICATED",
-        tsa_root_anchor_source="CALLER_SUPPLIED_UNAUTHENTICATED",
+        timestamp_authority_id=authority_id,
+        timestamp_authority_source="ROOT_SIGNED_POLICY_RELATIVE_TO_CALLER_SUPPLIED_ROOT",
+        timestamp_authority_policy_sha256=tsa_policy.envelope_sha256,
+        timestamp_authority_policy_sequence=tsa_policy.policy_sequence,
+        tsa_root_anchor_source="CALLER_SUPPLIED_CERTIFICATE_MATCHES_ROOT_SIGNED_POLICY",
         verification_clock_source="CALLER_SUPPLIED_UNAUTHENTICATED",
         nonce_source="CALLER_SUPPLIED_UNAUTHENTICATED",
         provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
