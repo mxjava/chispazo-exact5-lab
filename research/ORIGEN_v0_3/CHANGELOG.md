@@ -1,3 +1,9 @@
+
+## Official Normateca revision-status correction — 2026-11-25
+- Corrected the trust-chain integration note: the current “Normas Sustantivas Vigentes” index lists SGVO-PRO-05 with last update 20-Mar-2026, and its linked PDF identifies itself as revision 38. The separate “Proyectos Normativos” historical index lists `sgvo_pro_05p.pdf` for 23-Feb-2026 to 04-Mar-2026; that project listing does not establish revision 39 as effective.
+- Treat revision 38 as the currently published procedure; treat revision 39 as unconfirmed / project-only unless Lotería Nacional publishes an effective version. Revalidate all revision-specific operational limits against the current PDF before use.
+- Official sources: https://lotenal.gob.mx/Normateca/Sustantivas?id=2 ; https://lotenal.gob.mx/Normateca/Proyectos?id=0 ; current PDF: https://lotenal.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf . This correction does not authenticate any draw-specific physical evidence or cryptographic trust anchor.
+
 ## Policy-envelope / receipt-attestation composition (2026-11-25)
 - Added a research-only composition that verifies the signed policy envelope first, then verifies the receipt root attestation with the resulting policy.
 - Bound both results to the exact policy and receipt bytes; normalized one caller-supplied verification instant once so a stateful timezone cannot present different offsets to the two verifiers.
