@@ -211,6 +211,14 @@ class TestSignedRootRFC3161OutputSealIntegrationV1(unittest.TestCase):
             "TSA_REVOCATION_FRESHNESS_NOT_CHECKED",
             result.remaining_blockers,
         )
+        self.assertIn(
+            "RECEIPT_ATTESTATION_RFC3161_TIMESTAMP_TOKEN_NOT_VERIFIED",
+            result.root_chain.remaining_blockers,
+        )
+        self.assertNotIn(
+            "RFC3161_TIMESTAMP_TOKENS_NOT_VERIFIED",
+            result.root_chain.remaining_blockers,
+        )
 
     def test_evidence_order_is_not_semantically_significant(self):
         fixture = _fixture(accuracy={"seconds": 1})
