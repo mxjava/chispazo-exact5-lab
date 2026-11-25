@@ -271,6 +271,10 @@ def _fixture(
         "tsa_policy_bytes": tsa_policy_bytes,
         "policy_root_public": policy_root_public,
         "tsa_root_der": root_der,
+        # Ephemeral fixture material is exposed only to sibling synthetic tests.
+        "tsa_root_certificate": root,
+        "tsa_signer_certificate": tsa,
+        "tsa_signer_private_key": tsa_key,
         "evidence": tuple(evidence),
         "verification_time": verification_time,
     }
