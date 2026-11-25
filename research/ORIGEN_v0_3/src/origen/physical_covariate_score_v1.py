@@ -59,6 +59,19 @@ def _validated_epoch(epoch: Mapping[str, object], index: int):
     epoch_id = _require_text(epoch.get("epoch_id"), f"epochs[{index}].epoch_id")
     _require_text(epoch.get("machine_id"), f"epochs[{index}].machine_id")
     _require_text(epoch.get("ball_set_id"), f"epochs[{index}].ball_set_id")
+    _require_text(
+        epoch.get("measurement_snapshot_id"),
+        f"epochs[{index}].measurement_snapshot_id",
+    )
+    physical_ids = epoch.get("physical_ids_by_number")
+    if not isinstance(physical_ids, Sequence) or isinstance(physical_ids, (str, bytes)):
+        raise TypeError(f"epochs[{index}].physical_ids_by_number must be a sequence")
+    if (
+        len(physical_ids) != N_NUMBERS
+        or any(type(value) is not str or not value.strip() for value in physical_ids)
+        or len(set(physical_ids)) != N_NUMBERS
+    ):
+        raise ValueError("physical_ids_by_number must contain 28 unique non-empty IDs")
 
     features = epoch.get("features_by_number")
     if not isinstance(features, Mapping) or set(features) != set(REQUIRED_FEATURES):
