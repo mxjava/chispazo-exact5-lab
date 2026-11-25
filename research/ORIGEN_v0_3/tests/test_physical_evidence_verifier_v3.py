@@ -13,7 +13,7 @@ from test_physical_evidence_verifier_v2 import (
  _raw_public_key,
 )
 
-def signed_v3_policy(data, *, wrong_role=False, wrong_artifact=False, duplicate_role=False):
+def signed_v3_policy(data, *, wrong_role=False, wrong_artifact=False, duplicate_role=False, root_private=None):
  doc=data["document"]
  artifact_types={a["sha256"]:a["artifact_type"] for a in doc["artifacts"]}
  grouped={}
@@ -42,7 +42,7 @@ def signed_v3_policy(data, *, wrong_role=False, wrong_artifact=False, duplicate_
    "valid_until_utc":"2027-01-01T00:00:00Z",
    "revoked":False,"authorizations":auth,
   })
- root=Ed25519PrivateKey.generate()
+ root=root_private or Ed25519PrivateKey.generate()
  document={
   "schema_version":SCHEMA_VERSION_V3,"policy_domain":POLICY_DOMAIN,
   "policy_version":"physical-policy-v3-test","policy_sequence":POLICY_SEQUENCE,
@@ -89,6 +89,16 @@ class PhysicalEvidenceSignatureVerifierV3Tests(unittest.TestCase):
  def test_duplicate_role_authorization_is_rejected_even_when_root_signed(self):
   data=v2_fixture(); policy,root,_=signed_v3_policy(data,duplicate_role=True)
   with self.assertRaisesRegex(ValueError,"duplicate role authorization"):
+   verify_signed_trust_policy_v3(
+    policy,pinned_root_public_key_bytes=root,expected_root_key_id=ROOT_KEY_ID,
+    expected_policy_domain=POLICY_DOMAIN,minimum_policy_sequence=POLICY_SEQUENCE,
+    verification_time=NOW)
+
+ def test_policy_root_key_cannot_be_reused_as_delegated_physical_signer(self):
+  data=v2_fixture()
+  shared_private=next(iter(data["private_by_identity"].values()))
+  policy,root,_=signed_v3_policy(data,root_private=shared_private)
+  with self.assertRaisesRegex(ValueError,"pinned root public key must not be reused"):
    verify_signed_trust_policy_v3(
     policy,pinned_root_public_key_bytes=root,expected_root_key_id=ROOT_KEY_ID,
     expected_policy_domain=POLICY_DOMAIN,minimum_policy_sequence=POLICY_SEQUENCE,
