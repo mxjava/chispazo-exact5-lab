@@ -63,6 +63,8 @@ If the backend is unavailable, stale, rolled back, reset, inconsistent, or canno
 
 Separate sequence domains are required for receipt policy, TSA policy, witness registry and log-key registry. A sequence from one domain must never satisfy another domain's floor.
 
+**Current implementation gap:** `trust-policy-envelope.v1` does not contain an explicit `policy_domain` field. Domain separation is therefore not established by the V1 envelope itself. Before a production adapter exists, either introduce a new signed envelope version that includes the domain in the signature preimage, or provision distinct root/key namespaces and independent monotonic state per schema/domain. A caller-supplied label must not be treated as authenticated domain binding.
+
 ## 4. Verification time and revocation
 
 The current `verification_time` parameter is caller-supplied. Production time MUST come from a separately operated, authenticated time service with monitored synchronization and bounded uncertainty. Wall-clock rollback, unavailable time, leap-second ambiguity, or uncertainty outside the policy limit is a hard failure. A monotonic clock may measure elapsed durations but cannot replace an authenticated UTC instant.
