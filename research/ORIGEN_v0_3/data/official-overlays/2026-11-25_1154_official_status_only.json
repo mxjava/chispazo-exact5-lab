@@ -1,6 +1,6 @@
 {
   "schema_version": "origen.official-status-overlay.v1",
-  "captured_at_local": "2026-11-25T11:54:00-06:00",
+  "captured_at_local": "2026-11-25T13:56:00-06:00",
   "scope": "status_only_no_physical_evidence",
   "sources": [
     "https://www.loterianacional.gob.mx/Chispazo/Resultados",
@@ -12,9 +12,21 @@
     "dedicated_results_page": {
       "latest_contest": 12394,
       "latest_date": "2026-11-24",
-      "latest_numbers": [1, 9, 12, 16, 24],
+      "latest_numbers": [
+        1,
+        9,
+        12,
+        16,
+        24
+      ],
       "previous_same_day_contest": 12393,
-      "previous_same_day_numbers": [1, 7, 8, 9, 12],
+      "previous_same_day_numbers": [
+        1,
+        7,
+        8,
+        9,
+        12
+      ],
       "next_draw_date": "2026-11-25",
       "no_2026_11_25_result_visible": true
     },
@@ -27,11 +39,23 @@
       "visual_modality_confirmation": {
         "de_las_tres": {
           "contest_id": 12393,
-          "numbers": [1, 7, 8, 9, 12]
+          "numbers": [
+            1,
+            7,
+            8,
+            9,
+            12
+          ]
         },
         "classic": {
           "contest_id": 12394,
-          "numbers": [1, 9, 12, 16, 24]
+          "numbers": [
+            1,
+            9,
+            12,
+            16,
+            24
+          ]
         }
       }
     },
@@ -52,7 +76,8 @@
         "reason": "The home-index rendering does not identify this card as Chispazo; do not infer the Classic contest ID from it."
       },
       "classic_21_00_contest_id": null,
-      "classic_contest_id_visible": false
+      "classic_contest_id_visible": false,
+      "observation_time_local": "2026-11-25T13:56:00-06:00"
     },
     "official_chispazo_schedule": {
       "de_las_tres_local": "15:00",
