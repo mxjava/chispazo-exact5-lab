@@ -194,6 +194,8 @@ def _require_tsa_leaf(cert: x509.Certificate) -> None:
         raise ValueError("TSA signer certificate must have critical timeStamping-only EKU")
     if not ku_ext.value.digital_signature:
         raise ValueError("TSA signer certificate must permit digital signatures")
+    if ku_ext.value.key_cert_sign:
+        raise ValueError("TSA signer certificate must not assert keyCertSign")
 
 
 def _build_chain(
