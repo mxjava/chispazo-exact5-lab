@@ -32,7 +32,7 @@ from .rfc3161_tsa_verifier_v1 import (
 )
 from .trust_receipt_v1 import parse_unverified_receipt
 
-_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\\Z")
+_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
 
 CUSTODY_RECORD_TIMESTAMP_BLOCKERS = (
     "DETACHED_CUSTODY_SIGNATURE_ITSELF_NOT_TIME_STAMPED",
