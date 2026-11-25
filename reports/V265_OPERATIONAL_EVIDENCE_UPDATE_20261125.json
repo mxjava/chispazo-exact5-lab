@@ -41,6 +41,21 @@
       "id": "ARCHIVE_RETRIEVAL_ROUTE",
       "finding": "Lotería's official archival-instruments page exposes the classification chart, simple archive guide, CADIDO 2017 and inventories for archive-in-process and concentration. The PDFs could not be inspected in this run because public downloads timed out or exceeded retrieval limits.",
       "implication": "These inventories are a new route to identify custodial unit, documentary series and retention location. Their actual series and retention entries remain unverified."
+    },
+    {
+      "id": "2026_CUSTODY_OFFICE",
+      "finding": "SAF-MAN-12, the public February 2026 General Organization Manual, assigns the Subgerencia de Operación de Concursos, Juegos y Sorteos Electrónicos e Instantáneos responsibility for the annual preventive/corrective machinery-maintenance calendar, physical/digital custody and archiving of Actas, videorecordings and operational records, and facilitation of original files for certification.",
+      "implication": "Direct the physical-evidence records request to this specific Subgerencia and request certified originals or certified copies plus inventory/custody metadata."
+    },
+    {
+      "id": "MAINTENANCE_CONTRACT_058_2024",
+      "finding": "Lotería's official 2018-2024 management report identifies contract 058-2024 for preventive/corrective maintenance of 21 draw machines, controls and consoles covering Melate, Revancha, Revanchita, Melate Retro, Tris, Tris Multiplicador, Chispazo and Gana Gato; it is listed among contracts concluded during the January-June 2024 period.",
+      "implication": "Request contract scope, annexes, asset IDs, machine serials, service reports, work orders and acceptance records. This is fleet-level historical evidence, not a per-contest maintenance log."
+    },
+    {
+      "id": "FLEET_RECONCILIATION",
+      "finding": "The same official report describes 14 machines acquired in 2022, while contract 058-2024 covers 21 machines. No public asset-level reconciliation or Chispazo assignment was found.",
+      "implication": "Request the complete asset register and mapping of machine model/serial, controls, console, product allocation, active dates and reserve status. Do not infer a contradiction or assign any of the 21 machines to Chispazo without that register."
     }
   ],
   "normateca": {
@@ -203,6 +218,32 @@
     "SEGOB_inspection": {
       "url": "https://sitios.segob.gob.mx/es/Juegos_y_Sorteos/inspecciones_lotenal_pronosticos",
       "role": "Inspection_and_surveillance_gives_faith_legality_and_transparency_to_Loteria_Nacional_draws"
+    },
+    "SAF_MAN_12": {
+      "url": "https://www.loterianacional.gob.mx/documentos/Manual_de_Organizacion_General_de_Loteria_Nacional.pdf",
+      "document": "Manual de Organización General de Lotería Nacional",
+      "revision": 0,
+      "issue_date": "2026-02",
+      "section": "3.2.3.1 Subgerencia de Operación de Concursos, Juegos y Sorteos Electrónicos e Instantáneos",
+      "functions": {
+        "annual_preventive_corrective_maintenance_calendar": true,
+        "physical_and_digital_custody_of_actas_videos_operational_records": true,
+        "facilitate_original_documents_for_certification": true
+      },
+      "use": "Custodial-office identification; not a draw-level physical record."
+    },
+    "Maintenance_contract_058_2024": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf",
+      "report": "Informe de Gestión Gubernamental 2018-2024",
+      "pages": [
+        43,
+        58
+      ],
+      "contract": "058-2024",
+      "scope": "Preventive/corrective maintenance of 21 draw machines with controls and consoles for Melate, Revancha, Revanchita, Melate Retro, Tris, Tris Multiplicador, Chispazo and Gana Gato",
+      "status_in_report": "concluded_within_2024-01_to_2024-06_reporting_period",
+      "per_machine_serials_published": false,
+      "per_contest_work_orders_published": false
     }
   },
   "timing_decisions": {
@@ -231,7 +272,8 @@
       "maintenance_and_calibration_records"
     ],
     "RFID": "not_usable_until_individual_tags_reader_logs_and_sphere_number_map_are_obtained",
-    "sequence_conflict": "Regulation_article_9_urn_loading_preclose_vs_current_SGVO_activity_5_weighing_after_close_remains_unresolved"
+    "sequence_conflict": "Regulation_article_9_urn_loading_preclose_vs_current_SGVO_activity_5_weighing_after_close_remains_unresolved",
+    "custodial_office": "SAF-MAN-12 identifies the electronic-draw Subgerencia as custodian of Actas, videorecordings and operational records; custodian identity does not make those retrospective records pre-close predictors."
   },
   "V265": {
     "classification": "ASSOCIATION_SCREEN_ONLY",
