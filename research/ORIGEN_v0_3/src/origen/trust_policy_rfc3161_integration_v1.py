@@ -10,7 +10,7 @@ promotion is possible through this diagnostic.
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 
 from .independent_trust_adapter import ProvenanceStatus
@@ -224,6 +224,7 @@ def inspect_signed_root_attestation_chain_with_output_seal_timestamps(
         "TSA_PATH_VALIDATION_NOT_FULL_RFC5280",
         "NESTED_OUTPUT_SEAL_SIGNATURES_AND_SIGNER_ROLES_NOT_VERIFIED",
     )
+    root_chain = replace(root_chain, remaining_blockers=blockers)
     return SignedRootAndOutputSealTimeInspection(
         root_chain=root_chain,
         output_seal_timestamps=tuple(inspections),
