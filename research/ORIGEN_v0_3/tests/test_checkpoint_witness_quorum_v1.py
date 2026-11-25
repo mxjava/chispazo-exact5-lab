@@ -43,13 +43,15 @@ def signed_registry(
     sequence: int = 7,
     revoked: tuple[str, ...] = (),
     duplicate_public_key: bool = False,
+    public_key_overrides: dict[str, bytes] | None = None,
     issued_at: str = "2026-11-24T18:30:00Z",
     not_before: str = "2026-11-24T18:45:00Z",
     expires_at: str = "2026-11-25T18:30:00Z",
 ) -> tuple[dict, bytes]:
     witnesses = []
+    public_key_overrides = public_key_overrides or {}
     for index, (witness_id, private_key) in enumerate(WITNESS_PRIVATE.items(), start=1):
-        key_bytes = public_bytes(private_key)
+        key_bytes = public_key_overrides.get(witness_id, public_bytes(private_key))
         if duplicate_public_key and index == 2:
             key_bytes = public_bytes(WITNESS_PRIVATE["witness-1"])
         witnesses.append({
@@ -89,9 +91,11 @@ def signed_statements(
     issued_at_by_id: dict[str, str] | None = None,
     mutate_by_id: dict[str, dict] | None = None,
     invalid_signature_for: str | None = None,
+    private_key_overrides: dict[str, Ed25519PrivateKey] | None = None,
 ) -> list[bytes]:
     issued_at_by_id = issued_at_by_id or {}
     mutate_by_id = mutate_by_id or {}
+    private_key_overrides = private_key_overrides or {}
     registry_sha = sha(registry_bytes)
     result = []
     for witness_id in witness_ids:
@@ -116,9 +120,8 @@ def signed_statements(
             ),
         }
         unsigned.update(mutate_by_id.get(witness_id, {}))
-        signature = WITNESS_PRIVATE[witness_id].sign(
-            WITNESS_DOMAIN + canonical(unsigned)
-        )
+        signer = private_key_overrides.get(witness_id, WITNESS_PRIVATE[witness_id])
+        signature = signer.sign(WITNESS_DOMAIN + canonical(unsigned))
         if witness_id == invalid_signature_for:
             signature = b"\x00" * 64
         statement = dict(unsigned)
@@ -227,6 +230,41 @@ class CheckpointWitnessQuorumV1Tests(unittest.TestCase):
                 minimum_registry_sequence=7,
                 verification_time=NOW,
             )
+
+    def test_registry_root_and_log_signing_keys_must_be_distinct(self):
+        with self.assertRaisesRegex(ValueError, "registry root and log signing keys must be distinct roles"):
+            inspect(
+                self.checkpoints,
+                self.registry_bytes,
+                self.statements,
+                pinned_log_public_key_bytes=public_bytes(ROOT_PRIVATE),
+            )
+
+    def test_witness_key_cannot_reuse_registry_root_key(self):
+        registry, raw = signed_registry(
+            public_key_overrides={"witness-1": public_bytes(ROOT_PRIVATE)}
+        )
+        statements = signed_statements(
+            self.checkpoints,
+            registry,
+            raw,
+            private_key_overrides={"witness-1": ROOT_PRIVATE},
+        )
+        with self.assertRaisesRegex(ValueError, "witness signing key must be distinct"):
+            inspect(self.checkpoints, raw, statements)
+
+    def test_witness_key_cannot_reuse_log_signing_key(self):
+        registry, raw = signed_registry(
+            public_key_overrides={"witness-1": self.checkpoints["public_key"]}
+        )
+        statements = signed_statements(
+            self.checkpoints,
+            registry,
+            raw,
+            private_key_overrides={"witness-1": self.checkpoints["private_key"]},
+        )
+        with self.assertRaisesRegex(ValueError, "witness signing key must be distinct"):
+            inspect(self.checkpoints, raw, statements)
 
     def test_registry_root_signature_is_required(self):
         tampered = dict(self.registry)
