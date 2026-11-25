@@ -68,6 +68,7 @@ class VerifiedWitnessRegistry:
     maximum_witness_age_seconds: int
     maximum_witness_time_skew_seconds: int
     issued_at_utc: datetime
+    not_before_utc: datetime
     expires_at_utc: datetime
     active_witness_count: int
 
@@ -357,6 +358,7 @@ def verify_signed_witness_registry(
         maximum_witness_age_seconds=max_age,
         maximum_witness_time_skew_seconds=max_skew,
         issued_at_utc=issued,
+        not_before_utc=not_before,
         expires_at_utc=expires,
         active_witness_count=active_count,
     )
@@ -462,6 +464,8 @@ def verify_checkpoint_witness_quorum(
         valid_from = _timestamp(entry["valid_from_utc"], f"{label} registry valid_from")
         valid_until = _timestamp(entry["valid_until_utc"], f"{label} registry valid_until")
         issued = _timestamp(statement["issued_at_utc"], f"{label}.issued_at_utc")
+        if not (registry.not_before_utc <= issued < registry.expires_at_utc):
+            raise ValueError(f"{label} was issued outside signed registry validity")
         if not (valid_from <= issued <= valid_until):
             raise ValueError(f"{label} was issued outside witness key validity")
         if issued > now:
