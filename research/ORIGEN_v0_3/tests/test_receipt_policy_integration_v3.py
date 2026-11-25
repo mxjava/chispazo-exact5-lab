@@ -42,8 +42,10 @@ def signed_v3_policy(
     role=RECEIPT_ATTESTER_ROLE,
     artifact_types=(RECEIPT_ATTESTATION_ARTIFACT_TYPE,),
     policy_domain=CLASSIC_PHYSICAL_POLICY_DOMAIN,
+    root_private=None,
 ):
-    root_private = Ed25519PrivateKey.generate()
+    if root_private is None:
+        root_private = Ed25519PrivateKey.generate()
     document = {
         "schema_version": "origen.trust-policy-envelope.v3",
         "policy_domain": policy_domain,
@@ -129,6 +131,22 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertIn("RFC3161_TIMESTAMP_TOKENS_NOT_VERIFIED", result.remaining_blockers)
         self.assertIn("CUSTODY_RECEIPT_SIGNATURES_AND_CUSTODIAN_IDENTITY_NOT_VERIFIED", result.remaining_blockers)
+
+    def test_policy_root_key_cannot_be_reused_as_receipt_issuer_key(self):
+        receipt_bytes, receipt_public, shared_private = signed_receipt()
+        policy_bytes, root_public = signed_v3_policy(
+            receipt_public, root_private=shared_private
+        )
+        self.assertEqual(root_public, receipt_public)
+        with self.assertRaisesRegex(ValueError, "must not also be delegated"):
+            verify_receipt_attestation_with_policy_v3(
+                receipt_bytes,
+                policy_bytes,
+                pinned_root_public_key_bytes=root_public,
+                expected_root_key_id=ROOT_KEY_ID,
+                minimum_policy_sequence=POLICY_SEQUENCE,
+                verification_time=NOW,
+            )
 
     def test_valid_root_signature_without_receipt_role_authorization_is_rejected(self):
         self.policy_bytes, self.root_public_key = signed_v3_policy(
