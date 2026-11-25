@@ -99,5 +99,51 @@ class PhysicalEvidenceSignatureVerifierV3Tests(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,"fields mismatch|unsupported trust-policy"):
    inspect(data,data["signed_policy_envelope_bytes"],data["pinned_root_public_key_bytes"])
 
+
+
+from datetime import timedelta, tzinfo
+
+class _StatefulOffsetTimezone(tzinfo):
+    """Adversarial tzinfo that changes its answer after the first snapshot."""
+    def __init__(self):
+        self.calls = 0
+
+    def utcoffset(self, dt):
+        self.calls += 1
+        return timedelta(hours=-2 if self.calls == 1 else 2)
+
+    def dst(self, dt):
+        return timedelta(0)
+
+    def tzname(self, dt):
+        return "stateful-test-offset"
+
+
+class PhysicalEvidenceVerifierV3ClockSnapshotTests(unittest.TestCase):
+    def test_custom_timezone_offset_is_snapshotted_once_for_entire_verification(self):
+        data = v2_fixture()
+        policy, root_public, _ = signed_v3_policy(data)
+        tz = _StatefulOffsetTimezone()
+        supplied_time = datetime(2026, 11, 24, 12, 0, tzinfo=tz)
+
+        result = verify_physical_evidence_signatures_v3(
+            data["raw_manifest_bytes"],
+            data["artifact_bytes_by_sha256"],
+            data["signature_bytes_by_sha256"],
+            signed_policy_envelope_bytes=policy,
+            pinned_root_public_key_bytes=root_public,
+            expected_root_key_id=ROOT_KEY_ID,
+            expected_policy_domain=POLICY_DOMAIN,
+            minimum_policy_sequence=POLICY_SEQUENCE,
+            verification_time=supplied_time,
+        )
+
+        self.assertEqual(tz.calls, 1)
+        self.assertEqual(
+            result.verification_time_utc,
+            datetime(2026, 11, 24, 14, 0, tzinfo=timezone.utc),
+        )
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
 if __name__=="__main__":
  unittest.main()

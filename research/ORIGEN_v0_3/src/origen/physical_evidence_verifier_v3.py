@@ -48,7 +48,7 @@ def verify_physical_evidence_signatures_v3(
  policy:VerifiedTrustPolicyV3=verify_signed_trust_policy_v3(
   signed_policy_envelope_bytes,pinned_root_public_key_bytes=pinned_root_public_key_bytes,
   expected_root_key_id=expected_root_key_id,expected_policy_domain=expected_policy_domain,
-  minimum_policy_sequence=minimum_policy_sequence,verification_time=verification_time)
+  minimum_policy_sequence=minimum_policy_sequence,verification_time=verified_at)
  if type(policy) is not VerifiedTrustPolicyV3: raise TypeError("unexpected verified policy result")
  if policy.policy_domain!=CLASSIC_PHYSICAL_POLICY_DOMAIN: raise ValueError("CLASSIC manifest requires CLASSIC policy domain")
  keys={}
