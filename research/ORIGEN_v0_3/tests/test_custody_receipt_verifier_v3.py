@@ -184,6 +184,7 @@ def bundle(*, custody_role=CUSTODY_SIGNER_ROLE, root_reused=False):
 
 def inspect(data, **overrides):
     args = dict(data)
+    args.pop("receipt_private", None)
     args.update(overrides)
     return verify_receipt_and_custody_v3(**args)
 
