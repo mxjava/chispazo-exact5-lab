@@ -2,12 +2,19 @@
 
 No institutional trust roots, controlled artifact store, trusted-time service,
 or independent ledger have been provisioned and independently reviewed for
-this repository. Until those dependencies exist, every request returns the
+this repository. The research-only trust_chain_v1 module can compose a signed
+policy envelope with a root-attested receipt, but that verifies only two
+cryptographic links relative to caller-supplied inputs. It does not establish
+authentic provisioning or verify nested evidence, trusted time, ledger inclusion,
+or custody. This adapter deliberately does not consume that result.
+
+Until the complete independent backend exists, every request returns the
 single non-authenticating BLOCKED_PROVENANCE enum value.
 
-Do not replace this gate with caller-supplied booleans, callbacks, key maps, or
-reference sets. A future implementation must be separately reviewed and bind
-original artifact bytes to independently controlled trust roots.
+Do not replace this gate with caller-supplied booleans, callbacks, key maps,
+verified-policy objects, verification-result objects, or reference sets. A
+future implementation must be separately reviewed and bind original artifact
+bytes to independently controlled trust roots.
 """
 from __future__ import annotations
 

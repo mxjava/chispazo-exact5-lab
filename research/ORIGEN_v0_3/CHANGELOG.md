@@ -1,3 +1,24 @@
+
+## Official SGVO-PRO-05 revision correction — 2026-11-25 14:55 America/Mexico_City
+- Retracted the earlier incorrect statement that revision 39 was project-only and revision 38 was the current SGVO-PRO-05 procedure.
+- The official Normas Sustantivas Vigentes index lists PROCEDIMIENTO SORTEOS ELECTRÓNICOS, emitted 01/10/2003, last updated 20/03/2026, linking to `sgvo_pro_05.pdf`. That exact PDF is under SUSTANTIVAS/VIGENTES, identifies itself as SGVO-PRO-05 revision 39, and states publication 20-MAR-2026.
+- The historical project index lists distinct `sgvo_pro_05p.pdf` (23/02/2026–04/03/2026) and `svo_p_05.pdf` (19/09/2025–25/09/2025); neither should be conflated with the current `sgvo_pro_05.pdf`.
+- Revision 39 physical limits: Smartballs 4.25–5.25 g / max spread 0.30 g; Ping Pong 2.30–3.00 g / max spread 0.15 g; weigh every draw. It describes pre-draw electronic-signature storage, SEGOB inspector handoff and OIC-access security-box custody, plus Chispazo Acta support records.
+- The public procedure still does not disclose a public cryptographic verification key, signature algorithm/parameters, certificate chain, revocation information or public known-answer vector. No institutional trust anchor is provisioned by this correction.
+- Sources: https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2 ; https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0 ; https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf .
+
+
+## Official Normateca revision-status correction — 2026-11-25
+- Corrected the trust-chain integration note: the current “Normas Sustantivas Vigentes” index lists SGVO-PRO-05 with last update 20-Mar-2026, and its linked PDF identifies itself as revision 38. The separate “Proyectos Normativos” historical index lists `sgvo_pro_05p.pdf` for 23-Feb-2026 to 04-Mar-2026; that project listing does not establish revision 39 as effective.
+- Treat revision 38 as the currently published procedure; treat revision 39 as unconfirmed / project-only unless Lotería Nacional publishes an effective version. Revalidate all revision-specific operational limits against the current PDF before use.
+- Official sources: https://lotenal.gob.mx/Normateca/Sustantivas?id=2 ; https://lotenal.gob.mx/Normateca/Proyectos?id=0 ; current PDF: https://lotenal.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf . This correction does not authenticate any draw-specific physical evidence or cryptographic trust anchor.
+
+## Policy-envelope / receipt-attestation composition (2026-11-25)
+- Added a research-only composition that verifies the signed policy envelope first, then verifies the receipt root attestation with the resulting policy.
+- Bound both results to the exact policy and receipt bytes; normalized one caller-supplied verification instant once so a stateful timezone cannot present different offsets to the two verifiers.
+- Added synthetic adversarial tests for policy/receipt tampering, wrong root, anti-rollback floor, policy-version mismatch, stateful timezone behavior, and the invariant that a valid chain does not unblock the independent adapter.
+- The root pin, key ID, sequence floor, and clock remain caller-supplied. No authentic provisioning, durable anti-rollback store, RFC 3161, nested signatures, external ledger, or custody verifier is claimed. Adapter remains BLOCKED.
+
 ## Acta role separation and official 13:10 status refresh (2026-11-24)
 - Physical manifest regression: all four required DRAW-ACTA roles could reuse one subject_id; parser now requires distinct declared subjects for the General Directorate, Sales Operations, IT and SEGOB roles.
 - Test commit: `3e1384b76db02319c44f9de88baf28ed04197726`; implementation commit: `d8c7b0e8e5ed433f25549aecddb374424d64d41a`.
