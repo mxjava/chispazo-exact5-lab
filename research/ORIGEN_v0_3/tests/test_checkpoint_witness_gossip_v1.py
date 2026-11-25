@@ -220,6 +220,31 @@ class WitnessGossipComparisonV1Tests(unittest.TestCase):
         self.assertGreater(result.compared_checkpoint_observation_count, 0)
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
 
+    def test_nonoverlapping_tree_sizes_report_insufficient_overlap(self):
+        second_pair = build_pair(
+            12,
+            15,
+            old_issued_at="2026-11-24T19:03:00Z",
+            new_issued_at="2026-11-24T19:05:00Z",
+        )
+        second_batch = make_batch(
+            second_pair,
+            self.registry_bytes,
+            witness_ids=("witness-2", "witness-3"),
+            issued_at_by_id={
+                "witness-2": "2026-11-24T19:06:00Z",
+                "witness-3": "2026-11-24T19:06:00Z",
+            },
+        )
+        result = inspect((self.first_batch, second_batch))
+        self.assertFalse(result.split_view_detected)
+        self.assertEqual(result.comparable_tree_size_count, 0)
+        self.assertEqual(
+            result.comparison_status,
+            "INSUFFICIENT_OVERLAP_NO_SPLIT_VIEW_CLAIM",
+        )
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
     def test_same_size_conflicting_roots_detect_split_view_and_key_equivocation(self):
         alternate_pair = forked_pair()
         alternate_batch = make_batch(

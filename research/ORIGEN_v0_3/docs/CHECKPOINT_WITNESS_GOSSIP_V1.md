@@ -45,9 +45,10 @@ A duplicate batch is rejected because replaying the same exact evidence does not
 Possible comparison statuses:
 
 - `SPLIT_VIEW_DETECTED_IN_SUPPLIED_BATCHES`: at least one same-size conflicting-root finding exists in the supplied verified data.
-- `NO_CONFLICT_FOUND_IN_SUPPLIED_BATCHES_NOT_GLOBAL_PROOF`: no same-size root conflict was found in these inputs only.
+- `NO_CONFLICT_FOUND_IN_SUPPLIED_BATCHES_NOT_GLOBAL_PROOF`: at least one tree size was observed in more than one batch and no same-size root conflict was found there; this is still not a global proof.
+- `INSUFFICIENT_OVERLAP_NO_SPLIT_VIEW_CLAIM`: the batches share no tree size across distinct batch indexes, so the comparison cannot make even a bounded no-conflict statement.
 
-The second status is deliberately not a statement that the log is globally consistent. The module does not know whether the supplied batches cover all clients, all witnesses, all time periods, or all checkpoint sizes.
+The second status is deliberately not a statement that the log is globally consistent. The third status means the supplied batches do not overlap at a common tree size and therefore provide no comparable checkpoint view. The module does not know whether the supplied batches cover all clients, all witnesses, all time periods, or all checkpoint sizes.
 
 Every output retains:
 

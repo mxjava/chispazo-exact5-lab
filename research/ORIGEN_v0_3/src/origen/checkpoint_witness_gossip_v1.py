@@ -76,6 +76,7 @@ class WitnessGossipInspection:
     registry_sequences: tuple[int, ...]
     verified_witness_statement_count: int
     compared_checkpoint_observation_count: int
+    comparable_tree_size_count: int
     distinct_witness_key_count: int
     split_view_detected: bool
     witness_equivocation_detected: bool
@@ -300,24 +301,36 @@ def inspect_witness_gossip(
             )
         )
 
+    comparable_tree_size_count = sum(
+        1
+        for roots in views.values()
+        if len({
+            batch_index
+            for record in roots.values()
+            for batch_index in record["batch_indexes"]
+        }) >= 2
+    )
     split_view = bool(findings)
     witness_equivocation = any(
         finding.equivocating_witness_key_sha256 for finding in findings
     )
+    if split_view:
+        comparison_status = "SPLIT_VIEW_DETECTED_IN_SUPPLIED_BATCHES"
+    elif comparable_tree_size_count == 0:
+        comparison_status = "INSUFFICIENT_OVERLAP_NO_SPLIT_VIEW_CLAIM"
+    else:
+        comparison_status = "NO_CONFLICT_FOUND_IN_SUPPLIED_BATCHES_NOT_GLOBAL_PROOF"
     return WitnessGossipInspection(
         batch_count=len(batch_hashes),
         batch_sha256=tuple(batch_hashes),
         registry_sequences=tuple(sorted(verified_sequences)),
         verified_witness_statement_count=len(statement_hashes),
         compared_checkpoint_observation_count=compared_observations,
+        comparable_tree_size_count=comparable_tree_size_count,
         distinct_witness_key_count=len(witness_key_fingerprints),
         split_view_detected=split_view,
         witness_equivocation_detected=witness_equivocation,
-        comparison_status=(
-            "SPLIT_VIEW_DETECTED_IN_SUPPLIED_BATCHES"
-            if split_view
-            else "NO_CONFLICT_FOUND_IN_SUPPLIED_BATCHES_NOT_GLOBAL_PROOF"
-        ),
+        comparison_status=comparison_status,
         observation_scope="SUPPLIED_VERIFIED_BATCHES_ONLY",
         persistence_status="NOT_PERSISTED_BY_THIS_MODULE",
         trust_anchor_source="CALLER_SUPPLIED_UNAUTHENTICATED",
