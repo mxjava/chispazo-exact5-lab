@@ -17,6 +17,7 @@ from origen.transparency_ledger_verifier_v1 import (
     CHECKPOINT_SCHEMA,
     ENTRY_SCHEMA,
     PROOF_SCHEMA,
+    _verify_inclusion,
     verify_transparency_ledger_inclusion,
 )
 from test_physical_evidence_manifest_v1 import encode, valid_document
@@ -195,6 +196,23 @@ class TransparencyLedgerVerifierV1Tests(unittest.TestCase):
             "UNVERIFIED_NO_CONSISTENCY_PROOF",
         )
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_rfc6962_audit_path_verifies_every_leaf_across_tree_shapes(self):
+        for tree_size in range(1, 65):
+            leaves = [
+                f"tree-{tree_size}-leaf-{index}".encode("ascii")
+                for index in range(tree_size)
+            ]
+            root = tree_hash(leaves)
+            for leaf_index, leaf in enumerate(leaves):
+                with self.subTest(tree_size=tree_size, leaf_index=leaf_index):
+                    _verify_inclusion(
+                        leaf,
+                        leaf_index,
+                        tree_size,
+                        tuple(inclusion_path(leaf_index, leaves)),
+                        root,
+                    )
 
     def test_manifest_commitment_excludes_only_the_proof_digest_to_break_cycle(self):
         data = build_fixture()
