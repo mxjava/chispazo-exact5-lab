@@ -393,6 +393,15 @@ def verify_checkpoint_witness_quorum(
         raise TypeError("raw_witness_statement_bytes must be a tuple or list")
     if not 1 <= len(raw_witness_statement_bytes) <= MAX_STATEMENTS:
         raise ValueError(f"witness statements must contain 1..{MAX_STATEMENTS} entries")
+    if (
+        type(pinned_registry_root_public_key_bytes) is not bytes
+        or len(pinned_registry_root_public_key_bytes) != 32
+    ):
+        raise ValueError("pinned registry root public key must be exactly 32 bytes")
+    if type(pinned_log_public_key_bytes) is not bytes or len(pinned_log_public_key_bytes) != 32:
+        raise ValueError("pinned log public key must be exactly 32 bytes")
+    if pinned_registry_root_public_key_bytes == pinned_log_public_key_bytes:
+        raise ValueError("registry root and log signing keys must be distinct roles")
     registry = verify_signed_witness_registry(
         raw_registry_bytes,
         pinned_registry_root_public_key_bytes=pinned_registry_root_public_key_bytes,
@@ -420,6 +429,17 @@ def verify_checkpoint_witness_quorum(
     registry_doc = _load_canonical(
         raw_registry_bytes, maximum=MAX_REGISTRY_BYTES, label="witness registry"
     )
+    for index, entry in enumerate(registry_doc["witnesses"]):
+        witness_public_key = _b64(
+            entry["public_key_b64"], f"witnesses[{index}].public_key_b64", 32
+        )
+        if witness_public_key in (
+            pinned_registry_root_public_key_bytes,
+            pinned_log_public_key_bytes,
+        ):
+            raise ValueError(
+                "witness signing key must be distinct from registry root and log signing keys"
+            )
     entries_by_id = {entry["witness_id"]: entry for entry in registry_doc["witnesses"]}
     seen_witness_ids: set[str] = set()
     seen_key_ids: set[str] = set()
