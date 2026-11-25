@@ -25,9 +25,9 @@ MAX_CHECKPOINT_BYTES = 16_384
 MAX_CONSISTENCY_PROOF_BYTES = 16_384
 MAX_CONSISTENCY_NODES = 64
 MAX_TREE_SIZE = (1 << 63) - 1
-_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9.:/@+-]{0,127}\\Z")
-_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
-_UTC_TIMESTAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z\\Z")
+_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9.:/@+-]{0,127}\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_UTC_TIMESTAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z\Z")
 
 CONSISTENCY_REMAINING_BLOCKERS = (
     "LOG_SIGNING_KEY_NOT_INDEPENDENTLY_PROVISIONED",
@@ -191,7 +191,7 @@ def _parse_timestamp(value: object, field: str) -> datetime:
 
 
 def _node_hash(left: bytes, right: bytes) -> bytes:
-    return hashlib.sha256(b"\\x01" + left + right).digest()
+    return hashlib.sha256(b"\x01" + left + right).digest()
 
 
 def _verify_consistency(
