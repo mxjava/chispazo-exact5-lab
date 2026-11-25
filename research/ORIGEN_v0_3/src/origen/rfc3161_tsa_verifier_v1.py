@@ -194,6 +194,8 @@ def _require_tsa_leaf(cert: x509.Certificate) -> None:
         raise ValueError("TSA signer certificate must have critical timeStamping-only EKU")
     if not ku_ext.value.digital_signature:
         raise ValueError("TSA signer certificate must permit digital signatures")
+    if ku_ext.value.key_cert_sign:
+        raise ValueError("TSA signer certificate must not assert keyCertSign")
 
 
 def _build_chain(
@@ -435,15 +437,22 @@ def verify_rfc3161_timestamp_token(
     accuracy = tst_info["accuracy"]
     accuracy_microseconds = None
     if accuracy.native is not None:
-        seconds = accuracy["seconds"].native or 0
-        millis = accuracy["millis"].native or 0
-        micros = accuracy["micros"].native or 0
+        seconds_value = accuracy["seconds"].native
+        millis_value = accuracy["millis"].native
+        micros_value = accuracy["micros"].native
+        seconds = 0 if seconds_value is None else seconds_value
         if type(seconds) is not int or seconds < 0:
             raise ValueError("RFC3161 accuracy seconds must be a non-negative integer")
-        if type(millis) is not int or not 0 <= millis <= 999:
-            raise ValueError("RFC3161 accuracy millis must be in 0..999")
-        if type(micros) is not int or not 0 <= micros <= 999:
-            raise ValueError("RFC3161 accuracy micros must be in 0..999")
+        if millis_value is not None and (
+            type(millis_value) is not int or not 1 <= millis_value <= 999
+        ):
+            raise ValueError("RFC3161 accuracy millis must be in 1..999 when present")
+        if micros_value is not None and (
+            type(micros_value) is not int or not 1 <= micros_value <= 999
+        ):
+            raise ValueError("RFC3161 accuracy micros must be in 1..999 when present")
+        millis = 0 if millis_value is None else millis_value
+        micros = 0 if micros_value is None else micros_value
         accuracy_microseconds = seconds * 1_000_000 + millis * 1_000 + micros
     ordering = tst_info["ordering"].native
     if type(ordering) is not bool:

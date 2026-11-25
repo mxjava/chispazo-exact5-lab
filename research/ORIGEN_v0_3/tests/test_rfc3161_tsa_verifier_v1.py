@@ -24,6 +24,7 @@ def _name(common_name):
 def _certs(
     *,
     critical_eku=True,
+    leaf_key_cert_sign=False,
     critical_custom_extension_on=None,
     name_constraints_on=None,
     certificate_policies_on=None,
@@ -83,7 +84,7 @@ def _certs(
         .add_extension(
             x509.KeyUsage(
                 digital_signature=True, content_commitment=False, key_encipherment=False,
-                data_encipherment=False, key_agreement=False, key_cert_sign=False,
+                data_encipherment=False, key_agreement=False, key_cert_sign=leaf_key_cert_sign,
                 crl_sign=False, encipher_only=False, decipher_only=False,
             ),
             critical=True,
@@ -107,6 +108,7 @@ def _token(
     *,
     nonce=12345,
     critical_eku=True,
+    leaf_key_cert_sign=False,
     tamper_signature=False,
     include_root=False,
     accuracy=None,
@@ -117,6 +119,7 @@ def _token(
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
         critical_custom_extension_on=critical_custom_extension_on,
+        leaf_key_cert_sign=leaf_key_cert_sign,
         name_constraints_on=name_constraints_on,
         certificate_policies_on=certificate_policies_on,
     )
@@ -226,6 +229,11 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "CMS signature verification failed"):
             _verify(token, root_der)
 
+    def test_tsa_leaf_must_not_assert_key_cert_sign_when_ca_is_false(self):
+        token, root_der = _token(leaf_key_cert_sign=True)
+        with self.assertRaisesRegex(ValueError, "must not assert keyCertSign"):
+            _verify(token, root_der)
+
     def test_tsa_eku_must_be_critical(self):
         token, root_der = _token(critical_eku=False)
         with self.assertRaisesRegex(ValueError, "critical timeStamping-only EKU"):
@@ -277,6 +285,25 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         token, root_der = _token(include_root=True)
         result = _verify(token, root_der)
         self.assertEqual(result.certificate_chain_length, 2)
+
+    def test_accuracy_millis_rejects_values_outside_rfc3161_range(self):
+        for invalid in (0, -1, 1000):
+            with self.subTest(millis=invalid):
+                token, root_der = _token(accuracy={"millis": invalid})
+                with self.assertRaisesRegex(ValueError, "accuracy millis must be in 1..999"):
+                    _verify(token, root_der)
+
+    def test_accuracy_micros_rejects_values_outside_rfc3161_range(self):
+        for invalid in (0, -1, 1000):
+            with self.subTest(micros=invalid):
+                token, root_der = _token(accuracy={"micros": invalid})
+                with self.assertRaisesRegex(ValueError, "accuracy micros must be in 1..999"):
+                    _verify(token, root_der)
+
+    def test_accuracy_accepts_rfc3161_millis_and_micros_boundaries(self):
+        token, root_der = _token(accuracy={"millis": 1, "micros": 999})
+        result = _verify(token, root_der)
+        self.assertEqual(result.accuracy_microseconds, 1_999)
 
     def test_accuracy_is_preserved_for_downstream_preclose_bound(self):
         token, root_der = _token(accuracy={"seconds": 1, "millis": 250, "micros": 5})
