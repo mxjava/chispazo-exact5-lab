@@ -61,7 +61,10 @@ def _portfolio_bytes():
     return ("\n".join(rows) + "\n").encode("ascii")
 
 
-def _signed_policy(receipt_private, custodian_private, root_private, *, custody_role=CUSTODY_SIGNER_ROLE):
+def _signed_policy(
+    receipt_private, custodian_private, root_private, *,
+    custody_role=CUSTODY_SIGNER_ROLE, custodian_key_id=CUSTODIAN_KEY_ID,
+):
     authorizations = {
         RECEIPT_ISSUER: {
             "key_id": RECEIPT_KEY_ID,
@@ -70,7 +73,7 @@ def _signed_policy(receipt_private, custodian_private, root_private, *, custody_
             "artifact_type": "TRUST-RECEIPT-ROOT-ATTESTATION",
         },
         CUSTODIAN_ID: {
-            "key_id": CUSTODIAN_KEY_ID,
+            "key_id": custodian_key_id,
             "public_key": raw_public_key(custodian_private),
             "role": custody_role,
             "artifact_type": CUSTODY_ARTIFACT_TYPE,
@@ -116,7 +119,10 @@ def _signed_policy(receipt_private, custodian_private, root_private, *, custody_
     return envelope, raw_public_key(root_private)
 
 
-def bundle(*, custody_role=CUSTODY_SIGNER_ROLE, root_reused=False):
+def bundle(
+    *, custody_role=CUSTODY_SIGNER_ROLE, root_reused=False,
+    custodian_key_id=CUSTODIAN_KEY_ID,
+):
     receipt_private = Ed25519PrivateKey.generate()
     custodian_private = Ed25519PrivateKey.generate()
     root_private = Ed25519PrivateKey.generate()
@@ -159,12 +165,13 @@ def bundle(*, custody_role=CUSTODY_SIGNER_ROLE, root_reused=False):
         custodian_private,
         root_private,
         custody_role=custody_role,
+        custodian_key_id=custodian_key_id,
     )
     signature = custodian_private.sign(
         canonical_custody_signature_payload(
             record_bytes,
             hashlib.sha256(receipt_bytes).hexdigest(),
-            CUSTODIAN_KEY_ID,
+            custodian_key_id,
         )
     )
     return {
@@ -173,7 +180,7 @@ def bundle(*, custody_role=CUSTODY_SIGNER_ROLE, root_reused=False):
         "custody_record_bytes": record_bytes,
         "portfolio_bytes": portfolio,
         "custody_signature_bytes": signature,
-        "custodian_key_id": CUSTODIAN_KEY_ID,
+        "custodian_key_id": custodian_key_id,
         "pinned_root_public_key_bytes": root_public,
         "expected_root_key_id": ROOT_KEY_ID,
         "minimum_policy_sequence": POLICY_SEQUENCE,
@@ -251,6 +258,11 @@ class CustodyReceiptVerifierV3Tests(unittest.TestCase):
         data = bundle()
         with self.assertRaisesRegex(ValueError, "must be distinct from receipt and physical signer key IDs"):
             inspect(data, custodian_key_id=RECEIPT_KEY_ID)
+
+    def test_custodian_key_id_cannot_alias_pinned_policy_root_key_id(self):
+        data = bundle(custodian_key_id=ROOT_KEY_ID)
+        with self.assertRaisesRegex(ValueError, "distinct from pinned policy root key ID"):
+            inspect(data)
 
     def test_unknown_custodian_key_is_rejected(self):
         data = bundle()
