@@ -31,10 +31,18 @@
       "scheduled_time_local": "15:00",
       "modality": "DE_LAS_TRES",
       "modality_status": "OFFICIAL_MASK_LOGO_VISUALLY_CONFIRMED",
-      "winning_numbers": [1, 7, 8, 9, 12],
+      "winning_numbers": [
+        1,
+        7,
+        8,
+        9,
+        12
+      ],
       "result_status": "OFFICIAL_DAILY_MASK_VISUALLY_CONFIRMED",
-      "classic_stream_eligible": false,
-      "canonical_append_allowed": false
+      "canonical_append_allowed": false,
+      "classic_stream_member": false,
+      "prospective_oos_eligible": false,
+      "prospective_oos_blocker": "NOT_CLASSIC_MODALITY"
     },
     {
       "contest_id": 12394,
@@ -42,10 +50,18 @@
       "scheduled_time_local": "21:00",
       "modality": "CLASSIC",
       "modality_status": "OFFICIAL_MASK_LOGO_VISUALLY_CONFIRMED",
-      "winning_numbers": [1, 9, 12, 16, 24],
+      "winning_numbers": [
+        1,
+        9,
+        12,
+        16,
+        24
+      ],
       "result_status": "OFFICIAL_DAILY_MASK_VISUALLY_CONFIRMED",
-      "classic_stream_eligible": false,
-      "canonical_append_allowed": false
+      "canonical_append_allowed": false,
+      "classic_stream_member": true,
+      "prospective_oos_eligible": false,
+      "prospective_oos_blocker": "NO_PRE_CLOSE_SEALED_PREDICTION_OR_INDEPENDENT_CUSTODY"
     }
   ],
   "source_observations": {
