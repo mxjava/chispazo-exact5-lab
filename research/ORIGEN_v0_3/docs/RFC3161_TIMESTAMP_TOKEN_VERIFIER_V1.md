@@ -15,7 +15,7 @@ The module is standalone. It is not yet wired into trust_receipt_v1, the physica
 - CMS signed attributes restricted to one contentType=tst_info and one messageDigest; the message digest must match the encapsulated TSTInfo bytes.
 - Exact artifact binding: TSTInfo message imprint is recomputed over the exact supplied data bytes. SHA-256, SHA-384 and SHA-512 are accepted; weaker/unknown digests are rejected.
 - Optional request nonce equality, when the caller supplies an expected nonce.
-- TSA leaf certificate must contain a critical EKU consisting only of id-kp-timeStamping, and KeyUsage must allow digital signatures.
+- TSA leaf certificate must contain a critical EKU consisting only of id-kp-timeStamping, and KeyUsage must allow digital signatures. It must not assert `keyCertSign`: RFC 5280 §4.2.1.9 requires `cA` to be true whenever `keyCertSign` is asserted, while this verifier rejects CA signer leaves.
 - Certificate signatures are checked along an unambiguous chain to the separately pinned root. Certificate validity is checked at genTime; CA BasicConstraints and KeyUsage must be critical and authorize certificate signing; path-length limits are enforced; the root must verify as self-signed.
 - genTime, serial number, policy OID, accuracy (microseconds) and ordering are returned for downstream chronology checks.
 
@@ -37,8 +37,10 @@ It also rejects every critical certificate extension that the verifier does
 not explicitly process. For CA certificates, the handled critical extensions
 are Basic Constraints and Key Usage. CA Extended Key Usage is rejected because
 its path restriction semantics are not implemented. For the TSA signer
-certificate, Basic Constraints, Key Usage, and the critical timeStamping-only
-Extended Key Usage are checked; a signer certificate marked CA is rejected.
+certificate, Basic Constraints, and the critical timeStamping-only Extended Key
+Usage are checked; a signer certificate marked CA or asserting `keyCertSign`
+is rejected. This enforces the RFC 5280 §4.2.1.9 rule that `keyCertSign` MUST
+NOT be asserted when Basic Constraints `cA` is false. See [RFC 5280](https://www.rfc-editor.org/rfc/rfc5280.html#section-4.2.1.9).
 
 This is intentionally restrictive. It prevents the diagnostic verifier from
 silently accepting a path whose constraints it does not understand. It does
@@ -50,7 +52,9 @@ treated as valid.
 
 Synthetic adversarial tests cover an unhandled critical extension on the TSA
 leaf and pinned root, plus Name Constraints and non-critical Certificate
-Policies on the root. These fixtures are generated test certificates only.
+Policies on the root. A further regression builds a TSA leaf with `cA=false`
+and `keyCertSign=true`, which must be rejected under RFC 5280 §4.2.1.9.
+These fixtures are generated test certificates only.
 
 ## Explicit non-guarantees
 
@@ -70,7 +74,7 @@ Every successful diagnostic returns:
 
 The tests generate an ephemeral RSA TSA key, a synthetic self-signed root, a synthetic TSA leaf certificate, and CMS/TSTInfo bytes at test time. No institutional key, live TSA, production timestamp, Lotería Nacional record, or physical artifact is included.
 
-Adversarial cases cover exact artifact imprint mismatch, nonce mismatch and omission, wrong root fingerprint, invalid CMS signature, non-critical TSA EKU, trailing bytes/non-DER input, verification time before genTime, root certificate included in the CMS certificate set, and preservation of timestamp accuracy.
+Adversarial cases cover exact artifact imprint mismatch, nonce mismatch and omission, wrong root fingerprint, invalid CMS signature, non-critical TSA EKU, trailing bytes/non-DER input, verification time before genTime, root certificate included in the CMS certificate set, preservation of timestamp accuracy, and rejection of a non-CA TSA leaf that asserts `keyCertSign`.
 
 ## Deployment prerequisites before any real use
 
