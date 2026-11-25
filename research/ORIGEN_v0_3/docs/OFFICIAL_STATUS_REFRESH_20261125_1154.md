@@ -1,4 +1,4 @@
-# Official Chispazo status refresh — 2026-11-25 11:54 America/Mexico_City
+# Official Chispazo status refresh — 2026-11-25 13:56 America/Mexico_City
 
 **Classification:** PUBLIC RESULT / STATUS-ONLY / NO DRAW-SPECIFIC PHYSICAL EVIDENCE  
 **Scope:** De las Tres (15:00) and Clásico (21:00), kept separate
@@ -14,7 +14,7 @@ The dedicated official results page lists contest 12394, dated 24-Nov-2026, as t
 
 This is the first same-day mask confirmation for both 24-Nov contests in this branch's status sequence. The dedicated results page itself lists the numbers but does not label the modalities; the mask supplies that modality confirmation.
 
-## Current-day status — 25-Nov at 11:54 local
+## Current-day status — 25-Nov at 13:56 local
 
 The official Chispazo product page explicitly states De las Tres at **15:00** and Clásico at **21:00**. Both times were still in the future at this observation.
 
