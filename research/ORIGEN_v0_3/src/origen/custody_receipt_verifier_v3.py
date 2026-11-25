@@ -320,6 +320,8 @@ def verify_receipt_and_custody_v3(
 
     if record["custodian_id"] == receipt.attestation.issuer_id:
         raise ValueError("custodian and receipt root attester must be distinct")
+    if custodian_key_id == expected_root_key_id:
+        raise ValueError("custodian key ID must be distinct from pinned policy root key ID")
     if custodian_key_id == receipt.attestation.key_id or custodian_key_id in {
         signer.key_id for signer in receipt.signers
     }:
