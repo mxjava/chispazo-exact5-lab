@@ -24,7 +24,7 @@ from .rfc3161_tsa_verifier_v1 import (
     verify_rfc3161_timestamp_token,
 )
 
-_SIGNATURE_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
+_SIGNATURE_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 CUSTODY_SIGNATURE_TIMESTAMP_BLOCKERS = (
     "TSA_ROOT_ANCHOR_PROVISIONING_UNVERIFIED",
