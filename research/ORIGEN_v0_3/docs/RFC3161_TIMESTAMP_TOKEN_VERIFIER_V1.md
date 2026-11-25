@@ -21,6 +21,37 @@ The module is standalone. It is not yet wired into trust_receipt_v1, the physica
 
 The implementation currently supports CMS RSA PKCS#1 v1.5, ECDSA, Ed25519 and Ed448 signatures. It accepts only SHA-256/384/512 for the CMS digest and certificate-signature digest. RSA-PSS CMS signer signatures and subject-key-identifier CMS signer IDs are rejected rather than guessed.
 
+## Fail-closed handling of unsupported RFC 5280 path semantics
+
+The verifier now rejects a certificate path when it encounters any of the
+following unsupported path-processing extensions, whether marked critical or
+non-critical:
+
+- Name Constraints;
+- Certificate Policies;
+- Policy Mappings;
+- Policy Constraints;
+- Inhibit Any-Policy.
+
+It also rejects every critical certificate extension that the verifier does
+not explicitly process. For CA certificates, the handled critical extensions
+are Basic Constraints and Key Usage. CA Extended Key Usage is rejected because
+its path restriction semantics are not implemented. For the TSA signer
+certificate, Basic Constraints, Key Usage, and the critical timeStamping-only
+Extended Key Usage are checked; a signer certificate marked CA is rejected.
+
+This is intentionally restrictive. It prevents the diagnostic verifier from
+silently accepting a path whose constraints it does not understand. It does
+not make the implementation a complete RFC 5280 validator: revocation and
+freshness, certificate-policy processing, name-constraint evaluation, policy
+mappings, and institutional designation remain unavailable. A real chain
+containing one of the unsupported extensions will be rejected rather than
+treated as valid.
+
+Synthetic adversarial tests cover an unhandled critical extension on the TSA
+leaf and pinned root, plus Name Constraints and non-critical Certificate
+Policies on the root. These fixtures are generated test certificates only.
+
 ## Explicit non-guarantees
 
 This is not a complete RFC 5280 path-validation engine. It does not evaluate name constraints, certificate policies, policy mappings, CRL distribution points, OCSP, revocation freshness, or every critical extension. It does not authenticate the TSA's institutional identity or authorize the returned policy OID.
