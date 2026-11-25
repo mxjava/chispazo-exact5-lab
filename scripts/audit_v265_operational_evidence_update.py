@@ -67,7 +67,7 @@ def validate() -> dict:
     assert guard["extraction_order_consumed"] is False
     assert guard["per_extraction_timestamps_consumed"] is False
     assert guard["anytime_evalue_gate_implemented"] is False
-    assert len(rows) == 23
+    assert len(rows) == 26
     assert any(r["variable_or_record"] == "CS-11 winning numbers" and r["same_draw_preclose_usable"] == "No" for r in rows)
     assert any(r["variable_or_record"] == "Traditional wooden-ball procedures" and r["same_draw_preclose_usable"] == "Not applicable" for r in rows)
     assert report["analysis"]["OOS_gate_passed"] is False
@@ -75,6 +75,15 @@ def validate() -> dict:
     assert report["analysis"]["anytime_evalue_gate_passed"] is False
     assert report["repository_protection"]["V294_changed"] is False
     assert report["repository_protection"]["canonical_history_changed"] is False
+    custodian = report["sources"]["SAF_MAN_12"]
+    assert custodian["issue_date"] == "2026-02"
+    assert custodian["functions"]["physical_and_digital_custody_of_actas_videos_operational_records"] is True
+    assert custodian["functions"]["facilitate_original_documents_for_certification"] is True
+    maintenance = report["sources"]["Maintenance_contract_058_2024"]
+    assert maintenance["contract"] == "058-2024"
+    assert maintenance["scope"].find("Chispazo") >= 0
+    assert maintenance["per_machine_serials_published"] is False
+    assert report["timing_decisions"]["custodial_office"].startswith("SAF-MAN-12")
     assert report["repository_protection"]["main_written"] is False
     return {"audit_id": report["audit_id"], "matrix_rows": len(rows), "new_findings": len(report["new_findings"]), "classification": report["classification"], "V265": guard["evidence_class"], "valid": True}
 
