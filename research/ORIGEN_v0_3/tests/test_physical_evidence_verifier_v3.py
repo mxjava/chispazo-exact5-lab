@@ -99,8 +99,6 @@ class PhysicalEvidenceSignatureVerifierV3Tests(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,"fields mismatch|unsupported trust-policy"):
    inspect(data,data["signed_policy_envelope_bytes"],data["pinned_root_public_key_bytes"])
 
-if __name__=="__main__":
- unittest.main()
 
 
 from datetime import timedelta, tzinfo
@@ -146,3 +144,6 @@ class PhysicalEvidenceVerifierV3ClockSnapshotTests(unittest.TestCase):
             datetime(2026, 11, 24, 14, 0, tzinfo=timezone.utc),
         )
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+if __name__=="__main__":
+ unittest.main()
