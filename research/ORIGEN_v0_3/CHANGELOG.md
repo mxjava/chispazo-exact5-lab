@@ -1,3 +1,9 @@
+## Policy-envelope / receipt-attestation composition (2026-11-25)
+- Added a research-only composition that verifies the signed policy envelope first, then verifies the receipt root attestation with the resulting policy.
+- Bound both results to the exact policy and receipt bytes; normalized one caller-supplied verification instant once so a stateful timezone cannot present different offsets to the two verifiers.
+- Added synthetic adversarial tests for policy/receipt tampering, wrong root, anti-rollback floor, policy-version mismatch, stateful timezone behavior, and the invariant that a valid chain does not unblock the independent adapter.
+- The root pin, key ID, sequence floor, and clock remain caller-supplied. No authentic provisioning, durable anti-rollback store, RFC 3161, nested signatures, external ledger, or custody verifier is claimed. Adapter remains BLOCKED.
+
 ## Acta role separation and official 13:10 status refresh (2026-11-24)
 - Physical manifest regression: all four required DRAW-ACTA roles could reuse one subject_id; parser now requires distinct declared subjects for the General Directorate, Sales Operations, IT and SEGOB roles.
 - Test commit: `3e1384b76db02319c44f9de88baf28ed04197726`; implementation commit: `d8c7b0e8e5ed433f25549aecddb374424d64d41a`.
