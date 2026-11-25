@@ -21,14 +21,15 @@ SCHEMA_VERSION = "origen.timestamp-authority-policy.v1"
 MAX_POLICY_BYTES = 131_072
 MAX_AUTHORITIES = 64
 MAX_POLICY_OIDS = 32
+MAX_JSON_DEPTH = 32
 MAX_SEQUENCE = (1 << 63) - 1
-_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\\Z")
-_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
+_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _UTC = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
-    r"(?:\\.[0-9]{1,6})?Z\\Z"
+    r"(?:\.[0-9]{1,6})?Z\Z"
 )
-_OID = re.compile(r"(?:0|1|2)(?:\\.(?:0|[1-9][0-9]*))+\\Z")
+_OID = re.compile(r"(?:0|1|2)(?:\.(?:0|[1-9][0-9]*))+\Z")
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +51,29 @@ class VerifiedTimestampAuthorityPolicy:
     issued_at_utc: datetime
     expires_at_utc: datetime
     authorities: tuple[TrustedTimestampAuthority, ...]
+
+
+def _validate_json_depth(raw: bytes) -> None:
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in raw:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:
+                escaped = True
+            elif byte == 0x22:
+                in_string = False
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x7B, 0x5B):
+            depth += 1
+            if depth > MAX_JSON_DEPTH:
+                raise ValueError("timestamp-authority policy exceeds maximum JSON nesting depth")
+        elif byte in (0x7D, 0x5D) and depth:
+            depth -= 1
 
 
 def _pairs_no_duplicates(pairs):
@@ -149,6 +173,7 @@ def verify_signed_timestamp_authority_policy(
         raise ValueError("expected_policy_sequence must be a positive signed 64-bit integer")
     now = _utc_now(verification_time)
 
+    _validate_json_depth(raw)
     try:
         document = json.loads(
             raw.decode("utf-8"),
@@ -158,7 +183,7 @@ def verify_signed_timestamp_authority_policy(
                 ValueError(f"non-standard JSON constant: {value}")
             ),
         )
-    except (UnicodeDecodeError, json.JSONDecodeError, binascii.Error) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, binascii.Error) as exc:
         raise ValueError("timestamp-authority policy must be valid UTF-8 JSON") from exc
     except ValueError as exc:
         if str(exc).startswith("timestamp-authority policy"):
