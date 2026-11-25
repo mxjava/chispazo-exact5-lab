@@ -21,6 +21,7 @@ from .trust_policy_envelope_v3 import (
 )
 from .trust_verifier_v1 import (
     CryptographicallyVerifiedReceipt,
+    TrustedIssuerKey,
     verify_receipt_attestation,
 )
 
@@ -98,6 +99,14 @@ def verify_receipt_attestation_with_policy_v3(
         raise TypeError("policy verifier returned an unexpected result type")
     if policy.policy_domain != CLASSIC_PHYSICAL_POLICY_DOMAIN:
         raise ValueError("receipt V3 integration requires the fixed CLASSIC provenance domain")
+    if any(
+        type(item) is TrustedIssuerKey
+        and item.public_key_bytes == pinned_root_public_key_bytes
+        for item in policy.policy.issuer_keys
+    ):
+        raise ValueError(
+            "pinned policy root key must not also be delegated as a receipt issuer key"
+        )
 
     receipt: CryptographicallyVerifiedReceipt = verify_receipt_attestation(
         original_receipt_bytes,
