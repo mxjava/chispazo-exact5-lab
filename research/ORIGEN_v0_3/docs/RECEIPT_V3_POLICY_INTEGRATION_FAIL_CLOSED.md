@@ -51,3 +51,8 @@ The root pin, key ID, sequence floor and time are still caller inputs. The signe
 This is a research composition and synthetic test surface only. It does not provision trust, change V294, modify canonical history, tune models, seal outputs or enable production. Production remains:
 
 `BLOCKED / RESEARCH_ONLY_NO_EDGE`
+
+
+## Root/delegate key separation
+
+The bridge rejects a policy whose delegated receipt-attester public key is byte-identical to the pinned policy-root public key. Without this rule, one private key could sign a policy authorizing itself and then sign the receipt, collapsing the intended root/delegate separation. A synthetic regression uses one Ed25519 key for both roles and requires rejection. This is a cryptographic separation-of-duties check only; it does not prove that distinct keys belong to distinct legal entities or administrative custodians.
