@@ -1,9 +1,9 @@
 """Research-only RFC 6962-style inclusion verifier for ORIGEN ledger entries.
 
-This module verifies an exact manifest-bound ledger entry against an Ed25519-
-signed Merkle checkpoint. The log key, tree-size floor, and verification clock
-remain caller-supplied. No append-only consistency proof or independent log
-witness is checked, so provenance always remains BLOCKED_PROVENANCE.
+This module verifies exact manifest-bound ledger-entry and proof bytes against
+an Ed25519-signed Merkle checkpoint. The log key, tree-size floor, and
+verification clock remain caller-supplied. No append-only consistency proof
+or independent log witness is checked, so provenance remains BLOCKED_PROVENANCE.
 """
 from __future__ import annotations
 
@@ -21,9 +21,11 @@ from origen.independent_trust_adapter import ProvenanceStatus
 from origen.physical_evidence_manifest_v1 import parse_unverified_physical_manifest
 
 ENTRY_SCHEMA = "origen.transparency-ledger-entry.v1"
+PROOF_SCHEMA = "origen.transparency-ledger-inclusion-proof.v1"
 CHECKPOINT_SCHEMA = "origen.transparency-ledger-checkpoint.v1"
 CHECKPOINT_DOMAIN = b"origen.transparency-ledger-checkpoint.v1\x00"
 MAX_ENTRY_BYTES = 65_536
+MAX_PROOF_BYTES = 16_384
 MAX_CHECKPOINT_BYTES = 16_384
 MAX_PROOF_NODES = 64
 MAX_TREE_SIZE = (1 << 63) - 1
@@ -49,6 +51,7 @@ class TransparencyLedgerInspection:
     entry_id: str
     manifest_sha256: str
     ledger_entry_sha256: str
+    inclusion_proof_sha256: str
     log_id: str
     key_id: str
     tree_size: int
@@ -176,15 +179,16 @@ def _decode_canonical_base64(value: object, field: str) -> bytes:
     return decoded
 
 
-def _proof_nodes(value: object, field: str) -> tuple[bytes, ...]:
-    if type(value) not in (tuple, list):
-        raise TypeError(f"{field} must be an exact tuple or list")
+def _parse_proof_nodes(value: object) -> tuple[bytes, ...]:
+    if type(value) is not list:
+        raise ValueError("inclusion proof audit_path_b64 must be an array")
     if len(value) > MAX_PROOF_NODES:
-        raise ValueError(f"{field} exceeds {MAX_PROOF_NODES} nodes")
+        raise ValueError(f"inclusion proof exceeds {MAX_PROOF_NODES} nodes")
     nodes: list[bytes] = []
-    for index, node in enumerate(value):
-        if type(node) is not bytes or len(node) != 32:
-            raise ValueError(f"{field}[{index}] must be exactly 32 bytes")
+    for index, encoded in enumerate(value):
+        node = _decode_canonical_base64(encoded, f"audit_path_b64[{index}]")
+        if len(node) != 32:
+            raise ValueError(f"audit_path_b64[{index}] must decode to exactly 32 bytes")
         nodes.append(node)
     return tuple(nodes)
 
@@ -207,7 +211,7 @@ def _verify_inclusion(
     fn = leaf_index
     sn = tree_size - 1
     calculated = _leaf_hash(leaf)
-    for index, sibling in enumerate(audit_path):
+    for sibling in audit_path:
         if sn == 0:
             raise ValueError("inclusion proof contains extra nodes")
         if (fn & 1) == 1 or fn == sn:
@@ -232,7 +236,7 @@ def _parse_entry(
     entry_id: str,
     manifest_sha256: str,
     artifact_sha256s: tuple[str, ...],
-) -> dict[str, object]:
+) -> None:
     entry = _load_canonical_object(
         raw_entry_bytes, maximum=MAX_ENTRY_BYTES, label="ledger entry"
     )
@@ -266,27 +270,69 @@ def _parse_entry(
         raise ValueError("ledger entry artifact digests must be unique and sorted")
     if parsed_artifacts != artifact_sha256s:
         raise ValueError("ledger entry artifact digests do not match manifest")
-    return entry
+
+
+def _parse_inclusion_proof(
+    raw_proof_bytes: bytes,
+    *,
+    expected_proof_sha256: str,
+    expected_ledger_id: str,
+    expected_entry_id: str,
+    expected_log_id: str,
+    expected_checkpoint_sha256: str,
+) -> tuple[int, tuple[bytes, ...]]:
+    if hashlib.sha256(raw_proof_bytes).hexdigest() != expected_proof_sha256:
+        raise ValueError("exact inclusion-proof bytes do not match manifest proof SHA-256")
+    proof = _load_canonical_object(
+        raw_proof_bytes, maximum=MAX_PROOF_BYTES, label="ledger inclusion proof"
+    )
+    _exact_fields(
+        proof,
+        {
+            "schema_version",
+            "ledger_id",
+            "entry_id",
+            "log_id",
+            "leaf_index",
+            "checkpoint_sha256",
+            "audit_path_b64",
+        },
+        "ledger inclusion proof",
+    )
+    if proof["schema_version"] != PROOF_SCHEMA:
+        raise ValueError("unsupported ledger inclusion proof schema")
+    if _identifier(proof["ledger_id"], "proof ledger_id") != expected_ledger_id:
+        raise ValueError("proof ledger_id does not match manifest")
+    if _identifier(proof["entry_id"], "proof entry_id") != expected_entry_id:
+        raise ValueError("proof entry_id does not match manifest")
+    if _identifier(proof["log_id"], "proof log_id") != expected_log_id:
+        raise ValueError("proof log_id does not match pinned expectation")
+    if _digest(proof["checkpoint_sha256"], "proof checkpoint_sha256") != expected_checkpoint_sha256:
+        raise ValueError("proof checkpoint digest does not match exact checkpoint bytes")
+    leaf_index = proof["leaf_index"]
+    if type(leaf_index) is not int or not 0 <= leaf_index <= MAX_TREE_SIZE:
+        raise ValueError("proof leaf_index must be a non-negative signed 64-bit integer")
+    return leaf_index, _parse_proof_nodes(proof["audit_path_b64"])
 
 
 def verify_transparency_ledger_inclusion(
     raw_manifest_bytes: bytes,
     raw_ledger_entry_bytes: bytes,
+    raw_inclusion_proof_bytes: bytes,
     raw_signed_checkpoint_bytes: bytes,
-    inclusion_path: tuple[bytes, ...] | list[bytes],
     *,
     pinned_log_public_key_bytes: bytes,
     expected_log_id: str,
     expected_key_id: str,
     minimum_tree_size: int,
-    leaf_index: int,
     verification_time: datetime,
 ) -> TransparencyLedgerInspection:
     """Verify exact manifest binding, signed checkpoint and RFC 6962 inclusion.
 
-    This is a diagnostic primitive only. The pin, monotonic floor, and clock
-    are caller-supplied. It does not verify checkpoint consistency across
-    tree sizes, independent witnesses, log governance, or custody.
+    The manifest commits to the exact proof bytes by SHA-256. The proof in turn
+    binds the exact checkpoint bytes and a Merkle audit path. The log pin,
+    monotonic floor, and clock remain caller-supplied. This does not verify
+    checkpoint consistency across tree sizes or independent log witnesses.
     """
     if type(raw_manifest_bytes) is not bytes:
         raise TypeError("raw_manifest_bytes must be exact bytes")
@@ -296,15 +342,12 @@ def verify_transparency_ledger_inclusion(
     expected_key_id = _identifier(expected_key_id, "expected_key_id")
     if type(minimum_tree_size) is not int or not 1 <= minimum_tree_size <= MAX_TREE_SIZE:
         raise ValueError("minimum_tree_size must be a positive signed 64-bit integer")
-    if type(leaf_index) is not int or not 0 <= leaf_index <= MAX_TREE_SIZE:
-        raise ValueError("leaf_index must be a non-negative signed 64-bit integer")
     verified_at = _utc_instant(verification_time, "verification_time")
 
     manifest = parse_unverified_physical_manifest(raw_manifest_bytes)
     artifact_sha256s = tuple(sorted(item.sha256 for item in manifest.artifacts))
-    entry_bytes = raw_ledger_entry_bytes
     _parse_entry(
-        entry_bytes,
+        raw_ledger_entry_bytes,
         ledger_id=manifest.ledger_anchor.ledger_id,
         entry_id=manifest.ledger_anchor.entry_id,
         manifest_sha256=manifest.raw_sha256,
@@ -342,8 +385,6 @@ def verify_transparency_ledger_inclusion(
         raise ValueError("checkpoint tree_size must be a positive signed 64-bit integer")
     if tree_size < minimum_tree_size:
         raise ValueError("checkpoint tree_size is below the caller-supplied monotonic floor")
-    if type(leaf_index) is not int or leaf_index >= tree_size:
-        raise ValueError("leaf_index must be smaller than checkpoint tree_size")
     root_hex = _digest(checkpoint["root_hash"], "checkpoint root_hash")
     root_hash = bytes.fromhex(root_hex)
     issued_at = _parse_utc_timestamp(checkpoint["issued_at_utc"], "checkpoint issued_at_utc")
@@ -363,24 +404,35 @@ def verify_transparency_ledger_inclusion(
     except (InvalidSignature, ValueError) as exc:
         raise ValueError("signed ledger checkpoint signature verification failed") from exc
 
-    proof = _proof_nodes(inclusion_path, "inclusion_path")
+    checkpoint_sha256 = hashlib.sha256(raw_signed_checkpoint_bytes).hexdigest()
+    leaf_index, audit_path = _parse_inclusion_proof(
+        raw_inclusion_proof_bytes,
+        expected_proof_sha256=manifest.ledger_anchor.inclusion_proof_sha256,
+        expected_ledger_id=manifest.ledger_anchor.ledger_id,
+        expected_entry_id=manifest.ledger_anchor.entry_id,
+        expected_log_id=log_id,
+        expected_checkpoint_sha256=checkpoint_sha256,
+    )
+    if leaf_index >= tree_size:
+        raise ValueError("proof leaf_index must be smaller than checkpoint tree_size")
     _verify_inclusion(
-        entry_bytes,
+        raw_ledger_entry_bytes,
         leaf_index,
         tree_size,
-        proof,
+        audit_path,
         root_hash,
     )
     return TransparencyLedgerInspection(
         ledger_id=manifest.ledger_anchor.ledger_id,
         entry_id=manifest.ledger_anchor.entry_id,
         manifest_sha256=manifest.raw_sha256,
-        ledger_entry_sha256=hashlib.sha256(entry_bytes).hexdigest(),
+        ledger_entry_sha256=hashlib.sha256(raw_ledger_entry_bytes).hexdigest(),
+        inclusion_proof_sha256=hashlib.sha256(raw_inclusion_proof_bytes).hexdigest(),
         log_id=log_id,
         key_id=key_id,
         tree_size=tree_size,
         leaf_index=leaf_index,
-        checkpoint_sha256=hashlib.sha256(raw_signed_checkpoint_bytes).hexdigest(),
+        checkpoint_sha256=checkpoint_sha256,
         checkpoint_signature_verified=True,
         inclusion_verified=True,
         trust_anchor_source="CALLER_SUPPLIED_UNAUTHENTICATED",
