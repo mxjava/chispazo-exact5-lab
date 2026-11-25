@@ -18,7 +18,12 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from origen.independent_trust_adapter import ProvenanceStatus
-from origen.transparency_ledger_verifier_v1 import (\n    CHECKPOINT_DOMAIN,\n    CHECKPOINT_SCHEMA,\n    TransparencyLedgerInspection,\n    verify_transparency_ledger_inclusion,\n)
+from origen.transparency_ledger_verifier_v1 import (
+    CHECKPOINT_DOMAIN,
+    CHECKPOINT_SCHEMA,
+    TransparencyLedgerInspection,
+    verify_transparency_ledger_inclusion,
+)
 
 CONSISTENCY_PROOF_SCHEMA = "origen.transparency-ledger-consistency-proof.v1"
 MAX_CHECKPOINT_BYTES = 16_384
