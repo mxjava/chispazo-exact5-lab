@@ -72,3 +72,10 @@ All keys, leaves, checkpoints, and proofs in tests are deterministic synthetic f
 ## Next external boundary
 
 The next meaningful integration requires a separately provisioned witness-key registry and a quorum policy delivered outside the caller, plus signed witness statements over exact checkpoint digests and cross-witness gossip or equivalent split-view detection. The trust anchor, monotonic checkpoint floor, and time source must be independently provisioned. RFC 3161 tokens and physical custody receipts remain separate evidence interfaces.
+
+
+## Composition with ledger inclusion
+
+The module also exposes `verify_ledger_inclusion_with_checkpoint_continuity`. It invokes the existing exact-byte inclusion verifier and the checkpoint-consistency verifier with the same `raw_new_checkpoint_bytes` value and the same caller-supplied log key, key ID, tree-size floor, and clock.
+
+The composition checks that both inspections report the same new-checkpoint digest and tree size. This prevents a caller from presenting an inclusion inspection for one signed root alongside a consistency inspection for another root. The composition remains diagnostic and returns `BLOCKED_PROVENANCE`; it does not authenticate the caller-supplied trust inputs or provide witness quorum.
