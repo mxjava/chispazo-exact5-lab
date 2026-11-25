@@ -89,6 +89,10 @@ def fixture(*, omit_identity=None, revoked_identity=None):
         signature_claim["artifact_sha256"] = old_to_new[
             signature_claim["artifact_sha256"]
         ]
+    for custody_event in document["custody_events"]:
+        custody_event["artifact_sha256"] = old_to_new[
+            custody_event["artifact_sha256"]
+        ]
 
     private_by_identity = {}
     for signature_claim in document["signatures"]:
