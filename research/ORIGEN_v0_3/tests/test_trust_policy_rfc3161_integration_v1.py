@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from origen.independent_trust_adapter import ProvenanceStatus
-from origen.trust_policy_integration_v1 import ROOT_KEY_ID, signed_policy
+from test_trust_policy_integration_v1 import ROOT_KEY_ID, signed_policy
 from origen.trust_policy_rfc3161_integration_v1 import (
     OutputSealTimestampEvidence,
     inspect_signed_root_attestation_chain_with_output_seal_timestamps,
