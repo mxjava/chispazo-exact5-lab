@@ -12,10 +12,13 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.transparency_ledger_verifier_v1 import CHECKPOINT_DOMAIN, CHECKPOINT_SCHEMA
+from test_transparency_ledger_verifier_v1 import build_fixture
+
 from origen.transparency_checkpoint_consistency_v1 import (
     CONSISTENCY_PROOF_SCHEMA,
     _verify_consistency,
     verify_checkpoint_consistency,
+    verify_ledger_inclusion_with_checkpoint_continuity,
 )
 
 LOG_ID = "SYNTHETIC-TRANSPARENCY-LOG"
@@ -334,6 +337,105 @@ class CheckpointConsistencyV1Tests(unittest.TestCase):
                 expected_log_id=LOG_ID,
                 expected_key_id=KEY_ID,
                 minimum_new_tree_size=9,
+                verification_time=NOW,
+            )
+
+
+    def test_composed_verifier_binds_inclusion_to_the_same_consistent_new_checkpoint(self):
+        data = build_fixture()
+        leaves = [
+            b"unrelated-ledger-record-0",
+            data["entry_bytes"],
+            b"unrelated-ledger-record-2",
+            b"unrelated-ledger-record-3",
+            b"unrelated-ledger-record-4",
+            b"unrelated-ledger-record-5",
+            b"unrelated-ledger-record-6",
+        ]
+        old_checkpoint, old_bytes = signed_checkpoint(
+            data["log_private"],
+            leaves[:3],
+            issued_at="2026-11-24T18:59:00Z",
+        )
+        del old_checkpoint
+        path = consistency_path(3, leaves, True)
+        proof = {
+            "schema_version": CONSISTENCY_PROOF_SCHEMA,
+            "log_id": LOG_ID,
+            "old_checkpoint_sha256": sha(old_bytes),
+            "new_checkpoint_sha256": sha(data["checkpoint_bytes"]),
+            "old_tree_size": 3,
+            "new_tree_size": 7,
+            "consistency_path_b64": [
+                base64.b64encode(node).decode("ascii") for node in path
+            ],
+        }
+        result = verify_ledger_inclusion_with_checkpoint_continuity(
+            data["manifest_bytes"],
+            data["entry_bytes"],
+            data["proof_bytes"],
+            old_bytes,
+            data["checkpoint_bytes"],
+            canonical(proof),
+            pinned_log_public_key_bytes=data["log_public"],
+            expected_log_id=LOG_ID,
+            expected_key_id=KEY_ID,
+            minimum_new_tree_size=7,
+            verification_time=NOW,
+        )
+        self.assertTrue(result.inclusion.inclusion_verified)
+        self.assertTrue(result.checkpoint_consistency.consistency_verified)
+        self.assertEqual(
+            result.inclusion.checkpoint_sha256,
+            result.checkpoint_consistency.new_checkpoint_sha256,
+        )
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_composed_verifier_rejects_consistency_for_a_different_new_checkpoint(self):
+        data = build_fixture()
+        leaves = [
+            b"unrelated-ledger-record-0",
+            data["entry_bytes"],
+            b"unrelated-ledger-record-2",
+            b"unrelated-ledger-record-3",
+            b"unrelated-ledger-record-4",
+            b"unrelated-ledger-record-5",
+            b"unrelated-ledger-record-6",
+        ]
+        _, old_bytes = signed_checkpoint(
+            data["log_private"],
+            leaves[:3],
+            issued_at="2026-11-24T18:59:00Z",
+        )
+        _, other_new_bytes = signed_checkpoint(
+            data["log_private"],
+            leaves,
+            issued_at="2026-11-24T19:02:00Z",
+        )
+        proof = {
+            "schema_version": CONSISTENCY_PROOF_SCHEMA,
+            "log_id": LOG_ID,
+            "old_checkpoint_sha256": sha(old_bytes),
+            "new_checkpoint_sha256": sha(other_new_bytes),
+            "old_tree_size": 3,
+            "new_tree_size": 7,
+            "consistency_path_b64": [
+                base64.b64encode(node).decode("ascii")
+                for node in consistency_path(3, leaves, True)
+            ],
+        }
+        with self.assertRaisesRegex(ValueError, "checkpoint digest does not match exact checkpoint bytes"):
+            verify_ledger_inclusion_with_checkpoint_continuity(
+                data["manifest_bytes"],
+                data["entry_bytes"],
+                data["proof_bytes"],
+                old_bytes,
+                other_new_bytes,
+                canonical(proof),
+                pinned_log_public_key_bytes=data["log_public"],
+                expected_log_id=LOG_ID,
+                expected_key_id=KEY_ID,
+                minimum_new_tree_size=7,
                 verification_time=NOW,
             )
 
