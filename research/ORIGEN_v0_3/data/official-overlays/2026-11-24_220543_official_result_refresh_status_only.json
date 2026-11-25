@@ -1,0 +1,126 @@
+{
+  "schema_version": "exact5.official-source-refresh.status-only.v1",
+  "capture": {
+    "observation_window_started_at_local": "2026-11-24T22:05:43-06:00",
+    "observation_window_started_at_utc": "2026-11-25T04:05:43Z",
+    "exact_per_source_http_retrieval_timestamps_captured": false,
+    "raw_response_bytes_captured": false,
+    "pdf_raw_bytes_downloaded": false,
+    "pdf_sha256_captured": false
+  },
+  "scope": "Post-close official result and daily-mask reconciliation only. No prediction, score, canonical append, model fitting, ranking, or retrospective reconstruction.",
+  "official_result_12393": {
+    "contest_id": 12393,
+    "draw_date_local": "2026-11-24",
+    "scheduled_time_local": "15:00",
+    "modality": "DE_LAS_TRES",
+    "modality_status": "OFFICIAL_EXPLICIT_VISUAL_MASK_LABEL",
+    "winning_numbers": [1, 7, 8, 9, 12],
+    "result_status": "OFFICIAL_RESULTS_PAGE_AND_DAILY_MASK_MATCH",
+    "basis": [
+      "The official Chispazo results page displays contest 12393, date 24/11/2026, and 01 07 08 09 12.",
+      "The official 2026-11-24 one-page daily mask visually labels the contest 12393 block with the Chispazo De las tres logo.",
+      "The official Chispazo product page defines De las Tres at 15:00."
+    ],
+    "classic_stream_eligible": false,
+    "canonical_append_allowed": false
+  },
+  "official_classic_12394": {
+    "contest_id": 12394,
+    "draw_date_local": "2026-11-24",
+    "scheduled_time_local": "21:00",
+    "modality": "CLASSIC",
+    "modality_status": "OFFICIAL_EXPLICIT_VISUAL_MASK_LABEL",
+    "winning_numbers": [1, 9, 12, 16, 24],
+    "result_status": "OFFICIAL_RESULTS_PAGE_AND_DAILY_MASK_MATCH",
+    "basis": [
+      "The official Chispazo results page displays contest 12394, date 24/11/2026, and 01 09 12 16 24.",
+      "The official 2026-11-24 one-page daily mask visually labels the contest 12394 block with the Chispazo Clásico logo.",
+      "The official Chispazo product page defines Clásico at 21:00."
+    ],
+    "canonical_append_allowed": false,
+    "preclose_snapshot_observed": false
+  },
+  "latest_mask_confirmed_classic_result": {
+    "contest_id": 12394,
+    "draw_date_local": "2026-11-24",
+    "modality": "CLASSIC",
+    "winning_numbers": [1, 9, 12, 16, 24],
+    "status": "OFFICIAL_DAILY_MASK_VISUALLY_CONFIRMED"
+  },
+  "source_observations": {
+    "official_dedicated_chispazo_results": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observed": "12394; 24/11/2026; 01 09 12 16 24; previous result 12393 = 01 07 08 09 12.",
+      "source_lines": "76-88 and 93-99",
+      "status": "CURRENT_THROUGH_12394"
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "observed": "RESULTADOS 2026-11-24 is the newest listed daily mask.",
+      "source_lines": "84-90",
+      "status": "DAILY_MASK_2026_11_24_LISTED"
+    },
+    "official_daily_mask_2026_11_24": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-24.pdf?v=24112026220918",
+      "observed": "One-page PDF dated Tuesday 24-Nov-2026. Visual inspection explicitly labels contest 12393 as Chispazo De las tres and contest 12394 as Chispazo Clásico, with both number combinations and prize tables.",
+      "page": 1,
+      "raw_bytes_captured": false,
+      "sha256": null,
+      "status": "BROWSER_RENDERED_VISUAL_CONTENT_CHECKED_RAW_BYTE_CUSTODY_MISSING"
+    },
+    "official_chispazo_game_schedule": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "observed": "Chispazo de las Tres at 15:00 hrs; Chispazo Clásico at 21:00 hrs.",
+      "status": "OFFICIAL_DAILY_SCHEDULE"
+    },
+    "official_home_results_endpoint": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxTdXBlcmlvcg%3D%3D",
+      "observed": "The official Home/Resultados extract shows 12393 = 01 07 08 09 12 and 12394 = 01 09 12 16 24, both dated 24/11/2026.",
+      "status": "MATCHES_DEDICATED_CHISPAZO_RESULTS"
+    }
+  },
+  "endpoint_reconciliation": {
+    "dedicated_chispazo_results_vs_daily_mask": "MATCH_FOR_12393_AND_12394",
+    "home_results_vs_dedicated_chispazo_results": "MATCH_AT_12394",
+    "mask_index_vs_daily_mask": "INDEX_LISTS_2026_11_24_AND_LINKS_ONE_PAGE_PDF",
+    "modality_classification": "BOTH_MODALITIES_EXPLICITLY_IDENTIFIED_BY_VISUAL_MASK_LOGOS_AND_OFFICIAL_DAILY_SCHEDULE"
+  },
+  "provenance": {
+    "official_result_12393_publicly_confirmed": true,
+    "official_result_12394_publicly_confirmed": true,
+    "official_modality_12393_visual_mask_confirmed": true,
+    "official_modality_12394_visual_mask_confirmed": true,
+    "official_daily_mask_2026_11_24_visually_inspected": true,
+    "raw_source_bytes_captured": false,
+    "pdf_sha256_captured": false,
+    "independent_custodian": false,
+    "trusted_preclose_timestamp": false,
+    "independent_signature_verification": false,
+    "preclose_prediction_snapshot": false,
+    "physical_tirade_pesaje_cs11_acta_or_custody_receipts_obtained": false
+  },
+  "research_firewall": {
+    "overlay_status_only": true,
+    "post_close_public_result": true,
+    "canonical_history_appended": false,
+    "prediction_payload_exists": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "model_or_challenger_changed": false,
+    "v294_changed": false,
+    "append_verified_result_used": false,
+    "main_written": false,
+    "promotion_performed": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "classification": "BLOCKED_PROVENANCE",
+  "notes": [
+    "Contest 12393 is De las Tres at 15:00 and is excluded from the Classic stream.",
+    "Contest 12394 is Clásico at 21:00; the official daily mask visually confirms the modality logo and winning numbers 01 09 12 16 24.",
+    "The daily PDF is a public post-draw result document, not an independently custodied pre-close record.",
+    "The PDF's rendered content was inspected, but original PDF bytes and SHA-256 were not captured because the direct byte download failed.",
+    "No Tira de Pesaje, CS-11, signed act, signed participation file, original recording, independent custodian receipt, RFC3161 token, or pre-close sealed prediction was acquired.",
+    "Do not append this result to the canonical history through this overlay and do not count it as an untouched prospective OOS draw."
+  ]
+}

@@ -1,0 +1,21 @@
+ORIGEN v0.3 validation provenance
+
+Original build artifact:
+- Archive: ORIGEN_v0_3_research_engine.zip
+- SHA-256: 66db3a31e35330acbbc4d2c0f4fc8a83177b1433acc67aa9a08c5963becaaf6e
+- Original package test report: 28 tests passed in the build environment (Python 3.13).
+
+GitHub publication:
+- The source files were transferred into this research branch through individual GitHub content commits.
+- The published source has been reconstructed from the verified archive contents; it is not claimed to be byte-identical to the ZIP.
+- The GitHub copy currently contains 32 test methods across its three test modules.
+- Those GitHub-transferred files have NOT yet been executed as a suite in GitHub Actions or a local checkout.
+
+Coverage includes:
+- Deterministic frame generation, registry idempotency and audit, no automatic promotion.
+- Protocol sealing/validation, duplicate protocol IDs, ledger hashes and null controls.
+- Holm-Bonferroni, chronological and rolling-origin splits, paired log-score gates.
+- Adversarial-null benchmarking, frame diversity, SHA-256 manifest tamper detection.
+- MetaObserver search-path audit for preregistration ordering and post-outcome adaptation.
+
+This framework does not validate a Chispazo model, real-world data provenance, independent custody, or prospective predictive edge. It cannot independently certify user-supplied custody assertions.

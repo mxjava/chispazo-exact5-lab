@@ -1,0 +1,74 @@
+{
+  "schema_version": "exact5.official-result-overlay.status-only.v1",
+  "contest_id": 12382,
+  "draw_date_local": "2026-11-18",
+  "scheduled_draw_local": "21:00",
+  "modality": "CLASSIC",
+  "modality_basis": "OFFICIAL_MASK_PDF_LABEL_OBSERVED",
+  "winning_numbers": [
+    5,
+    9,
+    11,
+    23,
+    25
+  ],
+  "result_status": "OFFICIAL_RESULT_OBSERVED",
+  "sources": {
+    "dedicated_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observed": "12382; 18/11/2026; 05 09 11 23 25",
+      "lines": "76-88, 93-100"
+    },
+    "official_daily_mask_pdf": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-18.pdf?v=18112026221442",
+      "observed": "Chispazo de las tres 12381; Chispazo Clásico 12382; numbers 5, 9, 11, 23, 25",
+      "lines": "37-58",
+      "raw_bytes_captured": false,
+      "sha256": null
+    },
+    "mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "observed": "RESULTADOS 2026-11-18 is listed",
+      "lines": "84-85"
+    },
+    "stale_or_lagging_endpoints": [
+      {
+        "url": "https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados",
+        "observed": "still displays contest 12381 as latest"
+      },
+      {
+        "url": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxNYXlvcg%3D%3D",
+        "observed": "contest 12382 still has blank winning-number placeholders"
+      }
+    ]
+  },
+  "provenance": {
+    "official_result_cross_source_match": true,
+    "official_modality_label_observed": true,
+    "source_pdf_raw_bytes_captured": false,
+    "source_pdf_sha256": null,
+    "source_document_chain_of_custody": false,
+    "preclose_prediction_snapshot": false,
+    "independent_custodian": false
+  },
+  "research_firewall": {
+    "overlay_status_only": true,
+    "canonical_history_appended": false,
+    "canonical_history_sha256": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "prediction_payload_exists": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "model_or_challenger_changed": false,
+    "v294_changed": false
+  },
+  "classification": "BLOCKED_PROVENANCE",
+  "notes": [
+    "The dedicated official results page and the official daily PDF agree on the five numbers.",
+    "The PDF explicitly labels contest 12382 as Chispazo Clásico; contest 12381 on the same sheet is Chispazo de las Tres.",
+    "The raw PDF bytes could not be captured in this run, so no byte-level source SHA-256 is claimed.",
+    "This record is not a prospective output and must never be used to reconstruct a pre-close PMF, rank, or score."
+  ],
+  "observation_window_started_at_utc": "2026-11-19T05:54:08Z",
+  "exact_source_retrieval_timestamp_captured": false,
+  "source_retrieval_timestamp_utc": null
+}

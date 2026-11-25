@@ -1,0 +1,32 @@
+{
+  "schema": "EXACT5_MODALITY_MAP_V1",
+  "source_path": "data/history/Chispazo_through_12249.csv",
+  "source_git_blob_sha": "2f5ff5bfbd779fe505736398e417b7211955958e",
+  "source_rows": 10887,
+  "min_contest": 1363,
+  "max_contest": 12249,
+  "unique_contests": 10887,
+  "contiguous_sequence": true,
+  "invalid_rows": 0,
+  "transition_contest": 5923,
+  "transition_date": "2017-09-25",
+  "pre_transition_classic_count": 4560,
+  "post_transition_classic_count": 3163,
+  "post_transition_de_las_tres_count": 3164,
+  "pre_transition_single_draw_dates": 4560,
+  "post_transition_complete_odd_even_days": 3163,
+  "latest_incomplete_day": 12249,
+  "post_transition_date_anomalies": [],
+  "errors": [],
+  "external_validation": [
+    "Pronósticos institutional report: addition of Chispazo de las Tres on 2017-09-25",
+    "Official 2017-11-02 result sheet: 5999 De las Tres; 6000 Clásico"
+  ],
+  "limitations": [
+    "Mapping before 2017-09-25 assumes the only daily Chispazo draw was the then-existing Clásico; official 2017 institutional source confirms addition of De las Tres.",
+    "Parity mapping is structurally supported from transition onward but not a row-by-row primary-source validation of every contest.",
+    "The canonical history ends 2026-09-13 at contest 12249; later draws are not present in this source.",
+    "Derived labels are hypotheses pending independent official row-level cross-check; do not treat as certification."
+  ],
+  "classification": "BLOCKED_PROVENANCE_PENDING_ROW_LEVEL_CROSSCHECK"
+}
