@@ -52,6 +52,7 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     by_number: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     quarantined: dict[str, set[str]] = defaultdict(set)
     row_count = 0
+    rows_by_contest: dict[str, int] = defaultdict(int)
 
     for index, raw in enumerate(rows, start=2):
         row_count += 1
@@ -60,12 +61,17 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             quarantined[f"row:{index}"].add("Q_REMAP")
             continue
         contest = str(int(contest_raw))
+        rows_by_contest[contest] += 1
         try:
-            set_id = str(raw["sphere_set_id"]).strip()
-            sphere_id = str(raw["sphere_id"]).strip()
-            number_raw = str(raw["printed_number"]).strip()
-            if not set_id or not sphere_id:
+            set_id_raw = raw["sphere_set_id"]
+            sphere_id_raw = raw["sphere_id"]
+            if not isinstance(set_id_raw, str) or not set_id_raw.strip():
+                raise ValueError("missing sphere set identity")
+            if not isinstance(sphere_id_raw, str) or not sphere_id_raw.strip():
                 raise ValueError("missing sphere identity")
+            set_id = set_id_raw.strip()
+            sphere_id = sphere_id_raw.strip()
+            number_raw = str(raw["printed_number"]).strip()
             if not number_raw.isdecimal() or not 1 <= int(number_raw) <= 28:
                 raise ValueError("invalid printed number")
             start = _aware_utc(raw["mapping_valid_from"], "mapping_valid_from")
@@ -86,6 +92,10 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
 
     forward_conflicts = _overlap_conflicts(by_sphere, "number", quarantined)
     inverse_conflicts = _overlap_conflicts(by_number, "sphere", quarantined)
+    quarantined_rows = sum(
+        1 if key.startswith("row:") else rows_by_contest.get(key, 0)
+        for key, reasons in quarantined.items() if reasons
+    )
     return {
         "status": "MAPPING_CONFLICTS" if quarantined else "MAPPING_HISTORY_CLEAR",
         "row_count": row_count,
@@ -94,6 +104,11 @@ def audit_mapping_history(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "forward_conflicts": forward_conflicts,
         "inverse_conflicts": inverse_conflicts,
         "overlapping_conflicts": forward_conflicts + inverse_conflicts,
+        "interval_conflicts_clear": (forward_conflicts + inverse_conflicts) == 0,
+        "overlap_conflicts_clear": (forward_conflicts + inverse_conflicts) == 0,
+        "invalid_or_quarantined_mapping_rows": quarantined_rows,
+        "continuity_status": "NOT_PROVEN",
+        "coverage_basis": "No expected contest inventory or complete date-range manifest was supplied; absence of overlaps does not prove gap-free coverage.",
         "quarantined": {key: sorted(value) for key, value in sorted(quarantined.items())},
         "scope_warning": (
             "Structural interval audit only; it does not authenticate sphere IDs, "

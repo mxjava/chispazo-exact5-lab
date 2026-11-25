@@ -1,0 +1,136 @@
+{
+  "schema_version": "exact5.official-source-refresh.status-only.v1",
+  "capture": {
+    "observed_at_local": "2026-11-24T22:52:58-06:00",
+    "observed_at_utc": "2026-11-25T04:52:58Z",
+    "official_2026_11_24_mask_visual_inspected": true,
+    "raw_response_bytes_captured": false,
+    "pdf_raw_bytes_downloaded": false,
+    "pdf_sha256_captured": false,
+    "independent_custody": false,
+    "trusted_preclose_timestamp": false
+  },
+  "scope": "Status-only reconciliation of the official 24-Nov-2026 daily Chispazo mask and public result endpoints. No canonical append, prediction, scoring, OOS registration, model fitting, or physical-provenance promotion.",
+  "source_document": {
+    "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-24.pdf?v=24112026220918",
+    "document_date_local": "2026-11-24",
+    "page_count": 1,
+    "page_visually_inspected": 1,
+    "visual_labels_observed": [
+      "Chispazo De las tres",
+      "Chispazo Clásico"
+    ],
+    "raw_bytes_captured": false,
+    "sha256": null,
+    "visual_observation": "The rendered official page 1 visibly labels contest 12393 with the Chispazo De las tres logo and numbers 01 07 08 09 12; it labels contest 12394 with the Chispazo Clásico logo and numbers 01 09 12 16 24."
+  },
+  "official_results": [
+    {
+      "contest_id": 12393,
+      "draw_date_local": "2026-11-24",
+      "scheduled_time_local": "15:00",
+      "modality": "DE_LAS_TRES",
+      "modality_status": "OFFICIAL_MASK_LOGO_VISUALLY_CONFIRMED",
+      "winning_numbers": [
+        1,
+        7,
+        8,
+        9,
+        12
+      ],
+      "result_status": "OFFICIAL_DAILY_MASK_VISUALLY_CONFIRMED",
+      "canonical_append_allowed": false,
+      "classic_stream_member": false,
+      "prospective_oos_eligible": false,
+      "prospective_oos_blocker": "NOT_CLASSIC_MODALITY"
+    },
+    {
+      "contest_id": 12394,
+      "draw_date_local": "2026-11-24",
+      "scheduled_time_local": "21:00",
+      "modality": "CLASSIC",
+      "modality_status": "OFFICIAL_MASK_LOGO_VISUALLY_CONFIRMED",
+      "winning_numbers": [
+        1,
+        9,
+        12,
+        16,
+        24
+      ],
+      "result_status": "OFFICIAL_DAILY_MASK_VISUALLY_CONFIRMED",
+      "canonical_append_allowed": false,
+      "classic_stream_member": true,
+      "prospective_oos_eligible": false,
+      "prospective_oos_blocker": "NO_PRE_CLOSE_SEALED_PREDICTION_OR_INDEPENDENT_CUSTODY"
+    }
+  ],
+  "source_observations": {
+    "official_chispazo_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observed": "Contest 12393 dated 24/11/2026 with 01 07 08 09 12; the page's current extract does not show 12394 in the winning-result block.",
+      "status": "DEDICATED_PAGE_CURRENT_AT_12393"
+    },
+    "official_home_results_indexed_extract": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxHb3JkaXRv",
+      "observed": "The official indexed extract shows contest 12393 = 01 07 08 09 12 and contest 12394 = 01 09 12 16 24, both dated 24/11/2026.",
+      "status": "INDEXED_EXTRACT_MATCHES_OFFICIAL_DAILY_MASK"
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "observed": "The page lists RESULTADOS 2026-11-24 and links the one-page official PDF.",
+      "status": "NOVEMBER_24_MASK_LISTED"
+    },
+    "official_chispazo_game_schedule": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "observed": "Chispazo de las Tres is scheduled daily at 15:00 and Chispazo Clásico daily at 21:00.",
+      "status": "OFFICIAL_MODALITY_SCHEDULE"
+    }
+  },
+  "endpoint_reconciliation": {
+    "mask_vs_home_results_indexed_extract": "MATCH_FOR_12393_AND_12394",
+    "mask_vs_dedicated_chispazo_results_page": "MATCH_FOR_12393; DEDICATED_PAGE_EXTRACT_NOT_YET_SHOWING_12394",
+    "direct_home_results_html_open": "STALE_BODY_OBSERVED_IN_BROWSER_OPEN; indexed official extract and dated mask are newer",
+    "supersedes_observation": "2026-11-24T16:55:43-06:00",
+    "supersession_note": "The 16:55 observation recorded 12394 as scheduled but not yet drawn and no 24-Nov mask listed. The later official mask index and rendered PDF now confirm the 12394 Classic result and the 12393 De las Tres result."
+  },
+  "provenance": {
+    "official_mask_page_visually_inspected": true,
+    "contest_ids_visually_confirmed": true,
+    "winning_numbers_visually_confirmed": true,
+    "modality_logos_visually_confirmed": true,
+    "raw_pdf_bytes_captured": false,
+    "pdf_sha256_captured": false,
+    "signed_draw_act_obtained": false,
+    "signed_cs11_obtained": false,
+    "original_weighing_strip_obtained": false,
+    "28_sphere_measurements_obtained": false,
+    "calibration_certificate_obtained": false,
+    "independent_custodian_receipt_obtained": false,
+    "trusted_timestamp_token_obtained": false,
+    "independent_signature_verification": false,
+    "preclose_prediction_snapshot": false
+  },
+  "research_firewall": {
+    "overlay_status_only": true,
+    "canonical_history_appended": false,
+    "canonical_history_blob": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_history_sha256": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_history_rows": 10887,
+    "prediction_payload_exists": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "model_or_challenger_changed": false,
+    "v294_changed": false,
+    "append_verified_result_used": false,
+    "main_written": false,
+    "promotion_performed": false
+  },
+  "classification": "BLOCKED_PROVENANCE",
+  "notes": [
+    "The 24-Nov official daily mask visually confirms 12393 as De las Tres at 15:00 and 12394 as Clásico at 21:00.",
+    "The public daily mask is an official published result artifact; it is not the signed physical draw act, CS-11, weighing strip, calibration record, original audiovisual recording, or independent custody package.",
+    "The browser-rendered PDF was visually inspected, but original PDF bytes could not be downloaded into the repository workspace. No SHA-256 is claimed.",
+    "Both contests remain excluded from prospective scoring and canonical history until the independent evidence and registration gates are satisfied.",
+    "Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE."
+  ]
+}

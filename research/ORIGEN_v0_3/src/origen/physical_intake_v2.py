@@ -9,10 +9,13 @@ from __future__ import annotations
 import csv
 import math
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
+
+DRAW_TIMEZONE = ZoneInfo("America/Mexico_City")
 
 V2_REQUIRED_COLUMNS = (
     "source_contest_id", "target_contest_id", "contest_id", "draw_date",
@@ -26,7 +29,16 @@ V2_REQUIRED_COLUMNS = (
     "source_signer_id", "source_signature_ref", "evidence_available_at",
     "custody_received_at", "custodian_id", "custodian_role",
     "custody_receipt_ref", "custody_receipt_sha256", "trusted_timestamp_ref",
-)
+) 
+
+NULL_PROVENANCE_COLUMNS = frozenset({
+    "source_document_sha256", "source_document_ref", "source_signed_at",
+    "source_signer_id", "source_signature_ref", "evidence_available_at",
+    "custody_received_at", "custodian_id", "custodian_role",
+    "custody_receipt_ref", "custody_receipt_sha256", "trusted_timestamp_ref",
+    "calibration_certificate_sha256",
+})
+
 
 def _parse_time(value: Any, field: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
@@ -46,6 +58,8 @@ def evaluate_temporal_eligibility(
     verified_custody_refs: set[str] | None = None,
     verified_timestamp_refs: set[str] | None = None,
     verified_source_refs: set[str] | None = None,
+    verified_signature_refs: set[str] | None = None,
+    verified_calibration_refs: set[str] | None = None,
     verified_continuity_targets: set[str] | None = None,
 ) -> dict[str, Any]:
     """Classify each target independently; missing external attestations fail closed.
@@ -60,15 +74,21 @@ def evaluate_temporal_eligibility(
     if missing:
         raise ValueError("missing required columns: " + ", ".join(missing))
 
-    custody = verified_custody_refs or set()
-    timestamps = verified_timestamp_refs or set()
-    sources = verified_source_refs or set()
-    continuity = verified_continuity_targets or set()
+    custody = set() if verified_custody_refs is None else verified_custody_refs
+    timestamps = set() if verified_timestamp_refs is None else verified_timestamp_refs
+    sources = set() if verified_source_refs is None else verified_source_refs
+    signatures = set() if verified_signature_refs is None else verified_signature_refs
+    calibrations = set() if verified_calibration_refs is None else verified_calibration_refs
+    continuity = set() if verified_continuity_targets is None else verified_continuity_targets
+    for field, values in (("verified_custody_refs", custody), ("verified_timestamp_refs", timestamps), ("verified_source_refs", sources), ("verified_signature_refs", signatures), ("verified_calibration_refs", calibrations), ("verified_continuity_targets", continuity)):
+        if not isinstance(values, (set, frozenset)) or any(not isinstance(value, str) or not value.strip() for value in values):
+            raise ValueError(f"{field} must be a set of non-empty strings")
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for row in materialized:
         target = str(row.get("target_contest_id", "")).strip()
-        if not target:
-            raise ValueError("target_contest_id: missing")
+        if not target.isdecimal() or int(target) <= 0:
+            raise ValueError("target_contest_id: positive contest ID required")
+        target = str(int(target))
         grouped[target].append(row)
 
     results: dict[str, dict[str, Any]] = {}
@@ -84,6 +104,7 @@ def evaluate_temporal_eligibility(
         target_draws: set[datetime] = set()
         assignments: set[datetime] = set()
         source_closes: set[datetime] = set()
+        source_draws: set[datetime] = set()
         sphere_types: set[str] = set()
         machine_models: set[str] = set()
         scales: set[str] = set()
@@ -96,6 +117,11 @@ def evaluate_temporal_eligibility(
         signer_ids: set[str] = set()
         timestamp_refs: set[str] = set()
         for row in group:
+            null_fields = {field for field in V2_REQUIRED_COLUMNS if row.get(field) is None}
+            if null_fields:
+                reasons.add("NULL_REQUIRED_FIELD")
+            if null_fields & NULL_PROVENANCE_COLUMNS:
+                reasons.add("NULL_PROVENANCE_FIELD")
             try:
                 close = _parse_time(row["target_draw_close_at"], "target_draw_close_at")
                 available = _parse_time(row["evidence_available_at"], "evidence_available_at")
@@ -103,6 +129,26 @@ def evaluate_temporal_eligibility(
                 measurement = _parse_time(row["measurement_at"], "measurement_at")
                 source_close = _parse_time(row["draw_close_at"], "draw_close_at")
                 source_draw = _parse_time(row["source_draw_at"], "source_draw_at")
+                source_draw_local_date = source_draw.astimezone(DRAW_TIMEZONE).date().isoformat()
+                declared_date_raw = row["draw_date"]
+                if not isinstance(declared_date_raw, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", declared_date_raw.strip()):
+                    reasons.add("INVALID_SOURCE_DRAW_DATE")
+                    declared_draw_date = ""
+                else:
+                    try:
+                        declared_draw_date = date.fromisoformat(declared_date_raw.strip()).isoformat()
+                    except ValueError:
+                        reasons.add("INVALID_SOURCE_DRAW_DATE")
+                        declared_draw_date = ""
+                contest_id = str(row["contest_id"]).strip()
+                source_contest_id = str(row["source_contest_id"]).strip()
+                if (not contest_id.isdecimal() or int(contest_id) <= 0
+                        or not source_contest_id.isdecimal() or int(source_contest_id) <= 0):
+                    reasons.add("INVALID_SOURCE_CONTEST_ID")
+                elif int(contest_id) != int(source_contest_id):
+                    reasons.add("SOURCE_CONTEST_ID_MISMATCH")
+                if declared_draw_date and declared_draw_date != source_draw_local_date:
+                    reasons.add("SOURCE_DRAW_DATE_MISMATCH")
                 target_draw = _parse_time(row["target_draw_at"], "target_draw_at")
                 assignment = _parse_time(row["set_assigned_at"], "set_assigned_at")
                 signed = _parse_time(row["source_signed_at"], "source_signed_at")
@@ -110,6 +156,11 @@ def evaluate_temporal_eligibility(
                 target_draws.add(target_draw)
                 assignments.add(assignment)
                 source_closes.add(source_close)
+                source_draws.add(source_draw)
+                for identity_field in ("sphere_type", "machine_model", "scale_id", "sphere_id", "sphere_set_id", "machine_id"):
+                    identity_value = row[identity_field]
+                    if not isinstance(identity_value, str) or not identity_value.strip():
+                        reasons.add("INVALID_PHYSICAL_IDENTITY")
                 sphere_types.add(str(row["sphere_type"]).strip())
                 machine_models.add(str(row["machine_model"]).strip())
                 scales.add(str(row["scale_id"]).strip())
@@ -177,6 +228,8 @@ def evaluate_temporal_eligibility(
                     reasons.add("SOURCE_SIGNATURE_MISSING")
                 if not str(row["custodian_id"]).strip() or not str(row["custodian_role"]).strip():
                     reasons.add("CUSTODIAN_IDENTITY_MISSING")
+                elif str(row["custodian_id"]).strip() == str(row["source_signer_id"]).strip():
+                    reasons.add("CUSTODIAN_IS_SOURCE_SIGNER")
                 if not str(row["custody_receipt_ref"]).strip():
                     reasons.add("CUSTODY_RECEIPT_MISSING")
                 if not str(row["trusted_timestamp_ref"]).strip():
@@ -187,10 +240,12 @@ def evaluate_temporal_eligibility(
                 reasons.add("INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE")
         if len(closes) != 1:
             reasons.add("TARGET_CLOSE_CONFLICT")
-        if len(target_draws) != 1 or (closes and target_draws and next(iter(target_draws)) < next(iter(closes))):
+        if len(target_draws) != 1 or (closes and target_draws and next(iter(target_draws)) <= next(iter(closes))):
             reasons.add("TARGET_DRAW_TIME_CONFLICT")
         if len(assignments) != 1 or len(source_closes) != 1:
             reasons.add("SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT")
+        if len(source_draws) != 1:
+            reasons.add("SOURCE_DRAW_TIME_CONFLICT")
         if len(sphere_types) != 1 or "" in sphere_types or len(machine_models) != 1 or "" in machine_models or len(scales) != 1 or "" in scales:
             reasons.add("METROLOGY_CONFIGURATION_CONFLICT")
         if any(len(values) != 1 or "" in values for values in (
@@ -212,30 +267,37 @@ def evaluate_temporal_eligibility(
             reasons.add("TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED")
         if not all(str(row.get("source_document_ref", "")) in sources for row in group):
             reasons.add("SOURCE_NOT_INDEPENDENTLY_VERIFIED")
+        if not all(str(row.get("source_signature_ref", "")) in signatures for row in group):
+            reasons.add("SOURCE_SIGNATURE_NOT_INDEPENDENTLY_VERIFIED")
+        if not all(str(row.get("calibration_certificate_sha256", "")).strip().lower() in calibrations for row in group):
+            reasons.add("CALIBRATION_NOT_INDEPENDENTLY_VERIFIED")
         if target not in continuity:
             reasons.add("PHYSICAL_CONTINUITY_NOT_VERIFIED")
 
         if "EVIDENCE_NOT_AVAILABLE_PRE_CLOSE" in reasons:
             classification = "INELIGIBLE_POST_CLOSE"
         elif any(reason in reasons for reason in (
-            "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "INVALID_SOURCE_SHA256",
+            "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "NULL_PROVENANCE_FIELD", "INVALID_SOURCE_SHA256",
             "INVALID_CUSTODY_RECEIPT_SHA256", "INVALID_CALIBRATION_SHA256",
             "CUSTODY_NOT_INDEPENDENTLY_VERIFIED", "TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",
-            "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
-            "CUSTODY_RECEIPT_MISSING", "TRUSTED_TIMESTAMP_MISSING",
+            "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "SOURCE_SIGNATURE_NOT_INDEPENDENTLY_VERIFIED", "CALIBRATION_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
+            "CUSTODY_RECEIPT_MISSING", "TRUSTED_TIMESTAMP_MISSING", "CUSTODIAN_IS_SOURCE_SIGNER",
             "PRIMARY_SOURCE_MISSING", "SOURCE_SIGNATURE_MISSING",
             "SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE"
         )):
             classification = "BLOCKED_PROVENANCE"
         elif any(reason in reasons for reason in (
-            "PHYSICAL_CONTINUITY_NOT_VERIFIED", "SOURCE_CONTEST_CONFLICT",
+            "PHYSICAL_CONTINUITY_NOT_VERIFIED", "NULL_REQUIRED_FIELD", "SOURCE_CONTEST_CONFLICT",
             "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", "PHYSICAL_SET_OR_MACHINE_CONFLICT",
             "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC",
             "BROKEN_EVIDENCE_TEMPORAL_ORDER", "MEASUREMENT_PRECEDES_SOURCE_CLOSE",
             "MEASUREMENT_AFTER_SOURCE_DRAW", "SOURCE_SIGNED_PRECEDES_MEASUREMENT",
             "SOURCE_SIGNED_AFTER_SOURCE_DRAW", "BROKEN_SOURCE_SIGNATURE_TEMPORAL_ORDER",
             "BROKEN_EVIDENCE_AVAILABILITY_ORDER", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
-            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
+            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "SOURCE_DRAW_TIME_CONFLICT",
+            "INVALID_SOURCE_CONTEST_ID", "SOURCE_CONTEST_ID_MISMATCH",
+            "SOURCE_DRAW_DATE_MISMATCH", "INVALID_SOURCE_DRAW_DATE",
+            "INVALID_PHYSICAL_IDENTITY", "METROLOGY_CONFIGURATION_CONFLICT",
             "EVIDENCE_DOCUMENT_SET_CONFLICT"
         )):
             classification = "BLOCKED_CONTINUITY"

@@ -1,0 +1,157 @@
+{
+  "schema_version": "exact5.official-source-refresh.status-only.v1",
+  "capture": {
+    "observed_at_local": "2026-11-24T16:55:43-06:00",
+    "observed_at_utc": "2026-11-24T22:55:43Z",
+    "exact_per_source_http_retrieval_timestamps_captured": false,
+    "source_http_status_codes_captured": false,
+    "search_index_snippets_used": true,
+    "raw_response_bytes_captured": false,
+    "pdf_raw_bytes_downloaded": false,
+    "official_2026_11_23_mask_visual_inspected": true,
+    "official_2026_11_24_mask_listed": false
+  },
+  "scope": "Official Chispazo result, scheduled modality, daily mask freshness and endpoint reconciliation only. Status-only observation; no prediction, scoring, canonical append, model fitting, ranking or retrospective reconstruction.",
+  "official_result_12393": {
+    "contest_id": 12393,
+    "draw_date_local": "2026-11-24",
+    "scheduled_time_local": "15:00",
+    "modality": "DE_LAS_TRES",
+    "modality_status": "SUPPORTED_BY_OFFICIAL_HOME_INDEX_15H_AND_OFFICIAL_DAILY_MODALITY_SCHEDULE",
+    "winning_numbers": [
+      1,
+      7,
+      8,
+      9,
+      12
+    ],
+    "result_status": "OFFICIAL_DEDICATED_RESULT_PAGE_AND_HOME_RESULTS_SEARCH_EXTRACT_MATCH",
+    "basis": [
+      "The official dedicated Chispazo results page displays contest 12393, date 24/11/2026 and numbers 01 07 08 09 12.",
+      "The official Lotería Nacional home/index search extract explicitly schedules contest 12393 at 15:00 on 24-Nov-2026.",
+      "The official Chispazo game page identifies the daily 15:00 draw as Chispazo de las Tres.",
+      "The official Home/Resultados search extract also shows 12393 with 01 07 08 09 12; its direct HTML open was stale and is recorded separately."
+    ],
+    "classic_stream_eligible": false,
+    "canonical_append_allowed": false
+  },
+  "official_classic_12394": {
+    "contest_id": 12394,
+    "draw_date_local": "2026-11-24",
+    "scheduled_time_local": "21:00",
+    "modality": "CLASSIC",
+    "modality_status": "SUPPORTED_BY_OFFICIAL_HOME_INDEX_21H_AND_OFFICIAL_DAILY_MODALITY_SCHEDULE",
+    "result_status": "SCHEDULED_NOT_YET_DRAWN_AT_OBSERVATION_TIME",
+    "winning_numbers": null,
+    "preclose_snapshot_observed": false,
+    "canonical_append_allowed": false,
+    "basis": [
+      "The official Lotería Nacional home/index search extract lists contest 12394 at 21:00 on 24-Nov-2026.",
+      "The official Chispazo game page identifies the daily 21:00 draw as Chispazo Clásico.",
+      "At the 16:55:43 local observation time, the scheduled 21:00 draw had not yet occurred; no result is recorded."
+    ]
+  },
+  "latest_mask_confirmed_classic": {
+    "contest_id": 12392,
+    "draw_date_local": "2026-11-23",
+    "winning_numbers": [
+      6,
+      11,
+      16,
+      23,
+      28
+    ],
+    "modality": "CLASSIC",
+    "status": "OFFICIAL_MASK_VISUAL_LABEL_CONFIRMED",
+    "source_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757",
+    "visual_evidence": "The official 2026-11-23 daily mask visually labels contest 12391 as Chispazo De las tres and contest 12392 as Chispazo Clásico, with the corresponding number sets.",
+    "raw_source_bytes_captured": false,
+    "source_sha256_captured": false,
+    "independent_custody": false
+  },
+  "source_observations": {
+    "official_dedicated_chispazo_results": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observed": "12393; 24/11/2026; 01 07 08 09 12.",
+      "status": "CURRENT_RESULT_12393"
+    },
+    "official_home_results_search_extract": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxHb3JkaXRv",
+      "observed": "Search-indexed official extract shows 24/11/2026, contest 12393 with 01 07 08 09 12 and contest 12394 with five blank positions.",
+      "status": "SEARCH_INDEX_CURRENT_12393_RESULT_12394_BLANK"
+    },
+    "official_home_results_direct_open": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxHb3JkaXRv",
+      "observed": "Direct HTML open returned a stale body dated 13/11/2026; it does not supersede the current dedicated Chispazo page or the current search-indexed extract.",
+      "status": "DIRECT_OPEN_STALE_AT_2026_11_13"
+    },
+    "official_loteria_home_index": {
+      "url": "https://www.loterianacional.gob.mx/home/index",
+      "observed": "Search-indexed official homepage lists Chispazo contest 12393 at 15:00 and contest 12394 at 21:00 on 24-Nov-2026.",
+      "status": "EXPLICIT_CONTEST_IDS_AND_SCHEDULES_12393_15H_12394_21H"
+    },
+    "official_chispazo_game_schedule": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "observed": "Daily Chispazo de las Tres at 15:00; Chispazo Clásico at 21:00.",
+      "status": "OFFICIAL_DAILY_MODALITY_SCHEDULE"
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "observed": "Newest listed daily mask is RESULTADOS 2026-11-23; no 2026-11-24 mask entry is listed.",
+      "status": "NOVEMBER_24_MASK_NOT_YET_LISTED"
+    },
+    "official_daily_mask_2026_11_23": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757",
+      "observed": "Browser-rendered page 1 visually confirms 12391 De las Tres = 03 07 19 20 24 and 12392 Clásico = 06 11 16 23 28.",
+      "page": 1,
+      "raw_bytes_captured": false,
+      "sha256": null,
+      "status": "VISUAL_CONTENT_CHECKED_RAW_BYTE_CUSTODY_MISSING"
+    }
+  },
+  "endpoint_reconciliation": {
+    "dedicated_results_vs_home_results_search_extract": "MATCH_AT_12393_01_07_08_09_12",
+    "home_index_vs_game_schedule": "12393_15H_DE_LAS_TRES_AND_12394_21H_CLASSIC",
+    "home_results_direct_open_vs_search_extract": "DIRECT_OPEN_STALE_AT_13_NOV_SEARCH_EXTRACT_CURRENT_AT_24_NOV",
+    "mask_index_vs_results": "DEDICATED_RESULTS_AT_12393_MASK_INDEX_AT_2026_11_23",
+    "supersedes_observation": null,
+    "supersession_note": "New status-only observation for 24-Nov-2026. Contest 12393 is supported as De las Tres by the official 15:00 contest listing plus the official modality schedule; contest 12394 is scheduled Classic at 21:00 and had not yet been drawn at observation time."
+  },
+  "provenance": {
+    "official_result_12393_cross_endpoint_match": true,
+    "official_modality_12393_schedule_supported": true,
+    "official_schedule_12394_classic_supported": true,
+    "official_result_12394_observed": false,
+    "official_daily_mask_2026_11_24_observed": false,
+    "raw_source_bytes_captured": false,
+    "source_sha256_captured": false,
+    "independent_custodian": false,
+    "trusted_preclose_timestamp": false,
+    "independent_signature_verification": false,
+    "preclose_prediction_snapshot": false
+  },
+  "research_firewall": {
+    "overlay_status_only": true,
+    "canonical_history_appended": false,
+    "canonical_history_blob": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_history_sha256": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "canonical_history_rows": 10887,
+    "prediction_payload_exists": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "model_or_challenger_changed": false,
+    "v294_changed": false,
+    "append_verified_result_used": false,
+    "main_written": false,
+    "promotion_performed": false
+  },
+  "classification": "BLOCKED_PROVENANCE",
+  "notes": [
+    "Contest 12393 is supported as De las Tres (15:00); exclude it from the Classic stream and from Classic prospective counts.",
+    "Contest 12394 is the scheduled Classic draw at 21:00 on 24-Nov-2026. At the 16:55:43 observation time it had not yet been drawn, so no winning combination is inferred.",
+    "The 24-Nov daily mask was not listed in the official mask index at observation time. The latest visually checked daily mask is 23-Nov and explicitly labels 12392 as Clásico.",
+    "The direct Home/Resultados page open was stale at 13-Nov; the current dedicated Chispazo result page and search-indexed official Home/Resultados extract agree on contest 12393.",
+    "No original PDF bytes, source SHA-256, signed primary record, independent custodian receipt, trusted timestamp, signature verification or pre-close prediction snapshot was captured.",
+    "This status-only overlay cannot support canonical append, retrospective PMF/rank/score reconstruction, OOS counting or an edge claim."
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "schema_version": "exact5.official-source-refresh.status-only.v1",
+  "observation": {
+    "observation_window_started_at_local": "2026-11-20T15:59:29-06:00",
+    "exact_per_source_retrieval_timestamps_captured": false
+  },
+  "scope": "Official source freshness, modality verification, and endpoint reconciliation only. No prediction, score, canonical append, model fitting, or modality inference from contest-ID parity or sequence.",
+  "latest_official_result_page_observation": {
+    "contest_id": 12385,
+    "draw_date_local": "2026-11-20",
+    "modality": null,
+    "modality_status": "UNCONFIRMED_PENDING_OFFICIAL_DAILY_MASK",
+    "winning_numbers": [
+      3,
+      13,
+      20,
+      22,
+      23
+    ],
+    "result_status": "OFFICIAL_DEDICATED_RESULTS_PAGE_OBSERVED_MODALITY_UNCONFIRMED"
+  },
+  "latest_modality_confirmed_classic_result": {
+    "contest_id": 12384,
+    "draw_date_local": "2026-11-19",
+    "modality": "CLASSIC",
+    "modality_basis": "OFFICIAL_DAILY_MASK_PDF_LABEL_OBSERVED",
+    "winning_numbers": [
+      1,
+      2,
+      9,
+      21,
+      25
+    ],
+    "result_status": "OFFICIAL_RESULT_AND_MODALITY_OBSERVED"
+  },
+  "source_observations": {
+    "official_dedicated_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observed": "Sorteo 12385; 20/11/2026; 03 13 20 22 23; result detail at top of page and first row of last-15 history",
+      "lines": "76-88, 93-98",
+      "status": "CURRENT_AT_OBSERVATION_RESULT_PAGE_ONLY_MODALITY_UNCONFIRMED"
+    },
+    "official_commercializer_results_page": {
+      "url": "https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados",
+      "observed": "Still shows 12384; 19/11/2026; 01 02 09 21 25; latest row 12384",
+      "lines": "76-88, 93-100",
+      "status": "LAGS_DEDICATED_RESULTS_PAGE_BY_ONE_CONTEST"
+    },
+    "official_daily_mask_pdf_2026_11_19": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-19.pdf?v=19112026215833",
+      "observed": "Chispazo De las tres 12383 = 01 03 08 27 28; Chispazo Clásico 12384 = 01 02 09 21 25",
+      "lines": "57-88",
+      "browser_text_readable": true,
+      "raw_bytes_captured": false,
+      "sha256": null,
+      "status": "CONTENT_VERIFIED_RAW_BYTE_CUSTODY_MISSING"
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "observed": "Newest listed entry is RESULTADOS 2026-11-19; no 2026-11-20 entry listed in the current index view",
+      "lines": "84-93",
+      "status": "LATEST_LISTED_DATE_2026_11_19"
+    },
+    "official_chispazo_schedule": {
+      "url": "https://loterianacional.gob.mx/Chispazo/Chispazo",
+      "observed": "Chispazo de las Tres 15:00; Chispazo Clásico 21:00, daily",
+      "lines": "90-96",
+      "status": "CURRENT_AT_OBSERVATION"
+    }
+  },
+  "upcoming_draw_handling": {
+    "result_page_contest_12385": "OBSERVED_BUT_MODALITY_UNCONFIRMED; do not classify as CLASSIC or add to Classic history until official daily mask confirms the label",
+    "official_2026_11_20_classic_result_observed": false,
+    "classic_contest_id_at_21h": null,
+    "rule": "Do not infer the 21:00 Classic contest ID or modality from parity, sequence, schedule, or the 15:00 listing. Wait for the 2026-11-20 official daily mask or an equivalent primary official record."
+  },
+  "provenance": {
+    "official_result_page_observed_for_12385": true,
+    "official_modality_label_observed_for_12385": false,
+    "official_modality_label_observed_for_12384": true,
+    "official_result_cross_source_match_for_12385": false,
+    "source_pdf_raw_bytes_captured": false,
+    "source_pdf_sha256": null,
+    "source_document_chain_of_custody": false,
+    "independent_custodian": false,
+    "preclose_prediction_snapshot": false,
+    "exact_per_source_retrieval_timestamp_captured": false
+  },
+  "research_firewall": {
+    "overlay_status_only": true,
+    "canonical_history_appended": false,
+    "canonical_history_blob": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "canonical_history_sha256": "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a",
+    "prediction_payload_exists": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "model_or_challenger_changed": false,
+    "v294_changed": false,
+    "append_verified_result_used": false
+  },
+  "classification": "BLOCKED_PROVENANCE",
+  "notes": [
+    "The dedicated official Chispazo results page has advanced to contest 12385 and displays 03 13 20 22 23 for 20/11/2026.",
+    "The official commercializer Chispazo results endpoint remains at contest 12384, so the two result endpoints do not yet agree on the latest contest.",
+    "The official daily mask PDF for 19/11/2026 explicitly labels 12383 as De las tres and 12384 as Chispazo Clásico; 12384 is the latest modality-confirmed Classic result.",
+    "The official mask index currently lists 19/11/2026 as its newest entry. No 20/11/2026 daily mask was available in the observed index.",
+    "Contest 12385 remains unclassified. The daily schedule is contextual evidence only and is not used to infer its modality or the 21:00 Classic contest ID.",
+    "The raw PDF bytes were not captured, so no byte-level SHA-256 or independent custody is claimed.",
+    "The overlay is status-only. It is not a prospective output and must never be used to reconstruct a pre-close PMF, rank, or score."
+  ]
+}

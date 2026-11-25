@@ -27,6 +27,21 @@ class MappingHistoryTests(unittest.TestCase):
         self.assertEqual(report["status"], "MAPPING_HISTORY_CLEAR")
         self.assertEqual(report["overlapping_conflicts"], 0)
 
+    def test_invalid_rows_do_not_masquerade_as_overlap_conflicts(self):
+        invalid = rows()
+        invalid[0]["sphere_id"] = " "
+        invalid.append({**invalid[0], "sphere_id": "BALL-02", "printed_number": "8"})
+        report = audit_mapping_history(invalid)
+        self.assertEqual(report["overlapping_conflicts"], 0)
+        self.assertTrue(report["overlap_conflicts_clear"])
+        self.assertEqual(report["invalid_or_quarantined_mapping_rows"], 2)
+        self.assertEqual(report["continuity_status"], "NOT_PROVEN")
+
+    def test_interval_clearance_does_not_claim_continuity(self):
+        report = audit_mapping_history(rows())
+        self.assertTrue(report["interval_conflicts_clear"])
+        self.assertEqual(report["continuity_status"], "NOT_PROVEN")
+
     def test_overlapping_sphere_remap_quarantines_both_contests(self):
         data = rows()
         data[1]["printed_number"] = "8"
@@ -72,6 +87,18 @@ class MappingHistoryTests(unittest.TestCase):
     def test_naive_timestamp_fails_closed(self):
         data = rows()
         data[0]["mapping_valid_from"] = "2026-01-01T00:00:00"
+        report = audit_mapping_history(data)
+        self.assertIn("Q_REMAP", report["quarantined"]["1001"])
+
+    def test_none_sphere_id_fails_closed(self):
+        data = rows()
+        data[0]["sphere_id"] = None
+        report = audit_mapping_history(data)
+        self.assertIn("Q_REMAP", report["quarantined"]["1001"])
+
+    def test_none_sphere_set_id_fails_closed(self):
+        data = rows()
+        data[0]["sphere_set_id"] = None
         report = audit_mapping_history(data)
         self.assertIn("Q_REMAP", report["quarantined"]["1001"])
 

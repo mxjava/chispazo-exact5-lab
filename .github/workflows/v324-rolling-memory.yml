@@ -1,0 +1,38 @@
+name: v324 rolling-memory ablation
+on:
+  # Frozen retrospective audit: run manually only; unrelated pushes must not replay closed work.
+  workflow_dispatch:
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      PYTHONPATH: src:research/ORIGEN_v0_3/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: Verify immutable canonical history
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          p = Path("data/history/Chispazo_through_12249.csv")
+          digest = hashlib.sha256(p.read_bytes()).hexdigest()
+          expected = "5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a"
+          assert digest == expected, (digest, expected)
+          print("canonical SHA256 PASS:", digest)
+          PY
+      - name: Replay fixed rolling windows
+        run: |
+          for window in 400 800 1600; do
+            python -m origen.v324_rolling_memory --history data/history/Chispazo_through_12249.csv --out artifacts/v324 --window-classic "$window" --expected-sha256 5a977558c57b6579258d4d6991d3d33fe97e742bc25f59e194ebc8b71928218a
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exact5-v324-rolling-memory-ablation
+          path: artifacts/v324/
+          if-no-files-found: error

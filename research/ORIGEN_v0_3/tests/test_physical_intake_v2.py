@@ -47,6 +47,8 @@ VERIFIED = dict(
     verified_custody_refs={"RECEIPT-1"},
     verified_timestamp_refs={"TSA-1"},
     verified_source_refs={"DOC-12300"},
+    verified_signature_refs={"SIG-1"},
+    verified_calibration_refs={"a" * 64},
     verified_continuity_targets={"12301"},
 )
 
@@ -88,12 +90,47 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "BLOCKED_PROVENANCE",
         )
 
+    def test_custodian_must_be_independent_from_source_signer(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["custodian_id"] = row["source_signer_id"]
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("CUSTODIAN_IS_SOURCE_SIGNER", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_PROVENANCE")
+
+    def test_source_signature_requires_independent_verification(self):
+        verification = dict(VERIFIED)
+        verification["verified_signature_refs"] = set()
+        result = evaluate_temporal_eligibility(rows_for_target(), **verification)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_SIGNATURE_NOT_INDEPENDENTLY_VERIFIED", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_PROVENANCE")
+
+    def test_calibration_certificate_requires_independent_verification(self):
+        verification = dict(VERIFIED)
+        verification["verified_calibration_refs"] = set()
+        result = evaluate_temporal_eligibility(rows_for_target(), **verification)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("CALIBRATION_NOT_INDEPENDENTLY_VERIFIED", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_PROVENANCE")
+
+    def test_verification_arguments_must_be_sets_of_nonempty_strings(self):
+        with self.assertRaisesRegex(ValueError, "verified_source_refs must be a set"):
+            evaluate_temporal_eligibility(rows_for_target(), verified_source_refs="DOC-12300")
+
+    def test_empty_list_is_not_accepted_as_verification_set(self):
+        with self.assertRaisesRegex(ValueError, "verified_source_refs must be a set"):
+            evaluate_temporal_eligibility(rows_for_target(), verified_source_refs=[])
+
     def test_missing_continuity_is_separate_block(self):
         result = evaluate_temporal_eligibility(
             rows_for_target(),
             verified_custody_refs={"RECEIPT-1"},
             verified_timestamp_refs={"TSA-1"},
             verified_source_refs={"DOC-12300"},
+            verified_signature_refs={"SIG-1"},
+            verified_calibration_refs={"a" * 64},
         )
         self.assertEqual(
             result["targets"]["12301"]["predictive_eligibility"],
@@ -118,6 +155,37 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             "BLOCKED_PROVENANCE",
         )
         self.assertIn("TARGET_CLOSE_CONFLICT", result["targets"]["12301"]["reasons"])
+
+    def test_draw_date_must_be_canonical_iso_date(self):
+        rows = rows_for_target()
+        rows[0]["draw_date"] = "2026-11-20T00:00:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "INVALID_SOURCE_DRAW_DATE",
+            result["targets"]["12301"]["reasons"],
+        )
+
+    def test_draw_date_mismatch_reason_is_reported(self):
+        rows = rows_for_target()
+        rows[0]["draw_date"] = "2026-11-19"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "SOURCE_DRAW_DATE_MISMATCH",
+            result["targets"]["12301"]["reasons"],
+        )
+
+    def test_draw_date_uses_mexico_city_local_date_not_utc_date(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["draw_close_at"] = "2026-11-20T18:30:00-06:00"
+            row["measurement_at"] = "2026-11-20T18:40:00-06:00"
+            row["source_signed_at"] = "2026-11-20T18:50:00-06:00"
+            row["source_draw_at"] = "2026-11-21T01:00:00Z"
+            row["evidence_available_at"] = "2026-11-20T19:05:00-06:00"
+            row["custody_received_at"] = "2026-11-20T19:06:00-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertNotIn("SOURCE_DRAW_DATE_MISMATCH", reasons)
 
     def test_template_contract_has_all_required_fields(self):
         self.assertEqual(len(V2_REQUIRED_COLUMNS), len(set(V2_REQUIRED_COLUMNS)))
@@ -253,6 +321,49 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
         self.assertIn("INVALID_MASS_OR_RESOLUTION", reasons)
         self.assertIn("INVALID_CALIBRATION_SHA256", reasons)
 
+    def test_source_draw_timestamp_must_be_consistent_across_all_28_spheres(self):
+        rows = rows_for_target()
+        rows[0]["source_draw_at"] = "2026-11-20T21:00:01-06:00"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_DRAW_TIME_CONFLICT", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
+    def test_target_draw_equal_to_target_close_is_blocked(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["target_draw_at"] = row["target_draw_close_at"]
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("TARGET_DRAW_TIME_CONFLICT", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
+    def test_null_sphere_identity_is_blocked(self):
+        rows = rows_for_target()
+        rows[0]["sphere_id"] = None
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("INVALID_PHYSICAL_IDENTITY", reasons)
+        self.assertIn("NULL_REQUIRED_FIELD", reasons)
+        self.assertNotIn("NULL_PROVENANCE_FIELD", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
+    def test_contest_id_must_match_source_contest_id(self):
+        rows = rows_for_target()
+        rows[0]["contest_id"] = "12399"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_CONTEST_ID_MISMATCH", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
+    def test_draw_date_must_match_source_draw_local_date(self):
+        rows = rows_for_target()
+        rows[0]["draw_date"] = "2026-11-19"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("SOURCE_DRAW_DATE_MISMATCH", reasons)
+        self.assertEqual(result["targets"]["12301"]["predictive_eligibility"], "BLOCKED_CONTINUITY")
+
     def test_target_draw_cannot_precede_target_close(self):
         rows = rows_for_target()
         for row in rows:
@@ -276,6 +387,32 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
     def test_empty_input_is_not_success(self):
         self.assertEqual(evaluate_temporal_eligibility([])["status"], "EMPTY")
+
+
+    def test_null_provenance_fields_cannot_become_literal_none(self):
+        cases = (
+            ("source_document_ref", "verified_source_refs"),
+            ("source_signature_ref", "verified_signature_refs"),
+            ("custody_receipt_ref", "verified_custody_refs"),
+            ("trusted_timestamp_ref", "verified_timestamp_refs"),
+            ("custodian_id", None),
+            ("custodian_role", None),
+            ("source_signer_id", None),
+            ("calibration_certificate_sha256", "verified_calibration_refs"),
+        )
+        for field, verifier_arg in cases:
+            with self.subTest(field=field):
+                rows = rows_for_target()
+                for row in rows:
+                    row[field] = None
+                verification = dict(VERIFIED)
+                if verifier_arg is not None:
+                    verification[verifier_arg] = set(verification[verifier_arg]) | {"None"}
+                result = evaluate_temporal_eligibility(rows, **verification)
+                target = result["targets"]["12301"]
+                self.assertIn("NULL_REQUIRED_FIELD", target["reasons"])
+                self.assertIn("NULL_PROVENANCE_FIELD", target["reasons"])
+                self.assertEqual(target["predictive_eligibility"], "BLOCKED_PROVENANCE")
 
 
 if __name__ == "__main__":
