@@ -54,6 +54,17 @@ This does not establish who collected, transmitted, stored or presented the side
 - External ledger inclusion/head anchoring, independent witnesses, original physical records, signed CS-11/weighing strip, 28 sphere measurements, calibration, machine/set assignment and custody are not authenticated.
 - No real institutional TSA token, certificate, root key, receipt, physical evidence or custody record is included. Tests use ephemeral synthetic keys, certificates and CMS tokens.
 
+## Diagnostic consistency invariant
+
+After the detached receipt-attestation token verifies, the returned top-level
+inspection, its nested root/output-seal inspection, and the nested root-chain
+inspection expose the same remaining-blocker tuple. The blocker
+RECEIPT_ATTESTATION_RFC3161_TIMESTAMP_TOKEN_NOT_VERIFIED is removed only from
+those projections after exact token/imprint verification; the independent
+provenance status remains BLOCKED_PROVENANCE and the detached-envelope,
+nonce-origin, institutional provisioning, custody, and physical-evidence
+blockers remain explicit.
+
 ## Synthetic adversarial tests
 
 The new tests cover exact receipt/signature/token digest binding, message-imprint binding, nonce mismatch, unlisted authority, unauthorized OID, genTime mismatch, absent accuracy, noncanonical JSON, duplicate JSON keys, unknown fields and invalid nonce type. The fixtures are generated in tests and are not institutional evidence.
