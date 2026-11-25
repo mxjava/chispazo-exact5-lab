@@ -145,6 +145,8 @@ def verify_signed_trust_policy_v3(
             raise ValueError(f"issuer_keys[{index}] fields mismatch")
         key_issuer = _identifier(item["issuer_id"], f"issuer_keys[{index}].issuer_id")
         key_id = _identifier(item["key_id"], f"issuer_keys[{index}].key_id")
+        if key_id == root_key_id:
+            raise ValueError("delegated issuer key ID must not reuse pinned root key ID")
         public_bytes = _b64(
             item["public_key_b64"], f"issuer_keys[{index}].public_key_b64", 32
         )
