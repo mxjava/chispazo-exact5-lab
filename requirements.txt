@@ -8,3 +8,4 @@ optuna>=3.6
 pytest>=8.0
 tzdata>=2025.2
 cryptography>=42.0.0,<47.0.0
+asn1crypto>=1.5.1,<2.0.0
