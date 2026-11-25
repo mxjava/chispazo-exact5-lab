@@ -30,6 +30,8 @@ def synthetic_epoch(*, biased: bool, seed: int = 20261125, draw_count: int = 160
         "epoch_id": "SYNTHETIC-EPOCH-001",
         "machine_id": "SYNTHETIC-MACHINE",
         "ball_set_id": "SYNTHETIC-SET",
+        "measurement_snapshot_id": "SYNTHETIC-MEASUREMENT-SNAPSHOT",
+        "physical_ids_by_number": [f"SYNTHETIC-BALL-{i:02d}" for i in range(1, 29)],
         "features_by_number": features,
         "draws": draws,
         "contest_ids": list(range(20000, 20000 + draw_count)),
@@ -92,6 +94,12 @@ class TestPhysicalCovariateScoreV1(unittest.TestCase):
         epoch = synthetic_epoch(biased=False)
         del epoch["features_by_number"]["surface_roughness_um"]
         with self.assertRaisesRegex(ValueError, "exactly"):
+            self.evaluate(epoch)
+
+    def test_rejects_duplicate_physical_ball_mapping(self):
+        epoch = synthetic_epoch(biased=False)
+        epoch["physical_ids_by_number"][1] = epoch["physical_ids_by_number"][0]
+        with self.assertRaisesRegex(ValueError, "28 unique"):
             self.evaluate(epoch)
 
     def test_rejects_constant_feature(self):
