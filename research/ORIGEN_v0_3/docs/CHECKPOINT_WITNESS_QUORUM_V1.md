@@ -26,6 +26,8 @@ The implementation is in src/origen/checkpoint_witness_quorum_v1.py. Tests use d
 
 A quorum means only that the configured number of distinct registry identities signed the same exact checkpoint pair and consistency proof. It does **not** prove that the operators are independent organizations.
 
+The registry root key, log signing key, and every witness signing key are also required to be pairwise role-separated. Reusing one Ed25519 public key as a registry root, log signer, or witness is rejected. This prevents one cryptographic identity from being counted across trust roles; it still does not prove that different keys are controlled by different organizations.
+
 ## Important temporal invariant
 
 A witness statement cannot be accepted merely because its key was valid and its timestamp is recent. It must also have been issued at or after the registry's not_before_utc, and strictly before the registry's expires_at_utc. This prevents a statement from claiming authorization under a registry that had not yet become effective.
