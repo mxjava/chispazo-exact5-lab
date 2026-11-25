@@ -113,6 +113,18 @@ class TestDetachedReceiptAttestationTimestampEnvelopeV1(unittest.TestCase):
             "RECEIPT_ATTESTATION_RFC3161_TIMESTAMP_TOKEN_NOT_VERIFIED",
             result.remaining_blockers,
         )
+        self.assertEqual(
+            result.root_and_output_seals.remaining_blockers,
+            result.remaining_blockers,
+        )
+        self.assertEqual(
+            result.root_and_output_seals.root_chain.remaining_blockers,
+            result.remaining_blockers,
+        )
+        self.assertNotIn(
+            "RECEIPT_ATTESTATION_RFC3161_TIMESTAMP_TOKEN_NOT_VERIFIED",
+            result.root_and_output_seals.root_chain.remaining_blockers,
+        )
 
     def test_receipt_digest_must_bind_exact_original_bytes(self):
         fixture = _fixture(accuracy={"seconds": 1})
