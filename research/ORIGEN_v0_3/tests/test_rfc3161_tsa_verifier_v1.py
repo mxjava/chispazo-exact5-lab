@@ -26,7 +26,6 @@ def _certs(
     critical_eku=True,
     leaf_key_cert_sign=False,
     critical_custom_extension_on=None,
-    leaf_key_cert_sign=False,
     name_constraints_on=None,
     certificate_policies_on=None,
 ):
@@ -109,6 +108,7 @@ def _token(
     *,
     nonce=12345,
     critical_eku=True,
+    leaf_key_cert_sign=False,
     tamper_signature=False,
     include_root=False,
     accuracy=None,
