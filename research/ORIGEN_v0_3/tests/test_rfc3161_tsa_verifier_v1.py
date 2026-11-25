@@ -8,7 +8,7 @@ from asn1crypto import cms, tsp, x509 as asn1_x509
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
-from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID, ObjectIdentifier
 
 from origen.rfc3161_tsa_verifier_v1 import verify_rfc3161_timestamp_token
 
@@ -21,10 +21,16 @@ def _name(common_name):
     return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
 
 
-def _certs(*, critical_eku=True):
+def _certs(
+    *,
+    critical_eku=True,
+    critical_custom_extension_on=None,
+    name_constraints_on=None,
+    certificate_policies_on=None,
+):
     root_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     root_name = _name("Synthetic TSA Root")
-    root = (
+    root_builder = (
         x509.CertificateBuilder()
         .subject_name(root_name)
         .issuer_name(root_name)
@@ -41,10 +47,31 @@ def _certs(*, critical_eku=True):
             ),
             critical=True,
         )
-        .sign(root_key, hashes.SHA256())
     )
+    if critical_custom_extension_on == "root":
+        root_builder = root_builder.add_extension(
+            x509.UnrecognizedExtension(ObjectIdentifier("1.3.6.1.4.1.55555.1"), b"\\x05\\x00"),
+            critical=True,
+        )
+    if name_constraints_on == "root":
+        root_builder = root_builder.add_extension(
+            x509.NameConstraints(
+                permitted_subtrees=[x509.DirectoryName(_name("Synthetic TSA"))],
+                excluded_subtrees=None,
+            ),
+            critical=True,
+        )
+    if certificate_policies_on == "root":
+        root_builder = root_builder.add_extension(
+            x509.CertificatePolicies([
+                x509.PolicyInformation(ObjectIdentifier("1.2.3.4.5.6"), None)
+            ]),
+            critical=False,
+        )
+    root = root_builder.sign(root_key, hashes.SHA256())
+
     tsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    tsa = (
+    tsa_builder = (
         x509.CertificateBuilder()
         .subject_name(_name("Synthetic TSA"))
         .issuer_name(root.subject)
@@ -65,13 +92,34 @@ def _certs(*, critical_eku=True):
             x509.ExtendedKeyUsage([ExtendedKeyUsageOID.TIME_STAMPING]),
             critical=critical_eku,
         )
-        .sign(root_key, hashes.SHA256())
     )
+    if critical_custom_extension_on == "leaf":
+        tsa_builder = tsa_builder.add_extension(
+            x509.UnrecognizedExtension(ObjectIdentifier("1.3.6.1.4.1.55555.1"), b"\\x05\\x00"),
+            critical=True,
+        )
+    tsa = tsa_builder.sign(root_key, hashes.SHA256())
     return root, tsa, tsa_key
 
 
-def _token(data=DATA, *, nonce=12345, critical_eku=True, tamper_signature=False, include_root=False, accuracy=None):
-    root, tsa, tsa_key = _certs(critical_eku=critical_eku)
+def _token(
+    data=DATA,
+    *,
+    nonce=12345,
+    critical_eku=True,
+    tamper_signature=False,
+    include_root=False,
+    accuracy=None,
+    critical_custom_extension_on=None,
+    name_constraints_on=None,
+    certificate_policies_on=None,
+):
+    root, tsa, tsa_key = _certs(
+        critical_eku=critical_eku,
+        critical_custom_extension_on=critical_custom_extension_on,
+        name_constraints_on=name_constraints_on,
+        certificate_policies_on=certificate_policies_on,
+    )
     tst_info = tsp.TSTInfo({
         "version": "v1",
         "policy": "1.2.3.4.5",
@@ -186,6 +234,26 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
     def test_token_requires_expected_nonce_when_requested(self):
         token, root_der = _token(nonce=None)
         with self.assertRaisesRegex(ValueError, "omits the required request nonce"):
+            _verify(token, root_der)
+
+    def test_unhandled_critical_tsa_leaf_extension_fails_closed(self):
+        token, root_der = _token(critical_custom_extension_on="leaf")
+        with self.assertRaisesRegex(ValueError, "unhandled critical extension"):
+            _verify(token, root_der)
+
+    def test_unhandled_critical_pinned_root_extension_fails_closed(self):
+        token, root_der = _token(critical_custom_extension_on="root")
+        with self.assertRaisesRegex(ValueError, "unhandled critical extension"):
+            _verify(token, root_der)
+
+    def test_unsupported_name_constraints_fail_closed(self):
+        token, root_der = _token(name_constraints_on="root")
+        with self.assertRaisesRegex(ValueError, "unsupported RFC 5280 path extension"):
+            _verify(token, root_der)
+
+    def test_unsupported_certificate_policies_fail_closed_even_when_noncritical(self):
+        token, root_der = _token(certificate_policies_on="root")
+        with self.assertRaisesRegex(ValueError, "unsupported RFC 5280 path extension"):
             _verify(token, root_der)
 
     def test_non_der_trailing_bytes_are_rejected(self):

@@ -30,6 +30,14 @@ _SHA = {
 }
 _HEX256 = re.compile(r"[0-9a-f]{64}\Z")
 
+_UNSUPPORTED_PATH_EXTENSION_OIDS = frozenset({
+    x509.ExtensionOID.NAME_CONSTRAINTS,
+    x509.ExtensionOID.CERTIFICATE_POLICIES,
+    x509.ExtensionOID.POLICY_MAPPINGS,
+    x509.ExtensionOID.POLICY_CONSTRAINTS,
+    x509.ExtensionOID.INHIBIT_ANY_POLICY,
+})
+
 
 @dataclass(frozen=True, slots=True)
 class RFC3161Inspection:
@@ -109,7 +117,38 @@ def _valid_at(cert: x509.Certificate, instant: datetime, label: str) -> None:
         raise ValueError(f"{label} certificate is not valid at timestamp genTime")
 
 
+def _reject_unsupported_path_extensions(
+    cert: x509.Certificate, label: str
+) -> None:
+    for extension in cert.extensions:
+        if extension.oid in _UNSUPPORTED_PATH_EXTENSION_OIDS:
+            raise ValueError(
+                f"{label} certificate uses unsupported RFC 5280 path extension "
+                f"{extension.oid.dotted_string}"
+            )
+
+
+def _reject_unhandled_critical_extensions(
+    cert: x509.Certificate, label: str, handled_oids: frozenset
+) -> None:
+    for extension in cert.extensions:
+        if extension.critical and extension.oid not in handled_oids:
+            raise ValueError(
+                f"{label} certificate contains an unhandled critical extension "
+                f"{extension.oid.dotted_string}"
+            )
+
+
 def _require_ca(cert: x509.Certificate, label: str) -> None:
+    _reject_unsupported_path_extensions(cert, label)
+    _reject_unhandled_critical_extensions(
+        cert,
+        label,
+        frozenset({
+            x509.ExtensionOID.BASIC_CONSTRAINTS,
+            x509.ExtensionOID.KEY_USAGE,
+        }),
+    )
     try:
         bc = cert.extensions.get_extension_for_class(x509.BasicConstraints)
         ku = cert.extensions.get_extension_for_class(x509.KeyUsage)
@@ -119,6 +158,42 @@ def _require_ca(cert: x509.Certificate, label: str) -> None:
         raise ValueError(f"{label} CA constraints and key usage must be critical")
     if not bc.value.ca or not ku.value.key_cert_sign:
         raise ValueError(f"{label} certificate is not authorized to sign certificates")
+    try:
+        cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage)
+    except x509.ExtensionNotFound:
+        pass
+    else:
+        raise ValueError(
+            f"{label} CA certificate contains unsupported extended-key-usage path constraints"
+        )
+
+
+def _require_tsa_leaf(cert: x509.Certificate) -> None:
+    _reject_unsupported_path_extensions(cert, "TSA signer")
+    _reject_unhandled_critical_extensions(
+        cert,
+        "TSA signer",
+        frozenset({
+            x509.ExtensionOID.BASIC_CONSTRAINTS,
+            x509.ExtensionOID.KEY_USAGE,
+            x509.ExtensionOID.EXTENDED_KEY_USAGE,
+        }),
+    )
+    try:
+        basic_constraints = cert.extensions.get_extension_for_class(x509.BasicConstraints)
+    except x509.ExtensionNotFound:
+        basic_constraints = None
+    if basic_constraints is not None and basic_constraints.value.ca:
+        raise ValueError("TSA signer certificate must not be a CA certificate")
+    try:
+        eku_ext = cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage)
+        ku_ext = cert.extensions.get_extension_for_class(x509.KeyUsage)
+    except x509.ExtensionNotFound as exc:
+        raise ValueError("TSA signer certificate lacks required EKU or key usage") from exc
+    if not eku_ext.critical or tuple(eku_ext.value) != (ExtendedKeyUsageOID.TIME_STAMPING,):
+        raise ValueError("TSA signer certificate must have critical timeStamping-only EKU")
+    if not ku_ext.value.digital_signature:
+        raise ValueError("TSA signer certificate must permit digital signatures")
 
 
 def _build_chain(
@@ -287,15 +362,7 @@ def verify_rfc3161_timestamp_token(
 
     signer_info = signer_infos[0]
     signer_cert = _match_signer_certificate(signer_info, certificates)
-    try:
-        eku_ext = signer_cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage)
-        ku_ext = signer_cert.extensions.get_extension_for_class(x509.KeyUsage)
-    except x509.ExtensionNotFound as exc:
-        raise ValueError("TSA signer certificate lacks required EKU or key usage") from exc
-    if not eku_ext.critical or tuple(eku_ext.value) != (ExtendedKeyUsageOID.TIME_STAMPING,):
-        raise ValueError("TSA signer certificate must have critical timeStamping-only EKU")
-    if not ku_ext.value.digital_signature:
-        raise ValueError("TSA signer certificate must permit digital signatures")
+    _require_tsa_leaf(signer_cert)
 
     imprint = tst_info["message_imprint"]
     imprint_algorithm = imprint["hash_algorithm"]["algorithm"].native
