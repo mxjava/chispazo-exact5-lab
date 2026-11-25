@@ -166,6 +166,12 @@ def verify_signed_trust_policy(
         raise ValueError("policy envelope must be valid UTF-8 JSON") from exc
     if type(document) is not dict:
         raise ValueError("policy envelope must be a JSON object")
+
+    # The envelope digest is used by downstream receipt/ledger bindings. Require
+    # one byte representation for each signed policy object so equivalent JSON
+    # encodings cannot acquire different envelope hashes.
+    if raw != _canonical(document):
+        raise ValueError("policy envelope JSON must use canonical UTF-8 encoding")
     fields = {
         "schema_version", "policy_version", "policy_sequence", "issuer_id",
         "root_key_id", "issued_at_utc", "not_before_utc", "expires_at_utc",
