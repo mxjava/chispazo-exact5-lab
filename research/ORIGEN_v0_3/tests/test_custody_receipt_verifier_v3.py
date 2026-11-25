@@ -186,12 +186,14 @@ def bundle(
         "minimum_policy_sequence": POLICY_SEQUENCE,
         "verification_time": NOW,
         "receipt_private": receipt_private,
+        "custodian_private": custodian_private,
     }
 
 
 def inspect(data, **overrides):
     args = dict(data)
     args.pop("receipt_private", None)
+    args.pop("custodian_private", None)
     args.update(overrides)
     return verify_receipt_and_custody_v3(**args)
 

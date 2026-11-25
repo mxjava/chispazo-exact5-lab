@@ -28,6 +28,7 @@ def _certs(
     critical_custom_extension_on=None,
     name_constraints_on=None,
     certificate_policies_on=None,
+    gen_time=GEN_TIME,
 ):
     root_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     root_name = _name("Synthetic TSA Root")
@@ -37,8 +38,8 @@ def _certs(
         .issuer_name(root_name)
         .public_key(root_key.public_key())
         .serial_number(100)
-        .not_valid_before(GEN_TIME - timedelta(days=30))
-        .not_valid_after(GEN_TIME + timedelta(days=365))
+        .not_valid_before(gen_time - timedelta(days=30))
+        .not_valid_after(gen_time + timedelta(days=365))
         .add_extension(x509.BasicConstraints(ca=True, path_length=1), critical=True)
         .add_extension(
             x509.KeyUsage(
@@ -78,8 +79,8 @@ def _certs(
         .issuer_name(root.subject)
         .public_key(tsa_key.public_key())
         .serial_number(200)
-        .not_valid_before(GEN_TIME - timedelta(days=1))
-        .not_valid_after(GEN_TIME + timedelta(days=30))
+        .not_valid_before(gen_time - timedelta(days=1))
+        .not_valid_after(gen_time + timedelta(days=30))
         .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
         .add_extension(
             x509.KeyUsage(
@@ -115,6 +116,7 @@ def _token(
     critical_custom_extension_on=None,
     name_constraints_on=None,
     certificate_policies_on=None,
+    gen_time=GEN_TIME,
 ):
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
@@ -122,6 +124,7 @@ def _token(
         leaf_key_cert_sign=leaf_key_cert_sign,
         name_constraints_on=name_constraints_on,
         certificate_policies_on=certificate_policies_on,
+        gen_time=gen_time,
     )
     tst_info = tsp.TSTInfo({
         "version": "v1",
@@ -131,7 +134,7 @@ def _token(
             "hashed_message": hashlib.sha256(data).digest(),
         },
         "serial_number": 777,
-        "gen_time": GEN_TIME,
+        "gen_time": gen_time,
         "nonce": nonce,
         "accuracy": accuracy,
     })
@@ -285,6 +288,25 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         token, root_der = _token(include_root=True)
         result = _verify(token, root_der)
         self.assertEqual(result.certificate_chain_length, 2)
+
+    def test_accuracy_millis_explicit_zero_is_rejected(self):
+        token, root_der = _token(accuracy={"millis": 0})
+        with self.assertRaisesRegex(ValueError, "accuracy millis must be 1..999 when present"):
+            _verify(token, root_der)
+
+    def test_accuracy_micros_explicit_zero_is_rejected(self):
+        token, root_der = _token(accuracy={"micros": 0})
+        with self.assertRaisesRegex(ValueError, "accuracy micros must be 1..999 when present"):
+            _verify(token, root_der)
+
+    def test_accuracy_fractional_boundaries_one_and_999_are_accepted(self):
+        token, root_der = _token(accuracy={"millis": 1, "micros": 999})
+        result = _verify(token, root_der)
+        self.assertEqual(result.accuracy_microseconds, 1_999)
+
+        token, root_der = _token(accuracy={"millis": 999, "micros": 1})
+        result = _verify(token, root_der)
+        self.assertEqual(result.accuracy_microseconds, 999_001)
 
     def test_accuracy_is_preserved_for_downstream_preclose_bound(self):
         token, root_der = _token(accuracy={"seconds": 1, "millis": 250, "micros": 5})

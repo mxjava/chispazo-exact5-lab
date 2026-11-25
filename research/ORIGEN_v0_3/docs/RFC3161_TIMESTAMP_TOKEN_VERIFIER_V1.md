@@ -21,6 +21,20 @@ The module is standalone. It is not yet wired into trust_receipt_v1, the physica
 
 The implementation currently supports CMS RSA PKCS#1 v1.5, ECDSA, Ed25519 and Ed448 signatures. It accepts only SHA-256/384/512 for the CMS digest and certificate-signature digest. RSA-PSS CMS signer signatures and subject-key-identifier CMS signer IDs are rejected rather than guessed.
 
+## RFC 3161 Accuracy field validation
+
+RFC 3161 §2.4.2 defines optional `millis` and `micros` components with the
+ASN.1 range `1..999`. If either component is absent, its value is zero; an
+explicit zero is not equivalent to absence and is invalid. The verifier now
+distinguishes absent components from present values and rejects explicit zero
+for both fields. The `seconds` component remains optional and non-negative.
+
+Synthetic adversarial tests cover explicit zero rejection and the valid
+1/999 boundaries. This correction validates the token's ASN.1 accuracy syntax;
+it does not authenticate the TSA root, clock, revocation status, or policy.
+
+Reference: [RFC 3161 §2.4.2](https://www.rfc-editor.org/rfc/rfc3161.html#section-2.4.2).
+
 ## Fail-closed handling of unsupported RFC 5280 path semantics
 
 The verifier now rejects a certificate path when it encounters any of the
