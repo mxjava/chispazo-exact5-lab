@@ -220,6 +220,7 @@ class CustodyReceiptVerifierV3Tests(unittest.TestCase):
                       result.remaining_blockers)
         self.assertIn("CUSTODIAN_LEGAL_IDENTITY_AND_INSTITUTIONAL_DELEGATION_NOT_AUTHENTICATED",
                       result.remaining_blockers)
+        self.assertIn("CUSTODY_SIGNATURE_TRUSTED_TIME_NOT_VERIFIED", result.remaining_blockers)
 
     def test_mutated_custody_record_bytes_are_rejected(self):
         data = bundle()
