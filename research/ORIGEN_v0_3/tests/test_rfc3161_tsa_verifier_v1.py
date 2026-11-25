@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import unittest
 from datetime import datetime, timedelta, timezone
 
-import pytest
 from asn1crypto import cms, tsp, x509 as asn1_x509
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -140,87 +140,82 @@ def _verify(token, root_der, data=DATA, **kwargs):
     return verify_rfc3161_timestamp_token(token, data, **values)
 
 
-def test_valid_synthetic_rfc3161_token_verifies_but_remains_blocked():
-    token, root_der = _token()
-    result = _verify(token, root_der)
-    assert result.message_imprint_algorithm == "sha256"
-    assert result.serial_number == 777
-    assert result.nonce_verified is True
-    assert result.trust_anchor_source == "CALLER_SUPPLIED_UNAUTHENTICATED"
-    assert result.verification_clock_source == "CALLER_SUPPLIED_UNAUTHENTICATED"
-    assert result.revocation_status == "NOT_CHECKED"
-    assert result.provenance_status == "BLOCKED_PROVENANCE"
+class RFC3161TimestampVerifierTests(unittest.TestCase):
+    def test_valid_synthetic_rfc3161_token_verifies_but_remains_blocked(self):
+        token, root_der = _token()
+        result = _verify(token, root_der)
+        self.assertEqual(result.message_imprint_algorithm, "sha256")
+        self.assertEqual(result.serial_number, 777)
+        self.assertTrue(result.nonce_verified)
+        self.assertEqual(result.trust_anchor_source, "CALLER_SUPPLIED_UNAUTHENTICATED")
+        self.assertEqual(result.verification_clock_source, "CALLER_SUPPLIED_UNAUTHENTICATED")
+        self.assertEqual(result.revocation_status, "NOT_CHECKED")
+        self.assertEqual(result.provenance_status, "BLOCKED_PROVENANCE")
+
+    def test_wrong_artifact_bytes_fail_imprint_binding(self):
+        token, root_der = _token()
+        with self.assertRaisesRegex(ValueError, "message imprint"):
+            _verify(token, root_der, b"different artifact")
+
+    def test_wrong_expected_nonce_fails(self):
+        token, root_der = _token()
+        with self.assertRaisesRegex(ValueError, "nonce"):
+            _verify(token, root_der, expected_nonce=12346)
+
+    def test_wrong_pinned_root_fingerprint_fails(self):
+        token, root_der = _token()
+        with self.assertRaisesRegex(ValueError, "fingerprint mismatch"):
+            verify_rfc3161_timestamp_token(
+                token, DATA,
+                pinned_tsa_root_certificate_der=root_der,
+                expected_tsa_root_sha256="0" * 64,
+                verification_time=NOW,
+                expected_nonce=12345,
+            )
+
+    def test_tampered_cms_signature_fails(self):
+        token, root_der = _token(tamper_signature=True)
+        with self.assertRaisesRegex(ValueError, "CMS signature verification failed"):
+            _verify(token, root_der)
+
+    def test_tsa_eku_must_be_critical(self):
+        token, root_der = _token(critical_eku=False)
+        with self.assertRaisesRegex(ValueError, "critical timeStamping-only EKU"):
+            _verify(token, root_der)
+
+    def test_token_requires_expected_nonce_when_requested(self):
+        token, root_der = _token(nonce=None)
+        with self.assertRaisesRegex(ValueError, "omits the required request nonce"):
+            _verify(token, root_der)
+
+    def test_non_der_trailing_bytes_are_rejected(self):
+        token, root_der = _token()
+        with self.assertRaises(ValueError):
+            _verify(token + b"\x00", root_der)
+
+    def test_verification_time_must_not_precede_gen_time(self):
+        token, root_der = _token()
+        with self.assertRaisesRegex(ValueError, "after caller-supplied verification time"):
+            verify_rfc3161_timestamp_token(
+                token,
+                DATA,
+                pinned_tsa_root_certificate_der=root_der,
+                expected_tsa_root_sha256=hashlib.sha256(root_der).hexdigest(),
+                verification_time=GEN_TIME - timedelta(seconds=1),
+                expected_nonce=12345,
+            )
+
+    def test_root_certificate_may_be_included_in_cms_certificate_set(self):
+        token, root_der = _token(include_root=True)
+        result = _verify(token, root_der)
+        self.assertEqual(result.certificate_chain_length, 2)
+
+    def test_accuracy_is_preserved_for_downstream_preclose_bound(self):
+        token, root_der = _token(accuracy={"seconds": 1, "millis": 250, "micros": 5})
+        result = _verify(token, root_der)
+        self.assertEqual(result.accuracy_microseconds, 1_250_005)
+        self.assertFalse(result.ordering)
 
 
-def test_wrong_artifact_bytes_fail_imprint_binding():
-    token, root_der = _token()
-    with pytest.raises(ValueError, match="message imprint"):
-        _verify(token, root_der, b"different artifact")
-
-
-def test_wrong_expected_nonce_fails():
-    token, root_der = _token()
-    with pytest.raises(ValueError, match="nonce"):
-        _verify(token, root_der, expected_nonce=12346)
-
-
-def test_wrong_pinned_root_fingerprint_fails():
-    token, root_der = _token()
-    with pytest.raises(ValueError, match="fingerprint mismatch"):
-        verify_rfc3161_timestamp_token(
-            token, DATA,
-            pinned_tsa_root_certificate_der=root_der,
-            expected_tsa_root_sha256="0" * 64,
-            verification_time=NOW,
-            expected_nonce=12345,
-        )
-
-
-def test_tampered_cms_signature_fails():
-    token, root_der = _token(tamper_signature=True)
-    with pytest.raises(ValueError, match="CMS signature verification failed"):
-        _verify(token, root_der)
-
-
-def test_tsa_eku_must_be_critical():
-    token, root_der = _token(critical_eku=False)
-    with pytest.raises(ValueError, match="critical timeStamping-only EKU"):
-        _verify(token, root_der)
-
-
-def test_token_requires_expected_nonce_when_requested():
-    token, root_der = _token(nonce=None)
-    with pytest.raises(ValueError, match="omits the required request nonce"):
-        _verify(token, root_der)
-
-
-def test_non_der_trailing_bytes_are_rejected():
-    token, root_der = _token()
-    with pytest.raises(ValueError):
-        _verify(token + b"\x00", root_der)
-
-
-def test_verification_time_must_not_precede_gen_time():
-    token, root_der = _token()
-    with pytest.raises(ValueError, match="after caller-supplied verification time"):
-        verify_rfc3161_timestamp_token(
-            token,
-            DATA,
-            pinned_tsa_root_certificate_der=root_der,
-            expected_tsa_root_sha256=hashlib.sha256(root_der).hexdigest(),
-            verification_time=GEN_TIME - timedelta(seconds=1),
-            expected_nonce=12345,
-        )
-
-
-def test_root_certificate_may_be_included_in_cms_certificate_set():
-    token, root_der = _token(include_root=True)
-    result = _verify(token, root_der)
-    assert result.certificate_chain_length == 2
-
-
-def test_accuracy_is_preserved_for_downstream_preclose_bound():
-    token, root_der = _token(accuracy={"seconds": 1, "millis": 250, "micros": 5})
-    result = _verify(token, root_der)
-    assert result.accuracy_microseconds == 1_250_005
-    assert result.ordering is False
+if __name__ == "__main__":
+    unittest.main()
