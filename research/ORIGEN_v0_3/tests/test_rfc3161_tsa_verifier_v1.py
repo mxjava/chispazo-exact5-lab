@@ -286,6 +286,25 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         result = _verify(token, root_der)
         self.assertEqual(result.certificate_chain_length, 2)
 
+    def test_accuracy_millis_rejects_values_outside_rfc3161_range(self):
+        for invalid in (0, -1, 1000):
+            with self.subTest(millis=invalid):
+                token, root_der = _token(accuracy={"millis": invalid})
+                with self.assertRaisesRegex(ValueError, "accuracy millis must be in 1..999"):
+                    _verify(token, root_der)
+
+    def test_accuracy_micros_rejects_values_outside_rfc3161_range(self):
+        for invalid in (0, -1, 1000):
+            with self.subTest(micros=invalid):
+                token, root_der = _token(accuracy={"micros": invalid})
+                with self.assertRaisesRegex(ValueError, "accuracy micros must be in 1..999"):
+                    _verify(token, root_der)
+
+    def test_accuracy_accepts_rfc3161_millis_and_micros_boundaries(self):
+        token, root_der = _token(accuracy={"millis": 1, "micros": 999})
+        result = _verify(token, root_der)
+        self.assertEqual(result.accuracy_microseconds, 1_999)
+
     def test_accuracy_is_preserved_for_downstream_preclose_bound(self):
         token, root_der = _token(accuracy={"seconds": 1, "millis": 250, "micros": 5})
         result = _verify(token, root_der)
