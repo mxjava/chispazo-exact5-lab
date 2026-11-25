@@ -103,3 +103,33 @@ Además se requiere:
 4. Recuperar e inspeccionar los inventarios archivísticos para identificar serie, custodio y plazo de conservación.
 
 **Dictamen:** evidencia de mecanismo y de custodia documental; no evidencia de sesgo físico ni ventaja predictiva. OOS, multiplicidad y anytime e-value no superados. V294 y el histórico canónico permanecen fuera de cambios.
+
+
+## 11. Nueva ruta concreta de custodia y mantenimiento (hallazgo adicional del 25-11-2026)
+
+El **SAF-MAN-12, Manual de Organización General, febrero de 2026, revisión 00**, identifica expresamente a la Subgerencia de Operación de Concursos, Juegos y Sorteos Electrónicos e Instantáneos como responsable de:
+- revisar el calendario anual de mantenimiento preventivo y correctivo de la maquinaria electrónica;
+- administrar la elaboración, custodia y archivo físico y digital de Actas, videograbaciones y registros operativos;
+- facilitar documentos y expedientes originales bajo su resguardo para certificación.
+
+Esto resuelve una parte del bloqueo de custodia: la solicitud de originales y copias certificadas debe dirigirse específicamente a esa Subgerencia, además de la Unidad de Transparencia.
+
+Fuente oficial: https://www.loterianacional.gob.mx/documentos/Manual_de_Organizacion_General_de_Loteria_Nacional.pdf (sección 3.2.3.1).
+
+El **Informe de Gestión Gubernamental 2018-2024** identifica el contrato **058-2024** para mantenimiento preventivo y correctivo de 21 máquinas de sorteos con controles y consolas, para Melate, Revancha, Revanchita, Melate Retro, Tris, Tris Multiplicador, Chispazo y Gana Gato. El informe lo incluye entre los contratos concluidos durante enero-junio de 2024. No publica números de serie, asignación por producto ni órdenes de trabajo por concurso.
+
+Fuente oficial: https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf (páginas 43 y 58).
+
+El mismo informe reporta 14 máquinas adquiridas en 2022 y el contrato 058-2024 cubre 21 máquinas. No hay conciliación pública por activo. Esto no demuestra inconsistencia: puede incluir equipos previos o de reserva, pero no se puede inferir. Debe solicitarse el inventario patrimonial completo con modelo, serie, consola, RFID, producto asignado, fechas de alta/baja y condición de reserva.
+
+### Ampliación concreta de recuperación documental
+
+La solicitud V3 debe pedir a la Subgerencia custodio:
+1. Expediente íntegro del contrato 058-2024, anexos técnicos, inventario de las 21 máquinas, órdenes de servicio, bitácoras preventivas/correctivas, entregables y actas de aceptación.
+2. Conciliación entre las 14 máquinas adquiridas en 2022 y las 21 cubiertas por el contrato, con seriales y asignación por producto.
+3. Calendario anual de mantenimiento y certificados/órdenes de calibración de básculas, con fechas de emisión, ejecución y recepción.
+4. Inventario de Actas y anexos de Chispazo Clásico, incluyendo Tiras, CS-11, Sumarios, CS-02, CS-09, CS-12, CS-18 y másteres de video, con ubicación física/digital, custodio y plazos.
+5. Para RFID: identificador de etiqueta, activo/esfera, lector, antena, timestamp de lectura, mapeo etiqueta-número de esfera y asignación a concurso.
+6. Para cada archivo: fecha/hora de creación, recepción, firma, digitalización, transferencia y consulta; hash disponible; formato original; y registro de cadena de custodia.
+
+El contrato 058-2024 es evidencia de que existió un servicio de mantenimiento de flota que incluía Chispazo; no prueba qué máquina se usó en un sorteo específico ni su estado en una fecha concreta. SAF-MAN-12 identifica al custodio, pero tampoco demuestra que cada archivo solicitado se conserve o esté completo.
