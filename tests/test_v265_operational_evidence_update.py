@@ -35,3 +35,20 @@ def test_no_physical_records_or_predictive_gates_are_claimed():
     assert report["analysis"]["OOS_gate_passed"] is False
     assert report["analysis"]["multiplicity_gate_passed"] is False
     assert report["analysis"]["anytime_evalue_gate_passed"] is False
+
+def test_2026_manual_identifies_electronic_records_custodian():
+    import json
+    report = json.loads(MODULE.REPORT.read_text(encoding="utf-8"))
+    custodian = report["sources"]["SAF_MAN_12"]
+    assert custodian["functions"]["physical_and_digital_custody_of_actas_videos_operational_records"] is True
+    assert custodian["functions"]["facilitate_original_documents_for_certification"] is True
+
+
+def test_maintenance_contract_is_fleet_level_not_contest_level_evidence():
+    import json
+    report = json.loads(MODULE.REPORT.read_text(encoding="utf-8"))
+    contract = report["sources"]["Maintenance_contract_058_2024"]
+    assert contract["contract"] == "058-2024"
+    assert "Chispazo" in contract["scope"]
+    assert contract["per_machine_serials_published"] is False
+    assert contract["per_contest_work_orders_published"] is False
