@@ -1,9 +1,10 @@
 """Research-only verifier for nested physical-evidence Ed25519 signatures.
 
 This module verifies exact artifact bytes and detached signatures relative to a
-caller-supplied, signed trust-policy envelope. Policy v1 does not bind signer
-roles, and the caller-supplied root, sequence floor, and clock are not
-independently provisioned. Therefore every result remains BLOCKED_PROVENANCE.
+caller-supplied V2 trust-policy envelope bound to the CLASSIC domain. Policy V2
+still does not bind signer roles, and the caller-supplied root, sequence floor,
+and clock are not independently provisioned. Every result remains
+BLOCKED_PROVENANCE.
 """
 from __future__ import annotations
 
@@ -21,9 +22,10 @@ from origen.trust_policy_envelope_v2 import (
     VerifiedTrustPolicyV2,
     verify_signed_trust_policy_v2,
 )
+from origen.trust_verifier_v1 import TrustedIssuerKey
+
 
 CLASSIC_PHYSICAL_POLICY_DOMAIN = "origen.chispazo.classic.provenance"
-from origen.trust_verifier_v1 import TrustedIssuerKey
 
 SIGNATURE_PAYLOAD_DOMAIN = "origen.physical-evidence-signature.v1"
 ROLE_AUTHORIZATION_UNVERIFIED = "UNVERIFIED_CLAIM_ONLY"
@@ -32,7 +34,7 @@ PHYSICAL_SIGNATURE_REMAINING_BLOCKERS = (
     "DEPLOYMENT_ROOT_ANCHOR_PROVISIONING_UNVERIFIED",
     "ANTI_ROLLBACK_FLOOR_NOT_BACKED_BY_EXTERNAL_MONOTONIC_STATE",
     "VERIFICATION_CLOCK_NOT_AUTHENTICATED",
-    "SIGNER_ROLE_AUTHORIZATION_NOT_BOUND_TO_POLICY_V1",
+    "SIGNER_ROLE_AUTHORIZATION_NOT_BOUND_TO_POLICY_V2",
     "RFC3161_TIMESTAMP_TOKENS_NOT_VERIFIED",
     "EXTERNAL_LEDGER_INCLUSION_AND_HEAD_NOT_VERIFIED",
     "CUSTODY_RECEIPT_SIGNATURES_AND_CUSTODIAN_IDENTITY_NOT_VERIFIED",
