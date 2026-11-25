@@ -44,6 +44,7 @@ def signed_v3_policy(
     artifact_types=(RECEIPT_ATTESTATION_ARTIFACT_TYPE,),
     policy_domain=CLASSIC_PHYSICAL_POLICY_DOMAIN,
     root_private=None,
+    issuer_key_id=ISSUER_KEY_ID,
 ):
     if root_private is None:
         root_private = Ed25519PrivateKey.generate()
@@ -60,7 +61,7 @@ def signed_v3_policy(
         "issuer_keys": [
             {
                 "issuer_id": ISSUER_ID,
-                "key_id": ISSUER_KEY_ID,
+                "key_id": issuer_key_id,
                 "public_key_b64": base64.b64encode(receipt_public_key_bytes).decode("ascii"),
                 "valid_from_utc": "2026-01-01T00:00:00Z",
                 "valid_until_utc": "2027-01-01T00:00:00Z",
@@ -132,6 +133,16 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertIn("RFC3161_TIMESTAMP_TOKENS_NOT_VERIFIED", result.remaining_blockers)
         self.assertIn("CUSTODY_RECEIPT_SIGNATURES_AND_CUSTODIAN_IDENTITY_NOT_VERIFIED", result.remaining_blockers)
+
+    def test_delegated_key_id_cannot_alias_pinned_policy_root_key_id(self):
+        policy_bytes, root_public = signed_v3_policy(
+            self.receipt_public_key, issuer_key_id=ROOT_KEY_ID
+        )
+        with self.assertRaisesRegex(ValueError, "delegated issuer key ID must not reuse pinned root key ID"):
+            self.inspect(
+                signed_policy_envelope_bytes=policy_bytes,
+                pinned_root_public_key_bytes=root_public,
+            )
 
     def test_policy_root_key_cannot_be_reused_as_receipt_issuer_key(self):
         receipt_bytes, receipt_public, shared_private = signed_receipt()
