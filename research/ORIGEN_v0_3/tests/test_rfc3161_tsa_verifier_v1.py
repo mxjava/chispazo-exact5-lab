@@ -24,7 +24,9 @@ def _name(common_name):
 def _certs(
     *,
     critical_eku=True,
+    leaf_key_cert_sign=False,
     critical_custom_extension_on=None,
+    leaf_key_cert_sign=False,
     name_constraints_on=None,
     certificate_policies_on=None,
 ):
@@ -83,7 +85,7 @@ def _certs(
         .add_extension(
             x509.KeyUsage(
                 digital_signature=True, content_commitment=False, key_encipherment=False,
-                data_encipherment=False, key_agreement=False, key_cert_sign=False,
+                data_encipherment=False, key_agreement=False, key_cert_sign=leaf_key_cert_sign,
                 crl_sign=False, encipher_only=False, decipher_only=False,
             ),
             critical=True,
@@ -117,6 +119,7 @@ def _token(
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
         critical_custom_extension_on=critical_custom_extension_on,
+        leaf_key_cert_sign=leaf_key_cert_sign,
         name_constraints_on=name_constraints_on,
         certificate_policies_on=certificate_policies_on,
     )
@@ -224,6 +227,11 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
     def test_tampered_cms_signature_fails(self):
         token, root_der = _token(tamper_signature=True)
         with self.assertRaisesRegex(ValueError, "CMS signature verification failed"):
+            _verify(token, root_der)
+
+    def test_tsa_leaf_must_not_assert_key_cert_sign_when_ca_is_false(self):
+        token, root_der = _token(leaf_key_cert_sign=True)
+        with self.assertRaisesRegex(ValueError, "must not assert keyCertSign"):
             _verify(token, root_der)
 
     def test_tsa_eku_must_be_critical(self):
