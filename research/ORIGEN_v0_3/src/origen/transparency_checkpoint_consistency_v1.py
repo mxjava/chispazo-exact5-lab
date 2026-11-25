@@ -18,7 +18,7 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from origen.independent_trust_adapter import ProvenanceStatus
-from origen.transparency_ledger_verifier_v1 import CHECKPOINT_DOMAIN, CHECKPOINT_SCHEMA
+from origen.transparency_ledger_verifier_v1 import (\n    CHECKPOINT_DOMAIN,\n    CHECKPOINT_SCHEMA,\n    TransparencyLedgerInspection,\n    verify_transparency_ledger_inclusion,\n)
 
 CONSISTENCY_PROOF_SCHEMA = "origen.transparency-ledger-consistency-proof.v1"
 MAX_CHECKPOINT_BYTES = 16_384
@@ -405,4 +405,74 @@ def verify_checkpoint_consistency(
         append_only_continuity_status="CONSISTENCY_VERIFIED_WITNESS_QUORUM_UNVERIFIED",
         provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
         remaining_blockers=CONSISTENCY_REMAINING_BLOCKERS,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class ConsistentLedgerInclusionInspection:
+    inclusion: TransparencyLedgerInspection
+    checkpoint_consistency: CheckpointConsistencyInspection
+    provenance_status: ProvenanceStatus
+    remaining_blockers: tuple[str, ...]
+
+
+def verify_ledger_inclusion_with_checkpoint_continuity(
+    raw_manifest_bytes: bytes,
+    raw_ledger_entry_bytes: bytes,
+    raw_inclusion_proof_bytes: bytes,
+    raw_old_checkpoint_bytes: bytes,
+    raw_new_checkpoint_bytes: bytes,
+    raw_consistency_proof_bytes: bytes,
+    *,
+    pinned_log_public_key_bytes: bytes,
+    expected_log_id: str,
+    expected_key_id: str,
+    minimum_new_tree_size: int,
+    verification_time: datetime,
+) -> ConsistentLedgerInclusionInspection:
+    """Compose inclusion and append-only continuity against the same new root.
+
+    The exact same raw_new_checkpoint_bytes value is supplied to both
+    verifiers. This prevents a caller from combining an inclusion result for
+    one checkpoint with a consistency result for a different checkpoint.
+    The result remains diagnostic and BLOCKED_PROVENANCE.
+    """
+    inclusion = verify_transparency_ledger_inclusion(
+        raw_manifest_bytes,
+        raw_ledger_entry_bytes,
+        raw_inclusion_proof_bytes,
+        raw_new_checkpoint_bytes,
+        pinned_log_public_key_bytes=pinned_log_public_key_bytes,
+        expected_log_id=expected_log_id,
+        expected_key_id=expected_key_id,
+        minimum_tree_size=minimum_new_tree_size,
+        verification_time=verification_time,
+    )
+    continuity = verify_checkpoint_consistency(
+        raw_old_checkpoint_bytes,
+        raw_new_checkpoint_bytes,
+        raw_consistency_proof_bytes,
+        pinned_log_public_key_bytes=pinned_log_public_key_bytes,
+        expected_log_id=expected_log_id,
+        expected_key_id=expected_key_id,
+        minimum_new_tree_size=minimum_new_tree_size,
+        verification_time=verification_time,
+    )
+    if inclusion.checkpoint_sha256 != continuity.new_checkpoint_sha256:
+        raise RuntimeError("inclusion and consistency verifiers disagree on exact new checkpoint")
+    if inclusion.tree_size != continuity.new_tree_size:
+        raise RuntimeError("inclusion and consistency verifiers disagree on new checkpoint tree size")
+    if (
+        inclusion.provenance_status is not ProvenanceStatus.BLOCKED_PROVENANCE
+        or continuity.provenance_status is not ProvenanceStatus.BLOCKED_PROVENANCE
+    ):
+        raise RuntimeError("unexpected provenance status; fail-closed invariant violated")
+    blockers = tuple(dict.fromkeys(
+        inclusion.remaining_blockers + continuity.remaining_blockers
+    ))
+    return ConsistentLedgerInclusionInspection(
+        inclusion=inclusion,
+        checkpoint_consistency=continuity,
+        provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
+        remaining_blockers=blockers,
     )
