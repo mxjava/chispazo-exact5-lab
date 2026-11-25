@@ -17,7 +17,7 @@ The module is standalone. It is not yet wired into trust_receipt_v1, the physica
 - Optional request nonce equality, when the caller supplies an expected nonce.
 - TSA leaf certificate must contain a critical EKU consisting only of id-kp-timeStamping, and KeyUsage must allow digital signatures. It must not assert `keyCertSign`: RFC 5280 §4.2.1.9 requires `cA` to be true whenever `keyCertSign` is asserted, while this verifier rejects CA signer leaves.
 - Certificate signatures are checked along an unambiguous chain to the separately pinned root. Certificate validity is checked at genTime; CA BasicConstraints and KeyUsage must be critical and authorize certificate signing; path-length limits are enforced; the root must verify as self-signed.
-- genTime, serial number, policy OID, accuracy (microseconds) and ordering are returned for downstream chronology checks.
+- genTime, serial number, policy OID, accuracy (microseconds) and ordering are returned for downstream chronology checks. Accuracy `millis` and `micros` fields are accepted only when present with values in the RFC 3161 range 1..999; omitted fields contribute zero. Out-of-range or zero-present values are rejected.
 
 The implementation currently supports CMS RSA PKCS#1 v1.5, ECDSA, Ed25519 and Ed448 signatures. It accepts only SHA-256/384/512 for the CMS digest and certificate-signature digest. RSA-PSS CMS signer signatures and subject-key-identifier CMS signer IDs are rejected rather than guessed.
 
