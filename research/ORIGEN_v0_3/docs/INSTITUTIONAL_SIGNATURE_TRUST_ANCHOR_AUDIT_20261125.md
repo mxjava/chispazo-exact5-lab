@@ -75,3 +75,30 @@ Until those items are supplied and verified, keep the external provenance adapte
 - Original institutional signature artifacts received: none.
 - Institutional public trust anchor verified: no.
 - All code fixtures in the companion V3 custody verifier remain synthetic.
+
+## Normateca identity and revision reconciliation — verified 2026-11-25 14:55 America/Mexico_City
+
+The official **Normas Sustantivas Vigentes** index has a row for **PROCEDIMIENTO SORTEOS ELECTRÓNICOS**, emitted 01/10/2003, last updated 20/03/2026, linking to `sgvo_pro_05.pdf`:
+
+- https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2
+- Direct linked PDF: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
+
+The linked PDF itself identifies **SGVO-PRO-05, revision 39**, states **FECHA DE PUBLICACIÓN: 20 MAR 2026**, and contains six approval/authorization name blocks with handwritten signature images. This is the current official Normateca entry and the version to use for this audit. The prior claim that revision 39 was only a project and that revision 38 was the current SGVO-PRO-05 version was incorrect.
+
+Two similarly named files in the separate historical **Proyectos Normativos** index must not be conflated with that current file:
+
+- `sgvo_pro_05p.pdf`: PROCEDIMIENTO SORTEOS ELECTRÓNICOS, consultation 23/02/2026–04/03/2026.
+- `svo_p_05.pdf`: SORTEOS, consultation 19/09/2025–25/09/2025.
+
+Project index: https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0 . The distinct filename, prefix and consultation dates matter; neither project listing displaces the current `sgvo_pro_05.pdf` row in Normas Sustantivas Vigentes.
+
+Revision 39's operational facts relevant to Chispazo include:
+
+- Policy 6: Smartballs 4.25–5.25 g, maximum mass spread 0.30 g; Ping Pong 2.30–3.00 g, maximum spread 0.15 g; weighing is performed for each draw.
+- Policy 8: the participation-file electronic signature is written to storage before the draw; the DTIT representative hands the device to the SEGOB inspector, who deposits it in the security box assigned for OIC access.
+- Policy 9: the stated electronic sales-close slots include 15:00 for De las Tres and 21:00 for nocturnal draws. Chispazo's own product page maps its Clásico to 21:00.
+- Policy 11 and its annex matrix: the Acta must identify place, date, time, assigned officials and SEGOB inspector; Chispazo attachments include the winner report CLSBR140, sales-close Sumario, CS-11, Sumario and Tira de Pesaje. The weekly media matrix lists CLSBR140, CLIER195, CLSKR170 and CLSAR110.
+
+This confirms the current procedural revision and the evidence-request targets. It does **not** supply a public cryptographic algorithm, public key/certificate chain, signature-byte canonicalization, revocation data or independently verifiable known-answer vector. The procedure's first/last-four-character comparison is an operational control, not a substitute for independent signature verification.
+
+The official web PDF was inspected through the published URL and parsed text in this run; the original PDF bytes were not successfully captured in the working container. Its SHA-256 remains **NOT_CAPTURED**. No draw-specific physical record was obtained.
