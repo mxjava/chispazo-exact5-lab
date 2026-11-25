@@ -148,6 +148,10 @@ def verify_signed_trust_policy_v3(
         public_bytes = _b64(
             item["public_key_b64"], f"issuer_keys[{index}].public_key_b64", 32
         )
+        if public_bytes == pinned_root_public_key_bytes:
+            raise ValueError(
+                "pinned root public key must not be reused as a delegated issuer key"
+            )
         valid_from = _timestamp(
             item["valid_from_utc"], f"issuer_keys[{index}].valid_from_utc"
         )
