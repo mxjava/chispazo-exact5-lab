@@ -261,7 +261,7 @@ class CustodyReceiptVerifierV3Tests(unittest.TestCase):
 
     def test_custodian_key_id_cannot_alias_pinned_policy_root_key_id(self):
         data = bundle(custodian_key_id=ROOT_KEY_ID)
-        with self.assertRaisesRegex(ValueError, "distinct from pinned policy root key ID"):
+        with self.assertRaisesRegex(ValueError, "delegated issuer key ID must not reuse pinned root key ID"):
             inspect(data)
 
     def test_unknown_custodian_key_is_rejected(self):
