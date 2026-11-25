@@ -33,8 +33,10 @@ ball-set ID and machine ID. A missing feature is not silently dropped. No substi
 feature, transformed feature, directional hypothesis, or post-hoc subgroup may be
 introduced after outcomes are inspected.
 
-The schema requires 28 unique physical IDs and a one-to-one physical-ID to printed-number
-mapping for every unchanged machine/ball-set epoch. If the machine, ball set, mapping,
+The input contract requires 28 unique physical IDs, a measurement snapshot ID and a
+one-to-one physical-ID to printed-number mapping for every unchanged machine/ball-set
+epoch. These are structural checks only; they do not authenticate the mapping or
+measurement record. If the machine, ball set, mapping,
 calibration, or feature measurements change, create a new epoch. Do not pool across
 epochs without retaining their separate feature vectors and draw memberships.
 
