@@ -50,6 +50,7 @@ class TransparencyLedgerInspection:
     ledger_id: str
     entry_id: str
     manifest_sha256: str
+    manifest_commitment_sha256: str
     ledger_entry_sha256: str
     inclusion_proof_sha256: str
     log_id: str
