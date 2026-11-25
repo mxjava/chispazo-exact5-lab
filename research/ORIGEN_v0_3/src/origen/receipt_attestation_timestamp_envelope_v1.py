@@ -14,7 +14,7 @@ import binascii
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 
 from .independent_trust_adapter import ProvenanceStatus
@@ -286,6 +286,18 @@ def inspect_signed_root_attestation_chain_with_detached_receipt_timestamp(
         "RECEIPT_V1_EMBEDDED_TIMESTAMP_REFERENCE_NOT_USED_AS_PROOF_BINDING",
         "DETACHED_RECEIPT_TIMESTAMP_ENVELOPE_SOURCE_AND_CUSTODY_NOT_AUTHENTICATED",
         "TSA_NONCE_REQUEST_ORIGIN_NOT_AUTHENTICATED",
+    )
+    # Keep every nested diagnostic projection consistent with the proof just
+    # verified. Otherwise the top-level result clears the timestamp blocker
+    # while root_and_output_seals.root_chain still reports it as outstanding.
+    updated_root_chain = replace(
+        combined.root_chain,
+        remaining_blockers=blockers,
+    )
+    combined = replace(
+        combined,
+        root_chain=updated_root_chain,
+        remaining_blockers=blockers,
     )
     inspection = ReceiptAttestationTimestampInspection(
         receipt_sha256=receipt_digest,
