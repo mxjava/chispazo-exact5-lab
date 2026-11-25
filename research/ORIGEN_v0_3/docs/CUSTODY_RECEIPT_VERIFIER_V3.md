@@ -16,7 +16,7 @@ The verifier requires all of the following:
 4. verify_seal_record() verifies the record against the exact portfolio bytes, including the Classic 21:00 slot and pre-close chronology.
 5. The record target and close, candidate digest, environment digest, generator ID and portfolio digest match the signed receipt's target/commitments/output-seal claims.
 6. Exactly one receipt custodian claim matches the record custodian ID; its role is external-custodian, and its receipt_sha256 equals SHA-256 of the exact original custody-record bytes.
-7. The custodian key ID is distinct from the receipt root-attester key ID and every physical signer key ID.
+7. The custodian key ID is distinct from the pinned V3 policy root key ID, the receipt root-attester key ID, and every physical signer key ID. A delegated custodian key cannot reuse the root key identifier even if its public-key bytes differ.
 8. The V3 policy authorizes (custodian_id, custodian_key_id, external-custodian, EXACT5-CUSTODY-RECORD). The key must be present, unrevoked and valid at the single normalized verification instant.
 9. The detached signature verifies over the domain-separated canonical payload from canonical_custody_signature_payload(). That payload binds the exact custody-record digest, its internal record digest, the exact receipt digest, custodian identity/key ID, role, artifact type, target and portfolio digest.
 
@@ -59,3 +59,7 @@ The result therefore remains exactly BLOCKED_PROVENANCE. The existing verify_ind
 test_custody_receipt_verifier_v3.py uses generated Ed25519 keys and synthetic records only. It covers valid verification plus record-byte mutation, portfolio mutation, signature tampering, receipt-to-record digest mismatch, key-ID aliasing, unknown keys, unauthorized roles, policy-root/delegate key reuse, noncanonical timestamps, duplicate JSON keys, and a stateful caller timezone.
 
 No synthetic key, certificate, custody record, timestamp or ledger fixture is an institutional artifact.
+
+## Key-identifier namespace hardening
+
+The verifier rejects a custodian delegated-key identifier equal to the externally expected V3 policy root key identifier. The policy root and delegated issuer keys occupy separate trust roles; reusing the same identifier for both is ambiguous even when the underlying public-key bytes differ. The regression uses a synthetic signed policy in which the custodian key ID is deliberately set to the root key ID and confirms fail-closed rejection. This is structural key-ID separation only; it does not authenticate the root or custodian identity.
