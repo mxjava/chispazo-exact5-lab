@@ -41,11 +41,11 @@ def public_bytes(private_key: Ed25519PrivateKey) -> bytes:
 
 
 def leaf_hash(value: bytes) -> bytes:
-    return hashlib.sha256(b"\\x00" + value).digest()
+    return hashlib.sha256(b"\x00" + value).digest()
 
 
 def node_hash(left: bytes, right: bytes) -> bytes:
-    return hashlib.sha256(b"\\x01" + left + right).digest()
+    return hashlib.sha256(b"\x01" + left + right).digest()
 
 
 def tree_hash(leaves: list[bytes]) -> bytes:
@@ -99,7 +99,7 @@ def build_pair(
     old_issued_at: str = "2026-11-24T19:00:00Z",
     new_issued_at: str = "2026-11-24T19:01:00Z",
 ):
-    private_key = Ed25519PrivateKey.from_private_bytes(b"\\x2a" * 32)
+    private_key = Ed25519PrivateKey.from_private_bytes(b"\x2a" * 32)
     leaves = [f"leaf-{index}".encode("ascii") for index in range(max(old_size, new_size))]
     old_leaves = leaves[:old_size]
     new_leaves = leaves[:new_size]
@@ -247,7 +247,7 @@ class CheckpointConsistencyV1Tests(unittest.TestCase):
     def test_checkpoint_signature_tampering_is_rejected(self):
         data = build_pair(3, 9)
         checkpoint = dict(data["old_checkpoint"])
-        checkpoint["signature_b64"] = base64.b64encode(b"\\x00" * 64).decode("ascii")
+        checkpoint["signature_b64"] = base64.b64encode(b"\x00" * 64).decode("ascii")
         data["old_bytes"] = canonical(checkpoint)
         data["proof"]["old_checkpoint_sha256"] = sha(data["old_bytes"])
         data["proof_bytes"] = canonical(data["proof"])
@@ -256,7 +256,7 @@ class CheckpointConsistencyV1Tests(unittest.TestCase):
 
     def test_wrong_log_public_key_is_rejected(self):
         data = build_pair(3, 9)
-        attacker = Ed25519PrivateKey.from_private_bytes(b"\\x31" * 32)
+        attacker = Ed25519PrivateKey.from_private_bytes(b"\x31" * 32)
         with self.assertRaisesRegex(ValueError, "old checkpoint Ed25519 signature verification failed"):
             inspect(data, pinned_log_public_key_bytes=public_bytes(attacker))
 
