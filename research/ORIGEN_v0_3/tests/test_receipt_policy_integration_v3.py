@@ -139,7 +139,7 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
             receipt_public, root_private=shared_private
         )
         self.assertEqual(root_public, receipt_public)
-        with self.assertRaisesRegex(ValueError, "must not also be delegated"):
+        with self.assertRaisesRegex(ValueError, "must not be reused as a delegated issuer key"):
             verify_receipt_attestation_with_policy_v3(
                 receipt_bytes,
                 policy_bytes,
