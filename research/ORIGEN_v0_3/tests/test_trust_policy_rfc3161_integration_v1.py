@@ -95,9 +95,10 @@ def _timestamp_token(data, root, tsa, tsa_key, *, nonce, gen_time, accuracy):
     return token
 
 
-def _fixture(*, token_data_overrides=None, token_times=None, accuracy=None, verification_time=NOW):
+def _fixture(*, token_data_overrides=None, token_times=None, declared_times=None, accuracy=None, verification_time=NOW):
     token_data_overrides = token_data_overrides or {}
     token_times = token_times or SEAL_TIMES
+    declared_times = declared_times or token_times
     issuer_private = Ed25519PrivateKey.generate()
     issuer_public = issuer_private.public_key().public_bytes(
         encoding=serialization.Encoding.Raw,
@@ -124,7 +125,9 @@ def _fixture(*, token_data_overrides=None, token_times=None, accuracy=None, veri
         signatures.append(signature_bytes)
         signature_digest = hashlib.sha256(signature_bytes).hexdigest()
         seal["signature_sha256"] = signature_digest
-        seal_time = token_times[index]
+        document["signers"][index]["signature_sha256"] = signature_digest
+        seal_time = declared_times[index]
+        token_gen_time = token_times[index]
         seal["created_at_utc"] = _stamp(seal_time)
         proof = document["trusted_time_proofs"][index + 1]
         proof["event_id"] = f"event-seal-{index}"
@@ -137,7 +140,7 @@ def _fixture(*, token_data_overrides=None, token_times=None, accuracy=None, veri
             tsa,
             tsa_key,
             nonce=nonce,
-            gen_time=seal_time,
+            gen_time=token_gen_time,
             accuracy=accuracy,
         )
         proof_digest = hashlib.sha256(token).hexdigest()
@@ -150,7 +153,7 @@ def _fixture(*, token_data_overrides=None, token_times=None, accuracy=None, veri
             expected_nonce=nonce,
         ))
 
-    latest_seal_time = max(token_times)
+    latest_seal_time = max(declared_times)
     attestation_time = max(ATTESTATION_TIME, latest_seal_time + timedelta(seconds=5))
     document["trusted_time_proofs"][0]["event_at_utc"] = _stamp(attestation_time)
     document["receipt_attestation"]["signed_at_utc"] = _stamp(attestation_time)
@@ -259,31 +262,13 @@ class TestSignedRootRFC3161OutputSealIntegrationV1(unittest.TestCase):
 
     def test_gen_time_must_match_signed_event_time(self):
         token_times = (SEAL_TIMES[0] + timedelta(seconds=1), SEAL_TIMES[1])
-        fixture = _fixture(accuracy={"seconds": 1}, token_times=token_times)
-        # The signed event time is updated with the declared seal time. A token
-        # generated one second later must not silently replace that declaration.
-        first, second = fixture["evidence"]
-        # Rebuild the first token with a genTime that differs from its signed claim.
-        root, tsa, tsa_key = _certs()
-        token = _timestamp_token(
-            first.signature_bytes,
-            root,
-            tsa,
-            tsa_key,
-            nonce=first.expected_nonce,
-            gen_time=SEAL_TIMES[0] + timedelta(seconds=2),
+        fixture = _fixture(
             accuracy={"seconds": 1},
+            token_times=token_times,
+            declared_times=SEAL_TIMES,
         )
-        # Keep the receipt's proof digest unchanged so the token-byte binding
-        # fails before chronology; this is still a strict negative control.
-        altered = OutputSealTimestampEvidence(
-            event_id=first.event_id,
-            token_der=token,
-            signature_bytes=first.signature_bytes,
-            expected_nonce=first.expected_nonce,
-        )
-        with self.assertRaisesRegex(ValueError, "token SHA-256"):
-            _inspect(fixture, output_seal_timestamp_evidence=(altered, second))
+        with self.assertRaisesRegex(ValueError, "genTime does not match"):
+            _inspect(fixture)
 
     def test_missing_accuracy_cannot_establish_strict_preclose_bound(self):
         fixture = _fixture(accuracy=None)
@@ -296,7 +281,7 @@ class TestSignedRootRFC3161OutputSealIntegrationV1(unittest.TestCase):
         fixture = _fixture(
             accuracy={"seconds": 1},
             token_times=(late_seal, SEAL_TIMES[1]),
-            verification_time=verification_time,
+            verification_time=CLOSE + timedelta(seconds=10),
         )
         with self.assertRaisesRegex(ValueError, "not strictly before"):
             _inspect(fixture)
