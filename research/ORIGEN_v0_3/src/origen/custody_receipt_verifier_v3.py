@@ -43,12 +43,12 @@ CUSTODY_SIGNER_ROLE = "external-custodian"
 CUSTODY_ARTIFACT_TYPE = "EXACT5-CUSTODY-RECORD"
 CUSTODY_ROLE_STATUS = "SIGNED_POLICY_MATCH_ONLY_NOT_INSTITUTIONALLY_AUTHENTICATED"
 
-_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\\Z")
-_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
-_SHA40 = re.compile(r"[0-9a-f]{40}\\Z")
+_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_SHA40 = re.compile(r"[0-9a-f]{40}\Z")
 _UTC_Z = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
-    r"(?:\\.[0-9]{1,6})?Z\\Z"
+    r"(?:\.[0-9]{1,6})?Z\Z"
 )
 
 CUSTODY_REMAINING_BLOCKERS = (
@@ -135,9 +135,9 @@ def _parse_exact_custody_record(raw: bytes) -> dict[str, object]:
         raise ValueError(
             f"custody_record_bytes must contain 1..{MAX_CUSTODY_RECORD_BYTES} bytes"
         )
-    if not raw.endswith(b"\\n"):
+    if not raw.endswith(b"\n"):
         raise ValueError("custody record must end with exactly one LF")
-    if raw.endswith(b"\\n\\n") or b"\\r" in raw:
+    if raw.endswith(b"\n\n") or b"\r" in raw:
         raise ValueError("custody record must use one canonical LF terminator")
     _validate_json_depth(raw)
     try:
@@ -151,7 +151,7 @@ def _parse_exact_custody_record(raw: bytes) -> dict[str, object]:
         raise ValueError("custody record must be bounded valid UTF-8 JSON") from exc
     if type(document) is not dict:
         raise ValueError("custody record JSON root must be an exact object")
-    if raw != canonical_json_bytes(document) + b"\\n":
+    if raw != canonical_json_bytes(document) + b"\n":
         raise ValueError("custody record must use canonical UTF-8 JSON bytes")
     for field in (
         "generated_at_utc",
