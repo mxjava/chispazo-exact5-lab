@@ -1,0 +1,78 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-26T00:52:41-06:00",
+  "scope": "status_only_official_mask_and_results_publication_no_physical_custody_evidence",
+  "sources": {
+    "official_chispazo_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_mask_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=25112026221906",
+    "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_chispazo_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  },
+  "observations": {
+    "official_mask_pdf": {
+      "date": "2026-11-25",
+      "bytes_captured_locally": false,
+      "sha256": "NOT_CAPTURED",
+      "modality_labels_explicit": true,
+      "de_las_tres": {
+        "contest_id": 12395,
+        "numbers": [
+          1,
+          13,
+          19,
+          23,
+          28
+        ]
+      },
+      "classic": {
+        "contest_id": 12396,
+        "numbers": [
+          5,
+          7,
+          21,
+          24,
+          28
+        ]
+      },
+      "note": "Official PDF text explicitly labels both Chispazo modalities and contest IDs."
+    },
+    "dedicated_results_page": {
+      "latest_contest": 12396,
+      "latest_date": "2026-11-25",
+      "latest_numbers": [
+        5,
+        7,
+        21,
+        24,
+        28
+      ],
+      "previous_same_day_contest": 12395,
+      "previous_same_day_numbers": [
+        1,
+        13,
+        19,
+        23,
+        28
+      ],
+      "next_draw_date": "2026-11-26",
+      "no_2026_11_26_result_visible": true
+    },
+    "official_schedule": {
+      "de_las_tres_local_time": "15:00",
+      "classic_local_time": "21:00",
+      "timezone": "America/Mexico_City"
+    },
+    "physical_provenance": {
+      "original_acta_obtained": false,
+      "cs11_obtained": false,
+      "signed_sumario_obtained": false,
+      "original_weighing_strip_obtained": false,
+      "individual_sphere_measurements_obtained": false,
+      "calibration_certificate_obtained": false,
+      "institutional_signature_material_obtained": false,
+      "independent_custody_obtained": false
+    }
+  },
+  "classification": "OFFICIAL_POST_DRAW_MASK_CONFIRMS_MODALITY_AND_NUMBERS_ONLY",
+  "production_state": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
