@@ -356,6 +356,82 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.physical_context_read_count, 1)
         self.assertEqual(provider.commit_count, 1)
 
+    def test_snapshot_must_bind_physical_context_digest_and_generation(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.snapshot = replace(
+            provider.snapshot,
+            physical_trust_context_generation=None,
+            physical_trust_context_sha256=None,
+        )
+
+        with self.assertRaisesRegex(TrustStateRejected, "does not bind a physical trust context"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.physical_context_read_count, 1)
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_physical_context_policy_floor_must_match_deployment_snapshot(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        changed = replace(
+            provider.physical_context,
+            minimum_policy_sequence=provider.physical_context.minimum_policy_sequence + 1,
+        )
+        provider.physical_context = changed
+        provider.snapshot = replace(
+            provider.snapshot,
+            physical_trust_context_sha256=physical_trust_context_sha256(changed),
+        )
+
+        with self.assertRaisesRegex(TrustStateRejected, "bootstrap floor differs"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.physical_context_read_count, 1)
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_provider_owned_log_tree_floor_is_enforced(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        changed = replace(
+            provider.physical_context,
+            minimum_log_tree_size=len(ledger["leaves"]) + 1,
+        )
+        provider.physical_context = changed
+        provider.snapshot = replace(
+            provider.snapshot,
+            physical_trust_context_sha256=physical_trust_context_sha256(changed),
+        )
+
+        with self.assertRaises(ValueError):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.physical_context_read_count, 1)
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_provider_owned_registry_sequence_floor_is_enforced(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        changed = replace(
+            provider.physical_context,
+            minimum_registry_sequence=8,
+        )
+        provider.physical_context = changed
+        provider.snapshot = replace(
+            provider.snapshot,
+            physical_trust_context_sha256=physical_trust_context_sha256(changed),
+        )
+
+        with self.assertRaises(ValueError):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.physical_context_read_count, 1)
+        self.assertEqual(provider.commit_count, 0)
+
     def test_provider_without_physical_context_fails_before_evidence_and_cas(self):
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger)
