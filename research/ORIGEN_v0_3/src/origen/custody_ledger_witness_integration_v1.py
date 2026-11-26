@@ -41,6 +41,7 @@ from .transparency_checkpoint_consistency_v1 import (
     ConsistentLedgerInclusionInspection,
     verify_ledger_inclusion_with_checkpoint_continuity,
 )
+from .transparency_ledger_verifier_v1 import _manifest_commitment_sha256
 from .rfc3161_tsa_verifier_v1 import (
     RFC3161Inspection,
     verify_rfc3161_timestamp_token,
@@ -269,6 +270,8 @@ def _verify_policy_envelope_timestamp_v1(
         verification_time=verification_time,
         expected_nonce=policy_timestamp_expected_nonce,
     )
+    if timestamp.provenance_status != "BLOCKED_PROVENANCE":
+        raise RuntimeError("RFC 3161 policy-envelope inspection did not preserve BLOCKED_PROVENANCE")
     if type(timestamp.accuracy_microseconds) is not int or timestamp.accuracy_microseconds < 0:
         raise ValueError("policy-envelope RFC 3161 accuracy is required and must be non-negative")
     accuracy = timedelta(microseconds=timestamp.accuracy_microseconds)
@@ -446,6 +449,15 @@ def verify_custody_timestamp_ledger_witness_v1(
         minimum_new_tree_size=minimum_new_tree_size,
         verification_time=verified_at,
     )
+    expected_manifest_commitment = _manifest_commitment_sha256(raw_manifest_bytes)
+    if (
+        ledger.inclusion.manifest_sha256 != manifest.raw_sha256
+        or ledger.inclusion.manifest_commitment_sha256 != expected_manifest_commitment
+    ):
+        raise RuntimeError("ledger inclusion did not commit to the exact manifest containing the policy timestamp proof")
+    # Only after the exact manifest commitment is independently verified can
+    # the policy-envelope timestamp event be marked as transitively ledger-bound.
+    policy_timestamp_proof_in_manifest_commitment_verified = True
     # This composition API accepts only an immutable, bounded tuple. Do
     # not iterate a caller-controlled lazy iterable or mutable list before
     # the gossip verifier applies its own resource and cryptographic checks.
@@ -501,7 +513,7 @@ def verify_custody_timestamp_ledger_witness_v1(
     return CustodyLedgerWitnessInspectionV1(
         custody_timestamp=custody_timestamp,
         policy_envelope_timestamp=policy_envelope_timestamp,
-        policy_envelope_timestamp_proof_in_manifest_commitment_verified=True,
+        policy_envelope_timestamp_proof_in_manifest_commitment_verified=policy_timestamp_proof_in_manifest_commitment_verified,
         physical_signatures=physical_signatures,
         ledger=ledger,
         witness_gossip=gossip,
