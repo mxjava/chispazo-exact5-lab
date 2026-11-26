@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from .checkpoint_witness_gossip_v1 import (
+    MAX_OBSERVATION_BATCHES,
     WitnessGossipInspection,
     WitnessObservationBatch,
     inspect_witness_gossip,
@@ -251,18 +252,15 @@ def verify_custody_timestamp_ledger_witness_v1(
         minimum_new_tree_size=minimum_new_tree_size,
         verification_time=verified_at,
     )
-    checkpoint_sha256 = ledger.inclusion.checkpoint_sha256
-    observed = any(
-        hashlib.sha256(batch.raw_old_checkpoint_bytes).hexdigest() == checkpoint_sha256
-        or hashlib.sha256(batch.raw_new_checkpoint_bytes).hexdigest() == checkpoint_sha256
-        for batch in witness_observation_batches
-        if type(batch) is WitnessObservationBatch
-        and type(batch.raw_old_checkpoint_bytes) is bytes
-        and type(batch.raw_new_checkpoint_bytes) is bytes
-    )
-    if not observed:
+    # This composition API accepts only an immutable, bounded tuple. Do
+    # not iterate a caller-controlled lazy iterable or mutable list before
+    # the gossip verifier applies its own resource and cryptographic checks.
+    if type(witness_observation_batches) is not tuple:
+        raise TypeError("witness_observation_batches must be an exact tuple")
+    if not 2 <= len(witness_observation_batches) <= MAX_OBSERVATION_BATCHES:
         raise ValueError(
-            "exact ledger checkpoint is absent from every verified witness observation batch"
+            "witness_observation_batches must contain "
+            f"2..{MAX_OBSERVATION_BATCHES} immutable batches"
         )
 
     gossip = inspect_witness_gossip(
@@ -277,6 +275,20 @@ def verify_custody_timestamp_ledger_witness_v1(
         minimum_new_tree_size=minimum_new_tree_size,
         verification_time=verified_at,
     )
+
+    # Only inspect exact checkpoint bytes after every immutable batch has
+    # passed registry, checkpoint, consistency and witness-quorum verification.
+    checkpoint_sha256 = ledger.inclusion.checkpoint_sha256
+    observed = any(
+        hashlib.sha256(batch.raw_old_checkpoint_bytes).hexdigest() == checkpoint_sha256
+        or hashlib.sha256(batch.raw_new_checkpoint_bytes).hexdigest() == checkpoint_sha256
+        for batch in witness_observation_batches
+    )
+    if not observed:
+        raise ValueError(
+            "exact ledger checkpoint is absent from every verified witness observation batch"
+        )
+
     if (
         custody_timestamp.provenance_status is not ProvenanceStatus.BLOCKED_PROVENANCE
         or ledger.provenance_status is not ProvenanceStatus.BLOCKED_PROVENANCE

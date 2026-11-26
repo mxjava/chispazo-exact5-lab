@@ -21,6 +21,7 @@ from test_custody_receipt_verifier_v3 import (
 from test_custody_signature_timestamp_integration_v1 import (
     timestamped_bundle,
 )
+from origen.checkpoint_witness_gossip_v1 import WitnessObservationBatch
 from test_checkpoint_witness_gossip_v1 import make_batch
 from test_checkpoint_witness_quorum_v1 import (
     REGISTRY_ID,
@@ -356,6 +357,31 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
             "SPLIT_VIEW_DETECTED_IN_SUPPLIED_BATCHES",
         )
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_lazy_or_mutable_witness_collections_are_rejected_before_iteration(self):
+        data, ledger, batches, _ = _build_case()
+        consumed = []
+
+        def lazy_batches():
+            consumed.append("iterated")
+            yield batches[0]
+            yield batches[1]
+
+        with self.assertRaisesRegex(TypeError, "exact tuple"):
+            _verify(data, ledger, lazy_batches())
+        self.assertEqual(consumed, [])
+
+        with self.assertRaisesRegex(TypeError, "exact tuple"):
+            _verify(data, ledger, list(batches))
+
+    def test_oversized_witness_tuple_is_rejected_before_checkpoint_scan(self):
+        data, ledger, _, _ = _build_case()
+        oversized = tuple(
+            WitnessObservationBatch(b"", b"", b"", b"", (b"",))
+            for _ in range(33)
+        )
+        with self.assertRaisesRegex(ValueError, r"2\.\.32"):
+            _verify(data, ledger, oversized)
 
     def test_stateful_caller_clock_is_sampled_once_at_composition_boundary(self):
         data, ledger, batches, _ = _build_case()
