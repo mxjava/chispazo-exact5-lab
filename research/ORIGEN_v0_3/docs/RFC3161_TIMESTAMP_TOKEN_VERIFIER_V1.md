@@ -120,7 +120,10 @@ certificate selected by CMS issuerAndSerialNumber.
 - If both attributes are present, both identifiers must match the same signer
   certificate.
 - When issuerSerial is present, both its serial number and directoryName issuer
-  must match the selected signer certificate.
+  must match the selected signer certificate. The complete DER Name is compared
+  to preserve RDN sequence/set boundaries; the flattened ASN.1 native mapping is
+  not used because distinct RDN structures can otherwise compare equal. This is
+  intentionally conservative and may reject semantically equivalent encodings.
 - Duplicate attributes, empty certificate-ID sequences, absent ESS attributes,
   unsupported ESSCertIDv2 digests and mismatched hashes/issuerSerial values are
   rejected.
