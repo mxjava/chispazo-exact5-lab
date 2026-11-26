@@ -5,6 +5,7 @@ import hashlib
 import unittest
 
 from origen.physical_trust_context_v1 import PhysicalTrustContextV1
+from origen.trust_policy_envelope_v1 import MAX_POLICY_SEQUENCE
 
 
 def valid_context(**overrides):
@@ -54,6 +55,18 @@ class PhysicalTrustContextTests(unittest.TestCase):
     def test_rejects_boolean_sequence_floor(self):
         with self.assertRaisesRegex(ValueError, "non-negative integer"):
             valid_context(minimum_policy_sequence=True)
+
+    def test_rejects_noncanonical_policy_oid(self):
+        with self.assertRaisesRegex(ValueError, "canonical object identifier"):
+            valid_context(policy_tsa_policy_oid="not-an-oid")
+
+    def test_rejects_policy_sequence_above_protocol_limit(self):
+        with self.assertRaisesRegex(ValueError, "supported range"):
+            valid_context(minimum_policy_sequence=MAX_POLICY_SEQUENCE + 1)
+
+    def test_rejects_noncanonical_registry_identifier(self):
+        with self.assertRaisesRegex(ValueError, "canonical identifier"):
+            valid_context(registry_id=" registry ")
 
     def test_rejects_mutable_certificate_input(self):
         with self.assertRaisesRegex(ValueError, "immutable bytes"):
