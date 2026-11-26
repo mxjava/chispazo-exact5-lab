@@ -91,7 +91,8 @@ token. The verifier supports these forms:
 - `registeredID`: exact dotted OID match against a SAN RegisteredID.
 
 Textual values are compared exactly and conservatively; no case folding or URI
-normalization is performed. Other GeneralName choices (including otherName,
+normalization is performed. iPAddress matching accepts address values only, not
+CIDR network values. Other GeneralName choices (including otherName,
 x400Address and ediPartyName) are rejected as unsupported. A present name that
 does not match a certificate subject/SAN entry is rejected. The field remains
 optional. This bounded verifier is not a complete RFC 5280 path-validation
