@@ -391,6 +391,16 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             _trust_configuration_sha256(changed),
         )
 
+    def test_physical_trust_context_fingerprint_is_part_of_cas_configuration(self):
+        changed = replace(
+            self.snapshot,
+            physical_trust_context_sha256="c" * 64,
+        )
+        self.assertNotEqual(
+            _trust_configuration_sha256(self.snapshot),
+            _trust_configuration_sha256(changed),
+        )
+
     def test_clock_sample_claims_must_match_provider_snapshot(self):
         document = json.loads(self.snapshot.clock_sample_envelope_bytes)
         document["clock_source_id"] = "attacker-clock"
