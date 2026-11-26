@@ -1,20 +1,17 @@
 """Fail-closed boundary for the not-yet-provisioned independent trust adapter.
 
-No institutional trust roots, controlled artifact store, trusted-time service,
-or independent ledger have been provisioned and independently reviewed for
-this repository. The adapter therefore has only BLOCKED_PROVENANCE.
+No institutional trust roots, trusted clock, rollback-resistant state, or
+independent provenance backend has been provisioned and reviewed. The adapter
+therefore has only BLOCKED_PROVENANCE.
 
-The optional V3 context is an in-process consistency handoff, not an
-unforgeable capability or an independent trust anchor. It binds the exact
-receipt and policy bytes to the exact verifier result objects produced by the
-V3 receipt bridge, checks their issuer/key/role/time relationships, and then
-still returns BLOCKED_PROVENANCE. Python callers with arbitrary code execution
-can fabricate objects; production decisions must never rely on these object
-types alone.
+For V3 diagnostics it re-verifies the exact policy-envelope and receipt bytes
+itself. It accepts no caller-created verifier-result objects. The deployment
+root pin, key ID, sequence floor and UTC instant remain caller supplied, so
+this is not institutional or independent trust.
 
 Do not replace this gate with caller-supplied booleans, callbacks, key maps,
-or reference sets. A future backend must independently provision its roots,
-clock and monotonic state, and re-verify original bytes at this boundary.
+or reference sets. A future backend must independently provision roots, time
+and monotonic state before any eligibility decision can be considered.
 """
 from __future__ import annotations
 
@@ -24,12 +21,16 @@ from datetime import datetime, timezone
 from enum import Enum
 
 from .trust_policy_envelope_v1 import MAX_POLICY_BYTES
-from .trust_policy_envelope_v3 import VerifiedTrustPolicyV3
+from .trust_policy_envelope_v3 import (
+    VerifiedTrustPolicyV3,
+    verify_signed_trust_policy_v3,
+)
 from .trust_receipt_v1 import MAX_TRUST_RECEIPT_BYTES, UnverifiedTrustReceipt
 from .trust_verifier_v1 import (
     CryptographicallyVerifiedReceipt,
     TrustPolicy,
     TrustedIssuerKey,
+    verify_receipt_attestation,
 )
 
 RECEIPT_ATTESTER_ROLE = "RECEIPT-ROOT-ATTESTER"
