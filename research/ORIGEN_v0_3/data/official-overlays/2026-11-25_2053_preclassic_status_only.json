@@ -1,0 +1,102 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-25T20:53:22-06:00",
+  "scope": "pre-21-00_classic_status_only_no_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxNYXlvcg%3D%3D",
+    "https://www.loterianacional.gob.mx/home/index",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  ],
+  "observations": {
+    "dedicated_chispazo_results": {
+      "latest_contest": 12395,
+      "date": "2026-11-25",
+      "numbers": [
+        1,
+        13,
+        19,
+        23,
+        28
+      ],
+      "modality": "DE_LAS_TRES",
+      "modality_basis": "first daily Chispazo contest and official product schedule maps 15:00 to De las Tres; dedicated result row does not print modality",
+      "prize_table": {
+        "first_place_winners": 3,
+        "first_place_individual_mxn": 67272.55,
+        "second_place_winners": 181,
+        "third_place_winners": 4051,
+        "fourth_place_winners": 28586,
+        "total_winners": 32821,
+        "total_payout_mxn": 887400.77
+      }
+    },
+    "official_home_results_table": {
+      "date": "2026-11-25",
+      "contest_12395": {
+        "numbers": [
+          1,
+          13,
+          19,
+          23,
+          28
+        ],
+        "scheduled_time_local": "15:00",
+        "modality": "DE_LAS_TRES",
+        "modality_basis": "first Chispazo contest row plus official schedule; modality inferred, not printed in row"
+      },
+      "contest_12396": {
+        "numbers": null,
+        "scheduled_time_local": "21:00",
+        "modality": "CLASSIC",
+        "modality_basis": "second Chispazo contest row and official schedule; modality inferred, not printed in row"
+      }
+    },
+    "official_home_index": {
+      "chispazo_classic_card": {
+        "contest_id": 12396,
+        "scheduled_time_local": "21:00",
+        "product_label": "Chispazo",
+        "source_url": "https://www.loterianacional.gob.mx/home/index"
+      },
+      "separate_generic_21_00_card": {
+        "displayed_contest_id": 4296,
+        "assigned_to_chispazo": false,
+        "reason": "separate generic homepage card; the Chispazo results table/index separately identifies 12396"
+      }
+    },
+    "official_mask_index": {
+      "newest_visible_result_date": "2026-11-24",
+      "newest_visible_document": "RESULTADOS 2026-11-24",
+      "2026_11_25_mask_visible": false,
+      "original_24nov_pdf_bytes_captured": false,
+      "original_24nov_pdf_sha256": "NOT_CAPTURED"
+    },
+    "official_chispazo_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00",
+      "source_explicitly_maps_each_slot": true
+    }
+  },
+  "physical_evidence_obtained": false,
+  "limitations": [
+    "12395 is classified as De las Tres from first-row order and official schedule; its dedicated result row does not explicitly label the modality.",
+    "12396 is identified by the official Chispazo home-results row and homepage card at 21:00; its modality is schedule-inferred as Classic, not explicitly printed in the result row.",
+    "At 20:53:22 local, no winning numbers were visible for 12396; this is a pre-21:00 snapshot.",
+    "The separate generic 21:00 card 4296 is not assigned to Chispazo.",
+    "The mask index still lists 24-Nov as newest; no 25-Nov mask is visible.",
+    "No original 25-Nov mask bytes were captured; no PDF digest is claimed.",
+    "No Acta, CS-11, Sumario/cierre de venta, original Tira de Pesaje, 28 sphere readings, calibration certificate, machine/set/sphere mapping, signed participation/cancellation archive, institutional signature-verification material, RFC3161 token, external ledger proof, independent custody receipt or two sealed pre-close outputs were obtained."
+  ],
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
