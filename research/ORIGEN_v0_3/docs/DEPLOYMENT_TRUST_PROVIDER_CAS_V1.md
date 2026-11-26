@@ -412,3 +412,45 @@ Before any deployment may be described as provisioned, retain and independently 
 - successful adversarial failover, stale snapshot, equivocation, clock rollback, root rotation and backup-restore exercises.
 
 The current repository has none of this production provisioning evidence. The provider and all trust fixtures remain synthetic; no trust root is installed, no anti-rollback backend is deployed, and all results remain `BLOCKED_PROVENANCE`. Do not infer institutional authorization from the Secretaría de Economía PSC directory alone. In particular, PSC listing metadata does not prove that a provider was used by or delegated authority from Lotería Nacional for a specific draw.
+
+
+## 15. RFC 3161 nonce challenge lifecycle — 2026-11-26
+
+The complete evidence composition no longer accepts caller-supplied RFC 3161
+request nonces. It requires the deployment provider to return an exact
+`TimestampNonceChallengeV1` bound to the snapshot's state generation, root
+generation, physical-trust-context generation and digest. The challenge carries
+separate positive signed-64-bit nonces for the policy-envelope timestamp and
+the detached custody-signature timestamp, plus a canonical issuance/expiry
+window. Its complete canonical digest is passed to the provider CAS.
+
+A conforming deployment provider must:
+
+1. Generate both nonce values using a cryptographically secure random source.
+   Never derive them from caller input, timestamps, policy sequence, or a
+   predictable counter.
+2. Persist the challenge as pending and bind it to the exact state/root/context
+   tuple returned by the same deployment snapshot.
+3. Reject a challenge whose issue/expiry interval does not cover the full
+   authenticated clock-uncertainty interval, or whose expiry exceeds the
+   current clock-sample lease.
+4. In the same linearizable transaction that advances policy/time state, look
+   up the pending challenge from authoritative storage, recompute its digest,
+   verify its state/configuration binding, and consume both nonce values.
+5. Reject reuse of either nonce value, even if a caller presents a fresh
+   challenge ID or recomputes a public digest. Consumption also applies to an
+   otherwise-idempotent successful policy inspection.
+6. Leave a challenge unconsumed when evidence validation or the CAS fails;
+   expire it according to provider time and never allow it to survive a state
+   generation change.
+
+The application checks the returned challenge and passes only its identifier
+and digest to the CAS. It does not treat the challenge object as an
+institutional capability. The provider's issuance store, randomness, atomic
+consumption, persistence and recovery behavior remain deployment obligations.
+The test provider's nonce ledger is synthetic and is not evidence of a
+production implementation.
+
+Remaining blocker:
+`RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED`.
+No institutional nonce service or production provider has been provisioned.
