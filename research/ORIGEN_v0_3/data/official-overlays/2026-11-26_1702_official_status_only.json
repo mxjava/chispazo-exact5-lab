@@ -1,0 +1,69 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-26T17:02:30-06:00",
+  "scope": "status_only_no_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/home/index",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas"
+  ],
+  "observations": {
+    "dedicated_results_page": {
+      "latest_contest": 12397,
+      "latest_date": "2026-11-26",
+      "latest_numbers": [5, 20, 23, 26, 28],
+      "result_page_labels_modality": false,
+      "modality_classification": "SCHEDULE_INFERRED_DE_LAS_TRES",
+      "modality_basis": "The official product schedule maps 15:00 to De las Tres and 21:00 to Clásico; the official home index lists contest 12398 for 26-Nov at 21:00. The dedicated result block does not itself label contest 12397's time or modality."
+    },
+    "official_home_index": {
+      "classic_contest": 12398,
+      "date": "2026-11-26",
+      "time_local": "21:00",
+      "status_at_capture": "UPCOMING_NO_RESULT",
+      "modality": "CLASICO",
+      "modality_basis": "Official home-index listing plus official product schedule"
+    },
+    "modality_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00"
+    },
+    "mask_index": {
+      "newest_visible_result_date": "2026-11-25",
+      "no_2026_11_26_mask_visible": true,
+      "original_pdf_bytes_captured": false,
+      "original_pdf_sha256": "NOT_CAPTURED"
+    }
+  },
+  "prior_day_mask_result_confirmed": {
+    "date": "2026-11-25",
+    "de_las_tres": {
+      "contest_id": 12395,
+      "numbers": [1, 13, 19, 23, 28]
+    },
+    "classic": {
+      "contest_id": 12396,
+      "numbers": [5, 7, 21, 24, 28]
+    },
+    "official_pdf_bytes_captured_in_this_cycle": false,
+    "official_pdf_sha256": "NOT_CAPTURED"
+  },
+  "physical_evidence_obtained": false,
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "limitations": [
+    "The 12397 public result is published on the official results page, but that page's result block does not label its modality; De las Tres is schedule-inferred only.",
+    "The official home index identifies 12398 at 21:00; the official product schedule maps 21:00 to Clásico. No 12398 result was visible at the 17:02:30 observation.",
+    "The official mask index still lists 25-Nov-2026 as newest; no 26-Nov mask was visible.",
+    "No original Acta, CS-11, signed participation file, weighing strip, sphere measurements, calibration certificate, equipment/sphere-set linkage, custody receipt, trusted timestamp, external ledger proof or two pre-close output seals was obtained.",
+    "Website results and mask publications are discovery/publication sources, not substitutes for the signed official act or physical provenance package."
+  ]
+}
