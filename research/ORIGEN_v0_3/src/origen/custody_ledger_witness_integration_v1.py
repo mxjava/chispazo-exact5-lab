@@ -27,7 +27,10 @@ from .custody_signature_timestamp_integration_v1 import (
     custody_signature_timestamp_event_id,
     verify_receipt_custody_signature_timestamp_v1,
 )
-from .independent_trust_adapter import ProvenanceStatus
+from .independent_trust_adapter import (
+    ProvenanceStatus,
+    verify_independent_provenance,
+)
 from .physical_evidence_manifest_v1 import (
     UnverifiedPhysicalEvidenceManifest,
     parse_unverified_physical_manifest,
@@ -64,6 +67,7 @@ COMPOSITION_REMAINING_BLOCKERS = (
     "CUSTODIAN_LEGAL_IDENTITY_AND_INSTITUTIONAL_DELEGATION_ARE_NOT_AUTHENTICATED",
     "PHYSICAL_ARTIFACT_ORIGIN_AND_DRAW_EVENT_TRUTH_ARE_NOT_AUTHENTICATED",
     "PROSPECTIVE_EDGE_CRITERIA_NOT_MET",
+    "INDEPENDENT_BOUNDARY_RECHECK_STILL_USES_CALLER_SUPPLIED_ROOT_AND_TIME",
 )
 
 
@@ -100,6 +104,7 @@ class CustodyLedgerWitnessInspectionV1:
     ledger_checkpoint_sha256: str
     ledger_checkpoint_observed_in_witness_batches: bool
     witness_comparison_status: str
+    independent_boundary_status: ProvenanceStatus
     provenance_status: ProvenanceStatus
     remaining_blockers: tuple[str, ...]
 
@@ -532,6 +537,26 @@ def verify_custody_timestamp_ledger_witness_v1(
     ):
         raise RuntimeError("a composed verifier returned an unexpected non-blocked provenance status")
 
+    # Re-enter the independent fail-closed boundary only after the exact
+    # physical, timestamp, ledger, and witness evidence has been verified.
+    # The boundary independently re-verifies the original receipt and signed
+    # policy bytes; it does not accept any verifier-result object from above.
+    independent_boundary_status = verify_independent_provenance(
+        original_receipt_bytes,
+        signed_policy_envelope_bytes=signed_policy_envelope_bytes,
+        pinned_root_public_key_bytes=pinned_root_public_key_bytes,
+        expected_root_key_id=expected_root_key_id,
+        minimum_policy_sequence=minimum_policy_sequence,
+        verification_time=verified_at,
+    )
+    if (
+        type(independent_boundary_status) is not ProvenanceStatus
+        or independent_boundary_status is not ProvenanceStatus.BLOCKED_PROVENANCE
+    ):
+        raise RuntimeError(
+            "independent provenance boundary returned an unsupported non-blocked status"
+        )
+
     blockers = tuple(dict.fromkeys(
         tuple(custody_timestamp.remaining_blockers)
         + tuple(physical_signatures.remaining_blockers)
@@ -554,6 +579,7 @@ def verify_custody_timestamp_ledger_witness_v1(
         ledger_checkpoint_sha256=checkpoint_sha256,
         ledger_checkpoint_observed_in_witness_batches=observed,
         witness_comparison_status=gossip.comparison_status,
-        provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
+        independent_boundary_status=independent_boundary_status,
+        provenance_status=independent_boundary_status,
         remaining_blockers=blockers,
     )

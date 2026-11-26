@@ -27,6 +27,7 @@ from .independent_trust_adapter import (
     ProvenanceStatus,
     verify_independent_provenance,
 )
+from .physical_trust_context_v1 import PhysicalTrustContextV1
 from .trust_policy_envelope_v1 import (
     MAX_POLICY_BYTES,
     MAX_POLICY_SEQUENCE,
@@ -92,6 +93,7 @@ class DeploymentTrustSnapshot:
     maximum_clock_sample_age_ms: int
     state_backend_id: str
     provisioning_record_sha256: str
+    physical_trust_context_sha256: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,6 +112,13 @@ class DeploymentTrustProvider(Protocol):
 
     read_snapshot must return one internally consistent snapshot of root pin,
     sequence state, generation, and authenticated clock metadata.
+
+    read_physical_trust_context must return the complete separately provisioned
+    physical TSA/policy/log/registry anchors and floors. Its canonical digest
+    must be bound into read_snapshot.physical_trust_context_sha256. The provider
+    must recompute that digest from authoritative configuration inside
+    compare_and_advance; otherwise physical trust could change between the two
+    reads without invalidating the transaction.
 
     compare_and_advance must be linearizable. It must compare the exact state
     generation and expected trust-configuration digest observed by read_snapshot
@@ -130,6 +139,12 @@ class DeploymentTrustProvider(Protocol):
     """
 
     def read_snapshot(self, *, policy_domain: str) -> DeploymentTrustSnapshot:
+        ...
+
+    def read_physical_trust_context(
+        self, *, policy_domain: str
+    ) -> PhysicalTrustContextV1:
+        """Return independently provisioned TSA/log/registry roots and floors."""
         ...
 
     def compare_and_advance(
@@ -211,6 +226,7 @@ def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
         ).hexdigest(),
         "state_backend_id": snapshot.state_backend_id,
         "provisioning_record_sha256": snapshot.provisioning_record_sha256,
+        "physical_trust_context_sha256": snapshot.physical_trust_context_sha256,
     }
     canonical = json.dumps(
         payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
@@ -404,6 +420,7 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         maximum_clock_sample_age_ms=value.maximum_clock_sample_age_ms,
         state_backend_id=value.state_backend_id,
         provisioning_record_sha256=value.provisioning_record_sha256,
+        physical_trust_context_sha256=value.physical_trust_context_sha256,
     )
 
     if type(snapshot.policy_domain) is not str or snapshot.policy_domain != CLASSIC_POLICY_DOMAIN:
@@ -416,6 +433,11 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
     _require_identifier(snapshot.clock_sample_id, "clock_sample_id")
     _require_identifier(snapshot.state_backend_id, "state_backend_id")
     _require_sha256(snapshot.provisioning_record_sha256, "provisioning_record_sha256")
+    if snapshot.physical_trust_context_sha256 is not None:
+        _require_sha256(
+            snapshot.physical_trust_context_sha256,
+            "physical_trust_context_sha256",
+        )
 
     integer_fields = (
         ("root_generation", snapshot.root_generation, 1, MAX_POLICY_SEQUENCE),
@@ -546,6 +568,7 @@ def inspect_receipt_with_deployment_trust_provider(
     signed_policy_envelope_bytes: bytes,
     *,
     provider: DeploymentTrustProvider,
+    provider_snapshot: DeploymentTrustSnapshot | None = None,
 ) -> DeploymentTrustInspection:
     """Inspect policy and receipt through provider-supplied deployment state.
 
@@ -558,8 +581,12 @@ def inspect_receipt_with_deployment_trust_provider(
     It verifies exact bytes, requires the complete trusted-time uncertainty
     interval to fit policy and signer validity, calls the independent
     provenance boundary, and then performs an atomic sequence/digest
-    compare-and-advance. Any provider failure or state conflict raises and
-    yields no inspection result. Success remains BLOCKED_PROVENANCE.
+    compare-and-advance. An optional snapshot lets a composed verifier share
+    the exact same immutable provider observation with another verifier; the
+    final provider CAS must still match its authoritative generation,
+    configuration digest, and clock-sample digest. Any provider failure or
+    state conflict raises and yields no inspection result. Success remains
+    BLOCKED_PROVENANCE.
     """
     if type(original_receipt_bytes) is not bytes or not original_receipt_bytes:
         raise ValueError("original_receipt_bytes must be non-empty exact bytes")
@@ -575,10 +602,16 @@ def inspect_receipt_with_deployment_trust_provider(
     if not callable(read_snapshot) or not callable(compare_and_advance):
         raise TypeError("provider must implement read_snapshot and compare_and_advance")
 
-    try:
-        supplied_snapshot = read_snapshot(policy_domain=CLASSIC_POLICY_DOMAIN)
-    except Exception as exc:
-        raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
+    if provider_snapshot is None:
+        try:
+            supplied_snapshot = read_snapshot(policy_domain=CLASSIC_POLICY_DOMAIN)
+        except Exception as exc:
+            raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
+    else:
+        # A composed verifier may pass the exact snapshot it already used.
+        # The final CAS below binds this snapshot to authoritative provider
+        # state; a caller-fabricated or stale snapshot cannot commit.
+        supplied_snapshot = provider_snapshot
     snapshot = _snapshot_copy(supplied_snapshot)
     trust_configuration_digest = _trust_configuration_sha256(snapshot)
     clock_sample_digest = _clock_sample_sha256(snapshot)
