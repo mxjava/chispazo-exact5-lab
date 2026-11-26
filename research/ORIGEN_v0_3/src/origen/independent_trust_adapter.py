@@ -113,15 +113,15 @@ def verify_independent_provenance(original_receipt_bytes: bytes) -> ProvenanceSt
             f"original_receipt_bytes must not exceed {MAX_TRUST_RECEIPT_BYTES} bytes"
         )
 
-    bootstrap = _load_provisioned_trust_bootstrap()
-    if bootstrap is None:
-        return ProvenanceStatus.BLOCKED_PROVENANCE
-
     try:
+        bootstrap = _load_provisioned_trust_bootstrap()
+        if bootstrap is None:
+            return ProvenanceStatus.BLOCKED_PROVENANCE
         _verify_root_attestation_layer(original_receipt_bytes, bootstrap)
     except Exception:
-        # Invalid, expired, rolled-back, malformed, or unverifiable input is
-        # deliberately indistinguishable at this non-authorizing public boundary.
+        # Bootstrap-store outages, invalid/expired/rolled-back policies,
+        # malformed receipts and signature failures all fail closed at this
+        # non-authorizing public boundary.
         return ProvenanceStatus.BLOCKED_PROVENANCE
 
     # A valid root attestation is only one layer of the complete trust chain.
