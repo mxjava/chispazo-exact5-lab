@@ -83,7 +83,7 @@ class PhysicalTrustContextV1:
             parsed_oid = ObjectIdentifier(self.policy_tsa_policy_oid)
         except (TypeError, ValueError) as exc:
             raise ValueError("policy_tsa_policy_oid must be a canonical object identifier") from exc
-        if str(parsed_oid) != self.policy_tsa_policy_oid:
+        if parsed_oid.dotted_string != self.policy_tsa_policy_oid:
             raise ValueError("policy_tsa_policy_oid must be a canonical object identifier")
         for field, maximum in (
             ("minimum_policy_sequence", MAX_POLICY_SEQUENCE),
@@ -91,7 +91,7 @@ class PhysicalTrustContextV1:
         ):
             value = getattr(self, field)
             if type(value) is not int or not 0 <= value <= maximum:
-                raise ValueError(f"{field} must be an integer within its supported range")
+                raise ValueError(f"{field} must be a non-negative integer within its supported range")
 
 
 def physical_trust_context_sha256(context: PhysicalTrustContextV1) -> str:
