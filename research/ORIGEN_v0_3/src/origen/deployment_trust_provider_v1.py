@@ -13,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Protocol
 
@@ -21,11 +21,15 @@ from .independent_trust_adapter import (
     ProvenanceStatus,
     verify_independent_provenance,
 )
-from .trust_policy_envelope_v1 import MAX_POLICY_SEQUENCE
+from .trust_policy_envelope_v1 import (
+    MAX_POLICY_BYTES,
+    MAX_POLICY_SEQUENCE,
+)
 from .trust_policy_envelope_v3 import (
     VerifiedTrustPolicyV3,
     verify_signed_trust_policy_v3,
 )
+from .trust_receipt_v1 import MAX_TRUST_RECEIPT_BYTES
 from .trust_verifier_v1 import (
     CryptographicallyVerifiedReceipt,
     verify_receipt_attestation,
@@ -104,6 +108,7 @@ class DeploymentTrustProvider(Protocol):
         policy_sequence: int,
         policy_envelope_sha256: str,
         accepted_at_utc: datetime,
+        clock_uncertainty_ms: int,
     ) -> DeploymentTrustCommit:
         ...
 
@@ -121,6 +126,8 @@ class DeploymentTrustInspection:
     provisioning_record_sha256: str
     clock_source_id: str
     state_backend_id: str
+    time_window_start_utc: datetime
+    time_window_end_utc: datetime
     state_generation_before: int
     state_generation_after: int
     state_outcome: TrustStateOutcome
@@ -152,8 +159,7 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         raise TypeError("provider must return an exact DeploymentTrustSnapshot")
 
     # Copy all primitive immutable fields before any verification or provider
-    # write. This prevents later provider-side object mutation from changing
-    # the values used by this operation.
+    # write so later provider-side mutation cannot change this operation.
     snapshot = DeploymentTrustSnapshot(
         policy_domain=value.policy_domain,
         root_public_key_bytes=value.root_public_key_bytes,
@@ -216,8 +222,8 @@ def _commit_copy(value: object) -> DeploymentTrustCommit:
         raise TypeError("provider must return an exact DeploymentTrustCommit")
     if type(value.outcome) is not TrustStateOutcome:
         raise TypeError("provider commit outcome must be an exact TrustStateOutcome")
-    if type(value.state_generation) is not int or value.state_generation < 0:
-        raise ValueError("provider commit state_generation must be a non-negative exact integer")
+    if type(value.state_generation) is not int or not 0 <= value.state_generation <= MAX_POLICY_SEQUENCE:
+        raise ValueError("provider commit state_generation is invalid")
     if type(value.policy_sequence) is not int or not 1 <= value.policy_sequence <= MAX_POLICY_SEQUENCE:
         raise ValueError("provider commit policy_sequence is invalid")
     _require_sha256(value.policy_envelope_sha256, "provider commit policy_envelope_sha256")
@@ -227,6 +233,54 @@ def _commit_copy(value: object) -> DeploymentTrustCommit:
         policy_sequence=value.policy_sequence,
         policy_envelope_sha256=value.policy_envelope_sha256,
     )
+
+
+def _time_window(snapshot: DeploymentTrustSnapshot) -> tuple[datetime, datetime]:
+    uncertainty = timedelta(milliseconds=snapshot.clock_uncertainty_ms)
+    try:
+        earliest = snapshot.trusted_time_utc - uncertainty
+        latest = snapshot.trusted_time_utc + uncertainty
+    except OverflowError as exc:
+        raise ValueError("provider time uncertainty interval overflows UTC datetime") from exc
+    return earliest, latest
+
+
+def _require_policy_and_receipt_inside_time_window(
+    verified_policy: VerifiedTrustPolicyV3,
+    verified_receipt: CryptographicallyVerifiedReceipt,
+    *,
+    earliest: datetime,
+    latest: datetime,
+) -> None:
+    # The whole clock uncertainty interval must fit inside the signed policy
+    # validity interval; checking only its midpoint is insufficient.
+    if not (
+        verified_policy.issued_at_utc <= earliest
+        and verified_policy.not_before_utc <= earliest
+        and latest < verified_policy.expires_at_utc
+    ):
+        raise ValueError("trusted-time uncertainty interval crosses the signed policy validity boundary")
+
+    attestation = verified_receipt.receipt.attestation
+    try:
+        signed_at = datetime.fromisoformat(
+            attestation.signed_at_utc.replace("Z", "+00:00")
+        ).astimezone(timezone.utc)
+    except (AttributeError, ValueError) as exc:
+        raise ValueError("receipt attestation signing time is not parseable") from exc
+    if signed_at > earliest:
+        raise ValueError("receipt signing time is not provably before the earliest trusted verification time")
+
+    matching_keys = [
+        key for key in verified_policy.policy.issuer_keys
+        if key.issuer_id == verified_receipt.verified_issuer_id
+        and key.key_id == verified_receipt.verified_key_id
+    ]
+    if len(matching_keys) != 1:
+        raise ValueError("verified policy does not contain exactly one receipt issuer key")
+    key = matching_keys[0]
+    if not (key.valid_from_utc <= earliest and latest <= key.valid_until_utc):
+        raise ValueError("trusted-time uncertainty interval crosses the receipt issuer-key validity boundary")
 
 
 def inspect_receipt_with_deployment_trust_provider(
@@ -243,18 +297,19 @@ def inspect_receipt_with_deployment_trust_provider(
     independently provisioned trust store, monotonic state service, and
     authenticated clock. No such provider is included in this repository.
 
-    The function verifies exact policy and receipt bytes, calls the independent
-    provenance boundary, then performs an atomic sequence/digest compare-and-
-    advance. Any provider failure or state conflict raises and yields no
-    inspection result. Even a successful transaction remains BLOCKED_PROVENANCE.
+    It verifies exact bytes, requires the complete trusted-time uncertainty
+    interval to fit policy and signer validity, calls the independent
+    provenance boundary, and then performs an atomic sequence/digest
+    compare-and-advance. Any provider failure or state conflict raises and
+    yields no inspection result. Success remains BLOCKED_PROVENANCE.
     """
     if type(original_receipt_bytes) is not bytes or not original_receipt_bytes:
         raise ValueError("original_receipt_bytes must be non-empty exact bytes")
     if type(signed_policy_envelope_bytes) is not bytes or not signed_policy_envelope_bytes:
         raise ValueError("signed_policy_envelope_bytes must be non-empty exact bytes")
-    if len(original_receipt_bytes) > 64 * 1024:
+    if len(original_receipt_bytes) > MAX_TRUST_RECEIPT_BYTES:
         raise ValueError("original_receipt_bytes exceeds the trust receipt size limit")
-    if len(signed_policy_envelope_bytes) > 256 * 1024:
+    if len(signed_policy_envelope_bytes) > MAX_POLICY_BYTES:
         raise ValueError("signed_policy_envelope_bytes exceeds the trust policy size limit")
 
     read_snapshot = getattr(provider, "read_snapshot", None)
@@ -267,6 +322,7 @@ def inspect_receipt_with_deployment_trust_provider(
     except Exception as exc:
         raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
     snapshot = _snapshot_copy(supplied_snapshot)
+    earliest, latest = _time_window(snapshot)
 
     effective_floor = max(
         snapshot.minimum_policy_sequence,
@@ -297,6 +353,12 @@ def inspect_receipt_with_deployment_trust_provider(
     )
     if type(verified_receipt) is not CryptographicallyVerifiedReceipt:
         raise TypeError("receipt verifier returned an unexpected result type")
+    _require_policy_and_receipt_inside_time_window(
+        verified_policy,
+        verified_receipt,
+        earliest=earliest,
+        latest=latest,
+    )
 
     provenance = verify_independent_provenance(
         original_receipt_bytes,
@@ -318,6 +380,7 @@ def inspect_receipt_with_deployment_trust_provider(
             policy_sequence=verified_policy.policy_sequence,
             policy_envelope_sha256=policy_digest,
             accepted_at_utc=snapshot.trusted_time_utc,
+            clock_uncertainty_ms=snapshot.clock_uncertainty_ms,
         )
     except Exception as exc:
         raise TrustProviderUnavailable("deployment trust sequence transaction failed") from exc
@@ -351,6 +414,8 @@ def inspect_receipt_with_deployment_trust_provider(
         provisioning_record_sha256=snapshot.provisioning_record_sha256,
         clock_source_id=snapshot.clock_source_id,
         state_backend_id=snapshot.state_backend_id,
+        time_window_start_utc=earliest,
+        time_window_end_utc=latest,
         state_generation_before=snapshot.state_generation,
         state_generation_after=commit.state_generation,
         state_outcome=commit.outcome,
