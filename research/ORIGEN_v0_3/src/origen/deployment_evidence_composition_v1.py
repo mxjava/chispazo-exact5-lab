@@ -170,7 +170,29 @@ def _read_physical_trust_context(
     if type(supplied) is not PhysicalTrustContextV1:
         raise TypeError("provider must return an exact PhysicalTrustContextV1")
 
-    context_digest = physical_trust_context_sha256(supplied)
+    # Frozen dataclasses are not immutable against object.__setattr__. Copy every
+    # primitive field before hashing or using any trust pin so a provider-side
+    # mutation after read cannot change the anchors after digest verification.
+    context = PhysicalTrustContextV1(
+        policy_tsa_root_certificate_der=supplied.policy_tsa_root_certificate_der,
+        policy_tsa_root_sha256=supplied.policy_tsa_root_sha256,
+        policy_tsa_policy_oid=supplied.policy_tsa_policy_oid,
+        policy_root_public_key_bytes=supplied.policy_root_public_key_bytes,
+        policy_root_key_id=supplied.policy_root_key_id,
+        minimum_policy_sequence=supplied.minimum_policy_sequence,
+        custody_tsa_root_certificate_der=supplied.custody_tsa_root_certificate_der,
+        custody_tsa_root_sha256=supplied.custody_tsa_root_sha256,
+        log_public_key_bytes=supplied.log_public_key_bytes,
+        log_id=supplied.log_id,
+        log_key_id=supplied.log_key_id,
+        registry_root_public_key_bytes=supplied.registry_root_public_key_bytes,
+        registry_root_key_id=supplied.registry_root_key_id,
+        registry_id=supplied.registry_id,
+        minimum_registry_sequence=supplied.minimum_registry_sequence,
+        minimum_log_tree_size=supplied.minimum_log_tree_size,
+        context_generation=supplied.context_generation,
+    )
+    context_digest = physical_trust_context_sha256(context)
     if (
         snapshot.physical_trust_context_generation is None
         or snapshot.physical_trust_context_sha256 is None
@@ -179,24 +201,24 @@ def _read_physical_trust_context(
             "deployment snapshot does not bind a physical trust context generation and digest"
         )
     if (
-        supplied.context_generation != snapshot.physical_trust_context_generation
+        context.context_generation != snapshot.physical_trust_context_generation
         or context_digest != snapshot.physical_trust_context_sha256
     ):
         raise TrustStateRejected(
             "provider physical trust context does not match the snapshot's exact generation and digest"
         )
     if (
-        supplied.policy_root_public_key_bytes != snapshot.root_public_key_bytes
-        or supplied.policy_root_key_id != snapshot.root_key_id
-        or supplied.minimum_policy_sequence != snapshot.minimum_policy_sequence
+        context.policy_root_public_key_bytes != snapshot.root_public_key_bytes
+        or context.policy_root_key_id != snapshot.root_key_id
+        or context.minimum_policy_sequence != snapshot.minimum_policy_sequence
     ):
         raise TrustStateRejected(
             "physical trust context policy root/key ID/bootstrap floor differs from the deployment snapshot"
         )
-    if supplied.context_generation < 1:
+    if context.context_generation < 1:
         raise TrustStateRejected("physical trust context generation must be positive")
 
-    return supplied, context_digest
+    return context, context_digest
 
 
 def inspect_custody_ledger_witness_with_deployment_provider_v1(
