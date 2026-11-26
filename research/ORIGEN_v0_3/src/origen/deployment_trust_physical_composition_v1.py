@@ -19,6 +19,8 @@ from datetime import datetime, timezone
 from .deployment_trust_provider_v1 import (
     DeploymentTrustInspection,
     DeploymentTrustProvider,
+    DeploymentTrustSnapshot,
+    _snapshot_copy,
     inspect_receipt_with_deployment_trust_provider,
 )
 from .independent_trust_adapter import ProvenanceStatus
@@ -49,18 +51,19 @@ def verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
 ) -> DeploymentBoundPhysicalInspectionV1:
     """Verify the physical bundle, then verify/advance deployment trust.
 
-    `physical_verification_kwargs` must contain the named arguments required
-    by `verify_custody_timestamp_ledger_witness_v1`, including
-    `verification_time`. The exact receipt and policy bytes are supplied
-    only once and forwarded unchanged to both verification paths.
+    `physical_verification_kwargs` contains the remaining named arguments
+    required by the physical verifier. Any caller-provided `verification_time`
+    is overwritten: the verifier receives the exact UTC instant from one
+    validated deployment-provider snapshot. That same immutable snapshot is
+    passed to deployment verification, whose final CAS binds it to the
+    provider's authoritative generation, trust configuration, and clock
+    sample. A stale or fabricated snapshot therefore cannot yield a result.
 
-    The provider transaction is deliberately last: failed physical evidence
-    cannot advance policy sequence or trusted-time state. The physical
-    verification instant must equal the midpoint of the provider's signed
-    uncertainty interval, so both paths evaluate the same instant.
-
-    Caller-supplied TSA/log/witness pins remain unauthenticated research
-    inputs. Every successful result remains BLOCKED_PROVENANCE.
+    The provider snapshot is read and cryptographically checked before the
+    physical bundle; the monotonic state transaction remains deliberately last
+    so failed physical evidence cannot advance policy state. Caller-supplied
+    TSA/log/witness pins remain unauthenticated research inputs. Every
+    successful result remains BLOCKED_PROVENANCE.
     """
     if type(original_receipt_bytes) is not bytes or not original_receipt_bytes:
         raise ValueError("original_receipt_bytes must be non-empty exact bytes")
@@ -68,20 +71,34 @@ def verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
         raise ValueError("signed_policy_envelope_bytes must be non-empty exact bytes")
     if type(physical_verification_kwargs) is not dict:
         raise TypeError("physical_verification_kwargs must be an exact dict")
-    if "verification_time" not in physical_verification_kwargs:
-        raise ValueError("physical_verification_kwargs must include verification_time")
-    supplied_time = physical_verification_kwargs["verification_time"]
-    if type(supplied_time) is not datetime or supplied_time.tzinfo is None:
-        raise ValueError("physical verification_time must be an aware datetime")
+    if "verification_time" in physical_verification_kwargs:
+        supplied_time = physical_verification_kwargs["verification_time"]
+        if type(supplied_time) is not datetime or supplied_time.tzinfo is None:
+            raise ValueError("caller verification_time, when supplied, must be an aware datetime")
     if any(
         key in physical_verification_kwargs
         for key in ("original_receipt_bytes", "signed_policy_envelope_bytes", "provider")
     ):
         raise ValueError("physical verification kwargs must not override shared trust inputs")
 
+    # Read and validate one provider snapshot. The same trusted instant is
+    # injected into physical verification and the exact snapshot is reused by
+    # deployment verification. Its final CAS rejects stale/fabricated state.
+    read_snapshot = getattr(provider, "read_snapshot", None)
+    if not callable(read_snapshot):
+        raise TypeError("provider must implement read_snapshot")
+    try:
+        supplied_snapshot = read_snapshot(
+            policy_domain="origen.chispazo.classic.provenance"
+        )
+    except Exception as exc:
+        raise RuntimeError("deployment trust snapshot could not be read") from exc
+    snapshot: DeploymentTrustSnapshot = _snapshot_copy(supplied_snapshot)
+
     # Snapshot the keyword mapping so caller mutation cannot change the
     # argument set between the physical and deployment verification stages.
     physical_kwargs = dict(physical_verification_kwargs)
+    physical_kwargs["verification_time"] = snapshot.trusted_time_utc
     physical = verify_custody_timestamp_ledger_witness_v1(
         original_receipt_bytes,
         signed_policy_envelope_bytes,
@@ -96,6 +113,7 @@ def verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
         original_receipt_bytes,
         signed_policy_envelope_bytes,
         provider=provider,
+        provider_snapshot=snapshot,
     )
     if type(deployment) is not DeploymentTrustInspection:
         raise TypeError("deployment trust verifier returned an unexpected result type")
@@ -113,7 +131,6 @@ def verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
     blockers = tuple(dict.fromkeys(
         tuple(physical.remaining_blockers)
         + (
-            "PHYSICAL_VERIFIER_CLOCK_IS_CALLER_SUPPLIED_NOT_PROVIDER_SNAPSHOT",
             "TSA_ROOT_AND_REVOCATION_NOT_AUTHENTICATED_BY_DEPLOYMENT_PROVIDER",
             "TRANSPARENCY_LOG_ROOT_AND_WITNESS_REGISTRY_NOT_OUT_OF_BAND_PROVISIONED",
             "PHYSICAL_ORIGIN_AND_INDEPENDENT_CUSTODY_NOT_INSTITUTIONALLY_AUTHENTICATED",
