@@ -296,6 +296,12 @@ def parse_unverified_physical_manifest_v2(raw: bytes) -> UnverifiedPhysicalEvide
         )
 
     ledger = _parse_ledger_anchor(root["ledger_anchor"])
+    ledger_participants = source_ids | signer_subjects | custodian_subjects | time_authorities
+    if ledger.ledger_id in ledger_participants:
+        raise ValueError(
+            "ledger ID must be distinct from artifact sources, signers, "
+            "custodians, and trusted time authorities"
+        )
     return UnverifiedPhysicalEvidenceManifestV2(
         target=target,
         artifacts=artifacts,
