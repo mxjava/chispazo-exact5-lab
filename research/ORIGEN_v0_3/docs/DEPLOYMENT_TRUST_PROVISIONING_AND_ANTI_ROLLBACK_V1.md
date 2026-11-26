@@ -163,3 +163,60 @@ A source-location audit found that two different official copies of SVO-PRO-05 m
 **Operational interpretation for this research:** use revision 38 as the copy the official portal currently classifies under VIGENTES. Treat revision 39 as a project/proposed copy until an official effective publication or explicit authority confirmation is obtained. Do not use the 4.25–5.25 g Smartballs interval as an operative acceptance criterion on the strength of the PROYECTO PDF alone. The earlier research note that described revision 39 as “published 20 March 2026” is unsupported by the primary PDF and is withdrawn.
 
 This correction does not establish any draw-specific physical measurement or evidence. It only fixes the provenance and status classification of the procedure copies.
+
+
+## 11. Superseding official procedure provenance update (2026-11-26)
+
+This section supersedes the operational interpretation in Section 10. The previous audit compared the legacy `svo_p_05.pdf` and the project copy, but missed the current Normateca **Sustantivas Vigentes** listing and its separately named current PDF.
+
+### Current official entry
+
+The official Normateca page `/Normateca/Sustantivas?id=2` now lists **PROCEDIMIENTO SORTEOS ELECTRÓNICOS**, issuing area Subdirección General de Ventas y Operaciones, issue date **01/10/2003**, publication date **20/03/2026**, file **`sgvo_pro_05.pdf`**. That file is served from the **SUSTANTIVAS/VIGENTES** directory.
+
+The PDF identifies itself as:
+- key: **SGVO-PRO-05**;
+- revision: **39**;
+- 38 pages;
+- DN-07 version 09;
+- publication field: **20 MAR 2026**.
+
+Accordingly, revision 39 is not supported only by a PROYECTO copy. The official current Normateca listing and the distinct `sgvo_pro_05.pdf` in VIGENTES support revision 39 as the currently listed procedure. The earlier Section 10 conclusion that revision 38 should be used operationally because revision 39 appeared only under PROYECTO is withdrawn.
+
+### Physical-control requirements now supported by the current VIGENTES copy
+
+The current revision 39 states:
+- Smartballs: each sphere **4.25–5.25 g**, with maximum difference between lightest and heaviest of **0.30 g**;
+- Ping Pong: each sphere **2.30–3.00 g**, with maximum difference of **0.15 g**;
+- weighing is performed for each draw;
+- the weighing representative weighs the spheres one by one and in numerical order in the presence of the SEGOB Inspector and Lotería representatives;
+- the weighing strip is the record; after acceptance, it is signed and delivered for review/rubric by the Subdirección General de Ventas y Operaciones representative, SEGOB Inspector and Dirección General representative, then attached to the corresponding Acta;
+- the CS-11 “Números Ganadores” record is read aloud against the drawn spheres and includes date, contest number, case number, spheres versus recorded numbers, and names of participants.
+
+This changes the correct operational acceptance interval for Smartballs from the legacy revision-38 range (4.2–5.2 g) to the current revision-39 range (4.25–5.25 g). It does not establish the measurements of any particular Chispazo draw.
+
+### Copies that must remain distinct
+
+1. **Current listed procedure:** `SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf`, SGVO-PRO-05 revision 39, published 20-Mar-2026, listed by the current Sustantivas page.
+2. **Legacy duplicate still retrievable:** `SUSTANTIVAS/VIGENTES/svo_p_05.pdf`, SVO-PRO-05 revision 38. Its continued URL availability must not override the current Normateca listing that points to `sgvo_pro_05.pdf`.
+3. **Project copy:** `SUSTANTIVAS/PROYECTO/svo_p_05.pdf`, SVO-PRO-05 revision 39, whose first-page publication field is blank. This is a separate file and is not the basis for the current effective-status conclusion.
+4. **Separate project-index entry:** `sgvo_pro_05p.pdf`, listed in the Proyectos index with 23/02/2026–04/03/2026 dates. It is not the same file as the current VIGENTES `sgvo_pro_05.pdf`.
+
+### Official sources inspected
+
+- Normateca Sustantivas listing: https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2
+- Current VIGENTES PDF: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
+- Legacy revision-38 PDF: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/svo_p_05.pdf
+- Project revision-39 PDF: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/PROYECTO/svo_p_05.pdf
+- Proyectos index: https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0
+- Chispazo schedule: https://www.loterianacional.gob.mx/Chispazo/Chispazo
+- Chispazo results: https://www.loterianacional.gob.mx/Chispazo/Resultados
+
+The product page distinguishes **Chispazo De las Tres at 15:00** from **Chispazo Clásico at 21:00**. The current home index shows contest **12397** on 26-Nov-2026 at 15:00; its separate 21:00 item **3093** is not a Chispazo contest. The results page still showed contest **12396**, dated 25-Nov-2026, as its latest published Chispazo result when inspected. No 26-Nov draw-specific Acta, CS-11, original weighing strip, 28-sphere measurement set, calibration record, signed participation/cancellation file, RFC3161 token, or independent custody package was located in this inspection.
+
+### Capture and integrity limits
+
+The official PDF was inspected through the official Normateca page and its rendered/extracted content. An attempt to retrieve the original PDF bytes into the research runtime failed; therefore the original PDF bytes were **NOT_CAPTURED**, their SHA-256 is **NOT_CAPTURED**, and no local artifact hash is claimed. The web-rendered text is not a substitute for the original PDF bytes or independent custody.
+
+This correction updates the official procedure provenance only. It does not add draw-specific physical evidence, authenticate the institution's records, establish statistical advantage, or change the fail-closed state:
+
+`BLOCKED / RESEARCH_ONLY_NO_EDGE`
