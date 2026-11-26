@@ -9,7 +9,8 @@ import base64
 import copy
 import json
 import unittest
-from datetime import datetime, timezone
+from dataclasses import replace
+from datetime import datetime, timedelta, timezone, tzinfo
 from unittest.mock import patch
 
 from cryptography.hazmat.primitives import serialization
@@ -116,6 +117,29 @@ class TestTrustPolicyReceiptComposition(unittest.TestCase):
         tampered = encode(document)
         with self.assertRaisesRegex(ValueError, "signature verification failed"):
             _verify_root_attestation_layer(tampered, bootstrap)
+
+    def test_bootstrap_timezone_callback_is_snapshotted_once_for_both_verifiers(self):
+        bootstrap, receipt_bytes = synthetic_bootstrap()
+
+        class ChangingTimezone(tzinfo):
+            def __init__(self):
+                self.calls = 0
+
+            def utcoffset(self, dt):
+                self.calls += 1
+                return timedelta(0) if self.calls == 1 else timedelta(hours=5)
+
+            def dst(self, dt):
+                return None
+
+            def tzname(self, dt):
+                return "CHANGING"
+
+        changing = ChangingTimezone()
+        caller_clock = datetime(2026, 11, 23, 4, 0, tzinfo=changing)
+        bootstrap = replace(bootstrap, verification_time=caller_clock)
+        _verify_root_attestation_layer(receipt_bytes, bootstrap)
+        self.assertEqual(changing.calls, 1)
 
     def test_bootstrap_must_be_exact_internal_snapshot_type(self):
         _, receipt_bytes = synthetic_bootstrap()
