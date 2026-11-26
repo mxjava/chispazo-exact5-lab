@@ -11,7 +11,10 @@ from unittest.mock import patch
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from origen.independent_trust_adapter import ProvenanceStatus
+from origen.independent_trust_adapter import (
+    ProvenanceStatus,
+    verify_independent_provenance,
+)
 from origen.signed_root_attestation_chain_v1 import (
     inspect_signed_root_attestation_chain_v1,
 )
@@ -172,6 +175,33 @@ class TestSignedRootAttestationChainV1(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "exact bytes"):
             self.inspect(signed_policy_envelope_bytes=bytearray(self.policy_bytes))
 
+
+
+    def test_independent_gate_reverifies_exact_v1_raw_inputs(self):
+        with patch(
+            "origen.signed_root_attestation_chain_v1.verify_independent_provenance",
+            wraps=verify_independent_provenance,
+        ) as independent_gate:
+            result = self.inspect()
+        independent_gate.assert_called_once_with(
+            self.receipt_bytes,
+            signed_policy_envelope_bytes=self.policy_bytes,
+            pinned_root_public_key_bytes=self.root_public_key,
+            expected_root_key_id="offline-root-2026",
+            minimum_policy_sequence=7,
+            verification_time=NOW,
+        )
+        self.assertIs(
+            result.provenance_status,
+            ProvenanceStatus.BLOCKED_PROVENANCE,
+        )
+
+    def test_independent_gate_rejects_partial_v1_context_instead_of_downgrading(self):
+        with self.assertRaisesRegex(ValueError, "requires exact policy bytes"):
+            verify_independent_provenance(
+                self.receipt_bytes,
+                signed_policy_envelope_bytes=self.policy_bytes,
+            )
 
 if __name__ == "__main__":
     unittest.main()
