@@ -176,6 +176,24 @@ def _build_physical_signature_bundle(data: dict) -> dict:
             "authorizations": authorizations,
         })
 
+    # One synthetic root-authorized clock key lets the provider-composition
+    # tests exercise the exact same V3 envelope as the physical evidence chain.
+    clock_private = Ed25519PrivateKey.generate()
+    clock_public_key_bytes = raw_public_key(clock_private)
+    clock_key_id = "synthetic-clock-key-1"
+    issuer_keys.append({
+        "issuer_id": "synthetic-clock",
+        "key_id": clock_key_id,
+        "public_key_b64": base64.b64encode(clock_public_key_bytes).decode("ascii"),
+        "valid_from_utc": "2026-01-01T00:00:00Z",
+        "valid_until_utc": "2027-01-01T00:00:00Z",
+        "revoked": False,
+        "authorizations": [
+            {"role": "TRUSTED_TIME_AUTHORITY", "artifact_types": ["CLOCK_SAMPLE"]}
+        ],
+    })
+    issuer_keys.sort(key=lambda item: (item["issuer_id"], item["key_id"]))
+
     root_private = Ed25519PrivateKey.generate()
     policy_document = {
         "schema_version": "origen.trust-policy-envelope.v3",
@@ -236,6 +254,9 @@ def _build_physical_signature_bundle(data: dict) -> dict:
         "pinned_root_public_key_bytes": raw_public_key(root_private),
         "expected_root_key_id": ROOT_KEY_ID,
         "minimum_policy_sequence": POLICY_SEQUENCE,
+        "clock_private": clock_private,
+        "clock_public_key_bytes": clock_public_key_bytes,
+        "clock_key_id": clock_key_id,
     })
     return document
 
