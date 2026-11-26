@@ -1,0 +1,72 @@
+{
+  "schema_version": "origen.official-source-status.v1",
+  "status": "PUBLIC_WEB_STATUS_ONLY_NOT_DRAW_PHYSICAL_EVIDENCE",
+  "reviewed_at_local": "2026-11-26T15:04:00-06:00",
+  "timezone": "America/Mexico_City",
+  "sources": {
+    "official_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "official_commercializer_home": "https://comercializadores.loterianacional.gob.mx/"
+  },
+  "modality_schedule": {
+    "DE_LAS_TRES": "15:00",
+    "CLASSIC": "21:00"
+  },
+  "official_schedule_index": {
+    "2026-11-26": {
+      "de_las_tres": {
+        "contest_id": 12397,
+        "scheduled_local": "15:00",
+        "classification": "OFFICIAL_HOME_INDEX_LISTING_AND_PRODUCT_MODALITY_SCHEDULE",
+        "result_status": "NOT_YET_PUBLISHED_ON_OFFICIAL_RESULTS_PAGE_AT_15_04"
+      },
+      "classic": {
+        "scheduled_local": "21:00",
+        "contest_id": null,
+        "classification": "PRODUCT_DAILY_SCHEDULE_ONLY",
+        "result_status": "NOT_YET_DUE_AT_REVIEW"
+      }
+    }
+  },
+  "official_results_page_snapshot": {
+    "latest_published_contest": 12396,
+    "latest_published_date": "2026-11-25",
+    "latest_published_numbers": [5, 7, 21, 24, 28],
+    "previous_published_contest": 12395,
+    "previous_published_numbers": [1, 13, 19, 23, 28],
+    "next_draw_date_shown": "2026-11-26",
+    "12397_result": "NOT_PRESENT_AT_REVIEW",
+    "12398_result": "NOT_CONFIRMED",
+    "interpretation": "Do not infer that 12398 is the 26-Nov Classic contest from the expected twice-daily sequence. The official home index snapshot identifies 12397 at 15:00 but shows a separate non-Chispazo Sorteo 3093 card at 21:00."
+  },
+  "physical_evidence": {
+    "draw_act": "NOT_OBTAINED",
+    "CS11": "NOT_OBTAINED",
+    "signed_weighing_strip": "NOT_OBTAINED",
+    "scale_calibration_certificate": "NOT_OBTAINED",
+    "original_recording": "NOT_OBTAINED",
+    "signed_participation_and_cancellation_files": "NOT_OBTAINED",
+    "independent_custody_receipt": "NOT_OBTAINED",
+    "trusted_timestamp": "NOT_OBTAINED",
+    "source_bytes_captured": false,
+    "source_sha256": null
+  },
+  "classification": {
+    "contest_12397": "SCHEDULE_CONFIRMED_DE_LAS_TRES_15_00_RESULT_NOT_PUBLISHED",
+    "classic_2026_11_26_21_00": "SCHEDULE_CONFIRMED_CONTEST_ID_NOT_CONFIRMED",
+    "physical_provenance": "BLOCKED_PROVENANCE",
+    "research_edge": false,
+    "production": "BLOCKED"
+  },
+  "canonical_history": {
+    "path": "data/history/Chispazo_through_12249.csv",
+    "expected_git_blob_sha1": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "modified": false
+  },
+  "limitations": [
+    "This is a public web status snapshot, not an original result mask or signed primary record.",
+    "The results page had not published contest 12397 at the review time.",
+    "The Classic contest ID for 26-Nov is not authenticated by the reviewed official index.",
+    "No source PDF bytes were captured; no source-byte hash is claimed."
+  ]
+}
