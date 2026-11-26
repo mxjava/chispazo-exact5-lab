@@ -198,6 +198,14 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             result.remaining_blockers,
         )
         self.assertIn(
+            "POLICY_ENVELOPE_TIMESTAMP_POLICY_OID_NOT_AUTHORIZED_BY_AUTHENTICATED_DEPLOYMENT_POLICY",
+            result.remaining_blockers,
+        )
+        self.assertIn(
+            "PROVIDER_ANTI_ROLLBACK_BACKEND_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED",
+            result.remaining_blockers,
+        )
+        self.assertIn(
             "TSA_CERTIFICATE_CHAINS_AND_CURRENT_REVOCATION_NOT_INDEPENDENTLY_VERIFIED",
             result.remaining_blockers,
         )
