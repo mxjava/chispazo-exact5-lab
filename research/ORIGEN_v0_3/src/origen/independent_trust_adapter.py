@@ -11,6 +11,7 @@ No genuine deployment bootstrap is provisioned in this repository.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 
 from .deployment_trust_bootstrap import (
@@ -36,6 +37,27 @@ INDEPENDENT_TRUST_BACKEND_NOT_PROVISIONED = (
 )
 
 
+def _snapshot_bootstrap_verification_time(value: object) -> datetime:
+    """Normalize one potentially hostile tzinfo callback exactly once.
+
+    Both policy and receipt verification must evaluate the same instant. Passing
+    the original datetime to both verifiers would call a stateful tzinfo twice
+    and could make the two checks observe different instants.
+    """
+    if type(value) is not datetime or value.tzinfo is None:
+        raise ValueError("bootstrap verification_time must be an exact aware datetime")
+    try:
+        offset = value.utcoffset()
+    except Exception as exc:
+        raise ValueError("bootstrap verification_time timezone is invalid") from exc
+    if type(offset) is not timedelta:
+        raise ValueError("bootstrap verification_time must have a valid UTC offset")
+    try:
+        return (value.replace(tzinfo=None) - offset).replace(tzinfo=timezone.utc)
+    except Exception as exc:
+        raise ValueError("bootstrap verification_time cannot be normalized") from exc
+
+
 def _verify_root_attestation_layer(
     original_receipt_bytes: bytes,
     bootstrap: _ProvisionedTrustBootstrap,
@@ -51,17 +73,20 @@ def _verify_root_attestation_layer(
     if type(bootstrap) is not _ProvisionedTrustBootstrap:
         raise TypeError("bootstrap must be an exact deployment bootstrap snapshot")
 
+    verification_time = _snapshot_bootstrap_verification_time(
+        bootstrap.verification_time
+    )
     verified_policy = verify_signed_trust_policy(
         bootstrap.policy_envelope_bytes,
         pinned_root_public_key_bytes=bootstrap.pinned_root_public_key_bytes,
         expected_root_key_id=bootstrap.expected_root_key_id,
         minimum_policy_sequence=bootstrap.minimum_policy_sequence,
-        verification_time=bootstrap.verification_time,
+        verification_time=verification_time,
     )
     verified_receipt = verify_receipt_attestation(
         original_receipt_bytes,
         verified_policy.policy,
-        verification_time=bootstrap.verification_time,
+        verification_time=verification_time,
     )
     return verified_policy, verified_receipt
 
