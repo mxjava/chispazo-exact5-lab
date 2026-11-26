@@ -35,7 +35,8 @@ The provider returns one immutable snapshot containing:
 - minimum sequence, accepted sequence, exact accepted-envelope digest, latest persisted trusted-time interval upper bound, and state generation;
 - one normalized UTC time, its uncertainty, and a provisioned maximum uncertainty;
 - identifiers for the clock source and state backend;
-- the provisioning-record digest.
+- the provisioning-record digest;
+- a locally computed canonical trust-configuration SHA-256 binding the policy domain, root-key fingerprint/ID/generation, minimum sequence, maximum clock uncertainty, clock/backend identifiers, and provisioning-record digest.
 
 The application request cannot independently override those values. The snapshot is copied and strictly type-checked before verification. A boolean is not accepted as an integer sequence or generation.
 
@@ -54,8 +55,9 @@ The operation is ordered as follows:
 7. Verify the exact receipt bytes under the policy just verified.
 8. Require the complete clock uncertainty interval to lie inside the signed policy validity interval and the receipt issuer-key validity interval. Require the receipt signing time to be no later than the earliest possible verification instant.
 9. Re-run the exact-byte V3 policy and receipt verification at `verify_independent_provenance`. That gate must still return exactly `BLOCKED_PROVENANCE`.
-10. Atomically compare-and-advance the provider state using the exact snapshot generation, root generation, policy sequence, envelope digest, accepted time, and clock uncertainty.
-11. Return a diagnostic inspection with the exact byte hashes and before/after state generations. Its provenance status remains `BLOCKED_PROVENANCE`.
+10. Compute a canonical trust-configuration digest from the immutable trust configuration in the validated snapshot.
+11. Atomically compare-and-advance the provider state using the exact snapshot generation, trust-configuration digest, root generation, policy sequence, envelope digest, accepted time, and clock uncertainty. The provider must recompute that digest from its own authoritative configuration inside the same transaction.
+12. Return a diagnostic inspection with the exact byte hashes, trust-configuration digest, and before/after state generations. Its provenance status remains `BLOCKED_PROVENANCE`.
 
 No state commit is attempted when policy signature, receipt signature, role authorization, time-window, or independent-boundary verification fails.
 
@@ -80,6 +82,12 @@ For every inspection, including same-sequence/same-digest reads, the application
 For a higher sequence, the provider stores the candidate sequence, exact envelope digest, and candidate latest time in one generation. For the same sequence and digest, a later disjoint interval advances only the time watermark and state generation, returning `TIME_ADVANCED`. If the candidate latest time equals the stored watermark, the provider returns `IDEMPOTENT` without changing the generation. Any interval whose earliest instant precedes the stored watermark returns `TIME_ROLLBACK`. This ensures that a later idempotent inspection cannot be followed by a clock restored to an earlier instant while remaining above only the original policy-acceptance time. The commit response must echo the exact persisted watermark. A provider that restores or regresses this clock floor must fail closed.
 
 The application checks the returned commit shape and exact policy digest, but only the provider's independently reviewed implementation can guarantee linearizability and durable anti-rollback.
+
+### Trust-configuration binding
+
+The application computes `trust_configuration_sha256` as SHA-256 over canonical JSON with the fixed schema identifier `origen.deployment-trust-configuration.v1` and these fields: policy domain, SHA-256 of the exact root public-key bytes, root key ID, root generation, minimum policy sequence, maximum clock uncertainty, clock-source identifier, state-backend identifier, and provisioning-record digest.
+
+The provider must independently recompute this value from its authoritative provisioned configuration and compare it atomically with the supplied expected digest and `expected_state_generation`. This detects root-key or provisioning/clock/backend configuration drift that reuses the same key ID, root generation, or state generation. The digest is a consistency binding, not proof that the provisioning record, clock, backend, or root is authentic. A provider that trusts the caller-supplied digest without recomputation does not satisfy the contract.
 
 ## 5. Trusted-time uncertainty
 
