@@ -574,6 +574,15 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertNotIn("policy_timestamp_expected_nonce", parameters)
         self.assertNotIn("expected_nonce", parameters)
 
+    def test_policy_and_custody_nonce_values_must_be_distinct(self):
+        data, ledger, _, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        with self.assertRaisesRegex(ValueError, "must be distinct"):
+            replace(
+                provider.nonce_challenge,
+                custody_timestamp_nonce=provider.nonce_challenge.policy_timestamp_nonce,
+            )
+
     def test_missing_provider_nonce_challenge_fails_before_evidence_and_cas(self):
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger)
