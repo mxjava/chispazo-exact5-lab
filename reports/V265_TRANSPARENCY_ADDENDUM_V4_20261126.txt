@@ -1,0 +1,103 @@
+SOLICITUD DE ACCESO — AMPLIACIÓN V4
+CHISPAZO CLÁSICO / EVIDENCIA FÍSICA, OPERATIVA Y CRONOLOGÍA
+Fecha de preparación: 26 de noviembre de 2026
+Estado: BORRADOR NO PRESENTADO
+
+DESTINATARIOS FUNCIONALES
+1. Subgerencia de Operación de Concursos, Juegos y Sorteos Electrónicos e Instantáneos, por sus funciones de operación, mantenimiento y custodia de Actas, videograbaciones y registros operativos descritas en SAF-MAN-12, sección 3.2.3.1.
+2. Unidad de Transparencia de Lotería Nacional, para trámite, búsqueda en unidades productoras y respuesta formal.
+3. Cuando corresponda, solicitar intervención o confirmación de la autoridad inspectora de SEGOB respecto de los registros que obren en sus archivos.
+
+ÁMBITO
+Exclusivamente Chispazo Clásico, sorteo electrónico de las 21:00 horas. No mezclar con Chispazo De las Tres ni con sorteos tradicionales, urnas/bolas de madera, ábacos o procedimientos SGVO-PRO-08, SGVO-PRO-34 y SGVO-PRO-15.
+
+PERIODO PRIORITARIO
+Solicito, de preferencia, los últimos 100 concursos de Chispazo Clásico para los que existan expedientes completos, y adicionalmente los registros de inventario/RFID desde la puesta en operación reportada en marzo de 2022. Si el volumen impide la entrega íntegra, solicito primero un inventario de expedientes por concurso, tipo documental, unidad productora, custodio, ubicación, disponibilidad y plazo de conservación.
+
+1. ACLARACIÓN NORMATIVA Y SECUENCIA FÍSICA
+a) Entregar copia controlada, aprobada y vigente del SGVO-MAN-02 “Manual de Apoyo para la Operación de Sorteos y Equipos Electrónicos”, con revisión, fecha de autorización, vigencia y constancia de publicación. Si el documento vigente no puede divulgarse, indicar fundamento legal de la reserva, autoridad que la aprobó, plazo y versión pública disponible.
+b) Aclarar por escrito la referencia de la actividad 5.2 y del Plan de Calidad 2 de SGVO-PRO-05 rev.39 a la Política 8, cuando la Política 6 contiene los límites de peso y la Política 8 trata la firma electrónica del archivo de participaciones.
+c) Confirmar el tipo de esfera (Smartballs o Ping Pong) utilizado por cada máquina/estuche de Chispazo Clásico y los parámetros de aceptación aplicables.
+d) Aclarar el artículo 9 del Reglamento Chispazo, que coloca 28 esferas en una urna antes del cierre, frente a las actividades 4.1, 5.1 y 5.6 de SGVO-PRO-05 rev.39 (cierre SICAL, pesaje y posterior depósito en alimentadores). Definir físicamente “urna”, “estuche”, “alimentador” y “máquina”, e indicar la secuencia real aprobada con timestamps.
+e) Para sustituciones de estuche, indicar si existe cierre inicial, cierre definitivo o reapertura; aportar la bitácora y los timestamps de cada transición.
+
+2. EXPEDIENTE POR CONCURSO
+Para cada concurso incluido en el periodo:
+- Acta íntegra y todos sus anexos.
+- Sumario de cierre SICAL y Sumario posterior a resultados.
+- Formato CS-11 original, todas sus copias y distribución de ejemplares.
+- Tira de Pesaje original y sus impresiones adicionales.
+- CS-02 de máquina y báscula.
+- CS-09, CS-12 y CS-18, incluyendo registros asociados.
+- Relación de Ganadores y firma electrónica correspondiente.
+- Inventario del DVD/CD/USB semanal, archivos incluidos y etiquetas del medio.
+- Máster audiovisual continuo desde el pesaje hasta el sorteo y versión editada incorporada al Acta.
+
+3. TIRA DE PESAJE Y TRAZABILIDAD DE LAS 28 ESFERAS
+Para cada lectura individual, solicitar:
+- número de esfera y número impreso;
+- identificador RFID/tag, si existe;
+- peso, unidad y resolución de la báscula;
+- tipo/material de esfera;
+- número de estuche y máquina;
+- báscula, modelo, serie y estado de calibración;
+- orden de pesaje;
+- fecha/hora individual de lectura, si el sistema la genera;
+- fecha/hora de inicio y fin del pesaje;
+- responsable, Inspector SEGOB y representantes firmantes;
+- sustituciones de estuche, lecturas rechazadas y motivo.
+
+Si el formato no contiene ID por esfera o timestamp individual, solicito confirmación expresa y copia del formato/especificación controlada que define sus campos. No sustituir los campos ausentes con valores inferidos.
+
+4. RFID, MÁQUINAS, ESTUCHES Y LECTORES
+- Inventario de máquinas, controles, consolas, alimentadores, básculas, lectores y antenas RFID, con modelo, serie, activo patrimonial, tag ID, alta/baja, ubicación y producto asignado.
+- Relación individual esfera↔RFID↔número impreso.
+- Identificación RFID propia del estuche como contenedor, si existe; si no existe, declararlo.
+- Logs originales de lectura: tag, lector, antena, timestamp con zona horaria, resultado, errores, reintentos y vínculo con concurso.
+- Asignación máquina-estuche-esferas-concurso y todos los cambios.
+
+5. MANTENIMIENTO Y CALIBRACIÓN
+- Calendarios anuales de mantenimiento preventivo/correctivo de máquinas y set de sorteos.
+- Contrato 058-2024, anexos, inventario de 21 equipos, órdenes, bitácoras, entregables y actas de aceptación.
+- Cualquier contrato, orden o servicio de 2025 y 2026 que cubra máquinas de sorteos electrónicos, básculas, alimentadores, controles, consolas, RFID, lectores o cámaras.
+- Certificados de calibración, incertidumbre, patrón de referencia, fecha de calibración, vigencia y equipo/báscula al que corresponde.
+- Pruebas de funcionamiento posteriores al mantenimiento y fallas/incidencias por activo.
+
+6. VIDEO, INCIDENCIAS Y ACCESO
+- Máster audiovisual sin edición, códec/formato original, timecodes, metadatos de creación, exportación y copia, checksum disponible y cadena de custodia.
+- CS-09 y actas de incidencia, retrasos de generación/impresión y cambios de estuche.
+- CS-12 y bitácoras de control de acceso a sala, taller y cabina de grabación.
+- CS-18 y evidencia de fecha/hora de elaboración, recepción y atención del riesgo.
+
+7. FIRMA ELECTRÓNICA Y CUSTODIA DIGITAL
+Para archivos de participaciones/cancelaciones, MJF, Relación de Ganadores y anexos:
+- bytes originales, algoritmo, hash, firma y verificación;
+- fecha/hora de creación, firma, recepción, grabación, depósito y consulta;
+- certificado, identidad/rol del firmante y estado de vigencia/revocación, cuando aplique;
+- inventario del medio físico y caja de seguridad;
+- constancia de acceso, extracción, transferencia o nueva grabación.
+Distinguir la firma post-cierre de participaciones/cancelaciones de la firma postresultado de la Relación de Ganadores.
+
+8. DEFECTOS DE DISTRIBUCIÓN Y MANIFIESTOS
+a) La actividad 13.1 de SGVO-PRO-05 indica cuatro ejemplares de CS-11; la 13.6 enumera el original y dos copias. Indicar destinatario y custodio del cuarto ejemplar.
+b) La matriz de anexos del Acta incluye Tira, CS-11 y Sumarios, pero el manifiesto del DVD semanal no los enumera expresamente. Indicar cuáles quedan en papel, cuáles en medio digital y cómo se verifica la integridad entre ambos conjuntos.
+
+9. CRONOLOGÍA Y DISPONIBILIDAD
+Para cada registro, distinguir:
+- event_time;
+- captured_at;
+- created_at;
+- signed_at;
+- received_at;
+- filed_at;
+- scanned_at;
+- transferred_at;
+- accessed_at.
+Indicar zona horaria, sistema de origen, reloj utilizado, precisión y quién certifica cada timestamp. No considerar una fecha impresa, bandera CSV o timestamp declarado por el solicitante como prueba suficiente de disponibilidad pre-cierre.
+
+10. FORMATO DE RESPUESTA
+Solicito archivos en formato original y, cuando sea posible, CSV/JSON estructurado junto con el documento firmado. Para cada archivo, indicar nombre, concurso, tipo documental, unidad productora, custodio, versión, tamaño, hash SHA-256 calculado sobre los bytes entregados y cadena de custodia.
+Si un documento no existe, no se conserva, fue transferido, dado de baja o está reservado, indicar expresamente la causa, fecha, unidad responsable y acta/resolución aplicable. Si hay datos personales, acepto versión pública testada conservando IDs técnicos, roles, timestamps, pesos y trazabilidad.
+
+FINALIDAD
+La información se utilizará para una auditoría reproducible del mecanismo físico y de la disponibilidad temporal de datos. No se presume sesgo, incumplimiento ni ventaja predictiva. No se solicitan datos personales de participantes ni combinaciones individuales de apuestas.
