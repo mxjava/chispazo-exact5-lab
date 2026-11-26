@@ -66,7 +66,29 @@ def _hash_algorithm(name: object):
     return _SHA[name]()
 
 
+_ALLOWED_EC_CURVES = frozenset({"secp256r1", "secp384r1", "secp521r1"})
+
+
+def _require_public_key_strength(public_key, label: str) -> None:
+    """Reject public-key sizes/curves below the verifier's cryptographic floor."""
+    if isinstance(public_key, rsa.RSAPublicKey):
+        if public_key.key_size < 2048:
+            raise ValueError(f"{label} RSA public key must be at least 2048 bits")
+        return
+    if isinstance(public_key, ec.EllipticCurvePublicKey):
+        curve_name = public_key.curve.name
+        if curve_name not in _ALLOWED_EC_CURVES:
+            raise ValueError(
+                f"{label} EC public key curve {curve_name} is not in the allowed P-256/P-384/P-521 set"
+            )
+        return
+    if isinstance(public_key, (ed25519.Ed25519PublicKey, ed448.Ed448PublicKey)):
+        return
+    raise ValueError(f"{label} public-key algorithm is unsupported")
+
+
 def _verify_signature(public_key, signature: bytes, payload: bytes, algorithm, digest):
+    _require_public_key_strength(public_key, "TSA signer")
     try:
         if isinstance(public_key, rsa.RSAPublicKey):
             if algorithm != "rsassa_pkcs1v15":
@@ -91,6 +113,7 @@ def _verify_signature(public_key, signature: bytes, payload: bytes, algorithm, d
 
 
 def _verify_certificate_signature(cert: x509.Certificate, issuer_key) -> None:
+    _require_public_key_strength(issuer_key, "certificate issuer")
     params = cert.signature_algorithm_parameters
     digest = cert.signature_hash_algorithm
     if digest is not None and digest.name not in _SHA:
@@ -141,6 +164,7 @@ def _reject_unhandled_critical_extensions(
 
 
 def _require_ca(cert: x509.Certificate, label: str) -> None:
+    _require_public_key_strength(cert.public_key(), label)
     _reject_unsupported_path_extensions(cert, label)
     _reject_unhandled_critical_extensions(
         cert,
@@ -170,6 +194,7 @@ def _require_ca(cert: x509.Certificate, label: str) -> None:
 
 
 def _require_tsa_leaf(cert: x509.Certificate) -> None:
+    _require_public_key_strength(cert.public_key(), "TSA signer")
     _reject_unsupported_path_extensions(cert, "TSA signer")
     _reject_unhandled_critical_extensions(
         cert,
