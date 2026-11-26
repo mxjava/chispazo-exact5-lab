@@ -11,7 +11,7 @@
       "CLASSIC": "21:00"
     },
     "timezone": "America/Mexico_City",
-    "note": "Official product page states the two daily slots. Do not classify a result by contest-number sequence alone; require draw-specific official modality evidence."
+    "note": "The official product page states De las Tres at 15:00 and Clásico at 21:00. The official 25-Nov-2026 result mask explicitly labels 12395 De las Tres and 12396 Clásico. Do not infer 26-Nov contest ID 12398 from sequence alone; the reviewed official home page lists 12397 at 15:00 but does not list a Chispazo contest ID for 21:00."
   },
   "official_results_page": {
     "source_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
@@ -40,8 +40,8 @@
     "next_draw_date_shown": "2026-11-26",
     "draw_time_and_modality_in_result_page": "NOT_STATED_FOR_LISTED_ROWS",
     "contest_12397_result": "NOT_YET_PRESENT_ON_RESULTS_PAGE_AT_REVIEW",
-    "contest_12398_result": "NOT_YET_PRESENT_ON_RESULTS_PAGE_AT_REVIEW",
-    "classic_2026_11_26_21_00_result": "NO_CONTEST_ID_OR_RESULT_CONFIRMED_ON_RESULTS_PAGE_AT_REVIEW"
+    "contest_12398_result": "NOT_CONFIRMED_BY_REVIEWED_OFFICIAL_INDEX_OR_RESULTS_PAGE",
+    "classic_2026_11_26_21_00_result": "NOT_YET_PRESENT_ON_RESULTS_PAGE_AT_REVIEW"
   },
   "official_schedule_index": {
     "source_url": "https://comercializadores.loterianacional.gob.mx/",
@@ -51,7 +51,7 @@
       "contest_id": null,
       "evidence_kind": "OFFICIAL_CHISPAZO_PRODUCT_PAGE_DAILY_MODALITY_SCHEDULE",
       "page_location": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
-      "caveat": "The commercializer home page snapshot does not list a Chispazo contest ID for this 21:00 slot. Its separate 21:00 item is labelled Sorteo 3093, not Chispazo; do not map it to contest 12398 or any Chispazo contest."
+      "caveat": "The product page confirms the daily 21:00 Classic slot. The reviewed commercializer home page does not list a Chispazo contest ID for it; the separate 21:00 card is Sorteo 3093 and is not Chispazo. Contest 12398 is not confirmed by these reviewed official index/result sources."
     },
     "de_las_tres_slot": {
       "date": "2026-11-26",
@@ -112,8 +112,11 @@
     ]
   },
   "classification": {
+    "contest_12395": "OFFICIAL_MASK_CONFIRMED_DE_LAS_TRES_2026_11_25",
+    "contest_12396": "OFFICIAL_MASK_CONFIRMED_CLASSIC_2026_11_25",
     "contest_12397": "SCHEDULE_ONLY_DE_LAS_TRES_15_00_NOT_RESULT_CONFIRMED",
     "classic_2026_11_26_21_00": "SCHEDULE_ONLY_CLASSIC_21_00_CONTEST_ID_NOT_CONFIRMED",
+    "contest_12398": "NOT_CONFIRMED_BY_REVIEWED_OFFICIAL_INDEX_OR_RESULTS_PAGE",
     "physical_provenance": "BLOCKED_PROVENANCE",
     "production": "BLOCKED",
     "research_edge": false
@@ -123,5 +126,37 @@
     "expected_git_blob_sha1": "2f5ff5bfbd779fe505736398e417b7211955958e",
     "modified": false
   },
-  "reviewed_at_local": "2026-11-26T14:56:51-06:00"
+  "reviewed_at_local": "2026-11-26T14:56:51-06:00",
+  "official_mask_2026_11_25": {
+    "source_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=25112026221906",
+    "source_type": "OFFICIAL_LOTERIA_NACIONAL_RESULTS_MASK_PDF",
+    "source_bytes_captured": false,
+    "source_pdf_sha256": null,
+    "date": "2026-11-25",
+    "draws": [
+      {
+        "contest_id": 12395,
+        "modality": "DE_LAS_TRES",
+        "numbers": [
+          1,
+          13,
+          19,
+          23,
+          28
+        ]
+      },
+      {
+        "contest_id": 12396,
+        "modality": "CLASSIC",
+        "numbers": [
+          5,
+          7,
+          21,
+          24,
+          28
+        ]
+      }
+    ],
+    "note": "The PDF headings explicitly label contest 12395 as Chispazo De las tres and contest 12396 as Chispazo Clásico. Web-extracted page text was reviewed; original PDF bytes were not captured locally."
+  }
 }
