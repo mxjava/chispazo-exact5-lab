@@ -289,3 +289,42 @@ unestablished.
 
 All successful paths remain `BLOCKED_PROVENANCE`. This is not a production
 provider and does not change `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
+
+## 11. Verified public institutional directory — candidate metadata only
+
+A fresh review of the Secretaría de Economía's official PSC directory
+(`https://psc.economia.gob.mx/directorio.html`) confirms that the directory
+currently lists, among other providers:
+
+- **ATEB Servicios, S.A. de C.V.** — service of digital time seals, with the
+  directory linking to its DOF notice dated 23-Aug-2022;
+- **INCODE PSC, S. de R.L. de C.V.** — service of digital time seals, with the
+  directory linking to its DOF notice dated 22-May-2024.
+
+The same official directory also lists other time-seal providers. This is
+verifiable evidence that those entities appear in the Secretaría de Economía
+PSC directory for the named service. It is **not** evidence that either entity
+operated the timestamp service for a particular Chispazo draw, that Lotería
+Nacional delegated draw custody to it, or that any certificate or TSA policy
+is authorized for this project.
+
+The directory's link to the Secretaría de Economía Second Certification
+Authority certificate resolves to
+`https://psc.economia.gob.mx/certificados/ACR2_SE.cer`, but the available web
+reader rejects its `application/pkix-cert` content type and the research
+runtime could not download the DER/PEM bytes. The certificate fingerprint,
+chain, validity and revocation state therefore remain **NOT_CAPTURED / NOT
+VERIFIED**. No certificate was installed or pinned.
+
+The Secretaría de Economía PSC page also cautions that PSC services do not,
+by themselves, confer public faith. Accreditation metadata must not be
+confused with institutional authority over Lotería Nacional's draw process.
+
+Accordingly, ATEB and INCODE remain **candidate discovery leads only**. Do not
+select either as a TSA root, hardcode an OID, accept a token, or configure a
+trust anchor from this directory entry alone. Required next evidence is the
+exact certificate bytes and fingerprint, complete chain and current status,
+live RFC 3161 response validation, the exact service policy/OID, and a
+separate institutional delegation tying the service to the relevant Chispazo
+records.
