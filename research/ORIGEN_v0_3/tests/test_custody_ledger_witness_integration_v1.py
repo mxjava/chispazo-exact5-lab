@@ -669,7 +669,7 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
         self.assertEqual(kwargs["minimum_policy_sequence"], data["minimum_policy_sequence"])
         self.assertEqual(
             kwargs["verification_time"],
-            datetime(2026, 11, 24, 19, 30, tzinfo=timezone.utc),
+            datetime(2026, 11, 24, 20, 0, tzinfo=timezone.utc),
         )
         self.assertIs(result.independent_boundary_status, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
