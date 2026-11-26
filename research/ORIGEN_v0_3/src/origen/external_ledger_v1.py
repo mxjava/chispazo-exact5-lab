@@ -103,10 +103,10 @@ def verify_external_ledger_inclusion(
     """
     if type(leaf_bytes) is not bytes or not leaf_bytes:
         raise ValueError("leaf_bytes must be non-empty exact bytes")
-    if type(log_id) is not str or not log_id or log_id != expected_log_id:
+    if type(expected_log_id) is not str or not expected_log_id or len(expected_log_id) > 128:
+        raise ValueError("expected_log_id must be a non-empty bounded exact string")
+    if type(log_id) is not str or not log_id or len(log_id) > 128 or log_id != expected_log_id:
         raise ValueError("ledger log identity does not match external pin")
-    if type(expected_log_id) is not str or not expected_log_id:
-        raise ValueError("expected_log_id must be a non-empty exact string")
     if type(minimum_tree_size) is not int or not 1 <= minimum_tree_size <= _MAX_TREE_SIZE:
         raise ValueError("minimum_tree_size must be a positive exact integer")
     if type(tree_size) is not int or tree_size < minimum_tree_size:
