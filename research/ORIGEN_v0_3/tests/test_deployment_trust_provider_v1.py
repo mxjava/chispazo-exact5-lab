@@ -15,6 +15,7 @@ from origen.deployment_trust_provider_v1 import (
     TrustProviderUnavailable,
     TrustStateOutcome,
     TrustStateRejected,
+    _clock_sample_sha256,
     _trust_configuration_sha256,
     inspect_receipt_with_deployment_trust_provider,
 )
@@ -52,6 +53,7 @@ class SyntheticTrustProvider:
         *,
         expected_state_generation,
         expected_trust_configuration_sha256,
+        expected_clock_sample_sha256,
         policy_domain,
         root_key_id,
         root_generation,
@@ -64,6 +66,7 @@ class SyntheticTrustProvider:
         self.last_commit_arguments = {
             "expected_state_generation": expected_state_generation,
             "expected_trust_configuration_sha256": expected_trust_configuration_sha256,
+            "expected_clock_sample_sha256": expected_clock_sample_sha256,
             "policy_domain": policy_domain,
             "root_key_id": root_key_id,
             "root_generation": root_generation,
@@ -80,6 +83,14 @@ class SyntheticTrustProvider:
                 state_generation=self.snapshot.state_generation + 1,
             )
         if expected_state_generation != self.snapshot.state_generation:
+            return DeploymentTrustCommit(
+                TrustStateOutcome.CONFLICT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
+        if expected_clock_sample_sha256 != _clock_sample_sha256(self.snapshot):
             return DeploymentTrustCommit(
                 TrustStateOutcome.CONFLICT,
                 self.snapshot.state_generation,
@@ -205,6 +216,9 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             clock_uncertainty_ms=0,
             maximum_clock_uncertainty_ms=100,
             clock_source_id="synthetic-clock",
+            clock_sample_id="synthetic-clock-sample-0001",
+            clock_sample_valid_until_utc=NOW + timedelta(seconds=60),
+            maximum_clock_sample_age_ms=120_000,
             state_backend_id="synthetic-cas-store",
             provisioning_record_sha256="b" * 64,
         )
@@ -239,6 +253,16 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             expected_configuration,
         )
         self.assertEqual(result.trust_configuration_sha256, expected_configuration)
+        expected_clock_sample = _clock_sample_sha256(self.snapshot)
+        self.assertEqual(
+            self.provider.last_commit_arguments["expected_clock_sample_sha256"],
+            expected_clock_sample,
+        )
+        self.assertEqual(result.clock_sample_sha256, expected_clock_sample)
+        self.assertEqual(
+            result.clock_sample_valid_until_utc,
+            self.snapshot.clock_sample_valid_until_utc,
+        )
 
     def test_same_sequence_and_same_exact_digest_is_idempotent(self):
         import hashlib
@@ -402,6 +426,8 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             trusted_time_latest_utc=NOW - timedelta(hours=2),
             clock_uncertainty_ms=60 * 60 * 1000,
             maximum_clock_uncertainty_ms=60 * 60 * 1000,
+            clock_sample_valid_until_utc=NOW + timedelta(hours=1, minutes=1),
+            maximum_clock_sample_age_ms=4_000_000,
         )
         with self.assertRaisesRegex(ValueError, "not provably before"):
             self.inspect()
@@ -512,6 +538,68 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.provider.compare_and_advance = wrong_time
         with self.assertRaisesRegex(TrustStateRejected, "candidate clock upper bound"):
             self.inspect()
+
+
+    def test_clock_sample_expiry_and_maximum_age_are_enforced_before_commit(self):
+        self.provider.snapshot = replace(
+            self.snapshot,
+            clock_sample_valid_until_utc=NOW - timedelta(microseconds=1),
+        )
+        with self.assertRaisesRegex(ValueError, "clock sample lease is already expired"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+        self.provider.snapshot = replace(
+            self.snapshot,
+            clock_sample_valid_until_utc=NOW + timedelta(seconds=121),
+            maximum_clock_sample_age_ms=120_000,
+        )
+        with self.assertRaisesRegex(ValueError, "exceeds the provisioned maximum age"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_clock_uncertainty_interval_must_fit_inside_sample_lease(self):
+        self.provider.snapshot = replace(
+            self.snapshot,
+            clock_uncertainty_ms=61_000,
+            maximum_clock_uncertainty_ms=61_000,
+            clock_sample_valid_until_utc=NOW + timedelta(seconds=60),
+            maximum_clock_sample_age_ms=120_000,
+        )
+        with self.assertRaisesRegex(ValueError, "uncertainty interval exceeds the authenticated clock sample lease"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_provider_rejects_clock_sample_drift_between_read_and_cas(self):
+        original_read = self.provider.read_snapshot
+        mutations = (
+            ("clock_sample_id", "synthetic-clock-sample-0002"),
+            ("trusted_time_utc", NOW + timedelta(seconds=1)),
+            ("clock_uncertainty_ms", 1),
+            ("clock_sample_valid_until_utc", NOW + timedelta(seconds=61)),
+        )
+        for field, replacement_value in mutations:
+            with self.subTest(field=field):
+                self.provider.snapshot = self.snapshot
+                def read_then_mutate(*, policy_domain):
+                    observed = original_read(policy_domain=policy_domain)
+                    self.provider.snapshot = replace(
+                        self.provider.snapshot,
+                        **{field: replacement_value},
+                    )
+                    return observed
+                self.provider.read_snapshot = read_then_mutate
+                with self.assertRaisesRegex(
+                    TrustStateRejected,
+                    "did not commit exactly one generation",
+                ):
+                    self.inspect()
+                self.assertEqual(
+                    self.provider.snapshot.accepted_policy_sequence,
+                    POLICY_SEQUENCE - 1,
+                )
+                self.provider.read_snapshot = original_read
+                self.provider.commit_count = 0
 
     def test_provider_rejects_trust_configuration_drift_without_generation_change(self):
         original_read = self.provider.read_snapshot
