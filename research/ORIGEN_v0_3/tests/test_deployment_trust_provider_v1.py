@@ -264,9 +264,6 @@ class SyntheticTrustProvider:
 class TestDeploymentTrustProviderV1(unittest.TestCase):
     def setUp(self):
         self.receipt_bytes, self.receipt_public_key, _ = signed_receipt()
-        self.policy_bytes, self.root_public_key = signed_v3_policy(
-            self.receipt_public_key
-        )
         self.clock_private_key = Ed25519PrivateKey.generate()
         self.clock_public_key_bytes = self.clock_private_key.public_key().public_bytes(
             encoding=serialization.Encoding.Raw,
@@ -274,6 +271,21 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         )
         self.clock_sample_key_id = "synthetic-clock-key-1"
         self.clock_sample_id = "synthetic-clock-sample-0001"
+        clock_authorization = {
+            "issuer_id": "synthetic-clock",
+            "key_id": self.clock_sample_key_id,
+            "public_key_b64": base64.b64encode(self.clock_public_key_bytes).decode("ascii"),
+            "valid_from_utc": "2026-01-01T00:00:00Z",
+            "valid_until_utc": "2027-01-01T00:00:00Z",
+            "revoked": False,
+            "authorizations": [
+                {"role": "TRUSTED_TIME_AUTHORITY", "artifact_types": ["CLOCK_SAMPLE"]}
+            ],
+        }
+        self.policy_bytes, self.root_public_key = signed_v3_policy(
+            self.receipt_public_key,
+            additional_issuer_keys=(clock_authorization,),
+        )
         self.clock_sample_valid_until_utc = NOW + timedelta(seconds=60)
         self.clock_sample_envelope_bytes = signed_clock_sample(
             self.clock_private_key,
