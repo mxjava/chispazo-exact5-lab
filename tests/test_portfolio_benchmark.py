@@ -54,6 +54,16 @@ class PortfolioBenchmarkTests(unittest.TestCase):
                 {"123":{"modality":"CLASSIC","sales_cutoff_utc":"2026-11-01T12:00:00Z"}},
                 {123:_line_mask("01-02-03-04-05")})
 
+    def test_rejects_inconsistent_native_registration_timestamps(self):
+        record = native_record()
+        record["registered_at_mexico_city"] = "2026-11-01T05:00:00-06:00"
+        record["registration_sha256"] = canonical_registration_hash(record)
+        with self.assertRaisesRegex(ValueError, "invalid_registration_timestamps"):
+            validate_records({"schema":"EXACT5_NATIVE_REGISTRATIONS_V1","records":[record]},
+                {"123":record["registration_sha256"]},
+                {"123":{"modality":"CLASSIC","sales_cutoff_utc":"2026-11-01T12:00:00Z"}},
+                {123:_line_mask("01-02-03-04-05")})
+
     def test_rejects_unanchored_or_tampered_registration(self):
         record = native_record()
         record["lines"][0] = "01-02-03-04-06"
