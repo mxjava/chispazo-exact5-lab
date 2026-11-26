@@ -290,12 +290,22 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
         self.assertIs(result, ProvenanceStatus.BLOCKED_PROVENANCE)
 
     def test_independent_provenance_rejects_tampered_receipt_at_boundary(self):
+        document = json.loads(self.receipt_bytes)
+        document["artifacts"][0]["sha256"] = "f" * 64
+        tampered = encode(document)
         with self.assertRaisesRegex(ValueError, "signature verification failed"):
-            self._verify_at_boundary(original_receipt_bytes=self.receipt_bytes + b" ")
+            self._verify_at_boundary(original_receipt_bytes=tampered)
 
     def test_independent_provenance_rejects_noncanonical_or_tampered_policy_bytes_at_boundary(self):
         with self.assertRaisesRegex(ValueError, "canonical UTF-8 encoding"):
             self._verify_at_boundary(signed_policy_envelope_bytes=self.policy_bytes + b" ")
+
+    def test_independent_provenance_rejects_tampered_signed_policy_at_boundary(self):
+        document = json.loads(self.policy_bytes)
+        document["policy_sequence"] = POLICY_SEQUENCE + 1
+        tampered = encode(document)
+        with self.assertRaisesRegex(ValueError, "root signature verification failed"):
+            self._verify_at_boundary(signed_policy_envelope_bytes=tampered)
 
     def test_independent_provenance_rejects_wrong_root_pin_at_boundary(self):
         wrong_root = raw_public_key(Ed25519PrivateKey.generate())
