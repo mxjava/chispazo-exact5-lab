@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import unittest
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from origen.deployment_trust_provider_v1 import DeploymentTrustInspection
@@ -66,17 +67,28 @@ def deployment_result():
 class DeploymentPhysicalCompositionTests(unittest.TestCase):
     def test_physical_bundle_precedes_provider_commit_and_exact_bytes_are_reused(self):
         events = []
-        provider = object()
+        snapshot = SimpleNamespace(trusted_time_utc=NOW)
+
+        class Provider:
+            def read_snapshot(self, *, policy_domain):
+                events.append(("snapshot", policy_domain))
+                return snapshot
+
+        provider = Provider()
 
         def physical(receipt, policy, **kwargs):
             events.append(("physical", receipt, policy, kwargs["verification_time"]))
             return physical_result()
 
         def deployment(receipt, policy, *, provider):
-            events.append(("provider", receipt, policy, provider))
+            events.append(("provider", receipt, policy, provider, kwargs.get("provider_snapshot")))
             return deployment_result()
 
         with (
+            patch(
+                "origen.deployment_trust_physical_composition_v1._snapshot_copy",
+                return_value=snapshot,
+            ),
             patch(
                 "origen.deployment_trust_physical_composition_v1.verify_custody_timestamp_ledger_witness_v1",
                 side_effect=physical,
@@ -90,23 +102,33 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
                 RECEIPT,
                 POLICY,
                 provider=provider,
-                physical_verification_kwargs={"verification_time": NOW},
+                physical_verification_kwargs={"verification_time": datetime(2026, 11, 26, 21, 0, tzinfo=timezone.utc)},
             )
 
-        self.assertEqual([event[0] for event in events], ["physical", "provider"])
-        self.assertEqual(events[0][1:3], (RECEIPT, POLICY))
+        self.assertEqual([event[0] for event in events], ["snapshot", "physical", "provider"])
         self.assertEqual(events[1][1:3], (RECEIPT, POLICY))
-        self.assertIs(events[1][3], provider)
+        self.assertEqual(events[1][3], NOW)  # caller time is overwritten
+        self.assertEqual(events[2][1:3], (RECEIPT, POLICY))
+        self.assertIs(events[2][3], provider)
+        self.assertIs(events[2][4], snapshot)
         self.assertEqual(result.receipt_sha256, hashlib.sha256(RECEIPT).hexdigest())
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
-        self.assertIn(
+        self.assertNotIn(
             "PHYSICAL_VERIFIER_CLOCK_IS_CALLER_SUPPLIED_NOT_PROVIDER_SNAPSHOT",
             result.remaining_blockers,
         )
 
     def test_failed_physical_bundle_never_reads_or_advances_provider(self):
-        provider = object()
+        class Provider:
+            def read_snapshot(self, *, policy_domain):
+                return object()
+
+        provider = Provider()
         with (
+            patch(
+                "origen.deployment_trust_physical_composition_v1._snapshot_copy",
+                return_value=SimpleNamespace(trusted_time_utc=NOW),
+            ),
             patch(
                 "origen.deployment_trust_physical_composition_v1.verify_custody_timestamp_ledger_witness_v1",
                 side_effect=ValueError("synthetic nested signature failure"),
