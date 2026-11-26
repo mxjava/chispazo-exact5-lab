@@ -326,7 +326,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
     def test_snapshot_rejects_non_utc_clock_and_missing_provisioning_digest(self):
         self.provider.snapshot = replace(
             self.snapshot,
-            trusted_time_utc=NOW.replace(tzinfo=timezone(timedelta(0))),
+            trusted_time_utc=NOW.replace(tzinfo=timezone(timedelta(0), name="noncanonical-utc")),
         )
         with self.assertRaisesRegex(ValueError, "exact normalized UTC"):
             self.inspect()
