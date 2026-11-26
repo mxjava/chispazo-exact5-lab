@@ -25,6 +25,7 @@ from origen.deployment_trust_provider_v1 import (
     inspect_receipt_with_deployment_trust_provider,
 )
 from origen.independent_trust_adapter import ProvenanceStatus, verify_independent_provenance
+from origen.timestamp_nonce_challenge_v1 import timestamp_nonce_challenge_sha256
 from test_receipt_policy_integration_v3 import (
     POLICY_SEQUENCE,
     ROOT_KEY_ID,
@@ -85,6 +86,9 @@ class SyntheticTrustProvider:
         self.fail_read = False
         self.fail_commit = False
         self.commit_time_utc = None
+        self.pending_timestamp_nonce_challenge = None
+        self.consumed_timestamp_nonce_challenge_ids = set()
+        self.consumed_timestamp_nonce_values = set()
 
     def read_snapshot(self, *, policy_domain):
         self.read_count += 1
@@ -93,6 +97,12 @@ class SyntheticTrustProvider:
         # Return the stored snapshot even when it is mis-scoped so the
         # application boundary, not this test double, must reject it.
         return self.snapshot
+
+    def _consume_timestamp_nonce_challenge(self, challenge_id):
+        challenge = self.pending_timestamp_nonce_challenge
+        self.consumed_timestamp_nonce_challenge_ids.add(challenge_id)
+        self.consumed_timestamp_nonce_values.add(challenge.policy_timestamp_nonce)
+        self.consumed_timestamp_nonce_values.add(challenge.custody_timestamp_nonce)
 
     def compare_and_advance(
         self,
@@ -107,6 +117,8 @@ class SyntheticTrustProvider:
         policy_envelope_sha256,
         accepted_at_utc,
         clock_uncertainty_ms,
+        timestamp_nonce_challenge_id=None,
+        timestamp_nonce_challenge_sha256=None,
     ):
         self.commit_count += 1
         self.last_commit_arguments = {
@@ -120,6 +132,8 @@ class SyntheticTrustProvider:
             "policy_envelope_sha256": policy_envelope_sha256,
             "accepted_at_utc": accepted_at_utc,
             "clock_uncertainty_ms": clock_uncertainty_ms,
+            "timestamp_nonce_challenge_id": timestamp_nonce_challenge_id,
+            "timestamp_nonce_challenge_sha256": timestamp_nonce_challenge_sha256,
         }
         if self.fail_commit:
             raise OSError("synthetic durable commit failure")
@@ -173,6 +187,38 @@ class SyntheticTrustProvider:
                 policy_envelope_sha256,
                 self.snapshot.trusted_time_latest_utc,
             )
+        if (timestamp_nonce_challenge_id is None) != (timestamp_nonce_challenge_sha256 is None):
+            return DeploymentTrustCommit(
+                TrustStateOutcome.CONFLICT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
+        if timestamp_nonce_challenge_id is not None:
+            challenge = self.pending_timestamp_nonce_challenge
+            if (
+                challenge is None
+                or challenge.challenge_id != timestamp_nonce_challenge_id
+                or timestamp_nonce_challenge_sha256(challenge) != timestamp_nonce_challenge_sha256
+                or challenge.challenge_id in self.consumed_timestamp_nonce_challenge_ids
+                or challenge.policy_timestamp_nonce in self.consumed_timestamp_nonce_values
+                or challenge.custody_timestamp_nonce in self.consumed_timestamp_nonce_values
+                or challenge.state_generation != expected_state_generation
+                or challenge.state_generation != self.snapshot.state_generation
+                or challenge.root_generation != self.snapshot.root_generation
+                or challenge.physical_trust_context_generation != self.snapshot.physical_trust_context_generation
+                or challenge.physical_trust_context_sha256 != self.snapshot.physical_trust_context_sha256
+                or challenge.issued_at_utc > accepted_at_utc
+                or (self.commit_time_utc or accepted_at_utc) >= challenge.expires_at_utc
+            ):
+                return DeploymentTrustCommit(
+                    TrustStateOutcome.CONFLICT,
+                    self.snapshot.state_generation,
+                    policy_sequence,
+                    policy_envelope_sha256,
+                    self.snapshot.trusted_time_latest_utc,
+                )
         if policy_domain != self.snapshot.policy_domain:
             return DeploymentTrustCommit(
                 TrustStateOutcome.CONFLICT,
@@ -225,6 +271,8 @@ class SyntheticTrustProvider:
 
         if policy_sequence == self.snapshot.accepted_policy_sequence:
             if candidate_latest > self.snapshot.trusted_time_latest_utc:
+                if timestamp_nonce_challenge_id is not None:
+                    self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
                 next_generation = self.snapshot.state_generation + 1
                 self.snapshot = replace(
                     self.snapshot,
@@ -238,6 +286,8 @@ class SyntheticTrustProvider:
                     policy_envelope_sha256,
                     candidate_latest,
                 )
+            if timestamp_nonce_challenge_id is not None:
+                self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
             return DeploymentTrustCommit(
                 TrustStateOutcome.IDEMPOTENT,
                 self.snapshot.state_generation,
@@ -246,6 +296,8 @@ class SyntheticTrustProvider:
                 self.snapshot.trusted_time_latest_utc,
             )
 
+        if timestamp_nonce_challenge_id is not None:
+            self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
         next_generation = self.snapshot.state_generation + 1
         self.snapshot = replace(
             self.snapshot,
