@@ -62,7 +62,7 @@ class TestIndependentTrustAdapter(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires exact policy bytes"):
             verify_independent_provenance(
                 b"receipt",
-                pinned_root_public_key_bytes=b"\\x00" * 32,
+                pinned_root_public_key_bytes=bytes(32),
             )
 
     def test_bytes_subclasses_are_not_accepted_at_boundary(self):
