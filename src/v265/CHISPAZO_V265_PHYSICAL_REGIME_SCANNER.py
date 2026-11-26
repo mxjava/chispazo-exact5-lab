@@ -147,7 +147,10 @@ def persistence(draws):
     pair_adj=holm_adjust(pp); trip_adj=holm_adjust(pt)
     pi=int(np.argmin(pp)); ti=int(np.argmin(pt))
     return {
-        'n':N,\n        'p_value_method':'two-sided exact binomial; Holm family-wise adjustment',\n        'pair_family_size':len(PAIR_LIST),\n        'triple_family_size':len(TRIPLE_LIST),
+        'n':N,
+        'p_value_method':'two-sided exact binomial; Holm family-wise adjustment',
+        'pair_family_size':len(PAIR_LIST),
+        'triple_family_size':len(TRIPLE_LIST),
         'pairs_holm_sig':int((pair_adj<0.05).sum()),
         'triples_holm_sig':int((trip_adj<0.05).sum()),
         'pair_half_pearson':float(pearsonr(z1,z2).statistic),
