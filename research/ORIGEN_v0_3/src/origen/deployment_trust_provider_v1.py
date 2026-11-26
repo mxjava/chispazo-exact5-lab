@@ -45,7 +45,7 @@ CLASSIC_POLICY_DOMAIN = "origen.chispazo.classic.provenance"
 CLOCK_SAMPLE_SCHEMA = "origen.clock-sample-attestation.v1"
 MAX_CLOCK_SAMPLE_BYTES = 4096
 _CLOCK_SAMPLE_UTC = re.compile(
-    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z\\Z"
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z\Z"
 )
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -330,7 +330,7 @@ def _verify_clock_sample_attestation(snapshot: DeploymentTrustSnapshot) -> None:
 
     unsigned = dict(document)
     unsigned.pop("signature")
-    message = b"ORIGEN_CLOCK_SAMPLE_V1\\x00" + _clock_sample_canonical(unsigned)
+    message = b"ORIGEN_CLOCK_SAMPLE_V1\x00" + _clock_sample_canonical(unsigned)
     try:
         Ed25519PublicKey.from_public_bytes(
             snapshot.clock_sample_public_key_bytes
