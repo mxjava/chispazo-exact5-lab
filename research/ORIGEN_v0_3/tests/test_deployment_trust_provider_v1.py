@@ -4,6 +4,8 @@ from __future__ import annotations
 import base64
 import json
 import unittest
+from enum import Enum
+from unittest.mock import patch
 from dataclasses import replace
 from datetime import timedelta, timezone
 
@@ -22,7 +24,7 @@ from origen.deployment_trust_provider_v1 import (
     _verify_clock_sample_attestation,
     inspect_receipt_with_deployment_trust_provider,
 )
-from origen.independent_trust_adapter import ProvenanceStatus
+from origen.independent_trust_adapter import ProvenanceStatus, verify_independent_provenance
 from test_receipt_policy_integration_v3 import (
     POLICY_SEQUENCE,
     ROOT_KEY_ID,
@@ -470,6 +472,54 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.assertEqual(
             result.clock_sample_valid_until_utc,
             self.snapshot.clock_sample_valid_until_utc,
+        )
+
+    def test_independent_boundary_reverifies_exact_bytes_with_provider_owned_context(self):
+        with patch(
+            "origen.deployment_trust_provider_v1.verify_independent_provenance",
+            wraps=verify_independent_provenance,
+        ) as boundary:
+            result = self.inspect()
+
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+        self.assertEqual(boundary.call_count, 1)
+        args, kwargs = boundary.call_args
+        self.assertEqual(args, (self.receipt_bytes,))
+        self.assertEqual(kwargs["signed_policy_envelope_bytes"], self.policy_bytes)
+        self.assertEqual(
+            kwargs["pinned_root_public_key_bytes"],
+            self.snapshot.root_public_key_bytes,
+        )
+        self.assertEqual(kwargs["expected_root_key_id"], self.snapshot.root_key_id)
+        self.assertEqual(
+            kwargs["minimum_policy_sequence"],
+            max(self.snapshot.minimum_policy_sequence, self.snapshot.accepted_policy_sequence),
+        )
+        self.assertEqual(kwargs["verification_time"], self.snapshot.trusted_time_utc)
+        self.assertNotIn("verified_policy", kwargs)
+        self.assertNotIn("verified_receipt", kwargs)
+        self.assertEqual(self.provider.commit_count, 1)
+
+    def test_unexpected_future_authenticated_status_never_reaches_provider_cas(self):
+        class FutureProvenanceStatus(Enum):
+            BLOCKED_PROVENANCE = "BLOCKED_PROVENANCE"
+            AUTHENTICATED = "AUTHENTICATED"
+
+        with patch(
+            "origen.deployment_trust_provider_v1.verify_independent_provenance",
+            return_value=FutureProvenanceStatus.AUTHENTICATED,
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "independent provenance gate returned an unsupported non-blocked status",
+            ):
+                self.inspect()
+
+        self.assertEqual(self.provider.commit_count, 0)
+        self.assertEqual(self.provider.snapshot.state_generation, self.snapshot.state_generation)
+        self.assertEqual(
+            self.provider.snapshot.accepted_policy_sequence,
+            self.snapshot.accepted_policy_sequence,
         )
 
     def test_same_sequence_and_same_exact_digest_is_idempotent(self):
