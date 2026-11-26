@@ -42,8 +42,8 @@ class SyntheticTrustProvider:
         self.read_count += 1
         if self.fail_read:
             raise OSError("synthetic provider outage")
-        if policy_domain != self.snapshot.policy_domain:
-            raise ValueError("wrong policy domain")
+        # Return the stored snapshot even when it is mis-scoped so the
+        # application boundary, not this test double, must reject it.
         return self.snapshot
 
     def compare_and_advance(
