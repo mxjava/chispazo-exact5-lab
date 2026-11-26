@@ -1,15 +1,15 @@
-"""Research-only composition of deployment trust state with the complete ORIGEN evidence bundle.
+"""Single-snapshot, provider-owned composition for the complete ORIGEN evidence bundle.
 
-The provider snapshot supplies the CLASSIC policy root, minimum sequence,
-authenticated-clock claims and anti-rollback state. The exact same immutable
-snapshot is used for the entire evidence verification and the final CAS. The
-CAS is deliberately delayed until custody, nested signatures, both RFC 3161
-paths, ledger continuity and witness observations have all passed.
+The deployment snapshot supplies the CLASSIC policy root, sequence/time state,
+and a digest/generation binding for the physical trust context. The provider-
+owned PhysicalTrustContextV1 supplies TSA, transparency-log and witness-
+registry pins/floors. Both objects must agree on the policy root and bootstrap
+floor; the context digest/generation is part of the provider CAS configuration.
 
-This module does not authenticate the provider implementation or its
-institutional provisioning. TSA, transparency-log and witness-registry pins
-remain explicit research inputs. Every successful result remains
-BLOCKED_PROVENANCE.
+The full custody / nested-signature / RFC 3161 / ledger / witness chain runs
+before the final provider CAS. Every successful result remains
+BLOCKED_PROVENANCE. Provider implementation and institutional provisioning
+remain external and unauthenticated by this library.
 """
 from __future__ import annotations
 
@@ -39,6 +39,10 @@ from .deployment_trust_provider_v1 import (
 )
 from .independent_trust_adapter import ProvenanceStatus
 from .physical_evidence_manifest_v1 import parse_unverified_physical_manifest
+from .physical_trust_context_v1 import (
+    PhysicalTrustContextV1,
+    physical_trust_context_sha256,
+)
 from .trust_policy_envelope_v1 import MAX_POLICY_BYTES
 from .trust_policy_envelope_v3 import (
     VerifiedTrustPolicyV3,
@@ -51,11 +55,13 @@ from .trust_verifier_v1 import (
 )
 
 
+CLASSIC_PHYSICAL_POLICY_DOMAIN = "origen.chispazo.classic.physical"
+
 PROVIDER_COMPOSITION_BLOCKERS = (
     "DEPLOYMENT_TRUST_PROVIDER_IMPLEMENTATION_AND_PROVISIONING_NOT_AUTHENTICATED_BY_THIS_LIBRARY",
-    "TSA_ROOT_REMAINS_CALLER_SUPPLIED_AND_NOT_OUT_OF_BAND_PROVISIONED",
-    "TRANSPARENCY_LOG_ROOT_REMAINS_CALLER_SUPPLIED_AND_NOT_OUT_OF_BAND_PROVISIONED",
-    "WITNESS_REGISTRY_ROOT_REMAINS_CALLER_SUPPLIED_AND_NOT_OUT_OF_BAND_PROVISIONED",
+    "PHYSICAL_TRUST_CONTEXT_IS_PROVIDER_OWNED_BUT_NOT_INSTITUTIONALLY_AUTHENTICATED",
+    "TSA_CERTIFICATE_CHAINS_AND_CURRENT_REVOCATION_NOT_INDEPENDENTLY_VERIFIED",
+    "TRANSPARENCY_LOG_AND_WITNESS_REGISTRY_ROOTS_NOT_INSTITUTIONALLY_AUTHENTICATED",
     "PHYSICAL_ARTIFACT_ORIGIN_AND_INSTITUTIONAL_DELEGATION_NOT_AUTHENTICATED",
     "INDEPENDENT_CUSTODY_AND_PROSPECTIVE_EDGE_CRITERIA_NOT_MET",
 )
@@ -74,28 +80,12 @@ class DeploymentEvidenceInspectionV1:
     root_generation: int
     trust_configuration_sha256: str
     clock_sample_sha256: str
+    physical_trust_context_sha256: str
+    physical_trust_context_generation: int
     trusted_time_earliest_utc: datetime
     trusted_time_latest_utc: datetime
     provenance_status: ProvenanceStatus
     remaining_blockers: tuple[str, ...]
-
-
-class _PinnedSnapshotProvider:
-    """Reuse one validated snapshot; delegate only the final atomic CAS."""
-
-    __slots__ = ("_snapshot", "_compare_and_advance")
-
-    def __init__(self, snapshot: DeploymentTrustSnapshot, compare_and_advance):
-        self._snapshot = snapshot
-        self._compare_and_advance = compare_and_advance
-
-    def read_snapshot(self, *, policy_domain: str) -> DeploymentTrustSnapshot:
-        if policy_domain != CLASSIC_POLICY_DOMAIN:
-            raise ValueError("pinned provider snapshot is scoped only to CLASSIC")
-        return self._snapshot
-
-    def compare_and_advance(self, **kwargs):
-        return self._compare_and_advance(**kwargs)
 
 
 def _require_used_policy_keys_cover_time_window(
@@ -149,6 +139,49 @@ def _require_used_policy_keys_cover_time_window(
             )
 
 
+def _read_physical_trust_context(
+    provider: DeploymentTrustProvider,
+    snapshot: DeploymentTrustSnapshot,
+) -> tuple[PhysicalTrustContextV1, str]:
+    read_context = getattr(provider, "read_physical_trust_context", None)
+    if not callable(read_context):
+        raise TrustProviderUnavailable("deployment provider lacks read_physical_trust_context")
+    try:
+        supplied = read_context(policy_domain=CLASSIC_PHYSICAL_POLICY_DOMAIN)
+    except Exception as exc:
+        raise TrustProviderUnavailable("provider physical trust context could not be read") from exc
+    if type(supplied) is not PhysicalTrustContextV1:
+        raise TypeError("provider must return an exact PhysicalTrustContextV1")
+
+    context_digest = physical_trust_context_sha256(supplied)
+    if (
+        snapshot.physical_trust_context_generation is None
+        or snapshot.physical_trust_context_sha256 is None
+    ):
+        raise TrustStateRejected(
+            "deployment snapshot does not bind a physical trust context generation and digest"
+        )
+    if (
+        supplied.context_generation != snapshot.physical_trust_context_generation
+        or context_digest != snapshot.physical_trust_context_sha256
+    ):
+        raise TrustStateRejected(
+            "provider physical trust context does not match the snapshot's exact generation and digest"
+        )
+    if (
+        supplied.policy_root_public_key_bytes != snapshot.root_public_key_bytes
+        or supplied.policy_root_key_id != snapshot.root_key_id
+        or supplied.minimum_policy_sequence != snapshot.minimum_policy_sequence
+    ):
+        raise TrustStateRejected(
+            "physical trust context policy root/key ID/bootstrap floor differs from the deployment snapshot"
+        )
+    if supplied.context_generation < 1:
+        raise TrustStateRejected("physical trust context generation must be positive")
+
+    return supplied, context_digest
+
+
 def inspect_custody_ledger_witness_with_deployment_provider_v1(
     original_receipt_bytes: bytes,
     signed_policy_envelope_bytes: bytes,
@@ -158,12 +191,7 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     custodian_key_id: str,
     timestamp_token_der: bytes,
     policy_timestamp_token_der: bytes,
-    pinned_policy_tsa_root_certificate_der: bytes,
-    expected_policy_tsa_root_sha256: str,
-    expected_policy_tsa_policy_oid: str,
     policy_timestamp_expected_nonce: int,
-    pinned_tsa_root_certificate_der: bytes,
-    expected_tsa_root_sha256: str,
     expected_nonce: int,
     raw_manifest_bytes: bytes,
     artifact_bytes_by_sha256: dict[str, bytes],
@@ -176,29 +204,29 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     witness_observation_batches: tuple,
     *,
     provider: DeploymentTrustProvider,
-    pinned_log_public_key_bytes: bytes,
-    expected_log_id: str,
-    expected_log_key_id: str,
-    minimum_new_tree_size: int,
-    pinned_registry_root_public_key_bytes: bytes,
-    expected_registry_root_key_id: str,
-    expected_registry_id: str,
-    minimum_registry_sequence: int,
 ) -> DeploymentEvidenceInspectionV1:
-    """Verify a complete Classic evidence bundle against one provider snapshot.
+    """Verify a complete Classic evidence bundle against one provider context.
 
-    Root pin, root key ID, policy sequence floor and verification time are
-    intentionally absent from the request API. They are obtained from one
-    provider snapshot, copied and validated before evidence verification.
+    Root pin, root key ID, sequence floor, verification time, policy/custody
+    TSA roots, TSA policy OID, log key/IDs/tree floor and registry key/IDs/
+    sequence floor are intentionally absent from the request API. They are
+    derived from one deployment snapshot and its exactly bound provider-owned
+    PhysicalTrustContextV1.
 
-    The provider's atomic compare-and-advance is invoked only after the full
-    custody/signature/RFC3161/ledger/witness composition succeeds. The exact
-    same cached snapshot is then rechecked by the existing provider boundary
-    before CAS. A physical-evidence failure therefore cannot advance policy or
-    time state.
+    The physical context must match the snapshot's context digest and
+    generation, and its policy root/key ID/bootstrap floor must equal the
+    deployment snapshot. The context digest/generation is included in the
+    canonical trust-configuration digest that the provider must recompute
+    atomically during compare-and-advance.
 
-    TSA, log and witness-registry roots remain caller-supplied research inputs;
-    this function does not claim that those trust domains are provisioned.
+    The full custody/signature/RFC3161/ledger/witness composition runs before
+    provider CAS. Any evidence failure therefore leaves provider state
+    untouched. The same cached deployment snapshot is passed to the final
+    independent provider boundary; no second snapshot read is permitted.
+
+    Successful results remain BLOCKED_PROVENANCE. The provider implementation,
+    physical context provisioning, TSA chain/revocation, institutional draw
+    authority and independent custody are not authenticated by this library.
     """
     if type(original_receipt_bytes) is not bytes or not original_receipt_bytes:
         raise ValueError("original_receipt_bytes must be non-empty exact bytes")
@@ -217,13 +245,16 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     compare_and_advance = getattr(provider, "compare_and_advance", None)
     if not callable(read_snapshot) or not callable(compare_and_advance):
         raise TypeError("provider must implement read_snapshot and compare_and_advance")
-
     try:
         supplied_snapshot = read_snapshot(policy_domain=CLASSIC_POLICY_DOMAIN)
     except Exception as exc:
         raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
 
     snapshot = _snapshot_copy(supplied_snapshot)
+    physical_context, physical_context_digest = _read_physical_trust_context(
+        provider,
+        snapshot,
+    )
     trust_configuration_digest = _trust_configuration_sha256(snapshot)
     clock_sample_digest = _clock_sample_sha256(snapshot)
     earliest, latest = _time_window(snapshot)
@@ -290,7 +321,6 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         latest=latest,
     )
 
-    # No provider state is advanced before this complete evidence chain returns.
     evidence = verify_custody_timestamp_ledger_witness_v1(
         original_receipt_bytes,
         signed_policy_envelope_bytes,
@@ -300,15 +330,15 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         custodian_key_id,
         timestamp_token_der,
         policy_timestamp_token_der,
-        pinned_policy_tsa_root_certificate_der,
-        expected_policy_tsa_root_sha256,
-        expected_policy_tsa_policy_oid,
+        physical_context.policy_tsa_root_certificate_der,
+        physical_context.policy_tsa_root_sha256,
+        physical_context.policy_tsa_policy_oid,
         policy_timestamp_expected_nonce,
         snapshot.root_public_key_bytes,
         snapshot.root_key_id,
         effective_floor,
-        pinned_tsa_root_certificate_der,
-        expected_tsa_root_sha256,
+        physical_context.custody_tsa_root_certificate_der,
+        physical_context.custody_tsa_root_sha256,
         expected_nonce,
         raw_manifest_bytes,
         artifact_bytes_by_sha256,
@@ -319,14 +349,14 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         raw_new_checkpoint_bytes,
         raw_consistency_proof_bytes,
         witness_observation_batches,
-        pinned_log_public_key_bytes=pinned_log_public_key_bytes,
-        expected_log_id=expected_log_id,
-        expected_log_key_id=expected_log_key_id,
-        minimum_new_tree_size=minimum_new_tree_size,
-        pinned_registry_root_public_key_bytes=pinned_registry_root_public_key_bytes,
-        expected_registry_root_key_id=expected_registry_root_key_id,
-        expected_registry_id=expected_registry_id,
-        minimum_registry_sequence=minimum_registry_sequence,
+        pinned_log_public_key_bytes=physical_context.log_public_key_bytes,
+        expected_log_id=physical_context.log_id,
+        expected_log_key_id=physical_context.log_key_id,
+        minimum_new_tree_size=physical_context.minimum_log_tree_size,
+        pinned_registry_root_public_key_bytes=physical_context.registry_root_public_key_bytes,
+        expected_registry_root_key_id=physical_context.registry_root_key_id,
+        expected_registry_id=physical_context.registry_id,
+        minimum_registry_sequence=physical_context.minimum_registry_sequence,
         verification_time=snapshot.trusted_time_utc,
     )
     if type(evidence) is not CustodyLedgerWitnessInspectionV1:
@@ -344,14 +374,14 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     ):
         raise RuntimeError("complete evidence composition did not consume the provider-verified policy and time")
 
-    # The existing provider boundary repeats root, clock, policy, receipt and
-    # independent-gate checks using this exact cached snapshot, then commits.
-    # It cannot silently read a second caller-controlled snapshot.
-    pinned_provider = _PinnedSnapshotProvider(snapshot, compare_and_advance)
+    # The provider boundary re-verifies exact policy/receipt bytes and performs
+    # CAS against the same snapshot. The trust-configuration digest includes
+    # the physical-context digest and generation checked above.
     deployment_trust = inspect_receipt_with_deployment_trust_provider(
         original_receipt_bytes,
         signed_policy_envelope_bytes,
-        provider=pinned_provider,
+        provider=provider,
+        provider_snapshot=snapshot,
     )
     if type(deployment_trust) is not DeploymentTrustInspection:
         raise TypeError("deployment trust boundary returned an unexpected result type")
@@ -364,7 +394,7 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         or deployment_trust.trust_configuration_sha256 != trust_configuration_digest
         or deployment_trust.clock_sample_sha256 != clock_sample_digest
     ):
-        raise RuntimeError("deployment trust commit is not bound to the exact verified evidence snapshot")
+        raise RuntimeError("deployment trust commit is not bound to the exact verified snapshot")
 
     blockers = tuple(dict.fromkeys(
         tuple(evidence.remaining_blockers)
@@ -380,6 +410,8 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         root_generation=snapshot.root_generation,
         trust_configuration_sha256=trust_configuration_digest,
         clock_sample_sha256=clock_sample_digest,
+        physical_trust_context_sha256=physical_context_digest,
+        physical_trust_context_generation=physical_context.context_generation,
         trusted_time_earliest_utc=earliest,
         trusted_time_latest_utc=latest,
         provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
