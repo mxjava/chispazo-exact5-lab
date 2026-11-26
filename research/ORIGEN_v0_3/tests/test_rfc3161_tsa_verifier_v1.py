@@ -648,6 +648,14 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         result = _verify(token, root_der)
         self.assertEqual(result.accuracy_microseconds, 999_001)
 
+    def test_accuracy_interval_outside_datetime_range_is_rejected(self):
+        token, root_der = _token(accuracy={"seconds": 1 << 63})
+        with self.assertRaisesRegex(
+            ValueError,
+            "accuracy interval exceeds supported datetime range",
+        ):
+            _verify(token, root_der)
+
     def test_accuracy_is_preserved_for_downstream_preclose_bound(self):
         token, root_der = _token(accuracy={"seconds": 1, "millis": 250, "micros": 5})
         result = _verify(token, root_der)
