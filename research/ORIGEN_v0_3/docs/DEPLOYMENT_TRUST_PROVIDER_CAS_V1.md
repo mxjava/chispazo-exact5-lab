@@ -372,3 +372,43 @@ continue using the independent copied object whose digest still matches the
 deployment snapshot. This protects the application operation from mutation of
 the returned Python object; it does **not** authenticate the provider or
 replace the provider's atomic authoritative-state comparison at CAS.
+
+
+## 14. Out-of-band trust-anchor and anti-rollback bootstrap runbook
+
+**Status: required deployment procedure, not performed.** This section specifies the minimum bootstrap ceremony. It does not claim that Lotería Nacional, SEGOB, a TSA, a transparency-log operator, or a custodian has supplied or authorized any trust anchor for this repository.
+
+### A. Root trust-anchor ceremony
+
+1. Obtain the institutional root public key and its authorization statement from the institution that is legally responsible for the relevant evidence. The key package must be delivered through a channel independent of this repository, the submitting user, the receipt issuer, and the deployment host. A URL or repository commit alone is not an out-of-band trust ceremony.
+2. Verify the institution's legal identity and its explicit authority for the exact purpose and scope: Chispazo **Clásico**, the applicable evidence classes, receipt-attester delegation, physical-record signer roles, and any timestamp/ledger services. A general digital-signature or PSC accreditation is not draw-specific delegation.
+3. Verify the public-key fingerprint independently through two separately administered channels. Record the exact raw public-key bytes, fingerprint, key ID, algorithm, institution, authority instrument, scope, effective interval, root generation, and revocation/rollover contact. Two URLs controlled by the same publishing system do not count as independent channels.
+4. Require dual control for acceptance (at least two separately identified approvers). Each approver signs the same canonical bootstrap record. The record binds the CLASSIC policy domain, root fingerprint and key ID, root generation, minimum policy sequence, policy-authority identity, clock/TSA/log/registry trust inputs, state-backend identity, and the hashes of all source instruments.
+5. Store the signed bootstrap record and approvals in an independently controlled, append-only evidence store. The verifier receives only the pinned public material and its record digest. Root private keys remain under institutional offline/HSM control and must never be copied into this repository or application configuration.
+6. Reconcile any root rotation as a distinct dual-authorized transition. Require explicit old-root and new-root authorization (or an independently documented institutional recovery procedure), increment root generation, preserve the prior sequence/time watermarks, and prohibit resetting the CLASSIC sequence floor.
+
+A root is not provisioned until the signed record, both approvals, source authority, fingerprint cross-checks, and revocation/rollover process have been independently reviewed. If any item is absent or ambiguous, do not install the key.
+
+### B. Anti-rollback state genesis and operation
+
+1. Provision the state backend independently of the application and its repository. It must provide linearizable compare-and-advance, durable monotonic generations, access separation, tamper-evident audit, and a recovery path that can detect restoration of an older snapshot. A normal file, environment variable, caller-supplied database, or unanchored backup does not satisfy this requirement.
+2. Create a signed genesis record scoped to `origen.chispazo.classic.provenance` and the pinned root generation. It must bind the trust-configuration digest, root key ID/fingerprint, bootstrap minimum sequence, state generation, backend identity, and initial policy/time watermarks. The empty initial state is explicit: accepted sequence and accepted envelope digest are unset; trusted-time watermark is unset; generation is the documented genesis generation. Never silently initialize state from a submitted receipt.
+3. For each accepted signed policy, atomically compare the expected state generation, exact trust-configuration digest, exact clock-sample digest, root generation, policy sequence and envelope digest. A higher sequence advances one generation. Same sequence/same digest is idempotent except that a later non-overlapping trusted-time interval advances the time watermark and generation. Same sequence/different digest is equivocation; lower sequence is rollback; stale generation or changed configuration/sample is conflict.
+4. Persist the **upper bound** of each accepted trusted-time uncertainty interval. Reject any next interval whose earliest possible instant is earlier than the persisted upper bound, including same-sequence retries. Do not compare only the midpoint or only the time of the last policy acceptance.
+5. A root-generation change, backend migration, disaster recovery, or restoration must be an explicit signed transition that carries forward the last accepted sequence, exact envelope digest, time watermark and state generation. If the latest state cannot be proven against an external monotonic anchor, stop verification and require a new independently witnessed bootstrap; do not lower the floor or reconstruct it from repository history.
+6. Require independent monitoring of sequence/time-watermark changes, failed CAS attempts, equivocation, clock lease expiry, configuration drift, backup restore and privileged access. Retain the signed transaction/audit evidence outside the service being monitored.
+
+### C. Operational acceptance evidence
+
+Before any deployment may be described as provisioned, retain and independently review:
+
+- signed root/bootstrap record and two approval signatures;
+- institution authority instrument and two-channel fingerprint verification record;
+- root/key validity, revocation and rollover evidence;
+- signed state-genesis record and backend control/linearizability assessment;
+- externally anchored monotonic checkpoint and a demonstrated rollback/restore rejection;
+- clock-source identity, signed sample, uncertainty policy, freshness lease and independent key authorization;
+- provider implementation/build digest, deployment composition-root configuration digest, access-control evidence and independent security review;
+- successful adversarial failover, stale snapshot, equivocation, clock rollback, root rotation and backup-restore exercises.
+
+The current repository has none of this production provisioning evidence. The provider and all trust fixtures remain synthetic; no trust root is installed, no anti-rollback backend is deployed, and all results remain `BLOCKED_PROVENANCE`. Do not infer institutional authorization from the Secretaría de Economía PSC directory alone. In particular, PSC listing metadata does not prove that a provider was used by or delegated authority from Lotería Nacional for a specific draw.
