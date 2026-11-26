@@ -149,6 +149,8 @@ def score_masks(masks: list[int], result_mask: int) -> int:
 def exact_uniform_portfolio_null(lines: int = 30) -> dict:
     """Exact hypergeometric null for a uniformly sampled set of distinct lines."""
     universe = math.comb(28, 5)
+    if isinstance(lines, bool) or not isinstance(lines, int) or not 1 <= lines <= universe:
+        raise ValueError("lines_must_be_integer_between_1_and_universe")
     tail = {}
     for threshold in range(1, 6):
         favorable = sum(math.comb(5, j) * math.comb(23, 5-j)
