@@ -21,7 +21,10 @@ def document_for(modality: str) -> dict:
     doc["schema_version"] = SCHEMA_VERSION
     target_id = "12395" if modality == "DE_LAS_TRES" else "12396"
     for artifact in doc["artifacts"]:
-        artifact["contest_id"] = target_id
+        is_mjf = artifact["artifact_type"] in NIGHTLY_ONLY
+        artifact["scope"] = "DAILY" if is_mjf else "DRAW"
+        artifact["scope_date_local"] = "2026-11-25"
+        artifact["contest_id"] = None if is_mjf else target_id
     doc["target"] = {
         "modality": modality,
         "contest_id": target_id,
@@ -35,6 +38,17 @@ def document_for(modality: str) -> dict:
             else "2026-11-26T03:04:00Z"
         ),
     }
+    if modality == "CLASSIC":
+        mjf_digests = {
+            item["sha256"] for item in doc["artifacts"]
+            if item["artifact_type"] in NIGHTLY_ONLY
+        }
+        for event in doc["custody_events"]:
+            if event["artifact_sha256"] in mjf_digests:
+                event["received_at_utc"] = "2026-11-26T03:10:00Z"
+                for proof in doc["trusted_time_proofs"]:
+                    if proof["event_id"] == event["event_id"]:
+                        proof["event_at_utc"] = event["received_at_utc"]
     if modality == "DE_LAS_TRES":
         removed = {
             item["sha256"] for item in doc["artifacts"]
@@ -111,7 +125,8 @@ class PhysicalEvidenceManifestV2Tests(unittest.TestCase):
             item for item in classic["artifacts"]
             if item["artifact_type"] == "MJF-TRANSACTION-FILE"
         ))
-        mjf["contest_id"] = "12395"
+        mjf["scope"] = "DAILY"
+        mjf["contest_id"] = None
         doc["artifacts"].append(mjf)
         with self.assertRaisesRegex(ValueError, "do not match DE_LAS_TRES requirements"):
             parse_unverified_physical_manifest_v2(encode(doc))
@@ -142,6 +157,44 @@ class PhysicalEvidenceManifestV2Tests(unittest.TestCase):
         doc = document_for("CLASSIC")
         doc["ledger_anchor"]["ledger_id"] = "LOTERIA-NACIONAL"
         with self.assertRaisesRegex(ValueError, "ledger ID must be distinct"):
+            parse_unverified_physical_manifest_v2(encode(doc))
+
+
+    def test_mjf_is_daily_scope_and_not_bound_to_one_contest(self):
+        parsed = parse_unverified_physical_manifest_v2(encode(document_for("CLASSIC")))
+        mjf = [
+            item for item in parsed.artifacts
+            if item.artifact_type in NIGHTLY_ONLY
+        ]
+        self.assertEqual(len(mjf), 2)
+        self.assertTrue(all(item.scope == "DAILY" for item in mjf))
+        self.assertTrue(all(item.contest_id is None for item in mjf))
+        self.assertTrue(all(item.scope_date_local == "2026-11-25" for item in mjf))
+
+    def test_classic_rejects_mjf_falsely_bound_to_draw_scope(self):
+        doc = document_for("CLASSIC")
+        item = next(
+            item for item in doc["artifacts"]
+            if item["artifact_type"] == "MJF-TRANSACTION-FILE"
+        )
+        item["scope"] = "DRAW"
+        item["contest_id"] = "12396"
+        with self.assertRaisesRegex(ValueError, "must use DAILY scope"):
+            parse_unverified_physical_manifest_v2(encode(doc))
+
+    def test_classic_rejects_mjf_custody_before_21_close(self):
+        doc = document_for("CLASSIC")
+        mjf_digests = {
+            item["sha256"] for item in doc["artifacts"]
+            if item["artifact_type"] in NIGHTLY_ONLY
+        }
+        for event in doc["custody_events"]:
+            if event["artifact_sha256"] in mjf_digests:
+                event["received_at_utc"] = "2026-11-26T02:59:59Z"
+                for proof in doc["trusted_time_proofs"]:
+                    if proof["event_id"] == event["event_id"]:
+                        proof["event_at_utc"] = event["received_at_utc"]
+        with self.assertRaisesRegex(ValueError, "at or after the 21:00"):
             parse_unverified_physical_manifest_v2(encode(doc))
 
 
