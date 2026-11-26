@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -74,6 +75,7 @@ class PolicyEnvelopeTimestampInspectionV1:
     policy_envelope_sha256: str
     timestamp_event_id: str
     timestamp_token_sha256: str
+    expected_policy_oid: str
     accuracy_lower_bound_utc: datetime
     accuracy_upper_bound_utc: datetime
     existence_before_effective_time_verified: bool
@@ -209,10 +211,28 @@ def _manifest_binds_signature_timestamp(
 POLICY_ENVELOPE_TIMESTAMP_BLOCKERS = (
     "POLICY_ENVELOPE_TSA_ROOT_NOT_OUT_OF_BAND_PROVISIONED",
     "POLICY_ENVELOPE_TSA_REVOCATION_STATUS_NOT_CHECKED",
-    "POLICY_ENVELOPE_TIMESTAMP_POLICY_OID_NOT_AUTHORIZED_BY_DEPLOYMENT_POLICY",
+    "POLICY_ENVELOPE_TIMESTAMP_POLICY_OID_NOT_AUTHORIZED_BY_AUTHENTICATED_DEPLOYMENT_POLICY",
+    "POLICY_ENVELOPE_TIMESTAMP_EXPECTED_POLICY_OID_IS_CALLER_SUPPLIED",
     "POLICY_ENVELOPE_TIMESTAMP_CLOCK_NOT_AUTHENTICATED",
     "POLICY_ENVELOPE_TIMESTAMP_NOT_GLOBALLY_WITNESSED",
 )
+
+
+def _validate_policy_oid(value: object) -> str:
+    if type(value) is not str:
+        raise ValueError("expected_policy_tsa_policy_oid must be a canonical numeric OID")
+    arcs = value.split(".")
+    if len(arcs) < 2 or any(
+        not arc.isascii()
+        or not arc.isdigit()
+        or (len(arc) > 1 and arc.startswith("0"))
+        for arc in arcs
+    ):
+        raise ValueError("expected_policy_tsa_policy_oid must be a canonical numeric OID")
+    first, second = int(arcs[0]), int(arcs[1])
+    if first not in (0, 1, 2) or (first < 2 and second > 39):
+        raise ValueError("expected_policy_tsa_policy_oid has invalid first two arcs")
+    return value
 
 
 def policy_envelope_timestamp_event_id(envelope_sha256: str) -> str:
@@ -242,6 +262,7 @@ def _verify_policy_envelope_timestamp_v1(
     minimum_policy_sequence: int,
     pinned_policy_tsa_root_certificate_der: bytes,
     expected_policy_tsa_root_sha256: str,
+    expected_policy_tsa_policy_oid: str,
     policy_timestamp_expected_nonce: int,
     verification_time: datetime,
 ) -> PolicyEnvelopeTimestampInspectionV1:
@@ -262,6 +283,7 @@ def _verify_policy_envelope_timestamp_v1(
     envelope_sha256 = hashlib.sha256(signed_policy_envelope_bytes).hexdigest()
     if policy.envelope_sha256 != envelope_sha256:
         raise RuntimeError("V3 policy verifier returned a mismatched exact envelope digest")
+    expected_policy_oid = _validate_policy_oid(expected_policy_tsa_policy_oid)
     timestamp = verify_rfc3161_timestamp_token(
         policy_timestamp_token_der,
         signed_policy_envelope_bytes,
@@ -272,6 +294,8 @@ def _verify_policy_envelope_timestamp_v1(
     )
     if timestamp.provenance_status != "BLOCKED_PROVENANCE":
         raise RuntimeError("RFC 3161 policy-envelope inspection did not preserve BLOCKED_PROVENANCE")
+    if timestamp.policy_oid != expected_policy_oid:
+        raise ValueError("RFC 3161 policy OID does not match the caller-pinned TSA policy OID")
     if type(timestamp.accuracy_microseconds) is not int or timestamp.accuracy_microseconds < 0:
         raise ValueError("policy-envelope RFC 3161 accuracy is required and must be non-negative")
     accuracy = timedelta(microseconds=timestamp.accuracy_microseconds)
@@ -289,7 +313,10 @@ def _verify_policy_envelope_timestamp_v1(
     if len(matching_events) != 1:
         raise ValueError("manifest must contain exactly one trusted-time event for the exact V3 policy envelope")
     proof = matching_events[0]
-    expected_authority_id = "tsa-root-sha256:" + timestamp.tsa_root_certificate_sha256
+    expected_authority_id = (
+        "tsa-root-sha256:" + timestamp.tsa_root_certificate_sha256
+        + ":policy-oid:" + expected_policy_oid
+    )
     token_sha256 = hashlib.sha256(policy_timestamp_token_der).hexdigest()
     if proof.authority_id != expected_authority_id:
         raise ValueError("manifest policy-envelope timestamp authority does not match exact TSA root")
@@ -306,6 +333,7 @@ def _verify_policy_envelope_timestamp_v1(
         policy_envelope_sha256=envelope_sha256,
         timestamp_event_id=event_id,
         timestamp_token_sha256=token_sha256,
+        expected_policy_oid=expected_policy_oid,
         accuracy_lower_bound_utc=lower_bound,
         accuracy_upper_bound_utc=upper_bound,
         existence_before_effective_time_verified=True,
@@ -325,6 +353,7 @@ def verify_custody_timestamp_ledger_witness_v1(
     policy_timestamp_token_der: bytes,
     pinned_policy_tsa_root_certificate_der: bytes,
     expected_policy_tsa_root_sha256: str,
+    expected_policy_tsa_policy_oid: str,
     policy_timestamp_expected_nonce: int,
     pinned_root_public_key_bytes: bytes,
     expected_root_key_id: str,
@@ -426,6 +455,7 @@ def verify_custody_timestamp_ledger_witness_v1(
         minimum_policy_sequence=minimum_policy_sequence,
         pinned_policy_tsa_root_certificate_der=pinned_policy_tsa_root_certificate_der,
         expected_policy_tsa_root_sha256=expected_policy_tsa_root_sha256,
+        expected_policy_tsa_policy_oid=expected_policy_tsa_policy_oid,
         policy_timestamp_expected_nonce=policy_timestamp_expected_nonce,
         verification_time=verified_at,
     )
