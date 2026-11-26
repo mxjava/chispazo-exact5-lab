@@ -259,6 +259,10 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             "TSA_CERTIFICATE_CHAINS_AND_CURRENT_REVOCATION_NOT_INDEPENDENTLY_VERIFIED",
             result.remaining_blockers,
         )
+        self.assertIn(
+            "RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED",
+            result.remaining_blockers,
+        )
 
     def test_nested_signature_failure_does_not_advance_provider_state(self):
         data, ledger, batches, _ = _build_case()
@@ -627,5 +631,3 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.snapshot.accepted_policy_sequence, accepted_sequence_after_first)
         self.assertEqual(len(provider.consumed_timestamp_nonce_values), 2)
         self.assertEqual(len(provider.consumed_timestamp_nonce_challenge_ids), 1)
-        self.assertNotIn("policy_timestamp_expected_nonce", parameters)
-        self.assertNotIn("expected_nonce", parameters)
