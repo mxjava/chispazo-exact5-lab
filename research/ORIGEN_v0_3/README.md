@@ -16,6 +16,7 @@ It is **not** an autonomous truth engine, a lottery predictor, or a model-promot
 - Empirical adversarial-null benchmarking with finite-simulation +1 correction.
 - Search diversity diagnostics based on lenses, representations and observable Jaccard overlap.
 - SHA-256 file manifests and tamper verification.
+- Signed trust-policy envelope verification and root Ed25519 receipt-attestation verification, composed behind an unprovisioned deployment bootstrap; public independent provenance remains fail-closed.
 - Pre-close custody record verification and ordered hash-chain audit (without pretending to provide signatures or trusted timestamps).
 - V316 identity-resolved persistence omnibus across 8,140 preregistered statistics, with packed-bit pair counting and reference-oracle tests.
 - MetaObserver search-path audit: checks timestamp ordering, protocol-before-outcome access and flags post-outcome adaptation.
@@ -23,7 +24,7 @@ It is **not** an autonomous truth engine, a lottery predictor, or a model-promot
 
 ## Installation / execution
 
-Python 3.10+, standard library only.
+Python 3.10+. Core research utilities use the standard library; the ORIGEN cryptographic verification path requires `cryptography>=42.0.0,<47.0.0`, and the isolated package declares `tzdata>=2025.2`.
 
 ```powershell
 $env:PYTHONPATH = '.\src'
@@ -84,7 +85,7 @@ python -m origen.cli manifest --base .\data --verify .\research\manifest.json
 ## Known limitations
 
 - No automatic access to official data or the user's GitHub repository.
-- No cryptographic signing, trusted timestamping, or external independent custody.
+- No institutional trust roots, rollback-resistant policy-sequence store, authenticated clock/TSA, or external independent custody are provisioned. The Ed25519 verifiers are research primitives and do not authenticate embedded physical claims or complete provenance.
 - No guarantee that supplied p-values represent the complete search family; the protocol and search ledger must be independently audited.
 - The exact sign test checks direction consistency, not model calibration or stationarity.
 - Adversarial-null quality depends on the null generators and full discovery pipeline supplied by the research team.
