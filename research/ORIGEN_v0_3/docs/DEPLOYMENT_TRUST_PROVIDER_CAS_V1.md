@@ -144,6 +144,7 @@ All keys, receipts, envelopes, provider state, and time sources in this test mod
 - clock uncertainty crossing activation, expiration, and receipt-signing order;
 - uncertainty exceeding the provisioned maximum;
 - expired, over-age, or uncertainty-crossing clock sample leases;
+- a sample lease that expires between snapshot read and CAS;
 - clock sample ID/time/uncertainty/lease drift between snapshot read and CAS;
 - boolean sequence values, wrong modality domain, noncanonical UTC and malformed provisioning digest;
 - provider commit digest substitution.
