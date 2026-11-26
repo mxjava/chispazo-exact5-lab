@@ -136,7 +136,13 @@ class DeploymentTrustProvider(Protocol):
     def read_physical_trust_context(
         self, *, policy_domain: str
     ) -> PhysicalTrustContextV1:
-        """Return independently provisioned TSA/log/registry roots and floors."""
+        """Return the context bound by the same snapshot's digest and generation.
+
+        The context generation and exact canonical context digest must match
+        physical_trust_context_generation / physical_trust_context_sha256 in
+        read_snapshot. compare_and_advance must recompute that binding from
+        authoritative state inside the same transaction as the policy/time CAS.
+        """
         ...
 
     def compare_and_advance(
@@ -219,6 +225,9 @@ def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
         "state_backend_id": snapshot.state_backend_id,
         "provisioning_record_sha256": snapshot.provisioning_record_sha256,
     }
+    if snapshot.physical_trust_context_generation is not None:
+        payload["physical_trust_context_generation"] = snapshot.physical_trust_context_generation
+        payload["physical_trust_context_sha256"] = snapshot.physical_trust_context_sha256
     canonical = json.dumps(
         payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
     ).encode("ascii")
@@ -411,6 +420,8 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         maximum_clock_sample_age_ms=value.maximum_clock_sample_age_ms,
         state_backend_id=value.state_backend_id,
         provisioning_record_sha256=value.provisioning_record_sha256,
+        physical_trust_context_generation=value.physical_trust_context_generation,
+        physical_trust_context_sha256=value.physical_trust_context_sha256,
     )
 
     if type(snapshot.policy_domain) is not str or snapshot.policy_domain != CLASSIC_POLICY_DOMAIN:
@@ -423,6 +434,14 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
     _require_identifier(snapshot.clock_sample_id, "clock_sample_id")
     _require_identifier(snapshot.state_backend_id, "state_backend_id")
     _require_sha256(snapshot.provisioning_record_sha256, "provisioning_record_sha256")
+    context_generation = snapshot.physical_trust_context_generation
+    context_digest = snapshot.physical_trust_context_sha256
+    if (context_generation is None) != (context_digest is None):
+        raise ValueError("physical trust context generation and digest must be supplied together")
+    if context_generation is not None:
+        if type(context_generation) is not int or not 1 <= context_generation <= MAX_POLICY_SEQUENCE:
+            raise ValueError("physical_trust_context_generation must be an exact positive integer")
+        _require_sha256(context_digest, "physical_trust_context_sha256")
 
     integer_fields = (
         ("root_generation", snapshot.root_generation, 1, MAX_POLICY_SEQUENCE),
