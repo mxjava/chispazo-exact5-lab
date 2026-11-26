@@ -347,6 +347,35 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 0)
 
+    def test_clock_sample_rejects_duplicate_keys_and_noncanonical_bytes(self):
+        self.provider.snapshot = replace(
+            self.snapshot,
+            clock_sample_envelope_bytes=b'{"schema":"one","schema":"two"}',
+        )
+        with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
+            self.inspect()
+        self.provider.snapshot = replace(
+            self.snapshot,
+            clock_sample_envelope_bytes=b" " + self.clock_sample_envelope_bytes,
+        )
+        with self.assertRaisesRegex(ValueError, "not canonical JSON"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_clock_sample_key_fingerprint_is_part_of_trust_configuration_digest(self):
+        replacement_key = Ed25519PrivateKey.generate().public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        changed = replace(
+            self.snapshot,
+            clock_sample_public_key_bytes=replacement_key,
+        )
+        self.assertNotEqual(
+            _trust_configuration_sha256(self.snapshot),
+            _trust_configuration_sha256(changed),
+        )
+
     def test_clock_sample_claims_must_match_provider_snapshot(self):
         document = json.loads(self.snapshot.clock_sample_envelope_bytes)
         document["clock_source_id"] = "attacker-clock"
@@ -758,6 +787,8 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             ("root_public_key_bytes", bytes([153]) * 32),
             ("provisioning_record_sha256", "c" * 64),
             ("clock_source_id", "replacement-clock"),
+            ("clock_sample_key_id", "replacement-clock-key"),
+            ("clock_sample_public_key_bytes", bytes([154]) * 32),
             ("state_backend_id", "replacement-backend"),
         )
         for field, replacement_value in mutations:
