@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from zoneinfo import ZoneInfo
 
 from .physical_evidence_manifest_v1 import (
@@ -246,9 +246,7 @@ def parse_unverified_physical_manifest_v2(raw: bytes) -> UnverifiedPhysicalEvide
         raise ValueError("unsupported physical manifest schema_version")
 
     target = _parse_target_v2(root["target"])
-    expected_types = set(_REQUIRED_ARTIFACT_TYPES)
-    if target.modality == "CLASSIC":
-        expected_types.update(_NIGHTLY_ONLY_ARTIFACTS)
+    base_required_types = set(_REQUIRED_ARTIFACT_TYPES)
     artifact_values = _array(
         root["artifacts"], "artifacts",
         minimum=0, maximum=len(V1_REQUIRED_ARTIFACT_TYPES),
@@ -260,9 +258,20 @@ def parse_unverified_physical_manifest_v2(raw: bytes) -> UnverifiedPhysicalEvide
     artifact_types = [item.artifact_type for item in artifacts]
     if len(set(artifact_types)) != len(artifact_types):
         raise ValueError("artifacts contain duplicate artifact types")
-    if set(artifact_types) != expected_types:
-        missing = sorted(expected_types - set(artifact_types))
-        unexpected = sorted(set(artifact_types) - expected_types)
+    present_types = set(artifact_types)
+    present_mjf = present_types & _NIGHTLY_ONLY_ARTIFACTS
+    if target.modality == "CLASSIC":
+        expected_types = base_required_types | _NIGHTLY_ONLY_ARTIFACTS
+    else:
+        if present_mjf and present_mjf != _NIGHTLY_ONLY_ARTIFACTS:
+            raise ValueError(
+                "DE_LAS_TRES may include the daily MJF only as a complete "
+                "transaction-file/signature-form pair"
+            )
+        expected_types = base_required_types | present_mjf
+    if present_types != expected_types:
+        missing = sorted(expected_types - present_types)
+        unexpected = sorted(present_types - expected_types)
         raise ValueError(
             f"artifacts do not match {target.modality} requirements; "
             f"missing={missing}, unexpected={unexpected}"
@@ -297,9 +306,7 @@ def parse_unverified_physical_manifest_v2(raw: bytes) -> UnverifiedPhysicalEvide
     for claim in signatures:
         signatures_by_artifact.setdefault(claim.artifact_sha256, []).append(claim)
     artifact_by_type = {item.artifact_type: item for item in artifacts}
-    signed_types = set(_SIGNED_ARTIFACT_TYPES)
-    if target.modality == "DE_LAS_TRES":
-        signed_types.difference_update(_NIGHTLY_ONLY_ARTIFACTS)
+    signed_types = set(_SIGNED_ARTIFACT_TYPES) & expected_types
     for artifact_type in signed_types:
         digest = artifact_by_type[artifact_type].sha256
         if not signatures_by_artifact.get(digest):
@@ -351,16 +358,19 @@ def parse_unverified_physical_manifest_v2(raw: bytes) -> UnverifiedPhysicalEvide
     daily_master_digests = {
         item.sha256 for item in artifacts if item.scope == "DAILY"
     }
+    daily_mjf_close_utc = datetime.fromisoformat(
+        f"{target.draw_date_local}T21:00:00"
+    ).replace(tzinfo=_CHISPAZO_LOCAL_TIMEZONE).astimezone(timezone.utc)
     for digest in daily_master_digests:
         if not any(
             event.artifact_sha256 == digest
             and datetime.fromisoformat(event.received_at_utc[:-1] + "+00:00")
-                >= datetime.fromisoformat(target.sales_close_at_utc[:-1] + "+00:00")
+                >= daily_mjf_close_utc
             for event in custody_events
         ):
             raise ValueError(
                 "DAILY-scoped MJF artifacts require a custody event at or after "
-                "the 21:00 automatic sales close"
+                "the 21:00 Mexico City daily close"
             )
 
     time_values = _array(
