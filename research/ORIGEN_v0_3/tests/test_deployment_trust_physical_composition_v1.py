@@ -157,6 +157,39 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
             result.remaining_blockers,
         )
 
+    def test_changed_physical_context_is_rejected_before_verification(self):
+        original_context = physical_context()
+        changed_context = physical_context(log_id="attacker-substituted-log")
+        snapshot = SimpleNamespace(
+            trusted_time_utc=NOW,
+            physical_trust_context_sha256=physical_trust_context_sha256(original_context),
+        )
+
+        class Provider:
+            def read_snapshot(self, *, policy_domain):
+                return object()
+
+            def read_physical_trust_context(self, *, policy_domain):
+                return changed_context
+
+        with (
+            patch(
+                "origen.deployment_trust_physical_composition_v1._snapshot_copy",
+                return_value=snapshot,
+            ),
+            patch(
+                "origen.deployment_trust_physical_composition_v1.verify_custody_timestamp_ledger_witness_v1"
+            ) as physical,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "does not bind the exact physical trust context"):
+                verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
+                    RECEIPT,
+                    POLICY,
+                    provider=Provider(),
+                    physical_verification_kwargs={},
+                )
+        physical.assert_not_called()
+
     def test_failed_physical_bundle_never_reads_or_advances_provider(self):
         context = physical_context()
         snapshot = SimpleNamespace(
