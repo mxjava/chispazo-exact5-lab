@@ -32,7 +32,7 @@ The provider returns one immutable snapshot containing:
 
 - root public-key bytes, root key ID, and root generation;
 - fixed CLASSIC policy domain;
-- minimum sequence, accepted sequence, exact accepted-envelope digest, last accepted clock-interval upper bound, and state generation;
+- minimum sequence, accepted sequence, exact accepted-envelope digest, latest persisted trusted-time interval upper bound, and state generation;
 - one normalized UTC time, its uncertainty, and a provisioned maximum uncertainty;
 - identifiers for the clock source and state backend;
 - the provisioning-record digest.
@@ -66,7 +66,8 @@ The external implementation must provide a linearizable compare-and-advance tran
 | Observed state vs candidate | Required outcome |
 |---|---|
 | Higher candidate sequence | Advance exactly one state generation |
-| Same sequence + same exact envelope digest | Idempotent; generation unchanged |
+| Same sequence + same exact envelope digest and unchanged time watermark | IDEMPOTENT; generation unchanged |
+| Same sequence + same exact envelope digest and a later disjoint time interval | Persist the new time watermark; increment one generation; return TIME_ADVANCED |
 | Same sequence + different digest | Reject as equivocation |
 | Lower sequence | Reject as rollback |
 | Snapshot generation changed before commit | Reject as conflict |
@@ -74,7 +75,9 @@ The external implementation must provide a linearizable compare-and-advance tran
 
 The provider must scope state by root generation and policy domain. A policy sequence from another domain must never satisfy the CLASSIC floor. Root rotation must be a separate, independently authorized transition and cannot reset the sequence.
 
-For every inspection, including same-sequence/same-digest idempotent reads, the application rejects a candidate trusted-time interval whose earliest instant precedes the previously stored accepted interval's upper bound. For every higher-sequence acceptance, the provider must additionally enforce that trusted-time rollback floor atomically: candidate earliest time (accepted_at_utc minus clock uncertainty) must be greater than or equal to the previously stored accepted interval's upper bound. On successful advance it stores candidate latest time (accepted_at_utc plus clock uncertainty) together with the new sequence and exact envelope digest. The commit response must echo that exact upper bound. Same-sequence/same-digest idempotency returns the previously stored upper bound without changing it. A provider that restores or regresses this clock floor must fail closed.
+For every inspection, including same-sequence/same-digest reads, the application rejects a candidate trusted-time interval whose earliest instant precedes the persisted `trusted_time_latest_utc` watermark. The provider must enforce that same floor atomically inside compare-and-advance; checking only the application snapshot is insufficient because another inspection may advance the watermark after the snapshot was read. Candidate earliest time is `accepted_at_utc - clock_uncertainty`; candidate latest time is `accepted_at_utc + clock_uncertainty`.
+
+For a higher sequence, the provider stores the candidate sequence, exact envelope digest, and candidate latest time in one generation. For the same sequence and digest, a later disjoint interval advances only the time watermark and state generation, returning `TIME_ADVANCED`. If the candidate latest time equals the stored watermark, the provider returns `IDEMPOTENT` without changing the generation. Any interval whose earliest instant precedes the stored watermark returns `TIME_ROLLBACK`. This ensures that a later idempotent inspection cannot be followed by a clock restored to an earlier instant while remaining above only the original policy-acceptance time. The commit response must echo the exact persisted watermark. A provider that restores or regresses this clock floor must fail closed.
 
 The application checks the returned commit shape and exact policy digest, but only the provider's independently reviewed implementation can guarantee linearizability and durable anti-rollback.
 
@@ -111,7 +114,8 @@ The Incode PSC material remains a public-metadata candidate only; certificate by
 All keys, receipts, envelopes, provider state, and time sources in this test module are synthetic. Tests cover:
 
 - successful sequence advance while remaining blocked;
-- exact same-sequence/digest idempotency;
+- exact same-sequence/digest idempotency when the persisted time watermark is unchanged;
+- same-sequence/digest time-watermark advancement and subsequent clock-rollback rejection;
 - same-sequence/different-digest equivocation;
 - rollback below accepted sequence;
 - compare-and-swap generation race;
