@@ -37,6 +37,8 @@ class TimestampNonceChallengeV1:
             value = getattr(self, field)
             if type(value) is not int or not 1 <= value <= _MAX_NONCE:
                 raise ValueError(f"{field} must be an exact positive signed 64-bit integer")
+        if self.policy_timestamp_nonce == self.custody_timestamp_nonce:
+            raise ValueError("policy and custody timestamp nonces must be distinct")
         for field, minimum in (
             ("state_generation", 0),
             ("root_generation", 1),
