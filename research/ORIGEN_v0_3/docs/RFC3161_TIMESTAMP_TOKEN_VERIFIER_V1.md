@@ -87,7 +87,7 @@ token. The verifier supports these forms:
 
 - `directoryName`: the certificate subject or a SAN DirectoryName;
 - `rfc822Name`, `dNSName`, and `uniformResourceIdentifier`: exact SAN value;
-- `iPAddress`: exact packed address match against a SAN IPAddress;
+- `iPAddress`: exact parsed IP-address value match against a SAN IPAddress;
 - `registeredID`: exact dotted OID match against a SAN RegisteredID.
 
 Textual values are compared exactly and conservatively; no case folding or URI
