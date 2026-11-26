@@ -102,14 +102,6 @@ def verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
     if deployment.provenance_status is not ProvenanceStatus.BLOCKED_PROVENANCE:
         raise RuntimeError("deployment trust verifier did not preserve BLOCKED_PROVENANCE")
 
-    trusted_midpoint = deployment.time_window_start_utc + (
-        deployment.time_window_end_utc - deployment.time_window_start_utc
-    ) / 2
-    if supplied_time.astimezone(timezone.utc) != trusted_midpoint:
-        raise ValueError(
-            "physical verification_time must equal the provider-authenticated clock midpoint"
-        )
-
     receipt_digest = hashlib.sha256(original_receipt_bytes).hexdigest()
     policy_digest = hashlib.sha256(signed_policy_envelope_bytes).hexdigest()
     if (
@@ -121,6 +113,7 @@ def verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
     blockers = tuple(dict.fromkeys(
         tuple(physical.remaining_blockers)
         + (
+            "PHYSICAL_VERIFIER_CLOCK_IS_CALLER_SUPPLIED_NOT_PROVIDER_SNAPSHOT",
             "TSA_ROOT_AND_REVOCATION_NOT_AUTHENTICATED_BY_DEPLOYMENT_PROVIDER",
             "TRANSPARENCY_LOG_ROOT_AND_WITNESS_REGISTRY_NOT_OUT_OF_BAND_PROVISIONED",
             "PHYSICAL_ORIGIN_AND_INDEPENDENT_CUSTODY_NOT_INSTITUTIONALLY_AUTHENTICATED",
