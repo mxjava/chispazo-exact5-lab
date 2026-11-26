@@ -109,7 +109,9 @@ def verify_external_ledger_inclusion(
         raise ValueError("ledger log identity does not match external pin")
     if type(minimum_tree_size) is not int or not 1 <= minimum_tree_size <= _MAX_TREE_SIZE:
         raise ValueError("minimum_tree_size must be a positive exact integer")
-    if type(tree_size) is not int or tree_size < minimum_tree_size:
+    if type(tree_size) is not int:
+        raise ValueError("tree_size must be an exact integer")
+    if tree_size < minimum_tree_size:
         raise ValueError("ledger tree size is below externally pinned minimum")
     if type(pinned_log_public_key_bytes) is not bytes or len(pinned_log_public_key_bytes) != 32:
         raise ValueError("pinned log public key must be exactly 32 immutable bytes")
