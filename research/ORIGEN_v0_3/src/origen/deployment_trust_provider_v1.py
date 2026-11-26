@@ -27,6 +27,7 @@ from .independent_trust_adapter import (
     ProvenanceStatus,
     verify_independent_provenance,
 )
+from .physical_trust_context_v1 import PhysicalTrustContextV1
 from .trust_policy_envelope_v1 import (
     MAX_POLICY_BYTES,
     MAX_POLICY_SEQUENCE,
@@ -130,6 +131,12 @@ class DeploymentTrustProvider(Protocol):
     """
 
     def read_snapshot(self, *, policy_domain: str) -> DeploymentTrustSnapshot:
+        ...
+
+    def read_physical_trust_context(
+        self, *, policy_domain: str
+    ) -> PhysicalTrustContextV1:
+        """Return independently provisioned TSA/log/registry roots and floors."""
         ...
 
     def compare_and_advance(
