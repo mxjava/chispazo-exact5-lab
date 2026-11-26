@@ -80,7 +80,7 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
             events.append(("physical", receipt, policy, kwargs["verification_time"]))
             return physical_result()
 
-        def deployment(receipt, policy, *, provider):
+        def deployment(receipt, policy, *, provider, **kwargs):
             events.append(("provider", receipt, policy, provider, kwargs.get("provider_snapshot")))
             return deployment_result()
 
