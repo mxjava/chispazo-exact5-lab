@@ -28,6 +28,7 @@ from .independent_trust_adapter import (
     verify_independent_provenance,
 )
 from .physical_trust_context_v1 import PhysicalTrustContextV1
+from .timestamp_nonce_challenge_v1 import TimestampNonceChallengeV1
 from .trust_policy_envelope_v1 import (
     MAX_POLICY_BYTES,
     MAX_POLICY_SEQUENCE,
@@ -147,6 +148,24 @@ class DeploymentTrustProvider(Protocol):
         """
         ...
 
+    def read_timestamp_nonce_challenge(
+        self,
+        *,
+        policy_domain: str,
+        expected_state_generation: int,
+        expected_root_generation: int,
+        expected_physical_trust_context_generation: int,
+        expected_physical_trust_context_sha256: str,
+    ) -> TimestampNonceChallengeV1:
+        """Return a provider-issued, one-use challenge bound to this snapshot.
+
+        The provider must create unpredictable RFC 3161 nonces, persist the
+        pending challenge, and reject stale, expired, or already-consumed
+        challenges. The challenge is not trusted merely because this interface
+        returns it; the deployment implementation and its state remain external.
+        """
+        ...
+
     def compare_and_advance(
         self,
         *,
@@ -160,7 +179,16 @@ class DeploymentTrustProvider(Protocol):
         policy_envelope_sha256: str,
         accepted_at_utc: datetime,
         clock_uncertainty_ms: int,
+        timestamp_nonce_challenge_id: str | None = None,
+        timestamp_nonce_challenge_sha256: str | None = None,
     ) -> DeploymentTrustCommit:
+        """Atomically advance policy/time state and consume any supplied challenge.
+
+        When challenge fields are present, the backend must look up its own
+        pending challenge, recompute the exact digest, verify the same state
+        and trust configuration, and consume both nonce values in this same
+        linearizable transaction. It must reject challenge or nonce reuse.
+        """
         ...
 
 
@@ -186,6 +214,8 @@ class DeploymentTrustInspection:
     state_generation_after: int
     state_outcome: TrustStateOutcome
     provenance_status: ProvenanceStatus
+    timestamp_nonce_challenge_id: str | None = None
+    timestamp_nonce_challenge_sha256: str | None = None
 
 
 class TrustProviderUnavailable(RuntimeError):
@@ -575,6 +605,8 @@ def inspect_receipt_with_deployment_trust_provider(
     *,
     provider: DeploymentTrustProvider,
     provider_snapshot: DeploymentTrustSnapshot | None = None,
+    timestamp_nonce_challenge_id: str | None = None,
+    timestamp_nonce_challenge_sha256: str | None = None,
 ) -> DeploymentTrustInspection:
     """Inspect policy and receipt through provider-supplied deployment state.
 
@@ -602,6 +634,12 @@ def inspect_receipt_with_deployment_trust_provider(
         raise ValueError("original_receipt_bytes exceeds the trust receipt size limit")
     if len(signed_policy_envelope_bytes) > MAX_POLICY_BYTES:
         raise ValueError("signed_policy_envelope_bytes exceeds the trust policy size limit")
+
+    if (timestamp_nonce_challenge_id is None) != (timestamp_nonce_challenge_sha256 is None):
+        raise ValueError("timestamp nonce challenge ID and digest must be supplied together")
+    if timestamp_nonce_challenge_id is not None:
+        _require_identifier(timestamp_nonce_challenge_id, "timestamp_nonce_challenge_id")
+        _require_sha256(timestamp_nonce_challenge_sha256, "timestamp_nonce_challenge_sha256")
 
     read_snapshot = getattr(provider, "read_snapshot", None)
     compare_and_advance = getattr(provider, "compare_and_advance", None)
@@ -701,6 +739,8 @@ def inspect_receipt_with_deployment_trust_provider(
             policy_envelope_sha256=policy_digest,
             accepted_at_utc=snapshot.trusted_time_utc,
             clock_uncertainty_ms=snapshot.clock_uncertainty_ms,
+            timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
+            timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
         )
     except Exception as exc:
         raise TrustProviderUnavailable("deployment trust sequence transaction failed") from exc
@@ -758,4 +798,6 @@ def inspect_receipt_with_deployment_trust_provider(
         state_generation_after=commit.state_generation,
         state_outcome=commit.outcome,
         provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
+        timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
+        timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
     )
