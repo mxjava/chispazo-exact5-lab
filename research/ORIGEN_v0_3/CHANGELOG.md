@@ -249,3 +249,13 @@
 - Home index shows a 23-Nov 15:00 card numbered 12391, but the rendered card does not explicitly name the product; it is not bound to the Chispazo target register. No 23-Nov 21:00 Classic contest ID or result was visible.
 - No new draw-specific primary physical evidence was obtained. The official 22-Nov PDF could be browser-rendered but not downloaded as original bytes; SHA-256 remains NOT_CAPTURED. SGVO-PRO-05 revision 39 remains procedural reference only.
 - No canonical append, V294 change, main write, merge, promotion, prospective score, or eligibility change.
+
+
+## 2026-11-26 — External ledger composition and modality-aware physical evidence V2
+
+- Added bounded RFC 6962 Merkle consistency-proof verification and composition with ledger inclusion-result roots. The composition validates exact record types/fields and adversarially rejects malformed or hostile Python values. These result records remain forgeable data, not authorization capabilities.
+- Added physical-evidence manifest V2 without changing V1. It separates 15:00 De las Tres and 21:00 Clásico, records sales-close and actual draw-event time separately, and distinguishes draw-scoped artifacts from daily-scoped records.
+- Corrected the MJF model from a contest-only/night-only assumption: SGVO-PRO-05 Rev. 39 page 38 says the MJF is written every day after the 21:00 automatic close. V2 treats it as a daily artifact, requires it in the complete Classic packet, and permits it in a De las Tres packet only as a later post-21:00 daily record with null contest ID.
+- Added official public-status snapshot `data/official-overlays/2026-11-26_1554_public_status_only.json`. The 15:00 home card's product name is not explicit; its De las Tres association is slot-level only. The 26-Nov result was not published at observation time; no combination was inferred. Original official PDF bytes were not captured, so no PDF SHA-256 is claimed.
+- Validation on code-bearing commit `2ef83d2bac57a2763b3ff9443dc1b1b9e6bf4000`: ORIGEN isolated CI run `45902750631` passed **531 tests**; general CI run `45902750576` passed **733 tests, 2 skipped, 134 subtests**. Exact current documentation head `2263a9ac12471343b93fca002d8b6c7d1baca544` general CI run `45902811572` passed **733 tests, 2 skipped, 134 subtests**.
+- No canonical history append, V294 change, model retuning, main write, merge or promotion. The canonical history blob remains `2f5ff5bfbd779fe505736398e417b7211955958e` on both main and this research branch. Independent trust provisioning, RFC 3161 verification, persistent anti-rollback, authentic external witness/custody and draw-specific primary physical records remain unavailable; production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
