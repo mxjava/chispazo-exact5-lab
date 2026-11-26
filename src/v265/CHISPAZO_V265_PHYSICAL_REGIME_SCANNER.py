@@ -4,7 +4,7 @@ from pathlib import Path
 from collections import Counter
 import numpy as np
 import pandas as pd
-from scipy.stats import binomtest, fisher_exact, norm, pearsonr, spearmanr
+from scipy.stats import binomtest, fisher_exact, pearsonr, spearmanr
 from scipy.special import logsumexp
 from scipy import sparse
 
