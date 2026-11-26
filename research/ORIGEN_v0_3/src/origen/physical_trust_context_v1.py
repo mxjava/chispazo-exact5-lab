@@ -7,7 +7,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
+
+from cryptography.x509 import ObjectIdentifier
+
+from .trust_policy_envelope_v1 import MAX_POLICY_SEQUENCE
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +65,6 @@ class PhysicalTrustContextV1:
             if hashlib.sha256(getattr(self, data_field)).hexdigest() != digest:
                 raise ValueError(f"{field} does not bind the exact certificate bytes")
         for field in (
-            "policy_tsa_policy_oid",
             "policy_root_key_id",
             "log_id",
             "log_key_id",
@@ -68,12 +72,26 @@ class PhysicalTrustContextV1:
             "registry_id",
         ):
             value = getattr(self, field)
-            if type(value) is not str or not value.strip():
-                raise ValueError(f"{field} must be a non-empty identifier")
-        for field in ("minimum_policy_sequence", "minimum_registry_sequence"):
+            if (
+                type(value) is not str
+                or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}", value)
+            ):
+                raise ValueError(f"{field} must be a canonical identifier")
+        if type(self.policy_tsa_policy_oid) is not str:
+            raise ValueError("policy_tsa_policy_oid must be a canonical object identifier")
+        try:
+            parsed_oid = ObjectIdentifier(self.policy_tsa_policy_oid)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("policy_tsa_policy_oid must be a canonical object identifier") from exc
+        if str(parsed_oid) != self.policy_tsa_policy_oid:
+            raise ValueError("policy_tsa_policy_oid must be a canonical object identifier")
+        for field, maximum in (
+            ("minimum_policy_sequence", MAX_POLICY_SEQUENCE),
+            ("minimum_registry_sequence", 2**63 - 1),
+        ):
             value = getattr(self, field)
-            if type(value) is not int or value < 0:
-                raise ValueError(f"{field} must be a non-negative integer")
+            if type(value) is not int or not 0 <= value <= maximum:
+                raise ValueError(f"{field} must be an integer within its supported range")
 
 
 def physical_trust_context_sha256(context: PhysicalTrustContextV1) -> str:
