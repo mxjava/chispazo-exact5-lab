@@ -1,9 +1,10 @@
 """Modality-aware V2 structural parser for Chispazo physical-evidence manifests.
 
 V1 remains CLASSIC-only and unchanged. V2 separates the 15:00 De las Tres
-workflow from the 21:00 Clásico workflow. This parser validates declarations
-only; it does not hash original objects, verify signatures/TSA tokens, prove
-custody, or authenticate the source.
+workflow from the 21:00 Clásico workflow, and models the nightly MJF as a
+daily-scoped object rather than falsely binding it to one contest. This parser
+validates declarations only; it does not hash original objects, verify
+signatures/TSA tokens, prove custody, or authenticate the source.
 """
 from __future__ import annotations
 
