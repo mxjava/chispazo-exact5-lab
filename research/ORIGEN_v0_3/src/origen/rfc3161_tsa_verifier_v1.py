@@ -417,6 +417,12 @@ def verify_rfc3161_timestamp_token(
         tst_info = tsp.TSTInfo.load(tst_bytes, strict=True)
         if tst_info.dump(force=True) != tst_bytes:
             raise ValueError("TSTInfo must use canonical DER encoding")
+        tst_version = tst_info["version"].native
+        if not (
+            (type(tst_version) is int and tst_version == 1)
+            or (type(tst_version) is str and tst_version == "v1")
+        ):
+            raise ValueError("RFC3161 TSTInfo version must be v1 (1)")
         signer_infos = signed_data["signer_infos"]
         cert_choices = signed_data["certificates"]
     except (ValueError, TypeError, KeyError) as exc:
