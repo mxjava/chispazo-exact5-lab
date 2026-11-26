@@ -6,6 +6,7 @@ Only a separately administered deployment provider may construct and return it.
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass
 
 
@@ -73,3 +74,33 @@ class PhysicalTrustContextV1:
             value = getattr(self, field)
             if type(value) is not int or value < 0:
                 raise ValueError(f"{field} must be a non-negative integer")
+
+
+def physical_trust_context_sha256(context: PhysicalTrustContextV1) -> str:
+    """Canonical digest binding every physical trust anchor and policy floor."""
+    if type(context) is not PhysicalTrustContextV1:
+        raise TypeError("context must be an exact PhysicalTrustContextV1")
+    payload = {
+        "schema": "origen.physical-trust-context.v1",
+        "policy_tsa_root_sha256": context.policy_tsa_root_sha256,
+        "policy_tsa_policy_oid": context.policy_tsa_policy_oid,
+        "policy_root_public_key_sha256": hashlib.sha256(
+            context.policy_root_public_key_bytes
+        ).hexdigest(),
+        "policy_root_key_id": context.policy_root_key_id,
+        "minimum_policy_sequence": context.minimum_policy_sequence,
+        "custody_tsa_root_sha256": context.custody_tsa_root_sha256,
+        "log_public_key_sha256": hashlib.sha256(context.log_public_key_bytes).hexdigest(),
+        "log_id": context.log_id,
+        "log_key_id": context.log_key_id,
+        "registry_root_public_key_sha256": hashlib.sha256(
+            context.registry_root_public_key_bytes
+        ).hexdigest(),
+        "registry_root_key_id": context.registry_root_key_id,
+        "registry_id": context.registry_id,
+        "minimum_registry_sequence": context.minimum_registry_sequence,
+    }
+    canonical = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("ascii")
+    return hashlib.sha256(canonical).hexdigest()
