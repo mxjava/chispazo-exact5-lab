@@ -1,10 +1,10 @@
 """Research-only orchestration of physical evidence and provider-backed trust.
 
-The physical bundle is verified first. Only after every nested signature,
-RFC 3161 token, ledger proof and witness batch succeeds does the deployment
-provider verify the exact same receipt/policy bytes and atomically advance its
-policy/time state. This ordering avoids consuming monotonic policy state for a
-physical bundle that fails its own verification.
+One validated deployment-provider snapshot supplies the exact verification
+instant to both the physical verifier and the deployment-policy verifier. The
+provider's atomic compare-and-advance occurs only after every nested physical
+signature, RFC 3161 token, ledger proof and witness batch succeeds. This avoids
+consuming monotonic policy state for a physical bundle that fails verification.
 
 This is not a production capability: TSA, log and witness-registry pins still
 enter through the physical verifier keyword arguments and must be replaced by
