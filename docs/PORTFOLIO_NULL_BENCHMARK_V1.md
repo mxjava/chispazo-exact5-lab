@@ -22,10 +22,10 @@ python -m src.portfolio_benchmark --registrations registrations.json --trusted-r
 
 The benchmark now reports an exact hypergeometric reference in addition to Monte Carlo replicates. For a uniformly sampled set of 30 distinct combinations from the 98,280 possible combinations, the probability of at least one line reaching each threshold is:
 
-- Best line >= 3/5: approximately 55.9078%.
-- Best line >= 4/5: approximately 3.48147%.
-- Best line = 5/5: exactly 30/98,280 = approximately 0.0305250%.
-- Expected best-hit count: approximately 2.59325.
+- Best line >= 3/5: 55.9077764%.
+- Best line >= 4/5: 3.48147044%.
+- Best line = 5/5: exactly 30/98,280 = 0.0305250305%.
+- Expected best-hit count: 2.59325218.
 
 These are random-baseline probabilities, not performance claims for the model. The exact 5/5 probability is invariant to which 30 distinct lines are selected under a uniform draw; selection strategy cannot improve it without a genuine non-uniform predictive signal.
 
