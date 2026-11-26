@@ -430,7 +430,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
 
     def test_same_sequence_and_same_exact_digest_is_idempotent(self):
         import hashlib
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
             minimum_policy_sequence=POLICY_SEQUENCE - 1,
             accepted_policy_sequence=POLICY_SEQUENCE,
@@ -444,7 +444,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
 
     def test_same_sequence_inspection_persists_later_clock_watermark(self):
         import hashlib
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
             minimum_policy_sequence=POLICY_SEQUENCE - 1,
             accepted_policy_sequence=POLICY_SEQUENCE,
@@ -467,7 +467,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
 
     def test_clock_rollback_after_later_idempotent_inspection_is_rejected(self):
         import hashlib
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
             minimum_policy_sequence=POLICY_SEQUENCE - 1,
             accepted_policy_sequence=POLICY_SEQUENCE,
@@ -477,7 +477,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         )
         first = self.inspect()
         self.assertIs(first.state_outcome, TrustStateOutcome.TIME_ADVANCED)
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.provider.snapshot,
             trusted_time_utc=NOW + timedelta(seconds=2),
         )
@@ -490,7 +490,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
 
     def test_same_sequence_idempotency_rejects_trusted_clock_rollback(self):
         import hashlib
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
             minimum_policy_sequence=POLICY_SEQUENCE - 1,
             accepted_policy_sequence=POLICY_SEQUENCE,
@@ -574,7 +574,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             root_private=None,
             not_before_utc=activation.isoformat().replace("+00:00", "Z"),
         )
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
             root_public_key_bytes=self.root_public_key,
             clock_uncertainty_ms=40,
@@ -602,7 +602,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             self.receipt_public_key,
             expires_at_utc="2026-11-23T04:00:00.500Z",
         )
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
             root_public_key_bytes=self.root_public_key,
             clock_uncertainty_ms=1000,
