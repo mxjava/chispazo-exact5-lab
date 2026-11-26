@@ -487,6 +487,9 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
             _verify(
                 data, ledger, batches,
                 policy_timestamp_token_der=data["timestamp_token_der"],
+                pinned_policy_tsa_root_certificate_der=data["pinned_tsa_root_certificate_der"],
+                expected_policy_tsa_root_sha256=data["expected_tsa_root_sha256"],
+                policy_timestamp_expected_nonce=data["expected_nonce"],
             )
 
     def test_policy_envelope_must_exist_before_its_signed_effective_time(self):
@@ -539,7 +542,7 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
             _verify(data, {**ledger, "manifest_bytes": bad_manifest}, batches)
 
 
-    def test_policy_timestamp_token_digest_is_signed_and_included_in_ledger_commitment(self):
+    def test_policy_timestamp_token_digest_is_covered_by_nested_signatures(self):
         data, ledger, batches, _ = _build_case()
         document = copy.deepcopy(ledger["document"])
         proof = next(
