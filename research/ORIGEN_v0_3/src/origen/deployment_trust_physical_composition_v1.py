@@ -25,7 +25,10 @@ from .deployment_trust_provider_v1 import (
     inspect_receipt_with_deployment_trust_provider,
 )
 from .independent_trust_adapter import ProvenanceStatus
-from .physical_trust_context_v1 import PhysicalTrustContextV1
+from .physical_trust_context_v1 import (
+    PhysicalTrustContextV1,
+    physical_trust_context_sha256,
+)
 from .custody_ledger_witness_integration_v1 import (
     CustodyLedgerWitnessInspectionV1,
     verify_custody_timestamp_ledger_witness_v1,
@@ -131,6 +134,11 @@ def verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
     if type(supplied_physical_context) is not PhysicalTrustContextV1:
         raise TypeError("provider returned an unexpected physical trust context type")
     context = supplied_physical_context
+    context_digest = physical_trust_context_sha256(context)
+    if snapshot.physical_trust_context_sha256 != context_digest:
+        raise RuntimeError(
+            "provider snapshot does not bind the exact physical trust context"
+        )
 
     # Snapshot the keyword mapping so caller mutation cannot change the
     # argument set between the physical and deployment verification stages.
