@@ -1,0 +1,129 @@
+{
+  "schema_version": "origen.official-public-status.v1",
+  "classification": "OFFICIAL_PUBLIC_STATUS_ONLY_NO_PRIMARY_PHYSICAL_EVIDENCE",
+  "observed_at_local": "2026-11-26T15:54:23-06:00",
+  "observed_at_utc": "2026-11-26T21:54:23Z",
+  "timezone": "America/Mexico_City",
+  "sources": [
+    {
+      "id": "chispazo_product_schedule",
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "source_type": "official_product_page",
+      "claims": {
+        "draws_per_day": 2,
+        "de_las_tres_local_time": "15:00",
+        "classic_local_time": "21:00"
+      }
+    },
+    {
+      "id": "commercializer_home_card",
+      "url": "https://comercializadores.loterianacional.gob.mx/home/",
+      "source_type": "official_commercializer_home_index",
+      "claims": {
+        "card_title": "Ilumina tu suerte",
+        "date": "2026-11-26",
+        "local_time": "15:00",
+        "contest_number": "12397",
+        "product_name_explicitly_printed": false,
+        "classification": "SLOT_LEVEL_ASSOCIATION_ONLY_NOT_DRAW_SPECIFIC_MODALITY_PROOF"
+      }
+    },
+    {
+      "id": "chispazo_results_endpoint",
+      "url": "https://loterianacional.gob.mx/Chispazo/Resultados",
+      "source_type": "official_results_page",
+      "claims": {
+        "latest_published_contest": "12396",
+        "latest_published_date": "2026-11-25",
+        "latest_published_combination": ["05", "07", "21", "24", "28"],
+        "next_draw_date_displayed": "2026-11-26",
+        "contest_12397_published_at_observation": false,
+        "previous_contest_12395_combination": ["01", "13", "19", "23", "28"]
+      }
+    },
+    {
+      "id": "official_result_mask_2026_11_25",
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=25112026221906",
+      "source_type": "official_result_mask_pdf",
+      "claims": {
+        "contest_12395_modality": "DE_LAS_TRES",
+        "contest_12395_combination": ["01", "13", "19", "23", "28"],
+        "contest_12396_modality": "CLASSIC",
+        "contest_12396_combination": ["05", "07", "21", "24", "28"]
+      },
+      "original_binary_captured": false,
+      "sha256": null
+    },
+    {
+      "id": "result_publication_faq",
+      "url": "https://www.loterianacional.gob.mx/Nosotros/PreguntasFrecuentes",
+      "source_type": "official_faq",
+      "claims": {
+        "afternoon_results_update_window_local": ["16:30", "17:00"],
+        "night_results_update_begins_local": "22:50",
+        "night_results_update_duration_hours": [1, 2]
+      },
+      "scope_note": "Generic Loteria Nacional publication timing guidance; not a draw-specific timestamp."
+    },
+    {
+      "id": "sgvo_pro_05_rev39",
+      "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+      "source_type": "official_electronic_draw_procedure_pdf",
+      "revision": "39",
+      "version": "09",
+      "normateca_last_update": "2026-03-20",
+      "original_binary_captured": false,
+      "sha256": null
+    }
+  ],
+  "draw_2026_11_26": {
+    "de_las_tres_slot": {
+      "scheduled_local_time": "15:00",
+      "home_card_contest_number": "12397",
+      "official_result_published_at_observation": false,
+      "draw_specific_modality_confirmed": false
+    },
+    "classic_slot": {
+      "scheduled_local_time": "21:00",
+      "contest_number_confirmed": false,
+      "result_published_at_observation": false
+    },
+    "unlabelled_21_00_home_card": {
+      "contest_number": "3093",
+      "assigned_to_chispazo": false
+    }
+  },
+  "physical_primary_evidence": {
+    "contest_12397": {
+      "acta_or_signed_draw_record": false,
+      "cs11": false,
+      "original_weighing_strip": false,
+      "sical_close_and_post_draw_summaries": false,
+      "participation_cancellation_signature_media": false,
+      "original_video": false,
+      "segob_oic_custody_receipt": false
+    },
+    "source_note": "No draw-specific primary physical records were obtained. Public result masks/pages are derived official publications, not substitutes for original records."
+  },
+  "binary_capture": {
+    "official_result_mask_pdf_sha256": null,
+    "sgvo_pro_05_pdf_sha256": null,
+    "reason": "Direct original-binary retrieval was unavailable in this working environment; no digest is fabricated."
+  },
+  "eligibility": {
+    "canonical_history_append": false,
+    "prospective_scoring_eligible": false,
+    "classic_edge_sample_eligible": false,
+    "research_edge": false,
+    "production_state": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "invariants": {
+    "v294_frozen": true,
+    "canonical_history_modified": false,
+    "canonical_history_byte_for_byte_equal_to_main_at_observation": true,
+    "canonical_history_content_characters": 505274,
+    "main_written": false,
+    "merge_performed": false,
+    "promotion_performed": false
+  }
+}

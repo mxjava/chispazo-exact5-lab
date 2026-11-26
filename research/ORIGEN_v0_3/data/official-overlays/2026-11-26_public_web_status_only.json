@@ -1,0 +1,162 @@
+{
+  "schema_version": "origen.official-source-status.v1",
+  "status": "PUBLIC_WEB_STATUS_ONLY_NOT_DRAW_PHYSICAL_EVIDENCE",
+  "review_date": "2026-11-26",
+  "source_bytes_captured": false,
+  "source_byte_hashes": null,
+  "modality_control": {
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "daily_schedule_local_time": {
+      "DE_LAS_TRES": "15:00",
+      "CLASSIC": "21:00"
+    },
+    "timezone": "America/Mexico_City",
+    "note": "The official product page states De las Tres at 15:00 and Clásico at 21:00. The official 25-Nov-2026 result mask explicitly labels 12395 De las Tres and 12396 Clásico. Do not infer 26-Nov contest ID 12398 from sequence alone; the reviewed official home page lists 12397 at 15:00 but does not list a Chispazo contest ID for 21:00."
+  },
+  "official_results_page": {
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "latest_published_contest": {
+      "contest_id": 12396,
+      "date": "2026-11-25",
+      "numbers": [
+        5,
+        7,
+        21,
+        24,
+        28
+      ]
+    },
+    "previous_published_contest": {
+      "contest_id": 12395,
+      "date": "2026-11-25",
+      "numbers": [
+        1,
+        13,
+        19,
+        23,
+        28
+      ]
+    },
+    "next_draw_date_shown": "2026-11-26",
+    "draw_time_and_modality_in_result_page": "NOT_STATED_FOR_LISTED_ROWS",
+    "contest_12397_result": "NOT_YET_PRESENT_ON_RESULTS_PAGE_AT_REVIEW",
+    "contest_12398_result": "NOT_CONFIRMED_BY_REVIEWED_OFFICIAL_INDEX_OR_RESULTS_PAGE",
+    "classic_2026_11_26_21_00_result": "NOT_YET_PRESENT_ON_RESULTS_PAGE_AT_REVIEW"
+  },
+  "official_schedule_index": {
+    "source_url": "https://comercializadores.loterianacional.gob.mx/",
+    "classic_slot": {
+      "date": "2026-11-26",
+      "time": "21:00",
+      "contest_id": null,
+      "evidence_kind": "OFFICIAL_CHISPAZO_PRODUCT_PAGE_DAILY_MODALITY_SCHEDULE",
+      "page_location": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "caveat": "The product page confirms the daily 21:00 Classic slot. The reviewed commercializer home page does not list a Chispazo contest ID for it; the separate 21:00 card is Sorteo 3093 and is not Chispazo. Contest 12398 is not confirmed by these reviewed official index/result sources."
+    },
+    "de_las_tres_slot": {
+      "date": "2026-11-26",
+      "time": "15:00",
+      "contest_id": 12397,
+      "evidence_kind": "OFFICIAL_COMMERCIALIZER_HOME_PAGE_LISTING",
+      "page_location": "https://comercializadores.loterianacional.gob.mx/home/",
+      "note": "Home page explicitly lists Chispazo contest 12397 at 15:00; the Chispazo product page maps 15:00 to De las Tres."
+    }
+  },
+  "procedure": {
+    "document": "SGVO-PRO-05",
+    "title": "Procedimiento Sorteos Electrónicos",
+    "revision": 39,
+    "publication_date": "2026-03-20",
+    "source_url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+    "source_pdf_bytes_captured": false,
+    "source_pdf_sha256": null,
+    "relevant_requirements": {
+      "sphere_weighing": "Every draw; one by one and in numerical order, in presence of SEGOB inspector and Lotería Nacional representatives.",
+      "smartballs": {
+        "min_g": "4.25",
+        "max_g": "5.25",
+        "max_set_spread_g": "0.30"
+      },
+      "ping_pong": {
+        "min_g": "2.30",
+        "max_g": "3.00",
+        "max_set_spread_g": "0.15"
+      },
+      "scale_calibration": "At least annually.",
+      "weighing_strip": "Signed by weighing representative, then initialled by Lotería Nacional operations representative, SEGOB inspector and Director General representative; attached to corresponding draw act.",
+      "act": "Must identify place, date, event time, names, roles and signatures of commissioned Lotería Nacional officials and the SEGOB inspector, including commission order and incidents if any.",
+      "recording": "Recording service covers weighing through the electronic draw; edited recording is included with the act as documentary witness.",
+      "sales_close": "SICAL closed-sales summary records draw identity/date/CDC, closed state, close time and sales; printed copies are initialled by Lotería Nacional representatives and SEGOB inspector.",
+      "post_result": "Post-entry SICAL summary includes winning numbers and prize/winner divisions and is reconciled with the winner-selection system."
+    },
+    "interpretation": "This is a published procedure, not evidence that any particular 26-Nov-2026 draw complied with it."
+  },
+  "segob_role": {
+    "source_url": "https://www.juegosysorteos.gob.mx/es/Juegos_y_Sorteos/inspecciones_lotenal_pronosticos",
+    "source_kind": "OFFICIAL_SEGOB_DGJS_PAGE",
+    "statement": "The Inspection and Surveillance area describes its responsibility to attest legality and transparency of draws carried out by institutions including Lotería Nacional.",
+    "note": "This establishes the published institutional role, not the identity or signature of the inspector assigned to a specific draw."
+  },
+  "draw_specific_physical_artifacts": {
+    "contest_12397": "NOT_OBTAINED_IN_PUBLIC_WEB_REVIEW",
+    "classic_2026_11_26_21_00": "NOT_OBTAINED_IN_PUBLIC_WEB_REVIEW",
+    "missing_from_this_review": [
+      "original signed draw act and annexes",
+      "pre-close SICAL sales-close summary",
+      "CS-11 winning-number record",
+      "signed sphere weighing strip",
+      "current scale calibration certificate",
+      "original recording from weighing through draw",
+      "signed participation/cancellation files and electronic signatures",
+      "independent custodian receipt and trusted timestamp/ledger anchor"
+    ]
+  },
+  "classification": {
+    "contest_12395": "OFFICIAL_MASK_CONFIRMED_DE_LAS_TRES_2026_11_25",
+    "contest_12396": "OFFICIAL_MASK_CONFIRMED_CLASSIC_2026_11_25",
+    "contest_12397": "SCHEDULE_ONLY_DE_LAS_TRES_15_00_NOT_RESULT_CONFIRMED",
+    "classic_2026_11_26_21_00": "SCHEDULE_ONLY_CLASSIC_21_00_CONTEST_ID_NOT_CONFIRMED",
+    "contest_12398": "NOT_CONFIRMED_BY_REVIEWED_OFFICIAL_INDEX_OR_RESULTS_PAGE",
+    "physical_provenance": "BLOCKED_PROVENANCE",
+    "production": "BLOCKED",
+    "research_edge": false
+  },
+  "canonical_history": {
+    "path": "data/history/Chispazo_through_12249.csv",
+    "expected_git_blob_sha1": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "modified": false
+  },
+  "reviewed_at_local": "2026-11-26T14:56:51-06:00",
+  "official_mask_2026_11_25": {
+    "source_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=25112026221906",
+    "source_type": "OFFICIAL_LOTERIA_NACIONAL_RESULTS_MASK_PDF",
+    "source_bytes_captured": false,
+    "source_pdf_sha256": null,
+    "date": "2026-11-25",
+    "draws": [
+      {
+        "contest_id": 12395,
+        "modality": "DE_LAS_TRES",
+        "numbers": [
+          1,
+          13,
+          19,
+          23,
+          28
+        ]
+      },
+      {
+        "contest_id": 12396,
+        "modality": "CLASSIC",
+        "numbers": [
+          5,
+          7,
+          21,
+          24,
+          28
+        ]
+      }
+    ],
+    "note": "The PDF headings explicitly label contest 12395 as Chispazo De las tres and contest 12396 as Chispazo Clásico. Web-extracted page text was reviewed; original PDF bytes were not captured locally."
+  }
+}

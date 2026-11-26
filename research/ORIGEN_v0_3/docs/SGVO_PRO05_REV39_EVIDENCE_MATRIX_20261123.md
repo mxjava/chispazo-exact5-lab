@@ -59,7 +59,7 @@ Policy 19 requires people participating in an electronic draw to register in CS-
 
 Policy 30 requires recording from sphere weighing through the electronic draw as documentary witness material; the edited draw-only recording is retained as part of the Acta. The manifest therefore distinguishes the full recording from the edited Acta copy.
 
-For the 21:00 nightly workflow, the procedure's annex says that after 21:00 the participation/cancellation files and their electronic signatures are written to CD/DVD, then the Master Transaction File (MJF) and its printed electronic-signature form are deposited in the security box for OIC custody. This nightly MJF control is not generalized to the 15:00 De las Tres workflow.
+The procedure's page 38 states that the Master Transaction File (MJF) is recorded to DVD **every day after the 21:00 automatic sales close** and deposited in the security box with its printed electronic-signature form. This is a daily-scope record, not a file scoped to one contest. It is not available at the 15:00 De las Tres draw; it may be linked to that day's De las Tres evidence packet only as a later post-21:00 daily record. The daytime participation/cancellation signature-reconciliation path remains distinct from the nocturnal CD-II path described in the page-35 note.
 
 ## 5. Versioned physical-evidence manifest
 
@@ -74,7 +74,7 @@ The new physical-evidence manifest v1 requires one original-byte entry for each 
 - SEGOB/OIC custody record;
 - full weighing-to-draw recording and edited draw-only recording;
 - Relación de Ganadores report with its electronic signature;
-- nightly MJF and its printed electronic-signature form;
+- daily MJF and its printed electronic-signature form (available after the 21:00 daily close; not a contest-only file);
 - CS-02 daily equipment inspection.
 
 Only the four attachment names above are stated as Chispazo Acta attachments by policy 11. The winner-relation report/signature, recordings, participation/cancellation media, nightly MJF/signature form, CS-02, CS-12, calibration and SEGOB/OIC custody are separate procedure controls or records. Equipment/urn identity and sphere-to-number mapping are ORIGEN supporting-evidence requirements. None is represented as an additional verbatim row in the policy-11 attachment matrix.

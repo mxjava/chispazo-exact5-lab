@@ -1,6 +1,6 @@
 # ORIGEN v0.3 — Independent Trust Adapter Specification
 
-Status: RESEARCH SPECIFICATION / NOT IMPLEMENTED  
+Status: RESEARCH SPECIFICATION / PARTIAL ROOT-ATTESTATION COMPOSITION IMPLEMENTED / FULL INDEPENDENT ADAPTER NOT PROVISIONED  
 Date: 2026-11-21  
 Parent baseline: `eb08acdb6a50ab3b5159348864f52bba075b480b`  
 Scope: bridge structural intake/custody validation to independently authenticated evidence.
@@ -9,7 +9,7 @@ Scope: bridge structural intake/custody validation to independently authenticate
 
 ORIGEN may classify a contest as prospectively eligible only when every provenance assertion is verified against independently controlled trust roots and original evidence bytes. A self-consistent CSV, caller-supplied reference set, URL, timestamp string, or re-hashed seal is not authentication.
 
-This specification does not claim that any physical evidence has been received, that any signature infrastructure exists, or that the adapter is implemented. Until implementation and independent review, the system state remains `BLOCKED_PROVENANCE / RESEARCH_ONLY_NO_EDGE`.
+This specification does not claim that any physical evidence has been received or that institutional signature infrastructure exists. As of 2026-11-26, the signed-policy verifier is composed with the root receipt-attestation verifier behind a private deployment bootstrap loader. That loader returns `None` in this repository; the full adapter is not provisioned and remains `BLOCKED_PROVENANCE / RESEARCH_ONLY_NO_EDGE`. See `docs/TRUST_BOOTSTRAP_AND_COMPOSITION_V1.md` for the implemented boundary and out-of-band provisioning contract.
 
 ## 2. Required trust boundary
 

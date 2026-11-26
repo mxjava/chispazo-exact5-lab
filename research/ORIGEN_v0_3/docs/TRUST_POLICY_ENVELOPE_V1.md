@@ -64,8 +64,6 @@ It does NOT prove:
 - physical draw-machine identity, calibration, sphere provenance, or bias;
 - prospective predictive performance or eligibility for production.
 
-The current code is an isolated trust-policy verification primitive. It is not
-wired into `verify_independent_provenance`; that path must remain fail-closed
-until a real independently provisioned root, anti-rollback state, trusted time,
-and authentic external evidence services are operationally supplied and
-audited. Synthetic keys in tests are never production trust anchors.
+The signed-policy primitive is now composed with `verify_receipt_attestation` in the private `_verify_root_attestation_layer` control flow of `independent_trust_adapter.py`. It obtains the `VerifiedTrustPolicy` by verifying the envelope against one deployment bootstrap snapshot, then passes that policy directly to the receipt verifier; it does not accept a caller-created verified-policy object.
+
+The deployment bootstrap provider currently returns `None`, because no real institutional root, rollback-resistant sequence store or trusted clock has been provisioned. The public `verify_independent_provenance` therefore remains `BLOCKED_PROVENANCE`. Even if a future deployment verifies this root-attestation layer, the public adapter must remain blocked until nested signatures, original artifact bytes, RFC 3161, external ledger inclusion/head, independent custody and both pre-close output seals are separately verified and reviewed. See `TRUST_BOOTSTRAP_AND_COMPOSITION_V1.md`. Synthetic keys in tests are never production trust anchors.
