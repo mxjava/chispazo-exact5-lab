@@ -339,10 +339,10 @@ def _verify_tstinfo_tsa_name(tst_info, signer_cert: x509.Certificate) -> None:
 
         expected = tsa_name.chosen.native
         if tsa_name.name == "ip_address":
-            if type(expected) is not bytes:
+            if type(expected) is not str:
                 raise ValueError("RFC3161 TSTInfo tsa iPAddress has an invalid value")
             accepted_values = [
-                candidate.value.packed
+                str(candidate.value)
                 for candidate in subject_alt_names
                 if isinstance(candidate, candidate_type)
             ]
