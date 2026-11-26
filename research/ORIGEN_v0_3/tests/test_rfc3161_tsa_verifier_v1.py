@@ -164,9 +164,6 @@ def _token(
             tsa_value = asn1_x509.Name.build(
                 {"common_name": tsa_general_name_value}
             )
-        elif tsa_general_name_type == "ip_address" and type(tsa_general_name_value) is str:
-            import ipaddress
-            tsa_value = ipaddress.ip_address(tsa_general_name_value).packed
         else:
             tsa_value = tsa_general_name_value
         tst_info_fields["tsa"] = asn1_x509.GeneralName(
