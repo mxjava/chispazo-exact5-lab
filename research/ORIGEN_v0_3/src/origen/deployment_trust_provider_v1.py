@@ -224,7 +224,7 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
             type(snapshot.trusted_time_latest_utc) is not datetime
             or snapshot.trusted_time_latest_utc.tzinfo is not timezone.utc
         ):
-            raise ValueError("non-empty accepted sequence requires an exact normalized UTC accepted-time upper bound")
+            raise ValueError("non-empty accepted sequence requires an exact normalized UTC trusted-time watermark")
     # The bootstrap floor and the last accepted sequence are independent
     # monotonic constraints. The effective floor is their maximum below; the
     # bootstrap floor may legitimately remain lower than accepted state.
