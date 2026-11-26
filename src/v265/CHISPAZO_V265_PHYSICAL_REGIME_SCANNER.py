@@ -60,7 +60,7 @@ def load_history(path, modality_column):
     if not isinstance(modality_column, str) or not modality_column.strip():
         raise ValueError('An explicit modality column is required; draw modality must never be inferred from row order')
     if modality_column not in df.columns:
-        raise ValueError(f'Explicit modality column {modality_column!r} is missing; draw modality must never be inferred from row order')
+        raise ValueError(f'explicit modality column {modality_column!r} is missing; draw modality must never be inferred from row order')
     req=['CONCURSO','R1','R2','R3','R4','R5','FECHA']
     miss=[c for c in req if c not in df.columns]
     if miss: raise ValueError(f'Missing columns: {miss}')
