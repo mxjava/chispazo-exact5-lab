@@ -8,11 +8,11 @@ The V3 verifier at PR #81 re-verifies exact policy and receipt bytes, but still 
 
 New module:
 
-- \`src/origen/deployment_trust_provider_v1.py\`
+- `src/origen/deployment_trust_provider_v1.py`
 
 New adversarial suite:
 
-- \`tests/test_deployment_trust_provider_v1.py\`
+- `tests/test_deployment_trust_provider_v1.py`
 
 The module deliberately ships no file-backed, SQLite, environment-variable, or in-memory production provider.
 
@@ -20,13 +20,13 @@ The module deliberately ships no file-backed, SQLite, environment-variable, or i
 
 The high-level function accepts exact receipt bytes, exact signed policy-envelope bytes, and one provider dependency:
 
-\`\`\`python
+```python
 inspect_receipt_with_deployment_trust_provider(
     original_receipt_bytes,
     signed_policy_envelope_bytes,
     provider=deployment_composition_root_provider,
 )
-\`\`\`
+```
 
 The provider returns one immutable snapshot containing:
 
@@ -48,14 +48,14 @@ The operation is ordered as follows:
 1. Read exactly one provider snapshot for the fixed CLASSIC domain.
 2. Reject malformed pins, identifiers, generations, sequence state, digest state, clock metadata, or provisioning-record digest.
 3. Reject clock uncertainty above the provider's provisioned maximum.
-4. Compute the closed uncertainty interval \`[trusted_time - uncertainty, trusted_time + uncertainty]\`.
+4. Compute the closed uncertainty interval `[trusted_time - uncertainty, trusted_time + uncertainty]`.
 5. Verify the exact canonical V3 policy envelope against the snapshot root pin, root key ID, CLASSIC domain, and the maximum of the provisioned floor and previously accepted sequence.
 6. Reject equal-sequence/different-envelope-digest equivocation.
 7. Verify the exact receipt bytes under the policy just verified.
 8. Require the complete clock uncertainty interval to lie inside the signed policy validity interval and the receipt issuer-key validity interval. Require the receipt signing time to be no later than the earliest possible verification instant.
-9. Re-run the exact-byte V3 policy and receipt verification at \`verify_independent_provenance\`. That gate must still return exactly \`BLOCKED_PROVENANCE\`.
+9. Re-run the exact-byte V3 policy and receipt verification at `verify_independent_provenance`. That gate must still return exactly `BLOCKED_PROVENANCE`.
 10. Atomically compare-and-advance the provider state using the exact snapshot generation, root generation, policy sequence, envelope digest, accepted time, and clock uncertainty.
-11. Return a diagnostic inspection with the exact byte hashes and before/after state generations. Its provenance status remains \`BLOCKED_PROVENANCE\`.
+11. Return a diagnostic inspection with the exact byte hashes and before/after state generations. Its provenance status remains `BLOCKED_PROVENANCE`.
 
 No state commit is attempted when policy signature, receipt signature, role authorization, time-window, or independent-boundary verification fails.
 
@@ -124,10 +124,10 @@ These tests exercise the application contract and a synthetic reference provider
 
 ## 8. Non-promotion
 
-V294 remains frozen. The canonical history file is not changed. PR #13 remains isolated and untouched. No write to \`main\`, merge, or production promotion is performed.
+V294 remains frozen. The canonical history file is not changed. PR #13 remains isolated and untouched. No write to `main`, merge, or production promotion is performed.
 
-Every successful call returns \`BLOCKED_PROVENANCE\`. Production remains:
+Every successful call returns `BLOCKED_PROVENANCE`. Production remains:
 
-\`BLOCKED / RESEARCH_ONLY_NO_EDGE\`
+`BLOCKED / RESEARCH_ONLY_NO_EDGE`
 
-No \`EDGE_SUPPORTED\` claim is possible without the full prospective Classic sample, preregistered positive lift, Holm threshold, anytime e-value, two pre-close seals, clean hashes, and authentic independent custody.
+No `EDGE_SUPPORTED` claim is possible without the full prospective Classic sample, preregistered positive lift, Holm threshold, anytime e-value, two pre-close seals, clean hashes, and authentic independent custody.
