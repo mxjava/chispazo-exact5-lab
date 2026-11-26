@@ -74,6 +74,9 @@ class DeploymentTrustSnapshot:
     clock_uncertainty_ms: int
     maximum_clock_uncertainty_ms: int
     clock_source_id: str
+    clock_sample_id: str
+    clock_sample_valid_until_utc: datetime
+    maximum_clock_sample_age_ms: int
     state_backend_id: str
     provisioning_record_sha256: str
 
@@ -102,8 +105,10 @@ class DeploymentTrustProvider(Protocol):
     provider state; it must not trust the caller's digest as a replacement for
     that comparison. Candidate earliest
     time (accepted_at_utc - clock_uncertainty) must not precede the stored
-    trusted_time_latest_utc. For a higher sequence, persist the candidate
-    sequence, digest, and latest time. For the same sequence and digest, persist
+    trusted_time_latest_utc. The expected clock-sample digest must be
+    recomputed against the authoritative current source sample inside the
+    transaction; reject a changed sample or an expired sample lease. For a
+    higher sequence, persist the candidate sequence, digest, and latest time. For the same sequence and digest, persist
     a later disjoint time watermark with one generation increment and return
     TIME_ADVANCED; if the watermark is unchanged, return IDEMPOTENT without a
     generation increment. It must never silently reset or restore any value.
@@ -117,6 +122,7 @@ class DeploymentTrustProvider(Protocol):
         *,
         expected_state_generation: int,
         expected_trust_configuration_sha256: str,
+        expected_clock_sample_sha256: str,
         policy_domain: str,
         root_key_id: str,
         root_generation: int,
@@ -141,6 +147,8 @@ class DeploymentTrustInspection:
     provisioning_record_sha256: str
     trust_configuration_sha256: str
     clock_source_id: str
+    clock_sample_sha256: str
+    clock_sample_valid_until_utc: datetime
     state_backend_id: str
     time_window_start_utc: datetime
     time_window_end_utc: datetime
@@ -180,9 +188,29 @@ def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
         "root_generation": snapshot.root_generation,
         "minimum_policy_sequence": snapshot.minimum_policy_sequence,
         "maximum_clock_uncertainty_ms": snapshot.maximum_clock_uncertainty_ms,
+        "maximum_clock_sample_age_ms": snapshot.maximum_clock_sample_age_ms,
         "clock_source_id": snapshot.clock_source_id,
         "state_backend_id": snapshot.state_backend_id,
         "provisioning_record_sha256": snapshot.provisioning_record_sha256,
+    }
+    canonical = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("ascii")
+    return hashlib.sha256(canonical).hexdigest()
+
+def _clock_sample_sha256(snapshot: DeploymentTrustSnapshot) -> str:
+    """Bind the exact provider-issued clock sample descriptor to the CAS."""
+    payload = {
+        "schema": "origen.provider-clock-sample.v1",
+        "clock_source_id": snapshot.clock_source_id,
+        "clock_sample_id": snapshot.clock_sample_id,
+        "trusted_time_utc": snapshot.trusted_time_utc.isoformat(
+            timespec="microseconds"
+        ).replace("+00:00", "Z"),
+        "clock_uncertainty_ms": snapshot.clock_uncertainty_ms,
+        "clock_sample_valid_until_utc": snapshot.clock_sample_valid_until_utc.isoformat(
+            timespec="microseconds"
+        ).replace("+00:00", "Z"),
     }
     canonical = json.dumps(
         payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
@@ -210,6 +238,9 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         clock_uncertainty_ms=value.clock_uncertainty_ms,
         maximum_clock_uncertainty_ms=value.maximum_clock_uncertainty_ms,
         clock_source_id=value.clock_source_id,
+        clock_sample_id=value.clock_sample_id,
+        clock_sample_valid_until_utc=value.clock_sample_valid_until_utc,
+        maximum_clock_sample_age_ms=value.maximum_clock_sample_age_ms,
         state_backend_id=value.state_backend_id,
         provisioning_record_sha256=value.provisioning_record_sha256,
     )
@@ -220,6 +251,7 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         raise ValueError("deployment root pin must be exactly 32 immutable bytes")
     _require_identifier(snapshot.root_key_id, "root_key_id")
     _require_identifier(snapshot.clock_source_id, "clock_source_id")
+    _require_identifier(snapshot.clock_sample_id, "clock_sample_id")
     _require_identifier(snapshot.state_backend_id, "state_backend_id")
     _require_sha256(snapshot.provisioning_record_sha256, "provisioning_record_sha256")
 
@@ -230,6 +262,7 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         ("accepted_policy_sequence", snapshot.accepted_policy_sequence, 0, MAX_POLICY_SEQUENCE),
         ("clock_uncertainty_ms", snapshot.clock_uncertainty_ms, 0, 2**31 - 1),
         ("maximum_clock_uncertainty_ms", snapshot.maximum_clock_uncertainty_ms, 0, 2**31 - 1),
+        ("maximum_clock_sample_age_ms", snapshot.maximum_clock_sample_age_ms, 1, 2**31 - 1),
     )
     for field, actual, minimum, maximum in integer_fields:
         if type(actual) is not int or not minimum <= actual <= maximum:
@@ -257,6 +290,16 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
 
     if type(snapshot.trusted_time_utc) is not datetime or snapshot.trusted_time_utc.tzinfo is not timezone.utc:
         raise ValueError("provider time must be one exact normalized UTC datetime")
+    if (
+        type(snapshot.clock_sample_valid_until_utc) is not datetime
+        or snapshot.clock_sample_valid_until_utc.tzinfo is not timezone.utc
+    ):
+        raise ValueError("clock sample valid-until must be exact normalized UTC")
+    sample_lifetime = snapshot.clock_sample_valid_until_utc - snapshot.trusted_time_utc
+    if sample_lifetime <= timedelta(0):
+        raise ValueError("provider clock sample lease is already expired")
+    if sample_lifetime > timedelta(milliseconds=snapshot.maximum_clock_sample_age_ms):
+        raise ValueError("clock sample lease exceeds the provisioned maximum age")
     if snapshot.clock_uncertainty_ms > snapshot.maximum_clock_uncertainty_ms:
         raise ValueError("provider clock uncertainty exceeds the provisioned maximum")
 
@@ -375,7 +418,10 @@ def inspect_receipt_with_deployment_trust_provider(
         raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
     snapshot = _snapshot_copy(supplied_snapshot)
     trust_configuration_digest = _trust_configuration_sha256(snapshot)
+    clock_sample_digest = _clock_sample_sha256(snapshot)
     earliest, latest = _time_window(snapshot)
+    if latest > snapshot.clock_sample_valid_until_utc:
+        raise ValueError("trusted-time uncertainty interval exceeds the provider clock sample lease")
 
     effective_floor = max(
         snapshot.minimum_policy_sequence,
@@ -439,6 +485,7 @@ def inspect_receipt_with_deployment_trust_provider(
         supplied_commit = compare_and_advance(
             expected_state_generation=snapshot.state_generation,
             expected_trust_configuration_sha256=trust_configuration_digest,
+            expected_clock_sample_sha256=clock_sample_digest,
             policy_domain=CLASSIC_POLICY_DOMAIN,
             root_key_id=snapshot.root_key_id,
             root_generation=snapshot.root_generation,
@@ -494,6 +541,8 @@ def inspect_receipt_with_deployment_trust_provider(
         provisioning_record_sha256=snapshot.provisioning_record_sha256,
         trust_configuration_sha256=trust_configuration_digest,
         clock_source_id=snapshot.clock_source_id,
+        clock_sample_sha256=clock_sample_digest,
+        clock_sample_valid_until_utc=snapshot.clock_sample_valid_until_utc,
         state_backend_id=snapshot.state_backend_id,
         time_window_start_utc=earliest,
         time_window_end_utc=latest,
