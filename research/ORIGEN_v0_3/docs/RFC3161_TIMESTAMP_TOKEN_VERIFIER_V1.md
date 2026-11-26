@@ -174,3 +174,21 @@ Adversarial cases cover exact artifact imprint mismatch, nonce mismatch and omis
 6. Keep the adapter fail-closed until independent custody, institutional provisioning and all prospective Exact5 gates are satisfied.
 
 No production status, predictive edge, or betting authorization is implied by this verifier.
+
+
+## Minimum public-key strength (research verifier hardening)
+
+The verifier rejects RSA public keys below 2048 bits and EC public keys outside
+the named prime curves P-256, P-384 and P-521. Ed25519 and Ed448 remain
+supported. The floor is enforced for the pinned root, every CA/intermediate,
+the TSA signer certificate and the CMS signer key. This prevents a validly
+structured but cryptographically weak certificate chain from passing merely
+because its signatures and caller-supplied root fingerprint are internally
+consistent.
+
+Synthetic adversarial tests cover 1024-bit RSA roots and TSA leaf keys, plus a
+P-192 EC key; a P-256 key remains accepted by the key-strength helper.
+
+This is only an algorithm-strength floor. It does not authenticate the root
+fingerprint, verify revocation freshness, establish institutional TSA
+designation, or supply independent custody. Production remains blocked.
