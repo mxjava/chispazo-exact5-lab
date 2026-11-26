@@ -22,6 +22,7 @@ from origen.independent_trust_adapter import ProvenanceStatus
 from test_custody_receipt_verifier_v3 import (
     ROOT_KEY_ID,
     POLICY_SEQUENCE,
+    POLICY_VERSION,
     StatefulOffsetTimezone,
     CUSTODIAN_ID,
     CUSTODIAN_KEY_ID,
@@ -182,7 +183,7 @@ def _build_physical_signature_bundle(data: dict) -> dict:
     policy_document = {
         "schema_version": "origen.trust-policy-envelope.v3",
         "policy_domain": CLASSIC_PHYSICAL_POLICY_DOMAIN,
-        "policy_version": "synthetic-combined-physical-custody-v3",
+        "policy_version": POLICY_VERSION,
         "policy_sequence": POLICY_SEQUENCE,
         "issuer_id": "synthetic-policy-authority",
         "root_key_id": ROOT_KEY_ID,
