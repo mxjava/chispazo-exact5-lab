@@ -14,7 +14,7 @@ _MAX_PROOF_NODES = 64
 
 
 def _node(left: bytes, right: bytes) -> bytes:
-    return hashlib.sha256(b"\\x01" + left + right).digest()
+    return hashlib.sha256(b"\x01" + left + right).digest()
 
 
 @dataclass(frozen=True, slots=True)
