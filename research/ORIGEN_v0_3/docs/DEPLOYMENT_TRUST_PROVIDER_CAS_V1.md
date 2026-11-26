@@ -207,12 +207,12 @@ in Sections 2–4 remains mandatory. No caller-supplied root, floor, clock,
 callback, verifier result or repository file is an acceptable production
 substitute.
 
-## 10. Provider-backed composition with the complete physical evidence bundle
+## 10. Single-snapshot composition with provider-owned physical trust context
 
-PR #96 adds `src/origen/deployment_evidence_composition_v1.py` and the
-research-only API:
+PR #96 extends the deployment snapshot and the provider-owned
+\`PhysicalTrustContextV1\` into one fail-closed composition:
 
-```python
+\`\`\`python
 inspect_custody_ledger_witness_with_deployment_provider_v1(
     original_receipt_bytes,
     signed_policy_envelope_bytes,
@@ -220,80 +220,83 @@ inspect_custody_ledger_witness_with_deployment_provider_v1(
     portfolio_bytes,
     custody_signature_bytes,
     custodian_key_id,
-    # exact RFC 3161, manifest, artifact, ledger and witness inputs
+    timestamp_token_der,
+    policy_timestamp_token_der,
+    # exact manifest, artifact, ledger and witness bytes
     provider=deployment_composition_root_provider,
-    # TSA, transparency-log and witness-registry pins remain explicit
 )
-```
+\`\`\`
 
-The request API intentionally has no `pinned_root_public_key_bytes`,
-`expected_root_key_id`, `minimum_policy_sequence`, or
-`verification_time` argument. It reads the CLASSIC deployment provider once,
-copies and validates the immutable snapshot, and derives the policy root,
-root key ID, effective sequence floor, clock interval and normalized UTC
-verification instant from that same snapshot.
+The request API intentionally has no policy root, root key ID, policy sequence
+floor, verification time, TSA certificate, TSA OID, transparency-log key,
+witness-registry key, or external checkpoint/registry floor arguments.
+
+The provider returns two exact immutable objects:
+
+- \`DeploymentTrustSnapshot\`: CLASSIC policy root, root generation, policy
+  bootstrap floor, accepted policy sequence/digest, signed clock sample,
+  time uncertainty/watermark and state backend metadata.
+- \`PhysicalTrustContextV1\`: policy-TSA root certificate and OID, custody-TSA
+  root certificate, transparency-log key/IDs/minimum tree size, witness
+  registry root/IDs/minimum sequence, plus the policy root/key ID/bootstrap
+  floor to which that context is intended to belong.
+
+The snapshot also carries \`physical_trust_context_generation\` and
+\`physical_trust_context_sha256\`. The latter is the canonical SHA-256 of every
+context pin/floor and its generation. Both fields are included in
+\`_trust_configuration_sha256\`; the provider's atomic
+\`compare_and_advance\` must recompute that digest from authoritative state
+inside the same transaction as the policy/time CAS.
 
 The application order is:
 
-1. Validate exact receipt/policy byte types and size bounds.
-2. Read one CLASSIC provider snapshot. Verify the signed clock-sample envelope
-   and its source/sample/time/lease claims against the snapshot key.
-3. Verify the exact V3 policy envelope under the snapshot root and effective
-   sequence floor. Verify that the root-signed policy authorizes the exact
-   clock key for `TRUSTED_TIME_AUTHORITY / CLOCK_SAMPLE`.
-4. Enforce the persisted trusted-time watermark and same-sequence digest rule.
-5. Verify the exact receipt attestation using the verified policy; require the
-   full clock uncertainty interval to fit policy and receipt-key validity and
-   prove the receipt signature predates the earliest possible verification
-   instant.
-6. Parse the exact physical manifest and require every physical and custody
-   signer key used by that bundle to be non-revoked and valid over the *whole*
-   uncertainty interval, not just its midpoint.
-7. Re-run the complete custody, nested-signature, both RFC 3161, manifest,
-   ledger inclusion/consistency and witness composition using the root, floor
-   and time from the same provider snapshot. That composition re-enters
-   `verify_independent_provenance` on the exact original receipt and policy
-   bytes and requires exact `BLOCKED_PROVENANCE`.
-8. Only after the complete evidence composition succeeds, call the existing
-   provider inspection through a private pinned-snapshot adapter. Its repeated
-   policy/receipt/independent-boundary checks must match the same snapshot; its
-   compare-and-advance is the only state-mutating operation.
-9. Validate that the commit result binds the same exact policy digest, root
-   generation, trust-configuration digest and clock-sample digest. Any CAS
-   conflict or mismatched commit returns no inspection result.
+1. Read one CLASSIC deployment snapshot and copy/validate it.
+2. Read one physical trust context. Require its exact type, positive generation
+   and canonical digest to match the snapshot's context generation/digest.
+3. Require the context policy root bytes, root key ID and bootstrap policy
+   floor to equal the deployment snapshot. A mismatch fails before receipt or
+   physical evidence processing.
+4. Verify the exact V3 policy under the snapshot root and the effective floor
+   \`max(minimum_policy_sequence, accepted_policy_sequence)\`. Verify the signed
+   clock sample and root authorization of its exact key.
+5. Enforce the persisted time watermark, verify the exact receipt attestation,
+   and require the entire trusted-time uncertainty interval to fit the policy
+   and receipt-key validity windows.
+6. Require every physical and custody signer key used by the exact manifest to
+   be non-revoked and valid throughout the full uncertainty interval.
+7. Run the full custody, nested-signature, both RFC 3161, manifest, ledger
+   inclusion/consistency and witness composition using the same snapshot root,
+   effective policy floor and trusted-time midpoint, plus the exact
+   provider-owned physical trust context.
+8. Re-enter the independent receipt/provenance boundary with the same cached
+   deployment snapshot. Only after the full evidence chain succeeds may the
+   provider CAS execute.
+9. Validate that the returned commit binds the same policy digest, root
+   generation, trust-configuration digest, clock-sample digest and physical
+   context generation/digest.
 
-The adapter delegates the final CAS to the original provider but never asks
-that provider for a second snapshot. Therefore a nested-signature, timestamp,
-ledger, witness or independent-boundary failure occurs before provider state
-can advance. The synthetic tests assert one original snapshot read, one CAS
-on success, and zero CAS for evidence failures.
+The provider must make the context digest/generation part of its authoritative
+trust-configuration compare-and-advance. If the context changes between read
+and commit, the expected configuration digest must conflict and no successful
+inspection is returned. Synthetic adversarial tests cover context digest
+mismatch, root mismatch, generation drift before CAS, missing context, nested
+signature failure, missing witness checkpoint, clock/root failures and CAS
+races.
 
-The wrapper does **not** pass a caller-constructed `VerifiedTrustPolicyV3`
-or receipt-verifier result into the evidence chain. It verifies raw bytes for
-preflight and the lower-level evidence verifiers independently re-verify the
-same raw bytes against the same root/time inputs. This preserves the exact-byte
-boundary rather than treating an in-process result object as a trust token.
+The physical context is still provider-owned metadata, not an independently
+signed institutional authorization. The provider implementation and its
+provisioning remain deployment dependencies. Certificate bytes and hashes
+can be checked for internal consistency, but this library does not establish
+that a listed TSA was used by Lotería Nacional, that its chain is currently
+unrevoked, or that the log/registry roots are institutionally delegated.
 
-### Remaining external trust domains
-
-The provider root, signed clock sample and anti-rollback state are now
-integrated at the application boundary, but the provider object is still a
-trusted deployment dependency whose implementation and provisioning are not
-authenticated by this repository. The TSA root, transparency-log root and
-witness-registry root remain caller-supplied. They must be moved behind
-independently provisioned trust services before this can be described as a
-complete trust composition. Institutional identity, physical artifact truth,
-independent custody, revocation and the prospective statistical edge remain
-unestablished.
-
-All successful paths remain `BLOCKED_PROVENANCE`. This is not a production
-provider and does not change `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
-
+All successful results remain exact \`BLOCKED_PROVENANCE\`. This is not a
+production provider and does not change \`BLOCKED / RESEARCH_ONLY_NO_EDGE\`.
 
 ## 11. Verified public institutional directory — candidate metadata only
 
 A fresh review of the Secretaría de Economía's official PSC directory
-(`https://psc.economia.gob.mx/directorio.html`) confirms that the directory
+(\`https://psc.economia.gob.mx/directorio.html\`) confirms that the directory
 currently lists, among other providers:
 
 - **ATEB Servicios, S.A. de C.V.** — service of digital time seals, with the
@@ -301,59 +304,54 @@ currently lists, among other providers:
 - **INCODE PSC, S. de R.L. de C.V.** — service of digital time seals, with the
   directory linking to its DOF notice dated 22-May-2024.
 
-The same official directory also lists other time-seal providers. This is
-verifiable evidence that those entities appear in the Secretaría de Economía
-PSC directory for the named service. It is **not** evidence that either entity
-operated the timestamp service for a particular Chispazo draw, that Lotería
-Nacional delegated draw custody to it, or that any certificate or TSA policy
-is authorized for this project.
+This verifies their listing and named service in the official directory. It
+does **not** establish that either provider operated the timestamp service
+for a particular Chispazo draw, that Lotería Nacional delegated draw custody
+to it, or that a certificate/TSA policy is authorized for this project.
 
 The directory's link to the Secretaría de Economía Second Certification
 Authority certificate resolves to
-`https://psc.economia.gob.mx/certificados/ACR2_SE.cer`, but the available web
-reader rejects its `application/pkix-cert` content type and the research
+\`https://psc.economia.gob.mx/certificados/ACR2_SE.cer\`, but the available web
+reader rejects its \`application/pkix-cert\` content type and the research
 runtime could not download the DER/PEM bytes. The certificate fingerprint,
 chain, validity and revocation state therefore remain **NOT_CAPTURED / NOT
 VERIFIED**. No certificate was installed or pinned.
 
-The Secretaría de Economía PSC page also cautions that PSC services do not,
-by themselves, confer public faith. Accreditation metadata must not be
-confused with institutional authority over Lotería Nacional's draw process.
+The PSC page also cautions that PSC services do not, by themselves, confer
+public faith. Accreditation metadata must not be confused with institutional
+authority over Lotería Nacional's draw process.
 
-Accordingly, ATEB and INCODE remain **candidate discovery leads only**. Do not
-select either as a TSA root, hardcode an OID, accept a token, or configure a
-trust anchor from this directory entry alone. Required next evidence is the
-exact certificate bytes and fingerprint, complete chain and current status,
-live RFC 3161 response validation, the exact service policy/OID, and a
-separate institutional delegation tying the service to the relevant Chispazo
-records.
+ATEB and INCODE remain **candidate discovery leads only**. Do not select
+either as a TSA root, hardcode an OID, accept a token, or configure a trust
+anchor from this directory entry alone. Required next evidence is exact
+certificate bytes/fingerprint, complete chain and current status, live RFC
+3161 response validation, exact service policy/OID, and separate
+institutional delegation tying the service to the relevant Chispazo records.
 
+## 12. Distinguish the earlier provider-context join from the stricter composition
 
-## 12. Distinguish the earlier two-call diagnostic join from the single-snapshot composition
+The helper \`deployment_trust_physical_composition_v1.py\` added on the PR #95
+branch reads a deployment snapshot and a provider-owned physical context, then
+runs physical and receipt/policy verification. However, it does not enforce
+that the context's policy root bytes, root key ID and bootstrap floor equal
+the deployment snapshot. It also does not bind the exact physical-context
+digest/generation into the deployment snapshot's trust-configuration digest
+and CAS.
 
-The research helper `deployment_trust_physical_composition_v1.py` added on the
-current PR #95 branch verifies physical evidence using a caller-supplied
-`physical_verification_kwargs` mapping, then calls
-`inspect_receipt_with_deployment_trust_provider`, which reads provider state
-separately. It compares the exact receipt and policy byte digests, but does
-not prove that the physical verifier used the provider snapshot's root bytes,
-root key ID, sequence floor, signed clock sample, uncertainty interval or
-trust-configuration digest. Its docstring's midpoint-equality requirement is
-not enforced by that helper.
+Consequently, that helper can still join a physical chain evaluated under a
+provider-returned context with a receipt/policy inspection evaluated under a
+different deployment root, or with a context that changes between read and
+CAS. A provider method returning both objects is not, by itself, proof that
+their trust contexts are identical or atomically versioned.
 
-That helper remains a diagnostic join only. A matching receipt/policy digest
-does not prove that two verifiers used the same trust context. Do not treat
-its returned object as evidence that the physical bundle was verified under
-the deployment provider's trust snapshot.
+For a single-snapshot provider-backed full evidence composition, use
+\`deployment_evidence_composition_v1.py\` from PR #96. It enforces root/key
+ID/bootstrap-floor equality, binds the canonical physical-context digest and
+generation into the deployment trust configuration, derives the effective
+policy floor from the snapshot, and requires the provider CAS to compare that
+same context binding atomically. The earlier helper remains research-only
+and must not be treated as the same trust boundary.
 
-For a single-snapshot provider-backed full evidence composition, use only
-`deployment_evidence_composition_v1.py` from PR #96. That API obtains the
-provider snapshot first, derives root/floor/time from it, validates the clock
-and receipt, checks the complete time interval for all used physical/custody
-keys, runs the full physical evidence chain with the same root/floor/time, and
-then performs the provider CAS through the cached snapshot adapter. The weaker
-two-call helper is not a substitute for this API.
-
-Both paths remain research-only and return `BLOCKED_PROVENANCE`; neither
-authenticates the provider implementation, TSA/log/witness institutional
-roots, physical origin or independent custody.
+Neither path authenticates the provider implementation, physical-context
+provisioning, institutional draw authority, physical artifact origin or
+independent custody.
