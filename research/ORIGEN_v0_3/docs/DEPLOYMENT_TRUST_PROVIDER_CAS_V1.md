@@ -206,3 +206,86 @@ verification results. The deployment provisioning and anti-rollback contract
 in Sections 2–4 remains mandatory. No caller-supplied root, floor, clock,
 callback, verifier result or repository file is an acceptable production
 substitute.
+
+
+## 10. Provider-backed composition with the complete physical evidence bundle
+
+PR #96 adds `src/origen/deployment_evidence_composition_v1.py` and the
+research-only API:
+
+```python
+inspect_custody_ledger_witness_with_deployment_provider_v1(
+    original_receipt_bytes,
+    signed_policy_envelope_bytes,
+    custody_record_bytes,
+    portfolio_bytes,
+    custody_signature_bytes,
+    custodian_key_id,
+    # exact RFC 3161, manifest, artifact, ledger and witness inputs
+    provider=deployment_composition_root_provider,
+    # TSA, transparency-log and witness-registry pins remain explicit
+)
+```
+
+The request API intentionally has no `pinned_root_public_key_bytes`,
+`expected_root_key_id`, `minimum_policy_sequence`, or
+`verification_time` argument. It reads the CLASSIC deployment provider once,
+copies and validates the immutable snapshot, and derives the policy root,
+root key ID, effective sequence floor, clock interval and normalized UTC
+verification instant from that same snapshot.
+
+The application order is:
+
+1. Validate exact receipt/policy byte types and size bounds.
+2. Read one CLASSIC provider snapshot. Verify the signed clock-sample envelope
+   and its source/sample/time/lease claims against the snapshot key.
+3. Verify the exact V3 policy envelope under the snapshot root and effective
+   sequence floor. Verify that the root-signed policy authorizes the exact
+   clock key for `TRUSTED_TIME_AUTHORITY / CLOCK_SAMPLE`.
+4. Enforce the persisted trusted-time watermark and same-sequence digest rule.
+5. Verify the exact receipt attestation using the verified policy; require the
+   full clock uncertainty interval to fit policy and receipt-key validity and
+   prove the receipt signature predates the earliest possible verification
+   instant.
+6. Parse the exact physical manifest and require every physical and custody
+   signer key used by that bundle to be non-revoked and valid over the *whole*
+   uncertainty interval, not just its midpoint.
+7. Re-run the complete custody, nested-signature, both RFC 3161, manifest,
+   ledger inclusion/consistency and witness composition using the root, floor
+   and time from the same provider snapshot. That composition re-enters
+   `verify_independent_provenance` on the exact original receipt and policy
+   bytes and requires exact `BLOCKED_PROVENANCE`.
+8. Only after the complete evidence composition succeeds, call the existing
+   provider inspection through a private pinned-snapshot adapter. Its repeated
+   policy/receipt/independent-boundary checks must match the same snapshot; its
+   compare-and-advance is the only state-mutating operation.
+9. Validate that the commit result binds the same exact policy digest, root
+   generation, trust-configuration digest and clock-sample digest. Any CAS
+   conflict or mismatched commit returns no inspection result.
+
+The adapter delegates the final CAS to the original provider but never asks
+that provider for a second snapshot. Therefore a nested-signature, timestamp,
+ledger, witness or independent-boundary failure occurs before provider state
+can advance. The synthetic tests assert one original snapshot read, one CAS
+on success, and zero CAS for evidence failures.
+
+The wrapper does **not** pass a caller-constructed `VerifiedTrustPolicyV3`
+or receipt-verifier result into the evidence chain. It verifies raw bytes for
+preflight and the lower-level evidence verifiers independently re-verify the
+same raw bytes against the same root/time inputs. This preserves the exact-byte
+boundary rather than treating an in-process result object as a trust token.
+
+### Remaining external trust domains
+
+The provider root, signed clock sample and anti-rollback state are now
+integrated at the application boundary, but the provider object is still a
+trusted deployment dependency whose implementation and provisioning are not
+authenticated by this repository. The TSA root, transparency-log root and
+witness-registry root remain caller-supplied. They must be moved behind
+independently provisioned trust services before this can be described as a
+complete trust composition. Institutional identity, physical artifact truth,
+independent custody, revocation and the prospective statistical edge remain
+unestablished.
+
+All successful paths remain `BLOCKED_PROVENANCE`. This is not a production
+provider and does not change `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
