@@ -10,9 +10,14 @@ Every successful inspection still returns BLOCKED_PROVENANCE.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
 import re
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
@@ -37,6 +42,11 @@ from .trust_verifier_v1 import (
 )
 
 CLASSIC_POLICY_DOMAIN = "origen.chispazo.classic.provenance"
+CLOCK_SAMPLE_SCHEMA = "origen.clock-sample-attestation.v1"
+MAX_CLOCK_SAMPLE_BYTES = 4096
+_CLOCK_SAMPLE_UTC = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z\\Z"
+)
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -74,6 +84,9 @@ class DeploymentTrustSnapshot:
     clock_uncertainty_ms: int
     maximum_clock_uncertainty_ms: int
     clock_source_id: str
+    clock_sample_key_id: str
+    clock_sample_public_key_bytes: bytes
+    clock_sample_envelope_bytes: bytes
     clock_sample_id: str
     clock_sample_valid_until_utc: datetime
     maximum_clock_sample_age_ms: int
@@ -103,7 +116,9 @@ class DeploymentTrustProvider(Protocol):
     and atomically enforce monotonic sequence/digest/time semantics for every
     inspection. It must recompute the configuration digest from authoritative
     provider state; it must not trust the caller's digest as a replacement for
-    that comparison. Candidate earliest
+    that comparison. It must also re-verify the exact signed clock-sample bytes
+    against its authoritative provisioned clock key and current source sample
+    inside the same transaction. Candidate earliest
     time (accepted_at_utc - clock_uncertainty) must not precede the stored
     trusted_time_latest_utc. The expected clock-sample digest must be
     recomputed against the authoritative current source sample inside the
@@ -190,6 +205,10 @@ def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
         "maximum_clock_uncertainty_ms": snapshot.maximum_clock_uncertainty_ms,
         "maximum_clock_sample_age_ms": snapshot.maximum_clock_sample_age_ms,
         "clock_source_id": snapshot.clock_source_id,
+        "clock_sample_key_id": snapshot.clock_sample_key_id,
+        "clock_sample_public_key_sha256": hashlib.sha256(
+            snapshot.clock_sample_public_key_bytes
+        ).hexdigest(),
         "state_backend_id": snapshot.state_backend_id,
         "provisioning_record_sha256": snapshot.provisioning_record_sha256,
     }
@@ -198,24 +217,131 @@ def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
     ).encode("ascii")
     return hashlib.sha256(canonical).hexdigest()
 
-def _clock_sample_sha256(snapshot: DeploymentTrustSnapshot) -> str:
-    """Bind the exact provider-issued clock sample descriptor to the CAS."""
-    payload = {
-        "schema": "origen.provider-clock-sample.v1",
-        "clock_source_id": snapshot.clock_source_id,
-        "clock_sample_id": snapshot.clock_sample_id,
-        "trusted_time_utc": snapshot.trusted_time_utc.isoformat(
-            timespec="microseconds"
-        ).replace("+00:00", "Z"),
-        "clock_uncertainty_ms": snapshot.clock_uncertainty_ms,
-        "clock_sample_valid_until_utc": snapshot.clock_sample_valid_until_utc.isoformat(
-            timespec="microseconds"
-        ).replace("+00:00", "Z"),
-    }
-    canonical = json.dumps(
-        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+def _clock_sample_pairs_no_duplicates(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("clock sample contains a duplicate JSON key")
+        result[key] = value
+    return result
+
+
+def _clock_sample_reject_constant(value: str):
+    raise ValueError("clock sample contains a non-finite JSON number")
+
+
+def _clock_sample_timestamp(value: object, field: str) -> datetime:
+    if type(value) is not str or not _CLOCK_SAMPLE_UTC.fullmatch(value):
+        raise ValueError(f"{field} must be canonical UTC with six fractional digits")
+    try:
+        return datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError as exc:
+        raise ValueError(f"{field} is not a valid UTC calendar timestamp") from exc
+
+
+def _clock_sample_canonical(value: object) -> bytes:
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=True
     ).encode("ascii")
-    return hashlib.sha256(canonical).hexdigest()
+
+
+def _verify_clock_sample_attestation(snapshot: DeploymentTrustSnapshot) -> None:
+    """Verify the provider-issued clock sample under its separately provisioned key.
+
+    The key is supplied by the trusted deployment provider and is not an
+    institutional identity claim. The provider must independently repeat this
+    verification against its authoritative key and current sample inside CAS.
+    """
+    raw = snapshot.clock_sample_envelope_bytes
+    if type(raw) is not bytes or not 1 <= len(raw) <= MAX_CLOCK_SAMPLE_BYTES:
+        raise ValueError("clock sample attestation must be exact bytes within size limit")
+    if type(snapshot.clock_sample_public_key_bytes) is not bytes or len(
+        snapshot.clock_sample_public_key_bytes
+    ) != 32:
+        raise ValueError("clock sample Ed25519 public key must be exactly 32 immutable bytes")
+    _require_identifier(snapshot.clock_sample_key_id, "clock_sample_key_id")
+
+    try:
+        document = json.loads(
+            raw.decode("ascii"),
+            object_pairs_hook=_clock_sample_pairs_no_duplicates,
+            parse_constant=_clock_sample_reject_constant,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("clock sample attestation must be canonical ASCII JSON") from exc
+    if type(document) is not dict:
+        raise ValueError("clock sample attestation must be a JSON object")
+    expected_fields = {
+        "schema",
+        "policy_domain",
+        "clock_source_id",
+        "clock_sample_id",
+        "sampled_at_utc",
+        "uncertainty_ms",
+        "valid_until_utc",
+        "key_id",
+        "signature",
+    }
+    if set(document) != expected_fields:
+        raise ValueError("clock sample attestation fields do not match the exact schema")
+    if _clock_sample_canonical(document) != raw:
+        raise ValueError("clock sample attestation bytes are not canonical JSON")
+
+    signature = document["signature"]
+    if type(signature) is not dict or set(signature) != {"algorithm", "signature_b64"}:
+        raise ValueError("clock sample signature object does not match the exact schema")
+    if signature["algorithm"] != "ed25519":
+        raise ValueError("clock sample signature algorithm must be ed25519")
+    encoded = signature["signature_b64"]
+    if type(encoded) is not str:
+        raise ValueError("clock sample signature must be canonical base64 text")
+    try:
+        signature_bytes = base64.b64decode(encoded, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("clock sample signature is not valid base64") from exc
+    if (
+        len(signature_bytes) != 64
+        or base64.b64encode(signature_bytes).decode("ascii") != encoded
+    ):
+        raise ValueError("clock sample signature must be exactly 64 canonical base64 bytes")
+
+    if document["schema"] != CLOCK_SAMPLE_SCHEMA:
+        raise ValueError("clock sample attestation schema is unsupported")
+    if document["policy_domain"] != CLASSIC_POLICY_DOMAIN:
+        raise ValueError("clock sample attestation is not scoped to the fixed CLASSIC domain")
+    if document["clock_source_id"] != snapshot.clock_source_id:
+        raise ValueError("clock sample attestation source does not match provider snapshot")
+    if document["clock_sample_id"] != snapshot.clock_sample_id:
+        raise ValueError("clock sample attestation ID does not match provider snapshot")
+    if document["key_id"] != snapshot.clock_sample_key_id:
+        raise ValueError("clock sample attestation key ID does not match provider pin")
+
+    sampled_at = _clock_sample_timestamp(document["sampled_at_utc"], "sampled_at_utc")
+    valid_until = _clock_sample_timestamp(document["valid_until_utc"], "valid_until_utc")
+    uncertainty = document["uncertainty_ms"]
+    if type(uncertainty) is not int or not 0 <= uncertainty <= 2**31 - 1:
+        raise ValueError("clock sample uncertainty_ms must be an exact bounded integer")
+    if sampled_at != snapshot.trusted_time_utc:
+        raise ValueError("signed clock sample time does not match provider snapshot")
+    if uncertainty != snapshot.clock_uncertainty_ms:
+        raise ValueError("signed clock sample uncertainty does not match provider snapshot")
+    if valid_until != snapshot.clock_sample_valid_until_utc:
+        raise ValueError("signed clock sample lease does not match provider snapshot")
+
+    unsigned = dict(document)
+    unsigned.pop("signature")
+    message = b"ORIGEN_CLOCK_SAMPLE_V1\\x00" + _clock_sample_canonical(unsigned)
+    try:
+        Ed25519PublicKey.from_public_bytes(
+            snapshot.clock_sample_public_key_bytes
+        ).verify(signature_bytes, message)
+    except (InvalidSignature, ValueError) as exc:
+        raise ValueError("clock sample Ed25519 signature verification failed") from exc
+
+
+def _clock_sample_sha256(snapshot: DeploymentTrustSnapshot) -> str:
+    """Hash the exact signed source sample bytes supplied to the provider CAS."""
+    return hashlib.sha256(snapshot.clock_sample_envelope_bytes).hexdigest()
 
 
 def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
@@ -238,6 +364,9 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         clock_uncertainty_ms=value.clock_uncertainty_ms,
         maximum_clock_uncertainty_ms=value.maximum_clock_uncertainty_ms,
         clock_source_id=value.clock_source_id,
+        clock_sample_key_id=value.clock_sample_key_id,
+        clock_sample_public_key_bytes=value.clock_sample_public_key_bytes,
+        clock_sample_envelope_bytes=value.clock_sample_envelope_bytes,
         clock_sample_id=value.clock_sample_id,
         clock_sample_valid_until_utc=value.clock_sample_valid_until_utc,
         maximum_clock_sample_age_ms=value.maximum_clock_sample_age_ms,
@@ -251,6 +380,7 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         raise ValueError("deployment root pin must be exactly 32 immutable bytes")
     _require_identifier(snapshot.root_key_id, "root_key_id")
     _require_identifier(snapshot.clock_source_id, "clock_source_id")
+    _require_identifier(snapshot.clock_sample_key_id, "clock_sample_key_id")
     _require_identifier(snapshot.clock_sample_id, "clock_sample_id")
     _require_identifier(snapshot.state_backend_id, "state_backend_id")
     _require_sha256(snapshot.provisioning_record_sha256, "provisioning_record_sha256")
@@ -302,6 +432,7 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         raise ValueError("clock sample lease exceeds the provisioned maximum age")
     if snapshot.clock_uncertainty_ms > snapshot.maximum_clock_uncertainty_ms:
         raise ValueError("provider clock uncertainty exceeds the provisioned maximum")
+    _verify_clock_sample_attestation(snapshot)
 
     return snapshot
 
