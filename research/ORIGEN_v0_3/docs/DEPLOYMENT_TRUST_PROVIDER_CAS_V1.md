@@ -91,7 +91,7 @@ The application computes `trust_configuration_sha256` as SHA-256 over canonical 
 
 The provider must independently recompute this value from its authoritative provisioned configuration and compare it atomically with the supplied expected digest and `expected_state_generation`. This detects root-key or provisioning/clock/backend configuration drift that reuses the same key ID, root generation, or state generation. The digest is a consistency binding, not proof that the provisioning record, clock, backend, or root is authentic. A provider that trusts the caller-supplied digest without recomputation does not satisfy the contract.
 
-### Authenticated clock-sample binding
+### Provider clock-sample binding
 
 The application computes `clock_sample_sha256` over canonical JSON containing the fixed schema ID, clock source ID, source-issued sample ID, exact UTC sample instant, uncertainty, and sample validity deadline. The sample descriptor is not a signature and this hash is not proof of clock authenticity.
 
