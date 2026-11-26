@@ -30,6 +30,6 @@ Do not use this V1 composition as a substitute for the domain-bound V3/provider 
 
 ## Adversarial fixtures
 
-All keys, policy envelopes, receipts and clocks in `tests/test_signed_root_attestation_chain_v1.py` are synthetic. Tests cover valid cryptographic composition while blocked, receipt tampering before the independent gate, wrong root pin, caller-supplied result-object rejection, unexpected independent-gate status, mutable buffers and a stateful timezone callback.
+All keys, policy envelopes, receipts and clocks in `tests/test_signed_root_attestation_chain_v1.py` are synthetic. Tests cover valid cryptographic composition while blocked, receipt tampering before the independent gate, wrong root pin, caller-supplied result-object rejection, exact raw-byte re-verification at the independent gate, partial-context downgrade rejection, unexpected independent-gate status, mutable buffers and a stateful timezone callback.
 
 No institutional or Chispazo draw evidence is created by these tests.
