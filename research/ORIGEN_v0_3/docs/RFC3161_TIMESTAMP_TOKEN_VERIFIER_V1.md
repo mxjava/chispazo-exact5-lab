@@ -33,6 +33,13 @@ Synthetic adversarial tests cover explicit zero rejection and the valid
 1/999 boundaries. This correction validates the token's ASN.1 accuracy syntax;
 it does not authenticate the TSA root, clock, revocation status, or policy.
 
+The verifier also evaluates the complete `genTime ± accuracy` interval at the
+RFC 3161 boundary. An ASN.1 `seconds` value that overflows Python's supported
+`timedelta` or the representable UTC datetime range is rejected as a
+`ValueError`; it is not allowed to surface later as an unhandled overflow in a
+custody or policy-timestamp composition. A synthetic token with a very large
+accuracy integer is covered by regression testing.
+
 Reference: [RFC 3161 §2.4.2](https://www.rfc-editor.org/rfc/rfc3161.html#section-2.4.2).
 
 ## Fail-closed handling of unsupported RFC 5280 path semantics
