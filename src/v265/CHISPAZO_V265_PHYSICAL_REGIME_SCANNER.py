@@ -252,6 +252,8 @@ def main():
     out=Path(args.out_dir); out.mkdir(parents=True,exist_ok=True)
     all_df=load_history(args.history,args.modality_column)
     pairs=same_day_pairs(all_df,args.modality_column,args.early_value,args.classic_value)
+    if not pairs:
+        raise SystemExit('No unambiguous same-day early/Clásico pairs found; refusing to report carryover statistics')
     df=all_df[all_df[args.modality_column]==args.classic_value].copy().reset_index(drop=True)
     if df.empty:
         raise SystemExit('No explicitly labelled Clásico rows found; refusing to run')
