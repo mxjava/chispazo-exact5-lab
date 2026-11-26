@@ -14,10 +14,10 @@ A newly reviewed official Lotería Nacional result-mask PDF for **25-Nov-2026** 
 This resolves the modality of the two 25-Nov contests from the official PDF itself, rather than guessing from contest order or the results table.
 
 For 26-Nov:
-- The official commercializer home page explicitly lists **Chispazo contest 12397 at 15:00**. Combined with the official product page's slot mapping, this is schedule-only evidence for **De las Tres**. No result was published at the 14:56 review.
-- The Chispazo product page confirms that **Clásico is scheduled daily at 21:00**, but the reviewed commercializer home-page snapshot does not list a Chispazo contest ID for that slot.
-- The separate 21:00 home-page card is labelled **“Sorteo | 3093”**. It is not labelled Chispazo and must not be assigned to Chispazo contest 12398.
-- Therefore, **contest 12398 remains unconfirmed by the reviewed official index/results sources**. A nonofficial aggregator is not used to upgrade this to official evidence.
+- The official commercializer home page shows a card titled **“Ilumina tu suerte”** with **26-Nov-2026, 15:00, Sorteo 12397**. The card text does not explicitly print the product name. Combined with the official product page's slot mapping, this is a **15:00 slot-level association** with De las Tres, not draw-specific modality proof. No result was published at the 14:56 review.
+- The Chispazo product page confirms that **Clásico is scheduled daily at 21:00**, but the reviewed commercializer home-page snapshot does not identify a Chispazo contest ID for that slot.
+- The separate 21:00 home-page card is labelled **“Sorteo | 3093”**. It is not labelled Chispazo and must not be assigned to Chispazo.
+- No 26-Nov Classic contest ID is inferred from contest-number sequence or a nonofficial aggregator.
 
 The official Chispazo results endpoint still displayed contest **12396**, dated 25-Nov-2026, as its latest result and showed 26-Nov as the next draw date. The 26-Nov results were not yet published at review.
 
@@ -32,6 +32,7 @@ Lotería Nacional's public procedure **SGVO-PRO-05, revision 39**, was published
 - The act must identify place, date, time, commissioned Lotería Nacional officials by name/role/signature, and the SEGOB inspector with commission order; incidents must be recorded.
 - The recording covers the weighing through the electronic draw and is included with the act as documentary evidence.
 - The SICAL sales-close summary and post-result summary are attached/reconciled as described by the procedure.
+- The MJF is recorded to DVD every day after the 21:00 automatic sales close and deposited with its printed electronic-signature form. It is a daily-scope record, not a contest-only artifact; for a 15:00 De las Tres packet it can only be linked later, after 21:00, and must not be represented as available at the draw time.
 
 These are published procedure requirements, not proof that a particular draw complied. No original signed act, pre-close SICAL summary, CS-11, signed weighing strip, calibration certificate, original recording, signed participation/cancellation files, or independent custody/time/ledger proofs were obtained for 26-Nov.
 
