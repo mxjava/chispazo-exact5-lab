@@ -160,7 +160,7 @@ def parse_unverified_physical_manifest_v2(raw: bytes) -> UnverifiedPhysicalEvide
         expected_types.update(_NIGHTLY_ONLY_ARTIFACTS)
     artifact_values = _array(
         root["artifacts"], "artifacts",
-        minimum=len(expected_types), maximum=len(expected_types),
+        minimum=0, maximum=len(V1_REQUIRED_ARTIFACT_TYPES),
     )
     artifacts = tuple(
         _parse_artifact(item, index, target.contest_id)
