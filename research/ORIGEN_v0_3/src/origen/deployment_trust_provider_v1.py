@@ -41,7 +41,7 @@ _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 class TrustStateOutcome(str, Enum):
-    """Only the two acceptable outcomes of an atomic provider transaction."""
+    """Outcome codes for an atomic provider transaction."""
 
     ADVANCED = "ADVANCED"
     IDEMPOTENT = "IDEMPOTENT"
