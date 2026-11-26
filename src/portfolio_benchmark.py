@@ -22,7 +22,7 @@ def _utc(value: str) -> datetime:
     return dt
 
 def _line_mask(line: str) -> int:
-    if not isinstance(line, str) or not re.fullmatch(r"\\d{2}(?:-\\d{2}){4}", line):
+    if not isinstance(line, str) or not re.fullmatch(r"\d{2}(?:-\d{2}){4}", line):
         raise ValueError("invalid_line_format")
     values = [int(x) for x in line.split("-")]
     if values != sorted(values) or len(set(values)) != 5 or any(x < 1 or x > 28 for x in values):
@@ -150,7 +150,7 @@ def main() -> int:
     records = validate_records(portfolios, anchors, draws)
     result = benchmark(records, args.replicates, args.seed)
     result["gate"] = "INSUFFICIENT_PROSPECTIVE_TARGETS" if len(records) < 100 else "REQUIRES_PREREGISTERED_MULTIPLICITY_AND_CUSTODY_REVIEW"
-    Path(args.out).write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+    Path(args.out).write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 
