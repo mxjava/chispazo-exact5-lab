@@ -17,9 +17,9 @@ The V1 schema is intentionally not reinterpreted. V2 adds an explicit modality f
 | `DE_LAS_TRES` | 15:00 | Daytime participation/cancellation signature reconciliation; no nightly MJF records |
 | `CLASSIC` | 21:00 | Nightly participation/cancellation handling and MJF transaction file plus printed signature form |
 
-The distinction follows the official procedure's policy 16 and its activity notes: the MJF/CD-II process is specified for nocturnal draws; daytime draws use the separate signature-comparison loop. The V2 parser therefore requires the MJF pair only for CLASSIC and rejects it for DE_LAS_TRES. It keeps the common Chispazo Acta attachments, CS-11, weighing strip, equipment, recording, custody and time-proof declarations for both.
+The distinction follows the official procedure's policy 16 and its activity notes: the MJF/CD-II process is specified for nocturnal draws; daytime draws use the separate signature-comparison loop. The V2 parser therefore requires the MJF pair only in the 21:00 CLASSIC packet and rejects it in the 15:00 DE_LAS_TRES packet. **The MJF is a daily master transaction file, not a per-contest file:** V2 marks both MJF objects `scope=DAILY`, sets `contest_id=null`, and binds `scope_date_local` to the target day. It requires a declared custody event at or after the 21:00 automatic sales close. All other artifacts use `scope=DRAW` and bind to the exact contest ID. This prevents a daily MJF from being falsely represented as data produced solely for contest 12396.
 
-V2 also records `draw_event_at_utc` separately from `sales_close_at_utc` and rejects an event time earlier than the automatic sales close or on a different Mexico City date. These are structural consistency checks only; timestamps remain untrusted strings until independently verified.
+V2 also records `draw_event_at_utc` separately from `sales_close_at_utc` and rejects an event time earlier than the automatic sales close or on a different Mexico City date. It checks the MJF custody declaration is not earlier than the 21:00 close. These are structural consistency checks only; timestamps remain untrusted strings until independently verified.
 
 ## Source mapping
 
