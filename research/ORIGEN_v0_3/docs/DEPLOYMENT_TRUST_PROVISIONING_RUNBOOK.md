@@ -115,8 +115,10 @@ validation report, certificate/revocation material, and independent review.
 
 ## 6. Physical evidence and custody
 
-For each Chispazo Clásico contest, preserve original bytes and metadata for
-available primary records, including as applicable:
+For each Chispazo contest, preserve original bytes and metadata for available
+primary records, including as applicable. The intake record must bind the
+contest ID, local draw date, modality, scheduled sales-close slot and actual
+draw-event time separately:
 
 - official draw act/minutes and signed result records;
 - original recording and acquisition metadata;
@@ -128,8 +130,20 @@ available primary records, including as applicable:
 
 Do not infer missing documents, substitute a screenshot for an original when
 the original is required, or describe a public result page as physical evidence.
-Bind every artifact to the exact contest ID and the 21:00 Clásico modality;
-never mix it with De las Tres at 15:00.
+Keep the official modalities separate:
+- **De las Tres** is the 15:00 Mexico City slot.
+- **Clásico** is the 21:00 Mexico City slot and is the only modality eligible
+  for the preregistered prospective EDGE_SUPPORTED sample.
+- The V2 structural manifest requires the nightly MJF transaction file and
+  printed signature form for Clásico only. Do not demand or fabricate those
+  nightly artifacts for De las Tres; preserve its daytime participation /
+  cancellation signature-reconciliation records instead.
+- Never infer modality from contest-number order alone. Bind each artifact to
+  the exact contest ID and corroborate the modality from the official schedule
+  and draw-specific official record.
+The official product schedule and SGVO-PRO-05 Rev. 39 are the current public
+sources for this separation; their procedural text does not prove that any
+specific draw's primary records were actually produced or preserved.
 
 **Acceptance evidence:** original source bytes, cryptographic digests computed
 at acquisition, signed custodian receipt, independent acquisition witness,
@@ -148,8 +162,11 @@ controlled pre-close seals with:
 - independent signature and timestamp token;
 - independent custody/ledger inclusion.
 
-The seals must be demonstrably created before the official close. A later
-reconstruction, edited timestamp, or post-result upload does not qualify.
+The seals must be demonstrably created before the official sales close. For
+the prospective edge study, the target must be an explicitly identified
+21:00 Clásico contest; a 15:00 De las Tres result cannot count toward the
+100-draw Classic threshold. A later reconstruction, edited timestamp, or
+post-result upload does not qualify.
 
 ## 8. Go/no-go gates
 
@@ -166,7 +183,8 @@ at `BLOCKED_PROVENANCE`:
 - [ ] Validated RFC 3161 TSA tokens
 - [ ] Original physical evidence and independent custody receipt
 - [ ] Two sealed pre-close outputs for each scored target
-- [ ] Exact contest/modality binding and intact hashes
+- [ ] Exact contest/modality binding and intact hashes; only 21:00 Clásico
+      contests count toward the prospective edge acceptance sample
 - [ ] Independent security review and signed go/no-go decision
 
 Passing these gates only establishes provenance readiness. It does not establish
