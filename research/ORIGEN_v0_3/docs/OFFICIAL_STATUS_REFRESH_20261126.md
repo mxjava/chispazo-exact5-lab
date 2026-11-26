@@ -63,10 +63,10 @@ V294 remains frozen. The canonical historical CSV is not changed; its main-branc
 
 ## Follow-up status snapshot — 2026-11-26 15:54 America/Mexico_City
 
-- The official commercializer home page lists Chispazo contest **12397** at **15:00 on 26-Nov-2026**. Given the official Chispazo product-page mapping, this is the 15:00 **De las Tres** slot, not Clásico.
+- The official commercializer home page shows a card titled **“Ilumina tu suerte”** with **26-Nov-2026, 15:00, Sorteo 12397**. The card text does not explicitly print the product name. Combined with the official Chispazo schedule, this is a **15:00 slot-level association** with De las Tres, not a draw-specific modality confirmation. Do not promote it to a confirmed Chispazo result solely from the card.
 - The dedicated Chispazo results endpoint still showed contest **12396** (25-Nov-2026) as latest and did not yet publish contest 12397 at the 15:54 observation.
 - Lotería Nacional's FAQ says afternoon results are normally updated between **16:30 and 17:00**. The absence of a published result at 15:54 is therefore not evidence of a failed draw and must not be filled with a guessed combination.
-- The 21:00 **Clásico** draw for 26-Nov remains a separate future event. No contest ID is inferred from the unrelated 21:00 card for another product.
+- The 21:00 **Clásico** draw for 26-Nov remains a separate future event. The home page separately shows **Sorteo 3093 at 21:00** without a Chispazo product label; it is not assigned to Chispazo and no Classic contest ID is inferred from it.
 - No draw-specific primary physical records for contest 12397 were obtained: no signed Acta/CS-11, original weighing strip, SICAL close/post-draw summaries, pre-draw participation-signature media, video original, or SEGOB/OIC custody record. The public mask/result publication is a derived official result, not a substitute for those primary records.
 - Source bytes for the 25-Nov official result-mask PDF and SGVO-PRO-05 remain **NOT_CAPTURED** in the working environment; no binary SHA-256 is asserted.
 - No history append, physical eligibility upgrade, model change, V294 change, main write, merge or promotion occurred.
