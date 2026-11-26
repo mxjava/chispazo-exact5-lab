@@ -273,7 +273,11 @@ def _verify_ess_issuer_serial(cert_id, signer_cert: x509.Certificate, label: str
         return
     if issuer_serial["serial_number"].native != signer_cert.serial_number:
         raise ValueError(f"RFC3161 {label} issuerSerial serial number does not match signer certificate")
-    expected_issuer_der = signer_cert.issuer.public_bytes()
+    signer_cert_asn1 = asn1_x509.Certificate.load(
+        signer_cert.public_bytes(serialization.Encoding.DER),
+        strict=True,
+    )
+    expected_issuer_der = signer_cert_asn1["tbs_certificate"]["issuer"].dump()
     issuer_names = issuer_serial["issuer"]
     if not any(
         name.name == "directory_name"
