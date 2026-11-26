@@ -8,6 +8,7 @@ established. Tokens and certificates in tests are synthetic.
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -345,6 +346,10 @@ def _verify_tstinfo_tsa_name(tst_info, signer_cert: x509.Certificate) -> None:
                 str(candidate.value)
                 for candidate in subject_alt_names
                 if isinstance(candidate, candidate_type)
+                and isinstance(
+                    candidate.value,
+                    (ipaddress.IPv4Address, ipaddress.IPv6Address),
+                )
             ]
         elif tsa_name.name == "registered_id":
             if type(expected) is not str:
