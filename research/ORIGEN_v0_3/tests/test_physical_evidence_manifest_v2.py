@@ -16,7 +16,7 @@ from test_physical_evidence_manifest_v1 import encode, valid_document
 NIGHTLY_ONLY = {"MJF-TRANSACTION-FILE", "MJF-SIGNATURE-PRINTED-FORM"}
 
 
-def document_for(modality: str) -> dict:
+def document_for(modality: str, include_mjf: bool = False) -> dict:
     doc = copy.deepcopy(valid_document())
     doc["schema_version"] = SCHEMA_VERSION
     target_id = "12395" if modality == "DE_LAS_TRES" else "12396"
@@ -38,7 +38,7 @@ def document_for(modality: str) -> dict:
             else "2026-11-26T03:04:00Z"
         ),
     }
-    if modality == "CLASSIC":
+    if modality == "CLASSIC" or include_mjf:
         mjf_digests = {
             item["sha256"] for item in doc["artifacts"]
             if item["artifact_type"] in NIGHTLY_ONLY
@@ -49,7 +49,7 @@ def document_for(modality: str) -> dict:
                 for proof in doc["trusted_time_proofs"]:
                     if proof["event_id"] == event["event_id"]:
                         proof["event_at_utc"] = event["received_at_utc"]
-    if modality == "DE_LAS_TRES":
+    if modality == "DE_LAS_TRES" and not include_mjf:
         removed = {
             item["sha256"] for item in doc["artifacts"]
             if item["artifact_type"] in NIGHTLY_ONLY
@@ -118,17 +118,13 @@ class PhysicalEvidenceManifestV2Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "target Mexico City draw date"):
             parse_unverified_physical_manifest_v2(encode(doc))
 
-    def test_de_las_tres_rejects_nightly_only_mjf_artifacts(self):
-        doc = document_for("DE_LAS_TRES")
-        classic = document_for("CLASSIC")
-        mjf = copy.deepcopy(next(
-            item for item in classic["artifacts"]
-            if item["artifact_type"] == "MJF-TRANSACTION-FILE"
-        ))
-        mjf["scope"] = "DAILY"
-        mjf["contest_id"] = None
-        doc["artifacts"].append(mjf)
-        with self.assertRaisesRegex(ValueError, "do not match DE_LAS_TRES requirements"):
+    def test_de_las_tres_rejects_partial_daily_mjf_pair(self):
+        doc = document_for("DE_LAS_TRES", include_mjf=True)
+        doc["artifacts"] = [
+            item for item in doc["artifacts"]
+            if item["artifact_type"] != "MJF-SIGNATURE-PRINTED-FORM"
+        ]
+        with self.assertRaisesRegex(ValueError, "complete.*pair"):
             parse_unverified_physical_manifest_v2(encode(doc))
 
     def test_classic_rejects_missing_nightly_mjf_artifact(self):
@@ -195,6 +191,35 @@ class PhysicalEvidenceManifestV2Tests(unittest.TestCase):
                     if proof["event_id"] == event["event_id"]:
                         proof["event_at_utc"] = event["received_at_utc"]
         with self.assertRaisesRegex(ValueError, "at or after the 21:00"):
+            parse_unverified_physical_manifest_v2(encode(doc))
+
+
+    def test_de_las_tres_can_link_daily_mjf_after_21_close(self):
+        parsed = parse_unverified_physical_manifest_v2(
+            encode(document_for("DE_LAS_TRES", include_mjf=True))
+        )
+        mjf = [
+            item for item in parsed.artifacts
+            if item.artifact_type in NIGHTLY_ONLY
+        ]
+        self.assertEqual(len(mjf), 2)
+        self.assertTrue(all(item.scope == "DAILY" for item in mjf))
+        self.assertTrue(all(item.contest_id is None for item in mjf))
+        self.assertTrue(all(item.scope_date_local == "2026-11-25" for item in mjf))
+
+    def test_de_las_tres_mjf_custody_must_be_after_21_daily_close(self):
+        doc = document_for("DE_LAS_TRES", include_mjf=True)
+        mjf_digests = {
+            item["sha256"] for item in doc["artifacts"]
+            if item["artifact_type"] in NIGHTLY_ONLY
+        }
+        for event in doc["custody_events"]:
+            if event["artifact_sha256"] in mjf_digests:
+                event["received_at_utc"] = "2026-11-26T02:59:59Z"
+                for proof in doc["trusted_time_proofs"]:
+                    if proof["event_id"] == event["event_id"]:
+                        proof["event_at_utc"] = event["received_at_utc"]
+        with self.assertRaisesRegex(ValueError, "21:00 Mexico City daily close"):
             parse_unverified_physical_manifest_v2(encode(doc))
 
 
