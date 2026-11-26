@@ -29,9 +29,11 @@ def _certs(
     name_constraints_on=None,
     certificate_policies_on=None,
     gen_time=GEN_TIME,
+    tsa_san_names=(),
+    root_subject_name=None,
 ):
     root_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    root_name = _name("Synthetic TSA Root")
+    root_name = root_subject_name or _name("Synthetic TSA Root")
     root_builder = (
         x509.CertificateBuilder()
         .subject_name(root_name)
@@ -95,6 +97,11 @@ def _certs(
             critical=critical_eku,
         )
     )
+    if tsa_san_names:
+        tsa_builder = tsa_builder.add_extension(
+            x509.SubjectAlternativeName(list(tsa_san_names)),
+            critical=False,
+        )
     if critical_custom_extension_on == "leaf":
         tsa_builder = tsa_builder.add_extension(
             x509.UnrecognizedExtension(ObjectIdentifier("1.3.6.1.4.1.55555.1"), b"\\x05\\x00"),
@@ -127,6 +134,10 @@ def _token(
     tst_version="v1",
     tsa_common_name=None,
     tsa_general_name_type="directory_name",
+    tsa_general_name_value=None,
+    tsa_san_names=(),
+    root_subject_name=None,
+    issuer_serial_name_override=None,
 ):
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
@@ -135,6 +146,8 @@ def _token(
         name_constraints_on=name_constraints_on,
         certificate_policies_on=certificate_policies_on,
         gen_time=gen_time,
+        tsa_san_names=tsa_san_names,
+        root_subject_name=root_subject_name,
     )
     tst_info_fields = {
         "version": tst_version,
@@ -148,12 +161,33 @@ def _token(
         "nonce": nonce,
         "accuracy": accuracy,
     }
-    if tsa_common_name is not None:
-        tsa_value = (
-            asn1_x509.Name.build({"common_name": tsa_common_name})
-            if tsa_general_name_type == "directory_name"
-            else tsa_common_name
-        )
+    if tsa_general_name_value is None:
+        tsa_general_name_value = tsa_common_name
+    if tsa_general_name_value is not None:
+        if tsa_general_name_type == "directory_name":
+            if isinstance(tsa_general_name_value, x509.Name):
+                tsa_value = asn1_x509.Name.load(
+                    tsa_general_name_value.public_bytes(),
+                    strict=True,
+                )
+            else:
+                subject_common_names = tsa.subject.get_attributes_for_oid(
+                    NameOID.COMMON_NAME
+                )
+                if (
+                    len(subject_common_names) == 1
+                    and tsa_general_name_value == subject_common_names[0].value
+                ):
+                    tsa_value = asn1_x509.Name.load(
+                        tsa.subject.public_bytes(),
+                        strict=True,
+                    )
+                else:
+                    tsa_value = asn1_x509.Name.build(
+                        {"common_name": tsa_general_name_value}
+                    )
+        else:
+            tsa_value = tsa_general_name_value
         tst_info_fields["tsa"] = asn1_x509.GeneralName(
             name=tsa_general_name_type,
             value=tsa_value,
@@ -171,11 +205,21 @@ def _token(
         value = {"cert_hash": cert_hash}
         if include_issuer_serial:
             issuer_names = asn1_x509.GeneralNames()
-            issuer_name = (
-                asn1_x509.Name.build({"common_name": "Wrong Synthetic Issuer"})
-                if wrong_issuer_name
-                else cert_asn1.issuer
-            )
+            if issuer_serial_name_override is not None:
+                issuer_name = (
+                    asn1_x509.Name.load(
+                        issuer_serial_name_override.public_bytes(),
+                        strict=True,
+                    )
+                    if isinstance(issuer_serial_name_override, x509.Name)
+                    else issuer_serial_name_override
+                )
+            elif wrong_issuer_name:
+                issuer_name = asn1_x509.Name.build(
+                    {"common_name": "Wrong Synthetic Issuer"}
+                )
+            else:
+                issuer_name = cert_asn1.issuer
             issuer_names.append(
                 asn1_x509.GeneralName(
                     name="directory_name",
@@ -303,13 +347,123 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not match signer certificate subject names"):
             _verify(token, root_der)
 
-    def test_tstinfo_tsa_unsupported_general_name_is_rejected(self):
+    def test_tstinfo_tsa_directory_name_may_match_subject_alt_name(self):
+        alternate_name = _name("Alternate Synthetic TSA")
         token, root_der = _token(
-            tsa_common_name="tsa.example.test",
-            tsa_general_name_type="dns_name",
+            tsa_general_name_value=alternate_name,
+            tsa_general_name_type="directory_name",
+            tsa_san_names=(x509.DirectoryName(alternate_name),),
         )
-        with self.assertRaisesRegex(ValueError, "GeneralName form is unsupported"):
+        _verify(token, root_der)
+
+    def test_tstinfo_tsa_directory_name_preserves_rdn_boundaries(self):
+        attributes = (
+            x509.NameAttribute(NameOID.COMMON_NAME, "Alternate Synthetic TSA"),
+            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "Evidence"),
+        )
+        tsa_name = x509.Name([
+            x509.RelativeDistinguishedName(list(attributes)),
+        ])
+        certificate_name = x509.Name([
+            x509.RelativeDistinguishedName([attributes[1]]),
+            x509.RelativeDistinguishedName([attributes[0]]),
+        ])
+        tsa_asn1 = asn1_x509.Name.load(tsa_name.public_bytes(), strict=True)
+        certificate_asn1 = asn1_x509.Name.load(
+            certificate_name.public_bytes(),
+            strict=True,
+        )
+        self.assertEqual(tsa_asn1.native, certificate_asn1.native)
+        self.assertNotEqual(tsa_name.public_bytes(), certificate_name.public_bytes())
+
+        token, root_der = _token(
+            tsa_general_name_value=tsa_name,
+            tsa_general_name_type="directory_name",
+            tsa_san_names=(x509.DirectoryName(certificate_name),),
+        )
+        with self.assertRaisesRegex(ValueError, "does not match signer certificate"):
             _verify(token, root_der)
+
+    def test_tstinfo_tsa_supported_general_names_must_match_subject_alt_name(self):
+        import ipaddress
+
+        cases = (
+            (
+                "dns_name",
+                "tsa.example.test",
+                x509.DNSName("tsa.example.test"),
+                "other.example.test",
+            ),
+            (
+                "rfc822_name",
+                "tsa@example.test",
+                x509.RFC822Name("tsa@example.test"),
+                "other@example.test",
+            ),
+            (
+                "uniform_resource_identifier",
+                "https://tsa.example.test/timestamp",
+                x509.UniformResourceIdentifier(
+                    "https://tsa.example.test/timestamp"
+                ),
+                "https://other.example.test/timestamp",
+            ),
+            (
+                "ip_address",
+                "192.0.2.10",
+                x509.IPAddress(ipaddress.ip_address("192.0.2.10")),
+                "192.0.2.11",
+            ),
+            (
+                "ip_address",
+                "2001:db8::10",
+                x509.IPAddress(ipaddress.ip_address("2001:db8::10")),
+                "2001:db8::11",
+            ),
+            (
+                "registered_id",
+                "1.3.6.1.4.1.55555.1",
+                x509.RegisteredID(ObjectIdentifier("1.3.6.1.4.1.55555.1")),
+                "1.3.6.1.4.1.55555.2",
+            ),
+        )
+        for name_type, matching_value, san_name, mismatching_value in cases:
+            with self.subTest(name_type=name_type, outcome="match"):
+                token, root_der = _token(
+                    tsa_general_name_type=name_type,
+                    tsa_general_name_value=matching_value,
+                    tsa_san_names=(san_name,),
+                )
+                _verify(token, root_der)
+            with self.subTest(name_type=name_type, outcome="mismatch"):
+                token, root_der = _token(
+                    tsa_general_name_type=name_type,
+                    tsa_general_name_value=mismatching_value,
+                    tsa_san_names=(san_name,),
+                )
+                with self.assertRaisesRegex(ValueError, "does not match signer certificate"):
+                    _verify(token, root_der)
+
+    def test_tstinfo_tsa_dns_name_without_matching_san_is_rejected(self):
+        token, root_der = _token(
+            tsa_general_name_type="dns_name",
+            tsa_general_name_value="tsa.example.test",
+        )
+        with self.assertRaisesRegex(ValueError, "does not match signer certificate"):
+            _verify(token, root_der)
+
+    def test_tstinfo_tsa_ip_address_does_not_accept_network_san(self):
+        import ipaddress
+
+        network = ipaddress.ip_network("192.0.2.0/24")
+        token, root_der = _token(
+            tsa_general_name_type="ip_address",
+            tsa_general_name_value="192.0.2.0/24",
+            tsa_san_names=(x509.IPAddress(network),),
+        )
+        with self.assertRaisesRegex(ValueError, "does not match signer certificate"):
+            _verify(token, root_der)
+
 
     def test_wrong_artifact_bytes_fail_imprint_binding(self):
         token, root_der = _token()
@@ -436,6 +590,41 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         token, root_der = _token(
             include_issuer_serial=True,
             wrong_issuer_name=True,
+        )
+        with self.assertRaisesRegex(ValueError, "issuerSerial issuer"):
+            _verify(token, root_der)
+
+    def test_ess_issuer_serial_directory_name_preserves_rdn_boundaries(self):
+        attributes = (
+            x509.NameAttribute(NameOID.COMMON_NAME, "Synthetic TSA Root"),
+            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "Timestamping"),
+        )
+        root_name = x509.Name([
+            x509.RelativeDistinguishedName(list(attributes)),
+        ])
+        different_rdn_layout = x509.Name([
+            x509.RelativeDistinguishedName([attributes[1]]),
+            x509.RelativeDistinguishedName([attributes[0]]),
+        ])
+        root_asn1 = asn1_x509.Name.load(root_name.public_bytes(), strict=True)
+        mismatched_asn1 = asn1_x509.Name.load(
+            different_rdn_layout.public_bytes(),
+            strict=True,
+        )
+        self.assertEqual(root_asn1.native, mismatched_asn1.native)
+        self.assertNotEqual(root_name.public_bytes(), different_rdn_layout.public_bytes())
+
+        matching_token, matching_root_der = _token(
+            include_issuer_serial=True,
+            root_subject_name=root_name,
+            issuer_serial_name_override=root_name,
+        )
+        _verify(matching_token, matching_root_der)
+
+        token, root_der = _token(
+            include_issuer_serial=True,
+            root_subject_name=root_name,
+            issuer_serial_name_override=different_rdn_layout,
         )
         with self.assertRaisesRegex(ValueError, "issuerSerial issuer"):
             _verify(token, root_der)

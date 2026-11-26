@@ -8,6 +8,7 @@ established. Tokens and certificates in tests are synthetic.
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -277,55 +278,100 @@ def _verify_ess_issuer_serial(cert_id, signer_cert: x509.Certificate, label: str
         signer_cert.public_bytes(serialization.Encoding.DER),
         strict=True,
     )
-    expected_issuer_name = signer_cert_asn1["tbs_certificate"]["issuer"].native
+    expected_issuer_name_der = signer_cert_asn1["tbs_certificate"]["issuer"].dump()
     issuer_names = issuer_serial["issuer"]
     if not any(
         name.name == "directory_name"
-        and name.chosen.native == expected_issuer_name
+        and name.chosen.untag().dump() == expected_issuer_name_der
         for name in issuer_names
     ):
         raise ValueError(f"RFC3161 {label} issuerSerial issuer does not match signer certificate")
 
 
 def _verify_tstinfo_tsa_name(tst_info, signer_cert: x509.Certificate) -> None:
-    """Check a present TSTInfo tsa name against the signer certificate.
+    """Bind a present TSTInfo tsa GeneralName to a signer-certificate name.
 
-    RFC 3161 says the optional tsa GeneralName must correspond to a subject
-    name in the certificate used to verify the token. This diagnostic supports
-    directoryName (certificate subject or SAN DirectoryName) and rejects other
-    GeneralName forms rather than silently ignoring them.
+    Supported forms are directoryName (subject or SAN), rfc822Name, dNSName,
+    uniformResourceIdentifier, iPAddress, and registeredID (SAN only). Text
+    names are compared exactly and conservatively; no case folding or URI
+    normalization is performed. Other GeneralName choices fail closed.
     """
     tsa_name = tst_info["tsa"]
     if tsa_name.native is None:
         return
-    if tsa_name.name != "directory_name":
-        raise ValueError(
-            "RFC3161 TSTInfo tsa GeneralName form is unsupported by this verifier"
-        )
-    signer_cert_asn1 = asn1_x509.Certificate.load(
-        signer_cert.public_bytes(serialization.Encoding.DER),
-        strict=True,
-    )
-    accepted_names = [
-        signer_cert_asn1["tbs_certificate"]["subject"].native
-    ]
+
     try:
         subject_alt_names = signer_cert.extensions.get_extension_for_class(
             x509.SubjectAlternativeName
         ).value
     except x509.ExtensionNotFound:
         subject_alt_names = ()
-    for candidate in subject_alt_names:
-        if isinstance(candidate, x509.DirectoryName):
-            candidate_name = asn1_x509.Name.load(
-                candidate.value.public_bytes(),
-                strict=True,
-            )
-            accepted_names.append(candidate_name.native)
-    if tsa_name.chosen.native not in accepted_names:
-        raise ValueError(
-            "RFC3161 TSTInfo tsa directoryName does not match signer certificate subject names"
+
+    if tsa_name.name == "directory_name":
+        signer_cert_asn1 = asn1_x509.Certificate.load(
+            signer_cert.public_bytes(serialization.Encoding.DER),
+            strict=True,
         )
+        # Compare complete DER Name values. asn1crypto Name.native flattens
+        # RDN boundaries into an ordered mapping and can make structurally
+        # different names compare equal.
+        accepted_names_der = [
+            signer_cert_asn1["tbs_certificate"]["subject"].dump()
+        ]
+        for candidate in subject_alt_names:
+            if isinstance(candidate, x509.DirectoryName):
+                accepted_names_der.append(candidate.value.public_bytes())
+        if tsa_name.chosen.untag().dump() in accepted_names_der:
+            return
+    else:
+        san_types = {
+            "rfc822_name": x509.RFC822Name,
+            "dns_name": x509.DNSName,
+            "uniform_resource_identifier": x509.UniformResourceIdentifier,
+            "ip_address": x509.IPAddress,
+            "registered_id": x509.RegisteredID,
+        }
+        candidate_type = san_types.get(tsa_name.name)
+        if candidate_type is None:
+            raise ValueError(
+                "RFC3161 TSTInfo tsa GeneralName form is unsupported by this verifier"
+            )
+
+        expected = tsa_name.chosen.native
+        if tsa_name.name == "ip_address":
+            if type(expected) is not str:
+                raise ValueError("RFC3161 TSTInfo tsa iPAddress has an invalid value")
+            accepted_values = [
+                str(candidate.value)
+                for candidate in subject_alt_names
+                if isinstance(candidate, candidate_type)
+                and isinstance(
+                    candidate.value,
+                    (ipaddress.IPv4Address, ipaddress.IPv6Address),
+                )
+            ]
+        elif tsa_name.name == "registered_id":
+            if type(expected) is not str:
+                raise ValueError("RFC3161 TSTInfo tsa registeredID has an invalid value")
+            accepted_values = [
+                candidate.value.dotted_string
+                for candidate in subject_alt_names
+                if isinstance(candidate, candidate_type)
+            ]
+        else:
+            if type(expected) is not str:
+                raise ValueError("RFC3161 TSTInfo tsa name has an invalid value")
+            accepted_values = [
+                candidate.value
+                for candidate in subject_alt_names
+                if isinstance(candidate, candidate_type)
+            ]
+        if expected in accepted_values:
+            return
+
+    raise ValueError(
+        "RFC3161 TSTInfo tsa name does not match signer certificate subject names"
+    )
 
 
 def _verify_signing_certificate_binding(signed_attrs, signer_cert: x509.Certificate):
