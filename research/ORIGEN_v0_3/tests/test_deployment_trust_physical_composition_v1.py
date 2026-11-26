@@ -104,7 +104,7 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
         provider = Provider()
 
         def physical(receipt, policy, **kwargs):
-            events.append(("physical", receipt, policy, kwargs["verification_time"]))
+            events.append(("physical", receipt, policy, kwargs["verification_time"], dict(kwargs)))
             return physical_result()
 
         def deployment(receipt, policy, *, provider, **kwargs):
