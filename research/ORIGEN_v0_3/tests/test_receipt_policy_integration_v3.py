@@ -135,6 +135,7 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
         self.assertEqual(result.role_authorization_status, RECEIPT_ROLE_STATUS)
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertIn("RFC3161_TIMESTAMP_TOKENS_NOT_VERIFIED", result.remaining_blockers)
+        self.assertIn("SIGNED_POLICY_ENVELOPE_EXISTENCE_TIME_NOT_INDEPENDENTLY_AUTHENTICATED", result.remaining_blockers)
         self.assertIn("CUSTODY_RECEIPT_SIGNATURES_AND_CUSTODIAN_IDENTITY_NOT_VERIFIED", result.remaining_blockers)
 
     def test_receipt_signature_cannot_precede_policy_effective_time(self):
