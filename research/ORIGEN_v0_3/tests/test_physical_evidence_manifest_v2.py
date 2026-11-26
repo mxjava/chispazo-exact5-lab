@@ -138,5 +138,12 @@ class PhysicalEvidenceManifestV2Tests(unittest.TestCase):
             parse_unverified_physical_manifest_v2(encode(doc))
 
 
+    def test_ledger_identity_cannot_alias_artifact_source(self):
+        doc = document_for("CLASSIC")
+        doc["ledger_anchor"]["ledger_id"] = "LOTERIA-NACIONAL"
+        with self.assertRaisesRegex(ValueError, "ledger ID must be distinct"):
+            parse_unverified_physical_manifest_v2(encode(doc))
+
+
 if __name__ == "__main__":
     unittest.main()
