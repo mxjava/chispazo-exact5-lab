@@ -166,3 +166,43 @@ No `EDGE_SUPPORTED` claim is possible without the full prospective Classic sampl
 ### Root-policy authorization of the clock-signing key
 
 The signed V3 trust-policy envelope must contain exactly one issuer-key entry matching the clock source ID and clock key ID. Its public key bytes must equal the snapshot key, the key must not be revoked, its validity interval must contain the complete trusted-time uncertainty interval, and its root-signed authorization matrix must grant role `TRUSTED_TIME_AUTHORITY` for artifact type `CLOCK_SAMPLE`. Missing, duplicate, revoked, expired, or differently pinned clock keys fail before receipt verification or CAS. This is authorization relative to the deployment root pin supplied by the provider; it does not establish that the root pin itself was provisioned institutionally. Test clock keys are synthetic.
+
+
+## 9. Composition with nested physical evidence — research-only boundary
+
+The custody/RFC 3161/Merkle-ledger/witness composition now invokes
+`verify_independent_provenance` **after** the nested physical signatures,
+custody signature timestamp, policy-envelope timestamp, ledger inclusion and
+checkpoint continuity, and witness-batch checks have succeeded. It passes the
+same exact original receipt bytes and signed V3 policy-envelope bytes, together
+with the same root pin, root key ID, sequence floor and one normalized UTC
+instant. The boundary re-verifies the raw policy and receipt bytes itself; no
+`VerifiedTrustPolicyV3`, receipt-verifier result, or boolean is passed across
+that boundary. A non-enum status, any status other than
+`BLOCKED_PROVENANCE`, or a boundary verification error aborts the composition.
+
+This closes an orchestration gap: the evidence-composition function previously
+returned a hard-coded blocked enum after its sub-verifiers but did not actually
+re-enter the independent provenance boundary. The returned diagnostic now
+records the exact boundary status separately.
+
+**Important limitation:** this composition-level recheck still receives its
+root pin, root key ID, sequence floor and verification time as call inputs. It
+does not consume the `DeploymentTrustProvider` snapshot described above, and
+it does not authenticate the TSA, transparency-log or witness-registry roots.
+Those pins remain research inputs. The separate
+`inspect_receipt_with_deployment_trust_provider` path authenticates the V3
+policy/receipt relative to a provider-supplied snapshot and checks its CAS
+contract, but it does not yet orchestrate the complete physical-evidence
+bundle. Neither path supplies a production provider or institutional trust.
+
+The next integration boundary must be a single reviewed composition root that
+obtains the policy root, clock, monotonic state, TSA trust, log trust and witness
+registry trust from independently provisioned services; verifies the exact
+receipt, physical artifact bytes, nested signatures, RFC 3161 tokens, ledger
+proofs and witness observations against those same immutable trust inputs; and
+performs the required atomic state transition without accepting caller-created
+verification results. The deployment provisioning and anti-rollback contract
+in Sections 2–4 remains mandatory. No caller-supplied root, floor, clock,
+callback, verifier result or repository file is an acceptable production
+substitute.
