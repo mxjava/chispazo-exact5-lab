@@ -245,6 +245,14 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             format=serialization.PublicFormat.Raw,
         )
         provider.snapshot = replace(provider.snapshot, root_public_key_bytes=other_public)
+        provider.physical_context = replace(
+            provider.physical_context,
+            policy_root_public_key_bytes=other_public,
+        )
+        provider.snapshot = replace(
+            provider.snapshot,
+            physical_trust_context_sha256=physical_trust_context_sha256(provider.physical_context),
+        )
 
         with self.assertRaisesRegex(ValueError, "trust-policy root signature verification failed"):
             _inspect(data, ledger, batches, provider)
