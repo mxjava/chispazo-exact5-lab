@@ -30,9 +30,10 @@ def _certs(
     certificate_policies_on=None,
     gen_time=GEN_TIME,
     tsa_san_names=(),
+    root_subject_name=None,
 ):
     root_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    root_name = _name("Synthetic TSA Root")
+    root_name = root_subject_name or _name("Synthetic TSA Root")
     root_builder = (
         x509.CertificateBuilder()
         .subject_name(root_name)
@@ -135,6 +136,8 @@ def _token(
     tsa_general_name_type="directory_name",
     tsa_general_name_value=None,
     tsa_san_names=(),
+    root_subject_name=None,
+    issuer_serial_name_override=None,
 ):
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
@@ -144,6 +147,7 @@ def _token(
         certificate_policies_on=certificate_policies_on,
         gen_time=gen_time,
         tsa_san_names=tsa_san_names,
+        root_subject_name=root_subject_name,
     )
     tst_info_fields = {
         "version": tst_version,
@@ -201,11 +205,21 @@ def _token(
         value = {"cert_hash": cert_hash}
         if include_issuer_serial:
             issuer_names = asn1_x509.GeneralNames()
-            issuer_name = (
-                asn1_x509.Name.build({"common_name": "Wrong Synthetic Issuer"})
-                if wrong_issuer_name
-                else cert_asn1.issuer
-            )
+            if issuer_serial_name_override is not None:
+                issuer_name = (
+                    asn1_x509.Name.load(
+                        issuer_serial_name_override.public_bytes(),
+                        strict=True,
+                    )
+                    if isinstance(issuer_serial_name_override, x509.Name)
+                    else issuer_serial_name_override
+                )
+            elif wrong_issuer_name:
+                issuer_name = asn1_x509.Name.build(
+                    {"common_name": "Wrong Synthetic Issuer"}
+                )
+            else:
+                issuer_name = cert_asn1.issuer
             issuer_names.append(
                 asn1_x509.GeneralName(
                     name="directory_name",
@@ -576,6 +590,34 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         token, root_der = _token(
             include_issuer_serial=True,
             wrong_issuer_name=True,
+        )
+        with self.assertRaisesRegex(ValueError, "issuerSerial issuer"):
+            _verify(token, root_der)
+
+    def test_ess_issuer_serial_directory_name_preserves_rdn_boundaries(self):
+        attributes = (
+            x509.NameAttribute(NameOID.COMMON_NAME, "Synthetic TSA Root"),
+            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "Timestamping"),
+        )
+        root_name = x509.Name([
+            x509.RelativeDistinguishedName(list(attributes)),
+        ])
+        different_rdn_layout = x509.Name([
+            x509.RelativeDistinguishedName([attributes[1]]),
+            x509.RelativeDistinguishedName([attributes[0]]),
+        ])
+        root_asn1 = asn1_x509.Name.load(root_name.public_bytes(), strict=True)
+        mismatched_asn1 = asn1_x509.Name.load(
+            different_rdn_layout.public_bytes(),
+            strict=True,
+        )
+        self.assertEqual(root_asn1.native, mismatched_asn1.native)
+        self.assertNotEqual(root_name.public_bytes(), different_rdn_layout.public_bytes())
+
+        token, root_der = _token(
+            include_issuer_serial=True,
+            root_subject_name=root_name,
+            issuer_serial_name_override=different_rdn_layout,
         )
         with self.assertRaisesRegex(ValueError, "issuerSerial issuer"):
             _verify(token, root_der)
