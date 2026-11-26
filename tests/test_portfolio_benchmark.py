@@ -2,6 +2,8 @@ import csv
 import itertools
 import tempfile
 import unittest
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 from src.portfolio_benchmark import (
@@ -12,7 +14,7 @@ from src.portfolio_benchmark import (
 def native_record(target=123, registered="2026-11-01T10:00:00+00:00"):
     record = {
         "target": target, "registered_at_utc": registered,
-        "registered_at_mexico_city": "2026-11-01T04:00:00-06:00",
+        "registered_at_mexico_city": datetime.fromisoformat(registered).astimezone(ZoneInfo("America/Mexico_City")).isoformat(),
         "commit_sha": "a" * 40, "model_version": "V294",
         "history_max": target - 1, "history_sha256": "b" * 64,
         "ranking_sha256": "c" * 64, "preflight_state": "PASS",
