@@ -34,9 +34,11 @@ The provider returns one immutable snapshot containing:
 - fixed CLASSIC policy domain;
 - minimum sequence, accepted sequence, exact accepted-envelope digest, latest persisted trusted-time interval upper bound, and state generation;
 - one normalized UTC time, its uncertainty, and a provisioned maximum uncertainty;
+- a source-issued clock sample ID and validity deadline, plus a provisioned maximum sample age;
 - identifiers for the clock source and state backend;
 - the provisioning-record digest;
-- a locally computed canonical trust-configuration SHA-256 binding the policy domain, root-key fingerprint/ID/generation, minimum sequence, maximum clock uncertainty, clock/backend identifiers, and provisioning-record digest.
+- a locally computed canonical trust-configuration SHA-256 binding the policy domain, root-key fingerprint/ID/generation, minimum sequence, maximum clock uncertainty and maximum sample age, clock/backend identifiers, and provisioning-record digest;
+- a locally computed clock-sample SHA-256 binding the source ID, sample ID, exact UTC instant, uncertainty, and validity deadline.
 
 The application request cannot independently override those values. The snapshot is copied and strictly type-checked before verification. A boolean is not accepted as an integer sequence or generation.
 
@@ -55,9 +57,9 @@ The operation is ordered as follows:
 7. Verify the exact receipt bytes under the policy just verified.
 8. Require the complete clock uncertainty interval to lie inside the signed policy validity interval and the receipt issuer-key validity interval. Require the receipt signing time to be no later than the earliest possible verification instant.
 9. Re-run the exact-byte V3 policy and receipt verification at `verify_independent_provenance`. That gate must still return exactly `BLOCKED_PROVENANCE`.
-10. Compute a canonical trust-configuration digest from the immutable trust configuration in the validated snapshot.
-11. Atomically compare-and-advance the provider state using the exact snapshot generation, trust-configuration digest, root generation, policy sequence, envelope digest, accepted time, and clock uncertainty. The provider must recompute that digest from its own authoritative configuration inside the same transaction.
-12. Return a diagnostic inspection with the exact byte hashes, trust-configuration digest, and before/after state generations. Its provenance status remains `BLOCKED_PROVENANCE`.
+10. Compute canonical trust-configuration and clock-sample digests from the validated snapshot.
+11. Atomically compare-and-advance the provider state using the exact snapshot generation, both digests, root generation, policy sequence, envelope digest, accepted time, and uncertainty. The provider must recompute the configuration digest from its authoritative configuration and the sample digest from its current authenticated clock sample inside the same transaction.
+12. Return a diagnostic inspection with the exact byte hashes, both digests, sample lease deadline, and before/after state generations. Its provenance status remains `BLOCKED_PROVENANCE`.
 
 No state commit is attempted when policy signature, receipt signature, role authorization, time-window, or independent-boundary verification fails.
 
@@ -89,6 +91,14 @@ The application computes `trust_configuration_sha256` as SHA-256 over canonical 
 
 The provider must independently recompute this value from its authoritative provisioned configuration and compare it atomically with the supplied expected digest and `expected_state_generation`. This detects root-key or provisioning/clock/backend configuration drift that reuses the same key ID, root generation, or state generation. The digest is a consistency binding, not proof that the provisioning record, clock, backend, or root is authentic. A provider that trusts the caller-supplied digest without recomputation does not satisfy the contract.
 
+### Authenticated clock-sample binding
+
+The application computes `clock_sample_sha256` over canonical JSON containing the fixed schema ID, clock source ID, source-issued sample ID, exact UTC sample instant, uncertainty, and sample validity deadline. The sample descriptor is not a signature and this hash is not proof of clock authenticity.
+
+The provider must obtain and validate the authoritative source sample (including its signature/attestation and source policy), recompute this digest, and compare it with `expected_clock_sample_sha256` inside the same linearizable CAS transaction. It must also reject a sample whose lease has expired at commit time, whose validity deadline is older than the complete uncertainty interval, or whose lifetime exceeds the provisioned maximum sample age. A changed sample between read and commit returns conflict and must not advance sequence or time state. The sample ID must be unique within the clock source's replay domain.
+
+This closes the application-level gap where a provider clock reading or uncertainty could change after the snapshot was read without changing the policy/configuration generation. It does not implement or authenticate a clock source in this repository; all sample IDs and leases in tests are synthetic.
+
 ## 5. Trusted-time uncertainty
 
 The prior V3 verifier checked policy validity at one supplied instant. This provider interface carries the clock's stated uncertainty and requires the entire possible-time interval to fit within:
@@ -109,7 +119,7 @@ No provider implementation is included. In particular, there is no:
 - accepted institutional root or verified bootstrap ceremony;
 - HSM/TPM/remote monotonic store;
 - protection against privileged administrator rollback or restoration of provider storage;
-- authenticated clock or independently measured uncertainty;
+- authenticated clock sample verification, signed sample bytes, or a live freshness-lease service;
 - verified OCSP/CRL client;
 - root-rotation authority;
 - institutional delegation for Chispazo records;
@@ -133,6 +143,8 @@ All keys, receipts, envelopes, provider state, and time sources in this test mod
 - receipt tampering before state advancement;
 - clock uncertainty crossing activation, expiration, and receipt-signing order;
 - uncertainty exceeding the provisioned maximum;
+- expired, over-age, or uncertainty-crossing clock sample leases;
+- clock sample ID/time/uncertainty/lease drift between snapshot read and CAS;
 - boolean sequence values, wrong modality domain, noncanonical UTC and malformed provisioning digest;
 - provider commit digest substitution.
 
