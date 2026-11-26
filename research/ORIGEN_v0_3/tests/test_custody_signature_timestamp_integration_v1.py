@@ -25,8 +25,10 @@ from test_trust_verifier_v1 import NOW
 GEN_TIME = datetime(2026, 11, 23, 2, 50, tzinfo=timezone.utc)
 
 
-def timestamped_bundle(*, gen_time=GEN_TIME, accuracy=None, timestamp_data=None):
-    data = bundle()
+def timestamped_bundle(
+    *, gen_time=GEN_TIME, accuracy=None, timestamp_data=None, **bundle_options
+):
+    data = bundle(**bundle_options)
     target = (
         data["custody_signature_bytes"]
         if timestamp_data is None
@@ -73,6 +75,28 @@ class CustodySignatureTimestampIntegrationV1Tests(unittest.TestCase):
         self.assertLess(result.accuracy_lower_bound_utc, result.timestamp.gen_time_utc)
         self.assertGreater(result.accuracy_upper_bound_utc, result.timestamp.gen_time_utc)
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_timestamp_accuracy_interval_must_fit_signed_policy_validity(self):
+        data = timestamped_bundle(
+            accuracy={"seconds": 1},
+            policy_not_before_utc="2026-11-23T02:51:00Z",
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "RFC 3161 signature accuracy interval falls outside signed V3 policy validity interval",
+        ):
+            inspect_timestamp(data)
+
+    def test_timestamp_accuracy_interval_must_fit_custodian_key_validity(self):
+        data = timestamped_bundle(
+            accuracy={"seconds": 1},
+            custodian_key_valid_from_utc="2026-11-23T02:51:00Z",
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "RFC 3161 signature accuracy interval falls outside custodian key validity interval",
+        ):
+            inspect_timestamp(data)
 
     def test_timestamp_token_must_imprint_exact_signature_not_record_bytes(self):
         data = timestamped_bundle(
