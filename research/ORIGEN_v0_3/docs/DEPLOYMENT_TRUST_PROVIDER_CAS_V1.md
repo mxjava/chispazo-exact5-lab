@@ -355,3 +355,20 @@ and must not be treated as the same trust boundary.
 Neither path authenticates the provider implementation, physical-context
 provisioning, institutional draw authority, physical artifact origin or
 independent custody.
+
+## 13. Defensive copy of provider-owned physical context
+
+The application now copies every primitive field from the exact
+`PhysicalTrustContextV1` returned by the provider into a new validated
+instance **before** computing its canonical digest or consuming any trust
+anchor. A frozen dataclass is not a security boundary against
+`object.__setattr__`; retaining the provider's original object after hashing
+would permit a provider-side mutation to replace a log/TSA/registry pin after
+the digest check (a time-of-check/time-of-use gap).
+
+A synthetic adversarial regression computes the context digest and then mutates
+the provider-owned source object immediately afterward. The composition must
+continue using the independent copied object whose digest still matches the
+deployment snapshot. This protects the application operation from mutation of
+the returned Python object; it does **not** authenticate the provider or
+replace the provider's atomic authoritative-state comparison at CAS.
