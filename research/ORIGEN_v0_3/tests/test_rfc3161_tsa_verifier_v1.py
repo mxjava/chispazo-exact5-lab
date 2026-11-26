@@ -7,10 +7,13 @@ from datetime import datetime, timedelta, timezone
 from asn1crypto import cms, tsp, x509 as asn1_x509
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID, ObjectIdentifier
 
-from origen.rfc3161_tsa_verifier_v1 import verify_rfc3161_timestamp_token
+from origen.rfc3161_tsa_verifier_v1 import (
+    _require_public_key_strength,
+    verify_rfc3161_timestamp_token,
+)
 
 NOW = datetime(2026, 11, 25, 6, 0, tzinfo=timezone.utc)
 GEN_TIME = datetime(2026, 11, 25, 5, 55, tzinfo=timezone.utc)
@@ -31,8 +34,10 @@ def _certs(
     gen_time=GEN_TIME,
     tsa_san_names=(),
     root_subject_name=None,
+    root_key_size=2048,
+    leaf_key_size=2048,
 ):
-    root_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    root_key = rsa.generate_private_key(public_exponent=65537, key_size=root_key_size)
     root_name = root_subject_name or _name("Synthetic TSA Root")
     root_builder = (
         x509.CertificateBuilder()
@@ -74,7 +79,7 @@ def _certs(
         )
     root = root_builder.sign(root_key, hashes.SHA256())
 
-    tsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    tsa_key = rsa.generate_private_key(public_exponent=65537, key_size=leaf_key_size)
     tsa_builder = (
         x509.CertificateBuilder()
         .subject_name(_name("Synthetic TSA"))
@@ -138,6 +143,8 @@ def _token(
     tsa_san_names=(),
     root_subject_name=None,
     issuer_serial_name_override=None,
+    root_key_size=2048,
+    leaf_key_size=2048,
 ):
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
@@ -148,6 +155,8 @@ def _token(
         gen_time=gen_time,
         tsa_san_names=tsa_san_names,
         root_subject_name=root_subject_name,
+        root_key_size=root_key_size,
+        leaf_key_size=leaf_key_size,
     )
     tst_info_fields = {
         "version": tst_version,
@@ -333,6 +342,23 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         self.assertEqual(result.verification_clock_source, "CALLER_SUPPLIED_UNAUTHENTICATED")
         self.assertEqual(result.revocation_status, "NOT_CHECKED")
         self.assertEqual(result.provenance_status, "BLOCKED_PROVENANCE")
+
+    def test_weak_rsa_root_key_is_rejected(self):
+        token, root_der = _token(root_key_size=1024)
+        with self.assertRaisesRegex(ValueError, "pinned TSA root RSA public key must be at least 2048 bits"):
+            _verify(token, root_der)
+
+    def test_weak_rsa_tsa_signer_key_is_rejected(self):
+        token, root_der = _token(leaf_key_size=1024)
+        with self.assertRaisesRegex(ValueError, "TSA signer RSA public key must be at least 2048 bits"):
+            _verify(token, root_der)
+
+    def test_weak_ec_curve_is_rejected_and_p256_is_accepted(self):
+        weak_key = ec.generate_private_key(ec.SECP192R1()).public_key()
+        with self.assertRaisesRegex(ValueError, "not in the allowed P-256/P-384/P-521 set"):
+            _require_public_key_strength(weak_key, "synthetic EC")
+        strong_key = ec.generate_private_key(ec.SECP256R1()).public_key()
+        self.assertIsNone(_require_public_key_strength(strong_key, "synthetic EC"))
 
     def test_non_v1_tstinfo_version_is_rejected(self):
         token, root_der = _token(tst_version=2)
