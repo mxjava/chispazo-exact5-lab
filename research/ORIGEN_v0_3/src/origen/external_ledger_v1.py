@@ -16,10 +16,10 @@ from dataclasses import dataclass
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-_HEX64 = re.compile(r"[0-9a-f]{64}\\Z")
+_HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 _MAX_TREE_SIZE = (1 << 63) - 1
 _MAX_PROOF_NODES = 64
-_STH_DOMAIN = b"ORIGEN_EXTERNAL_LEDGER_STH_V1\\n"
+_STH_DOMAIN = b"ORIGEN_EXTERNAL_LEDGER_STH_V1\n"
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,11 +41,11 @@ def _canonical_json(value: dict) -> bytes:
 
 
 def _hash_leaf(leaf_bytes: bytes) -> bytes:
-    return hashlib.sha256(b"\\x00" + leaf_bytes).digest()
+    return hashlib.sha256(b"\x00" + leaf_bytes).digest()
 
 
 def _hash_node(left: bytes, right: bytes) -> bytes:
-    return hashlib.sha256(b"\\x01" + left + right).digest()
+    return hashlib.sha256(b"\x01" + left + right).digest()
 
 
 def _verify_inclusion_path(
