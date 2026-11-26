@@ -48,16 +48,10 @@
         "modality_basis": "first Chispazo contest row plus official schedule; modality inferred, not printed in row"
       },
       "contest_12396": {
-        "numbers": [
-          5,
-          7,
-          21,
-          24,
-          28
-        ],
+        "numbers": null,
         "scheduled_time_local": "21:00",
         "modality": "CLASSIC",
-        "modality_basis": "Official 2026-11-25 mask PDF explicitly labels Chispazo Clásico, Sorteo No. 12396; the 21:00 product schedule is corroborative"
+        "modality_basis": "The home results row/schedule identifies the 21:00 Chispazo slot as Classic but retained a placeholder at capture; winning numbers and explicit modality label are sourced separately from the official 2026-11-25 mask PDF"
       }
     },
     "official_home_index": {
