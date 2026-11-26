@@ -9,7 +9,7 @@ from origen.external_ledger_chain_v1 import verify_inclusion_chain_consistency
 
 
 def leaf(data: bytes) -> bytes:
-    return hashlib.sha256(b"\\x00" + data).digest()
+    return hashlib.sha256(b"\x00" + data).digest()
 
 
 def node(left: bytes, right: bytes) -> bytes:
