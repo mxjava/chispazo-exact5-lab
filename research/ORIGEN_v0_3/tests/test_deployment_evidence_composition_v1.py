@@ -6,12 +6,14 @@ import inspect
 import json
 import unittest
 from dataclasses import replace
+from unittest.mock import patch
 from datetime import timedelta, timezone
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from origen.deployment_evidence_composition_v1 import (
+    _read_physical_trust_context,
     _require_used_policy_keys_cover_time_window,
     inspect_custody_ledger_witness_with_deployment_provider_v1,
 )
@@ -340,6 +342,35 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.read_count, 1)
         self.assertEqual(provider.physical_context_read_count, 1)
         self.assertEqual(provider.commit_count, 0)
+
+    def test_provider_physical_context_is_copied_before_digest_and_use(self):
+        data, ledger, _, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider_owned_context = provider.physical_context
+        expected_digest = provider.snapshot.physical_trust_context_sha256
+        original_hash = physical_trust_context_sha256
+
+        def mutate_provider_object_after_hash(context):
+            digest = original_hash(context)
+            # Simulate provider-side mutation immediately after the application
+            # computes the digest but before it consumes the trust pins.
+            object.__setattr__(provider_owned_context, "log_public_key_bytes", b"z" * 32)
+            return digest
+
+        with patch(
+            "origen.deployment_evidence_composition_v1.physical_trust_context_sha256",
+            side_effect=mutate_provider_object_after_hash,
+        ):
+            copied_context, copied_digest = _read_physical_trust_context(
+                provider,
+                provider.snapshot,
+            )
+
+        self.assertIsNot(copied_context, provider_owned_context)
+        self.assertEqual(copied_digest, expected_digest)
+        self.assertEqual(original_hash(copied_context), expected_digest)
+        self.assertEqual(copied_context.log_public_key_bytes, ledger["log_public"])
+        self.assertEqual(provider_owned_context.log_public_key_bytes, b"z" * 32)
 
     def test_physical_context_digest_mismatch_fails_before_evidence_and_cas(self):
         data, ledger, batches, _ = _build_case()
