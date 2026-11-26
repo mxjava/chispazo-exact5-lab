@@ -54,3 +54,10 @@ No caller-created booleans, strings, status labels or `VerifiedTrustPolicy` obje
 - V294: frozen.
 - Canonical history `data/history/Chispazo_through_12249.csv`: unchanged; expected Git blob SHA-1 remains `2f5ff5bfbd779fe505736398e417b7211955958e`.
 - No main write, merge or production promotion.
+
+
+## Research implementation: signed external ledger inclusion (2026-11-26)
+
+`external_ledger_v1.py` adds a bounded RFC 6962-style Merkle inclusion verifier and Ed25519-signed tree-head verification. It checks the exact leaf bytes, domain-separated leaf/node hashes, inclusion path, signed root, log identity, and a caller-supplied minimum tree size. Adversarial tests cover all leaf positions in trees of sizes 1–9, non-power-of-two trees, leaf/path tampering, wrong log key/identity, rollback floor, boolean-as-integer substitution, overlong paths, and signed-head tampering.
+
+**This is a verification primitive, not an authenticated ledger deployment.** The log public-key pin, expected log identity and minimum tree size are still inputs to the function. No persistent monotonic checkpoint, independent witness, consistency-proof verification, log-operator identity, or custody is provisioned. The primitive is not wired into `verify_independent_provenance`; public provenance remains `BLOCKED_PROVENANCE`. Fixtures use generated in-process Ed25519 keys and are synthetic only.
