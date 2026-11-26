@@ -155,8 +155,15 @@ def _token(
     def _ess_cert_id(cert_hash):
         value = {"cert_hash": cert_hash}
         if include_issuer_serial:
+            issuer_names = asn1_x509.GeneralNames()
+            issuer_names.append(
+                asn1_x509.GeneralName(
+                    name="directory_name",
+                    value=cert_asn1.issuer,
+                )
+            )
             value["issuer_serial"] = {
-                "issuer": [{"directory_name": cert_asn1.issuer}],
+                "issuer": issuer_names,
                 "serial_number": cert_asn1.serial_number + (1 if wrong_issuer_serial else 0),
             }
         return value
