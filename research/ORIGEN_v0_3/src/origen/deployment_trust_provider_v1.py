@@ -206,8 +206,9 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
             snapshot.accepted_policy_envelope_sha256,
             "accepted_policy_envelope_sha256",
         )
-    if snapshot.minimum_policy_sequence < snapshot.accepted_policy_sequence:
-        raise ValueError("minimum sequence floor cannot be below the accepted sequence")
+    # The bootstrap floor and the last accepted sequence are independent
+    # monotonic constraints. The effective floor is their maximum below; the
+    # bootstrap floor may legitimately remain lower than accepted state.
 
     if type(snapshot.trusted_time_utc) is not datetime or snapshot.trusted_time_utc.tzinfo is not timezone.utc:
         raise ValueError("provider time must be one exact normalized UTC datetime")
