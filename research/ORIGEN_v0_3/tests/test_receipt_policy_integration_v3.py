@@ -45,6 +45,9 @@ def signed_v3_policy(
     policy_domain=CLASSIC_PHYSICAL_POLICY_DOMAIN,
     root_private=None,
     issuer_key_id=ISSUER_KEY_ID,
+    issued_at_utc="2026-11-22T00:00:00Z",
+    not_before_utc="2026-11-22T00:00:00Z",
+    expires_at_utc="2026-12-01T00:00:00Z",
 ):
     if root_private is None:
         root_private = Ed25519PrivateKey.generate()
@@ -55,9 +58,9 @@ def signed_v3_policy(
         "policy_sequence": POLICY_SEQUENCE,
         "issuer_id": "synthetic-policy-authority",
         "root_key_id": ROOT_KEY_ID,
-        "issued_at_utc": "2026-11-22T00:00:00Z",
-        "not_before_utc": "2026-11-22T00:00:00Z",
-        "expires_at_utc": "2026-12-01T00:00:00Z",
+        "issued_at_utc": issued_at_utc,
+        "not_before_utc": not_before_utc,
+        "expires_at_utc": expires_at_utc,
         "issuer_keys": [
             {
                 "issuer_id": ISSUER_ID,
@@ -133,6 +136,22 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertIn("RFC3161_TIMESTAMP_TOKENS_NOT_VERIFIED", result.remaining_blockers)
         self.assertIn("CUSTODY_RECEIPT_SIGNATURES_AND_CUSTODIAN_IDENTITY_NOT_VERIFIED", result.remaining_blockers)
+
+    def test_receipt_signature_cannot_precede_policy_effective_time(self):
+        policy_bytes, root_public = signed_v3_policy(
+            self.receipt_public_key,
+            issued_at_utc="2026-11-23T03:06:00Z",
+            not_before_utc="2026-11-23T03:06:00Z",
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "receipt root attestation signing time is outside the signed V3 policy validity interval",
+        ):
+            self.inspect(
+                signed_policy_envelope_bytes=policy_bytes,
+                pinned_root_public_key_bytes=root_public,
+                verification_time=NOW + timedelta(hours=1),
+            )
 
     def test_delegated_key_id_cannot_alias_pinned_policy_root_key_id(self):
         policy_bytes, root_public = signed_v3_policy(
