@@ -13,7 +13,7 @@ def leaf(data: bytes) -> bytes:
 
 
 def node(left: bytes, right: bytes) -> bytes:
-    return hashlib.sha256(b"\\x01" + left + right).digest()
+    return hashlib.sha256(b"\x01" + left + right).digest()
 
 
 def split_point(n: int) -> int:
