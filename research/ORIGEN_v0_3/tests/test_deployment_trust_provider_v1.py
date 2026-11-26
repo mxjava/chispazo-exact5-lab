@@ -409,6 +409,45 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 0)
 
+    def test_clock_key_must_be_authorized_by_root_signed_policy(self):
+        policy_bytes, root_public = signed_v3_policy(self.receipt_public_key)
+        self.provider.snapshot = replace(
+            self.snapshot,
+            root_public_key_bytes=root_public,
+        )
+        self.policy_bytes = policy_bytes
+        with self.assertRaisesRegex(
+            ValueError,
+            "does not contain exactly one clock-source key",
+        ):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_revoked_clock_key_in_root_signed_policy_is_rejected(self):
+        clock_authorization = {
+            "issuer_id": "synthetic-clock",
+            "key_id": self.clock_sample_key_id,
+            "public_key_b64": base64.b64encode(self.clock_public_key_bytes).decode("ascii"),
+            "valid_from_utc": "2026-01-01T00:00:00Z",
+            "valid_until_utc": "2027-01-01T00:00:00Z",
+            "revoked": True,
+            "authorizations": [
+                {"role": "TRUSTED_TIME_AUTHORITY", "artifact_types": ["CLOCK_SAMPLE"]}
+            ],
+        }
+        policy_bytes, root_public = signed_v3_policy(
+            self.receipt_public_key,
+            additional_issuer_keys=(clock_authorization,),
+        )
+        self.provider.snapshot = replace(
+            self.snapshot,
+            root_public_key_bytes=root_public,
+        )
+        self.policy_bytes = policy_bytes
+        with self.assertRaisesRegex(ValueError, "clock sample key is revoked"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
     def test_valid_policy_and_receipt_atomically_advance_but_remain_blocked(self):
         result = self.inspect()
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
