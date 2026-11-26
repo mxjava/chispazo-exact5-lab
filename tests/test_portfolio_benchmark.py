@@ -92,6 +92,20 @@ class PortfolioBenchmarkTests(unittest.TestCase):
         self.assertAlmostEqual(null["expected_best_hits"],
             sum(null["probability_best_hits_at_least_k"].values()), places=14)
 
+    def test_exact_uniform_null_reference_probabilities(self):
+        null = exact_uniform_portfolio_null(30)
+        tail = null["probability_best_hits_at_least_k"]
+        self.assertAlmostEqual(tail["3"], 0.5590777643899736, places=14)
+        self.assertAlmostEqual(tail["4"], 0.034814704405994656, places=14)
+        self.assertAlmostEqual(tail["5"], 30/98280, places=14)
+        self.assertAlmostEqual(null["expected_best_hits"], 2.5932521779452404, places=13)
+
+    def test_exact_uniform_null_rejects_invalid_portfolio_size(self):
+        for value in (0, -1, 98281, True, 30.0):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "lines_must_be_integer"):
+                    exact_uniform_portfolio_null(value)
+
     def test_random_null_reproducible_and_research_only(self):
         masks = [_line_mask("-".join(f"{n:02d}" for n in c))
                  for c in itertools.islice(itertools.combinations(range(1, 29), 5), 30)]
