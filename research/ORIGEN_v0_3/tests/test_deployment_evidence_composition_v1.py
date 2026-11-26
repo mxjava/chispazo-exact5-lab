@@ -183,8 +183,20 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.snapshot.trusted_time_latest_utc, NOW)
         self.assertEqual(result.deployment_trust.state_generation_before, 7)
         self.assertEqual(result.deployment_trust.state_generation_after, 8)
+        self.assertNotIn(
+            "TSA_ROOT_AND_LOG_ROOT_ARE_CALLER_SUPPLIED_NOT_OUT_OF_BAND_PROVISIONED",
+            result.remaining_blockers,
+        )
+        self.assertNotIn(
+            "VERIFICATION_CLOCK_IS_CALLER_SUPPLIED_NOT_AUTHENTICATED",
+            result.remaining_blockers,
+        )
         self.assertIn(
-            "TSA_ROOT_REMAINS_CALLER_SUPPLIED_AND_NOT_OUT_OF_BAND_PROVISIONED",
+            "PHYSICAL_TRUST_CONTEXT_IS_PROVIDER_OWNED_BUT_NOT_INSTITUTIONALLY_AUTHENTICATED",
+            result.remaining_blockers,
+        )
+        self.assertIn(
+            "TSA_CERTIFICATE_CHAINS_AND_CURRENT_REVOCATION_NOT_INDEPENDENTLY_VERIFIED",
             result.remaining_blockers,
         )
 
