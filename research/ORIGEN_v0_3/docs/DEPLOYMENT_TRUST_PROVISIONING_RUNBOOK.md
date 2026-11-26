@@ -135,9 +135,12 @@ Keep the official modalities separate:
 - **Clásico** is the 21:00 Mexico City slot and is the only modality eligible
   for the preregistered prospective EDGE_SUPPORTED sample.
 - The V2 structural manifest requires the nightly MJF transaction file and
-  printed signature form for Clásico only. Do not demand or fabricate those
-  nightly artifacts for De las Tres; preserve its daytime participation /
-  cancellation signature-reconciliation records instead.
+  printed signature form in the 21:00 Clásico packet only. They are daily-scope
+  records (not contest-only files): bind them to the local date with
+  `scope=DAILY` and `contest_id=null`, and preserve custody at or after the
+  21:00 automatic close. Do not demand or fabricate them in the 15:00 De las
+  Tres packet; preserve its daytime participation/cancellation signature-
+  reconciliation records instead.
 - Never infer modality from contest-number order alone. Bind each artifact to
   the exact contest ID and corroborate the modality from the official schedule
   and draw-specific official record.
