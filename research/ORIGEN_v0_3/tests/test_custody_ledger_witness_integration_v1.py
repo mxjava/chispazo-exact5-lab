@@ -5,6 +5,7 @@ import copy
 import hashlib
 import json
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timezone
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -18,7 +19,10 @@ from origen.custody_receipt_verifier_v3 import (
 )
 from origen.physical_evidence_verifier_v2 import CLASSIC_PHYSICAL_POLICY_DOMAIN
 from origen.physical_evidence_verifier_v3 import canonical_physical_manifest_signature_payload_v2
-from origen.independent_trust_adapter import ProvenanceStatus
+from origen.independent_trust_adapter import (
+    ProvenanceStatus,
+    verify_independent_provenance,
+)
 from test_custody_receipt_verifier_v3 import (
     ROOT_KEY_ID,
     POLICY_SEQUENCE,
@@ -485,6 +489,7 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
             result.ledger.inclusion.manifest_commitment_sha256,
             manifest_commitment(ledger["document"]),
         )
+        self.assertIs(result.independent_boundary_status, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
 
     def test_policy_timestamp_token_must_imprint_exact_signed_v3_envelope(self):
@@ -645,3 +650,51 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
             datetime(2026, 11, 24, 19, 30, tzinfo=timezone.utc),
         )
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+
+    def test_independent_boundary_reverifies_exact_receipt_and_policy_after_evidence_chain(self):
+        data, ledger, batches, _ = _build_case()
+        with patch(
+            "origen.custody_ledger_witness_integration_v1.verify_independent_provenance",
+            wraps=verify_independent_provenance,
+        ) as boundary:
+            result = _verify(data, ledger, batches)
+
+        boundary.assert_called_once()
+        args, kwargs = boundary.call_args
+        self.assertIs(args[0], data["original_receipt_bytes"])
+        self.assertIs(kwargs["signed_policy_envelope_bytes"], data["signed_policy_envelope_bytes"])
+        self.assertIs(kwargs["pinned_root_public_key_bytes"], data["pinned_root_public_key_bytes"])
+        self.assertEqual(kwargs["expected_root_key_id"], data["expected_root_key_id"])
+        self.assertEqual(kwargs["minimum_policy_sequence"], data["minimum_policy_sequence"])
+        self.assertEqual(
+            kwargs["verification_time"],
+            datetime(2026, 11, 24, 19, 30, tzinfo=timezone.utc),
+        )
+        self.assertIs(result.independent_boundary_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_non_blocked_or_stringified_independent_boundary_status_fails_closed(self):
+        data, ledger, batches, _ = _build_case()
+        with patch(
+            "origen.custody_ledger_witness_integration_v1.verify_independent_provenance",
+            return_value="BLOCKED_PROVENANCE",
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "independent provenance boundary returned an unsupported non-blocked status",
+            ):
+                _verify(data, ledger, batches)
+
+    def test_independent_boundary_is_not_reached_when_nested_signature_validation_fails(self):
+        data, ledger, batches, _ = _build_case()
+        altered = dict(data["signature_bytes_by_sha256"])
+        digest = next(iter(altered))
+        altered[digest] = altered[digest][:-1] + bytes([altered[digest][-1] ^ 1])
+        with patch(
+            "origen.custody_ledger_witness_integration_v1.verify_independent_provenance",
+            wraps=verify_independent_provenance,
+        ) as boundary:
+            with self.assertRaisesRegex(ValueError, "signature SHA-256"):
+                _verify(data, ledger, batches, signature_bytes_by_sha256=altered)
+            boundary.assert_not_called()
