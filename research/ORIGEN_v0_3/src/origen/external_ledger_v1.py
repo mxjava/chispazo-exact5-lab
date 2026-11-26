@@ -19,6 +19,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 _HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 _MAX_TREE_SIZE = (1 << 63) - 1
 _MAX_PROOF_NODES = 64
+_MAX_LEAF_BYTES = 1_048_576
+_MAX_STH_BYTES = 16_384
 _STH_DOMAIN = b"ORIGEN_EXTERNAL_LEDGER_STH_V1\n"
 
 
@@ -31,6 +33,15 @@ class VerifiedLedgerInclusion:
     leaf_index: int
     root_hash: str
     signed_tree_head_sha256: str
+
+
+def _unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("signed tree head contains duplicate JSON keys")
+        result[key] = value
+    return result
 
 
 def _canonical_json(value: dict) -> bytes:
@@ -101,8 +112,8 @@ def verify_external_ledger_inclusion(
     size from an independent deployment trust store. Passing caller-controlled
     values is suitable only for isolated tests and MUST NOT authorize provenance.
     """
-    if type(leaf_bytes) is not bytes or not leaf_bytes:
-        raise ValueError("leaf_bytes must be non-empty exact bytes")
+    if type(leaf_bytes) is not bytes or not leaf_bytes or len(leaf_bytes) > _MAX_LEAF_BYTES:
+        raise ValueError("leaf_bytes must be non-empty exact bytes within the size limit")
     if type(expected_log_id) is not str or not expected_log_id or len(expected_log_id) > 128:
         raise ValueError("expected_log_id must be a non-empty bounded exact string")
     if type(log_id) is not str or not log_id or len(log_id) > 128 or log_id != expected_log_id:
@@ -115,13 +126,15 @@ def verify_external_ledger_inclusion(
         raise ValueError("ledger tree size is below externally pinned minimum")
     if type(pinned_log_public_key_bytes) is not bytes or len(pinned_log_public_key_bytes) != 32:
         raise ValueError("pinned log public key must be exactly 32 immutable bytes")
-    if type(signed_tree_head) is not bytes or not signed_tree_head:
-        raise ValueError("signed_tree_head must be non-empty exact bytes")
+    if type(signed_tree_head) is not bytes or not signed_tree_head or len(signed_tree_head) > _MAX_STH_BYTES:
+        raise ValueError("signed_tree_head must be non-empty exact bytes within the size limit")
     if type(audit_path_hex) is not tuple or len(audit_path_hex) > _MAX_PROOF_NODES:
         raise ValueError("audit_path_hex must be a bounded exact tuple")
 
     try:
-        document = json.loads(signed_tree_head.decode("utf-8"))
+        document = json.loads(
+            signed_tree_head.decode("utf-8"), object_pairs_hook=_unique_object
+        )
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ValueError("signed tree head is not valid UTF-8 JSON") from exc
     if type(document) is not dict or set(document) != {
