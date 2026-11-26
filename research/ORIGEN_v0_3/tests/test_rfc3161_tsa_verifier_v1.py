@@ -355,6 +355,12 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
                 "192.0.2.11",
             ),
             (
+                "ip_address",
+                "2001:db8::10",
+                x509.IPAddress(ipaddress.ip_address("2001:db8::10")),
+                "2001:db8::11",
+            ),
+            (
                 "registered_id",
                 "1.3.6.1.4.1.55555.1",
                 x509.RegisteredID(ObjectIdentifier("1.3.6.1.4.1.55555.1")),
