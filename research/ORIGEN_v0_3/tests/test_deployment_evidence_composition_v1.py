@@ -28,7 +28,7 @@ from test_custody_receipt_verifier_v3 import POLICY_SEQUENCE, ROOT_KEY_ID
 from test_deployment_trust_provider_v1 import SyntheticTrustProvider, signed_clock_sample
 from test_transparency_checkpoint_consistency_v1 import NOW
 from test_transparency_ledger_verifier_v1 import (
-    LEDGER_LOG_ID,
+    LOG_ID as LEDGER_LOG_ID,
     LOG_KEY_ID,
 )
 from test_checkpoint_witness_quorum_v1 import (
