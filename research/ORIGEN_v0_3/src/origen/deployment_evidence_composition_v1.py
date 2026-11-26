@@ -66,6 +66,23 @@ PROVIDER_COMPOSITION_BLOCKERS = (
     "INDEPENDENT_CUSTODY_AND_PROSPECTIVE_EDGE_CRITERIA_NOT_MET",
 )
 
+# The lower-level verifier is intentionally caller-parameterized. In this
+# provider composition those values are supplied from the exact provider
+# snapshot/context, so its caller-input blockers are no longer accurate.
+# Their underlying institutional-authentication limitations remain represented
+# by PROVIDER_COMPOSITION_BLOCKERS and the retained revocation/witness blockers.
+_PROVIDER_SUPERSEDED_BLOCKERS = frozenset({
+    "TSA_ROOT_AND_LOG_ROOT_ARE_CALLER_SUPPLIED_NOT_OUT_OF_BAND_PROVISIONED",
+    "WITNESS_REGISTRY_ROOT_IS_CALLER_SUPPLIED_NOT_OUT_OF_BAND_PROVISIONED",
+    "ANTI_ROLLBACK_FLOORS_ARE_NOT_BACKED_BY_EXTERNAL_MONOTONIC_STATE",
+    "VERIFICATION_CLOCK_IS_CALLER_SUPPLIED_NOT_AUTHENTICATED",
+    "INDEPENDENT_BOUNDARY_RECHECK_STILL_USES_CALLER_SUPPLIED_ROOT_AND_TIME",
+    "POLICY_ENVELOPE_TSA_ROOT_NOT_OUT_OF_BAND_PROVISIONED",
+    "POLICY_ENVELOPE_TIMESTAMP_POLICY_OID_NOT_AUTHORIZED_BY_AUTHENTICATED_DEPLOYMENT_POLICY",
+    "POLICY_ENVELOPE_TIMESTAMP_EXPECTED_POLICY_OID_IS_CALLER_SUPPLIED",
+    "POLICY_ENVELOPE_TIMESTAMP_CLOCK_NOT_AUTHENTICATED",
+})
+
 
 @dataclass(frozen=True, slots=True)
 class DeploymentEvidenceInspectionV1:
@@ -397,7 +414,10 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         raise RuntimeError("deployment trust commit is not bound to the exact verified snapshot")
 
     blockers = tuple(dict.fromkeys(
-        tuple(evidence.remaining_blockers)
+        tuple(
+            blocker for blocker in evidence.remaining_blockers
+            if blocker not in _PROVIDER_SUPERSEDED_BLOCKERS
+        )
         + PROVIDER_COMPOSITION_BLOCKERS
     ))
     return DeploymentEvidenceInspectionV1(
