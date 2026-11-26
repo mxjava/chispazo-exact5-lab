@@ -614,6 +614,13 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         self.assertEqual(root_asn1.native, mismatched_asn1.native)
         self.assertNotEqual(root_name.public_bytes(), different_rdn_layout.public_bytes())
 
+        matching_token, matching_root_der = _token(
+            include_issuer_serial=True,
+            root_subject_name=root_name,
+            issuer_serial_name_override=root_name,
+        )
+        _verify(matching_token, matching_root_der)
+
         token, root_der = _token(
             include_issuer_serial=True,
             root_subject_name=root_name,
