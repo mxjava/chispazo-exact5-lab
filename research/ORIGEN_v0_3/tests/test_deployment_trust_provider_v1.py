@@ -298,6 +298,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
     def test_uncertainty_interval_must_prove_receipt_precedes_verification(self):
         self.provider.snapshot = replace(
             self.snapshot,
+            accepted_time_latest_utc=NOW - timedelta(hours=2),
             clock_uncertainty_ms=60 * 60 * 1000,
             maximum_clock_uncertainty_ms=60 * 60 * 1000,
         )
@@ -368,6 +369,25 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         with self.assertRaisesRegex(TrustStateRejected, "regressed behind the previously accepted upper bound"):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 0)
+
+    def test_provider_cas_rejects_clock_floor_race(self):
+        original = self.provider.compare_and_advance
+
+        def regressed_floor(**kwargs):
+            self.provider.snapshot = replace(
+                self.provider.snapshot,
+                accepted_time_latest_utc=NOW + timedelta(milliseconds=1),
+            )
+            return original(**kwargs)
+
+        self.provider.compare_and_advance = regressed_floor
+        with self.assertRaisesRegex(TrustStateRejected, "compare-and-advance"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 1)
+        self.assertEqual(
+            self.provider.snapshot.accepted_policy_sequence,
+            POLICY_SEQUENCE - 1,
+        )
 
     def test_snapshot_rejects_missing_accepted_time_for_nonempty_sequence(self):
         self.provider.snapshot = replace(
