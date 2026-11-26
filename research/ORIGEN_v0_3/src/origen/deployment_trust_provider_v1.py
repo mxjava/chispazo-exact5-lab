@@ -66,6 +66,7 @@ class DeploymentTrustSnapshot:
     state_generation: int
     accepted_policy_sequence: int
     accepted_policy_envelope_sha256: str | None
+    accepted_time_latest_utc: datetime | None
     trusted_time_utc: datetime
     clock_uncertainty_ms: int
     maximum_clock_uncertainty_ms: int
@@ -82,6 +83,7 @@ class DeploymentTrustCommit:
     state_generation: int
     policy_sequence: int
     policy_envelope_sha256: str
+    accepted_time_latest_utc: datetime
 
 
 class DeploymentTrustProvider(Protocol):
@@ -92,7 +94,11 @@ class DeploymentTrustProvider(Protocol):
 
     compare_and_advance must be linearizable. It must compare the exact state
     generation observed by read_snapshot and atomically enforce monotonic
-    sequence/digest semantics. It must never silently reset or restore state.
+    sequence/digest/time semantics. For a higher sequence, candidate earliest
+    time (accepted_at_utc - clock_uncertainty) must not precede the stored
+    accepted_time_latest_utc; the provider must persist candidate latest time
+    (accepted_at_utc + clock_uncertainty) with the sequence and digest. It must
+    never silently reset or restore any of these values.
     """
 
     def read_snapshot(self, *, policy_domain: str) -> DeploymentTrustSnapshot:
@@ -169,6 +175,7 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         state_generation=value.state_generation,
         accepted_policy_sequence=value.accepted_policy_sequence,
         accepted_policy_envelope_sha256=value.accepted_policy_envelope_sha256,
+        accepted_time_latest_utc=value.accepted_time_latest_utc,
         trusted_time_utc=value.trusted_time_utc,
         clock_uncertainty_ms=value.clock_uncertainty_ms,
         maximum_clock_uncertainty_ms=value.maximum_clock_uncertainty_ms,
@@ -199,13 +206,21 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
             raise ValueError(f"{field} must be an exact integer in the permitted range")
 
     if snapshot.accepted_policy_sequence == 0:
-        if snapshot.accepted_policy_envelope_sha256 is not None:
-            raise ValueError("empty accepted sequence must not have an envelope digest")
+        if (
+            snapshot.accepted_policy_envelope_sha256 is not None
+            or snapshot.accepted_time_latest_utc is not None
+        ):
+            raise ValueError("empty accepted sequence must not have an envelope digest or accepted time")
     else:
         _require_sha256(
             snapshot.accepted_policy_envelope_sha256,
             "accepted_policy_envelope_sha256",
         )
+        if (
+            type(snapshot.accepted_time_latest_utc) is not datetime
+            or snapshot.accepted_time_latest_utc.tzinfo is not timezone.utc
+        ):
+            raise ValueError("non-empty accepted sequence requires an exact normalized UTC accepted-time upper bound")
     # The bootstrap floor and the last accepted sequence are independent
     # monotonic constraints. The effective floor is their maximum below; the
     # bootstrap floor may legitimately remain lower than accepted state.
@@ -228,11 +243,17 @@ def _commit_copy(value: object) -> DeploymentTrustCommit:
     if type(value.policy_sequence) is not int or not 1 <= value.policy_sequence <= MAX_POLICY_SEQUENCE:
         raise ValueError("provider commit policy_sequence is invalid")
     _require_sha256(value.policy_envelope_sha256, "provider commit policy_envelope_sha256")
+    if (
+        type(value.accepted_time_latest_utc) is not datetime
+        or value.accepted_time_latest_utc.tzinfo is not timezone.utc
+    ):
+        raise ValueError("provider commit accepted_time_latest_utc must be exact normalized UTC")
     return DeploymentTrustCommit(
         outcome=value.outcome,
         state_generation=value.state_generation,
         policy_sequence=value.policy_sequence,
         policy_envelope_sha256=value.policy_envelope_sha256,
+        accepted_time_latest_utc=value.accepted_time_latest_utc,
     )
 
 
@@ -346,6 +367,13 @@ def inspect_receipt_with_deployment_trust_provider(
     if snapshot.accepted_policy_sequence == verified_policy.policy_sequence:
         if snapshot.accepted_policy_envelope_sha256 != policy_digest:
             raise TrustStateRejected("same policy sequence is already bound to a different envelope digest")
+    elif (
+        snapshot.accepted_time_latest_utc is not None
+        and earliest < snapshot.accepted_time_latest_utc
+    ):
+        raise TrustStateRejected(
+            "trusted-time interval regressed behind the previously accepted upper bound"
+        )
 
     verified_receipt: CryptographicallyVerifiedReceipt = verify_receipt_attestation(
         original_receipt_bytes,
@@ -396,14 +424,18 @@ def inspect_receipt_with_deployment_trust_provider(
         if (
             commit.outcome is not TrustStateOutcome.IDEMPOTENT
             or commit.state_generation != snapshot.state_generation
+            or commit.accepted_time_latest_utc != snapshot.accepted_time_latest_utc
         ):
             raise TrustStateRejected("same-sequence policy was not accepted as an idempotent read")
     else:
         if (
             commit.outcome is not TrustStateOutcome.ADVANCED
             or commit.state_generation != snapshot.state_generation + 1
+            or commit.accepted_time_latest_utc != latest
         ):
-            raise TrustStateRejected("policy sequence compare-and-advance did not commit exactly one generation")
+            raise TrustStateRejected(
+                "policy sequence compare-and-advance did not commit exactly one generation and the candidate clock upper bound"
+            )
 
     return DeploymentTrustInspection(
         receipt_sha256=hashlib.sha256(original_receipt_bytes).hexdigest(),
