@@ -1,11 +1,15 @@
 from __future__ import annotations
-import base64, copy, json
+import base64, copy, hashlib, json
 from datetime import datetime, timezone
 import unittest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from origen.independent_trust_adapter import ProvenanceStatus
-from origen.physical_evidence_verifier_v3 import ROLE_STATUS, verify_physical_evidence_signatures_v3
+from origen.physical_evidence_verifier_v3 import (
+    ROLE_STATUS,
+    canonical_physical_manifest_signature_payload_v2,
+    verify_physical_evidence_signatures_v3,
+)
 from origen.trust_policy_envelope_v3 import SCHEMA_VERSION_V3, verify_signed_trust_policy_v3
 from test_physical_evidence_manifest_v1 import encode
 from test_physical_evidence_verifier_v2 import (
@@ -13,7 +17,24 @@ from test_physical_evidence_verifier_v2 import (
  _raw_public_key,
 )
 
+
+def _resign_manifest_v3(data):
+ document=copy.deepcopy(data["document"])
+ payload=canonical_physical_manifest_signature_payload_v2(encode(document))
+ signature_bytes_by_sha256={}
+ for claim in document["signatures"]:
+  identity=(claim["subject_id"],claim["key_id"])
+  signature=data["private_by_identity"][identity].sign(payload)
+  digest=hashlib.sha256(signature).hexdigest()
+  claim["signature_sha256"]=digest
+  signature_bytes_by_sha256[digest]=signature
+ data["document"]=document
+ data["raw_manifest_bytes"]=encode(document)
+ data["signature_bytes_by_sha256"]=signature_bytes_by_sha256
+ return data
+
 def signed_v3_policy(data, *, wrong_role=False, wrong_artifact=False, duplicate_role=False, root_private=None):
+ _resign_manifest_v3(data)
  doc=data["document"]
  artifact_types={a["sha256"]:a["artifact_type"] for a in doc["artifacts"]}
  grouped={}
@@ -67,6 +88,16 @@ def inspect(data, policy, root_public):
   verification_time=NOW)
 
 class PhysicalEvidenceSignatureVerifierV3Tests(unittest.TestCase):
+ def test_v3_signature_payload_breaks_ledger_proof_cycle_but_keeps_other_anchor_claims_signed(self):
+  data=_resign_manifest_v3(v2_fixture())
+  original=canonical_physical_manifest_signature_payload_v2(data["raw_manifest_bytes"])
+  changed_proof=copy.deepcopy(data["document"])
+  changed_proof["ledger_anchor"]["inclusion_proof_sha256"]="f"*64
+  self.assertEqual(original,canonical_physical_manifest_signature_payload_v2(encode(changed_proof)))
+  changed_entry=copy.deepcopy(data["document"])
+  changed_entry["ledger_anchor"]["entry_id"]="different-entry"
+  self.assertNotEqual(original,canonical_physical_manifest_signature_payload_v2(encode(changed_entry)))
+
  def test_signed_key_role_artifact_matrix_verifies_but_provenance_stays_blocked(self):
   data=v2_fixture(); policy,root,_=signed_v3_policy(data)
   result=inspect(data,policy,root)

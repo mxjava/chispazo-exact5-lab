@@ -1,5 +1,6 @@
 """V3 physical verifier: signed key-to-role-to-artifact authorization."""
 from __future__ import annotations
+import json
 from datetime import datetime
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -9,9 +10,43 @@ from origen.trust_verifier_v1 import TrustedIssuerKey
 from origen.physical_evidence_verifier_v2 import (
  CLASSIC_PHYSICAL_POLICY_DOMAIN, PHYSICAL_SIGNATURE_REMAINING_BLOCKERS,
  NestedSignatureVerification, PhysicalEvidenceSignatureInspection,
- _utc_instant, _exact_bytes_mapping, canonical_physical_manifest_signature_payload,
+ _utc_instant, _exact_bytes_mapping,
 )
 from origen.independent_trust_adapter import ProvenanceStatus
+
+
+PHYSICAL_SIGNATURE_PAYLOAD_DOMAIN_V2 = "origen.physical-evidence-signature.v2"
+
+
+def canonical_physical_manifest_signature_payload_v2(raw_manifest_bytes: bytes) -> bytes:
+    """Build the non-circular V3 nested-signature payload.
+
+    The exact ledger inclusion-proof digest is intentionally excluded because
+    the proof is over a ledger entry whose manifest commitment includes the
+    nested signature digests. Those signatures would otherwise cover a proof
+    digest that depends on the signatures themselves. All other manifest
+    claims, including ledger identity and checkpoint/head declarations, remain
+    signed. The exact proof bytes and checkpoint are verified separately by
+    the ledger verifier.
+    """
+    if type(raw_manifest_bytes) is not bytes:
+        raise TypeError("raw_manifest_bytes must be exact bytes")
+    parse_unverified_physical_manifest(raw_manifest_bytes)
+    document = json.loads(raw_manifest_bytes.decode("utf-8"))
+    for signature_claim in document["signatures"]:
+        signature_claim.pop("signature_sha256")
+    document["ledger_anchor"].pop("inclusion_proof_sha256")
+    return json.dumps(
+        {
+            "domain": PHYSICAL_SIGNATURE_PAYLOAD_DOMAIN_V2,
+            "manifest_claims": document,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("ascii")
+
 
 ROLE_STATUS="SIGNED_POLICY_MATCH_ONLY_NOT_INSTITUTIONALLY_AUTHENTICATED"
 
@@ -67,7 +102,7 @@ def verify_physical_evidence_signatures_v3(
   role_map=authorizations.setdefault(identity,{})
   if item[2] in role_map: raise ValueError("duplicate key/role authorization")
   role_map[item[2]]=frozenset(item[3])
- payload=canonical_physical_manifest_signature_payload(raw_manifest_bytes)
+ payload=canonical_physical_manifest_signature_payload_v2(raw_manifest_bytes)
  results=[]
  for index,claim in enumerate(manifest.signatures):
   if claim.algorithm!="ed25519": raise ValueError(f"signatures[{index}] uses unsupported algorithm")
