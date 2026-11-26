@@ -43,13 +43,20 @@ from test_checkpoint_witness_quorum_v1 import (
     ROOT_PRIVATE,
 )
 from test_transparency_checkpoint_consistency_v1 import public_bytes
+from origen.timestamp_nonce_challenge_v1 import (
+    TimestampNonceChallengeV1,
+    timestamp_nonce_challenge_sha256,
+)
 
 
 class SyntheticPhysicalTrustProvider(SyntheticTrustProvider):
-    def __init__(self, snapshot, context):
+    def __init__(self, snapshot, context, nonce_challenge):
         super().__init__(snapshot)
         self.physical_context = context
+        self.nonce_challenge = nonce_challenge
+        self.pending_timestamp_nonce_challenge = nonce_challenge
         self.physical_context_read_count = 0
+        self.timestamp_nonce_challenge_read_count = 0
         self.context_drift_before_commit = False
 
     def read_physical_trust_context(self, *, policy_domain):
@@ -57,6 +64,26 @@ class SyntheticPhysicalTrustProvider(SyntheticTrustProvider):
         if policy_domain != "origen.chispazo.classic.physical":
             raise ValueError("wrong physical trust policy domain")
         return self.physical_context
+
+    def read_timestamp_nonce_challenge(
+        self,
+        *,
+        policy_domain,
+        expected_state_generation,
+        expected_root_generation,
+        expected_physical_trust_context_generation,
+        expected_physical_trust_context_sha256,
+    ):
+        self.timestamp_nonce_challenge_read_count += 1
+        if (
+            policy_domain != CLASSIC_POLICY_DOMAIN
+            or expected_state_generation != self.snapshot.state_generation
+            or expected_root_generation != self.snapshot.root_generation
+            or expected_physical_trust_context_generation != self.snapshot.physical_trust_context_generation
+            or expected_physical_trust_context_sha256 != self.snapshot.physical_trust_context_sha256
+        ):
+            raise ValueError("nonce challenge request is not bound to current provider state")
+        return self.nonce_challenge
 
     def compare_and_advance(self, **kwargs):
         if self.context_drift_before_commit:
@@ -127,7 +154,18 @@ def _provider_for(data, ledger):
         physical_trust_context_generation=context.context_generation,
         physical_trust_context_sha256=context_digest,
     )
-    return SyntheticPhysicalTrustProvider(snapshot, context)
+    nonce_challenge = TimestampNonceChallengeV1(
+        challenge_id="synthetic-timestamp-challenge-0001",
+        policy_timestamp_nonce=data["policy_timestamp_expected_nonce"],
+        custody_timestamp_nonce=data["expected_nonce"],
+        state_generation=snapshot.state_generation,
+        root_generation=snapshot.root_generation,
+        physical_trust_context_generation=context.context_generation,
+        physical_trust_context_sha256=context_digest,
+        issued_at_utc=NOW - timedelta(seconds=1),
+        expires_at_utc=NOW + timedelta(seconds=30),
+    )
+    return SyntheticPhysicalTrustProvider(snapshot, context, nonce_challenge)
 
 
 def _arguments(data, ledger, batches):
@@ -140,8 +178,6 @@ def _arguments(data, ledger, batches):
         "custodian_key_id": data["custodian_key_id"],
         "timestamp_token_der": data["timestamp_token_der"],
         "policy_timestamp_token_der": data["policy_timestamp_token_der"],
-        "policy_timestamp_expected_nonce": data["policy_timestamp_expected_nonce"],
-        "expected_nonce": data["expected_nonce"],
         "raw_manifest_bytes": ledger["manifest_bytes"],
         "artifact_bytes_by_sha256": data["artifact_bytes_by_sha256"],
         "signature_bytes_by_sha256": data["signature_bytes_by_sha256"],
@@ -180,6 +216,20 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(result.trusted_time_latest_utc, NOW)
         self.assertEqual(provider.read_count, 1)
         self.assertEqual(provider.physical_context_read_count, 1)
+        self.assertEqual(provider.timestamp_nonce_challenge_read_count, 1)
+        self.assertEqual(result.timestamp_nonce_challenge_id, "synthetic-timestamp-challenge-0001")
+        self.assertEqual(
+            result.timestamp_nonce_challenge_sha256,
+            timestamp_nonce_challenge_sha256(provider.nonce_challenge),
+        )
+        self.assertEqual(
+            provider.last_commit_arguments["timestamp_nonce_challenge_id"],
+            result.timestamp_nonce_challenge_id,
+        )
+        self.assertEqual(
+            provider.last_commit_arguments["timestamp_nonce_challenge_sha256"],
+            result.timestamp_nonce_challenge_sha256,
+        )
         self.assertEqual(provider.commit_count, 1)
         self.assertEqual(provider.snapshot.accepted_policy_sequence, data["minimum_policy_sequence"])
         self.assertEqual(provider.snapshot.trusted_time_latest_utc, NOW)
@@ -502,3 +552,80 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertNotIn("expected_root_key_id", parameters)
         self.assertNotIn("minimum_policy_sequence", parameters)
         self.assertNotIn("verification_time", parameters)
+        self.assertNotIn("policy_timestamp_expected_nonce", parameters)
+        self.assertNotIn("expected_nonce", parameters)
+
+    def test_missing_provider_nonce_challenge_fails_before_evidence_and_cas(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.read_timestamp_nonce_challenge = None
+
+        from origen.deployment_trust_provider_v1 import TrustProviderUnavailable
+        with self.assertRaisesRegex(TrustProviderUnavailable, "lacks read_timestamp_nonce_challenge"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.timestamp_nonce_challenge_read_count, 0)
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_nonce_challenge_must_bind_exact_snapshot_generation_and_context(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.nonce_challenge = replace(
+            provider.nonce_challenge,
+            state_generation=provider.snapshot.state_generation + 1,
+        )
+        provider.pending_timestamp_nonce_challenge = provider.nonce_challenge
+
+        with self.assertRaisesRegex(TrustStateRejected, "not bound to the exact provider snapshot"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.timestamp_nonce_challenge_read_count, 1)
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_expired_nonce_challenge_fails_before_evidence_and_cas(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.nonce_challenge = replace(
+            provider.nonce_challenge,
+            expires_at_utc=NOW,
+        )
+        provider.pending_timestamp_nonce_challenge = provider.nonce_challenge
+
+        with self.assertRaisesRegex(TrustStateRejected, "outside the complete trusted-time interval"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_provider_cas_rejects_reused_timestamp_nonce_values_under_a_fresh_challenge_id(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        _inspect(data, ledger, batches, provider)
+        generation_after_first = provider.snapshot.state_generation
+        accepted_sequence_after_first = provider.snapshot.accepted_policy_sequence
+
+        provider.nonce_challenge = TimestampNonceChallengeV1(
+            challenge_id="synthetic-timestamp-challenge-0002",
+            policy_timestamp_nonce=data["policy_timestamp_expected_nonce"],
+            custody_timestamp_nonce=data["expected_nonce"],
+            state_generation=provider.snapshot.state_generation,
+            root_generation=provider.snapshot.root_generation,
+            physical_trust_context_generation=provider.snapshot.physical_trust_context_generation,
+            physical_trust_context_sha256=provider.snapshot.physical_trust_context_sha256,
+            issued_at_utc=NOW - timedelta(seconds=1),
+            expires_at_utc=NOW + timedelta(seconds=30),
+        )
+        provider.pending_timestamp_nonce_challenge = provider.nonce_challenge
+
+        with self.assertRaises(TrustStateRejected):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.commit_count, 2)
+        self.assertEqual(provider.snapshot.state_generation, generation_after_first)
+        self.assertEqual(provider.snapshot.accepted_policy_sequence, accepted_sequence_after_first)
+        self.assertEqual(len(provider.consumed_timestamp_nonce_values), 2)
+        self.assertEqual(len(provider.consumed_timestamp_nonce_challenge_ids), 1)
+        self.assertNotIn("policy_timestamp_expected_nonce", parameters)
+        self.assertNotIn("expected_nonce", parameters)
