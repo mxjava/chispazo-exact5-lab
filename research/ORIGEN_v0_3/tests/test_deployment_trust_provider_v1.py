@@ -15,6 +15,7 @@ from origen.deployment_trust_provider_v1 import (
     TrustProviderUnavailable,
     TrustStateOutcome,
     TrustStateRejected,
+    _trust_configuration_sha256,
     inspect_receipt_with_deployment_trust_provider,
 )
 from origen.independent_trust_adapter import ProvenanceStatus
@@ -50,6 +51,7 @@ class SyntheticTrustProvider:
         self,
         *,
         expected_state_generation,
+        expected_trust_configuration_sha256,
         policy_domain,
         root_key_id,
         root_generation,
@@ -61,6 +63,7 @@ class SyntheticTrustProvider:
         self.commit_count += 1
         self.last_commit_arguments = {
             "expected_state_generation": expected_state_generation,
+            "expected_trust_configuration_sha256": expected_trust_configuration_sha256,
             "policy_domain": policy_domain,
             "root_key_id": root_key_id,
             "root_generation": root_generation,
@@ -77,6 +80,14 @@ class SyntheticTrustProvider:
                 state_generation=self.snapshot.state_generation + 1,
             )
         if expected_state_generation != self.snapshot.state_generation:
+            return DeploymentTrustCommit(
+                TrustStateOutcome.CONFLICT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
+        if expected_trust_configuration_sha256 != _trust_configuration_sha256(self.snapshot):
             return DeploymentTrustCommit(
                 TrustStateOutcome.CONFLICT,
                 self.snapshot.state_generation,
@@ -222,6 +233,12 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             result.policy_envelope_sha256,
         )
         self.assertNotIn("AUTHENTICATED", ProvenanceStatus.__members__)
+        expected_configuration = _trust_configuration_sha256(self.snapshot)
+        self.assertEqual(
+            self.provider.last_commit_arguments["expected_trust_configuration_sha256"],
+            expected_configuration,
+        )
+        self.assertEqual(result.trust_configuration_sha256, expected_configuration)
 
     def test_same_sequence_and_same_exact_digest_is_idempotent(self):
         import hashlib
@@ -495,6 +512,38 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.provider.compare_and_advance = wrong_time
         with self.assertRaisesRegex(TrustStateRejected, "candidate clock upper bound"):
             self.inspect()
+
+    def test_provider_rejects_trust_configuration_drift_without_generation_change(self):
+        original_read = self.provider.read_snapshot
+        mutations = (
+            ("root_public_key_bytes", bytes([153]) * 32),
+            ("provisioning_record_sha256", "c" * 64),
+            ("clock_source_id", "replacement-clock"),
+            ("state_backend_id", "replacement-backend"),
+        )
+        for field, replacement_value in mutations:
+            with self.subTest(field=field):
+                self.provider.snapshot = self.snapshot
+                def read_then_mutate(*, policy_domain):
+                    observed = original_read(policy_domain=policy_domain)
+                    self.provider.snapshot = replace(
+                        self.provider.snapshot,
+                        **{field: replacement_value},
+                    )
+                    return observed
+                self.provider.read_snapshot = read_then_mutate
+                with self.assertRaisesRegex(
+                    TrustStateRejected,
+                    "compare-and-advance did not commit exactly one generation",
+                ):
+                    self.inspect()
+                self.assertEqual(
+                    self.provider.snapshot.accepted_policy_sequence,
+                    POLICY_SEQUENCE - 1,
+                )
+                self.assertEqual(self.provider.commit_count, 1)
+                self.provider.read_snapshot = original_read
+                self.provider.commit_count = 0
 
     def test_provider_commit_must_bind_exact_policy_digest(self):
         original = self.provider.compare_and_advance
