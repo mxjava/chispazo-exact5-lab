@@ -365,16 +365,19 @@ def inspect_receipt_with_deployment_trust_provider(
     policy_digest = hashlib.sha256(signed_policy_envelope_bytes).hexdigest()
     if verified_policy.envelope_sha256 != policy_digest:
         raise ValueError("verified policy does not bind the exact envelope bytes")
-    if snapshot.accepted_policy_sequence == verified_policy.policy_sequence:
-        if snapshot.accepted_policy_envelope_sha256 != policy_digest:
-            raise TrustStateRejected("same policy sequence is already bound to a different envelope digest")
-    elif (
+    # The trusted clock must remain monotonic even for idempotent reads.
+    # Otherwise a restored clock could replay an already accepted sequence at
+    # an earlier valid instant and still receive a successful inspection.
+    if (
         snapshot.accepted_time_latest_utc is not None
         and earliest < snapshot.accepted_time_latest_utc
     ):
         raise TrustStateRejected(
             "trusted-time interval regressed behind the previously accepted upper bound"
         )
+    if snapshot.accepted_policy_sequence == verified_policy.policy_sequence:
+        if snapshot.accepted_policy_envelope_sha256 != policy_digest:
+            raise TrustStateRejected("same policy sequence is already bound to a different envelope digest")
 
     verified_receipt: CryptographicallyVerifiedReceipt = verify_receipt_attestation(
         original_receipt_bytes,

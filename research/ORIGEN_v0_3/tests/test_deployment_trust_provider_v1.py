@@ -216,6 +216,23 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.assertEqual(result.state_generation_before, result.state_generation_after)
         self.assertEqual(self.provider.commit_count, 1)
 
+    def test_same_sequence_idempotency_rejects_trusted_clock_rollback(self):
+        import hashlib
+        self.provider.snapshot = replace(
+            self.snapshot,
+            minimum_policy_sequence=POLICY_SEQUENCE - 1,
+            accepted_policy_sequence=POLICY_SEQUENCE,
+            accepted_policy_envelope_sha256=hashlib.sha256(self.policy_bytes).hexdigest(),
+            accepted_time_latest_utc=NOW - timedelta(seconds=1),
+            trusted_time_utc=NOW - timedelta(seconds=2),
+        )
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "trusted-time interval regressed behind the previously accepted upper bound",
+        ):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
     def test_same_sequence_with_different_valid_envelope_is_equivocation(self):
         root_private = Ed25519PrivateKey.generate()
         first, root_public = signed_v3_policy(
