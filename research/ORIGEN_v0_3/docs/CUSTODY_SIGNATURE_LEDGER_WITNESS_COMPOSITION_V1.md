@@ -41,8 +41,9 @@ The V3 and RFC 3161 verifiers still validate the exact source bytes independentl
 3. Verify the RFC 3161 token over the exact detached signature bytes and require its complete accuracy interval to be after receipt and strictly before Classic 21:00.
 4. Parse the exact canonical physical manifest and cross-bind the custody record, receipt digest, detached signature event, token digest, TSA-root fingerprint and genTime.
 5. Verify manifest-bound ledger inclusion and append-only checkpoint consistency using the exact same new checkpoint bytes.
-6. Re-verify every witness observation batch, including its signed registry, checkpoint pair, consistency proof and quorum statements.
-7. Require the exact ledger checkpoint digest to appear as an old or new checkpoint in at least one witness batch.
+6. Require the composition boundary to receive an exact immutable tuple of 2..32 witness batches; lazy iterables and mutable lists are rejected before iteration.
+7. Re-verify every witness observation batch, including its signed registry, checkpoint pair, consistency proof and quorum statements.
+8. Only after verification, require the exact ledger checkpoint digest to appear as an old or new checkpoint in at least one witness batch.
 8. Return the bounded gossip comparison status. A supplied-batch split view is surfaced, never hidden or promoted.
 
 ## Result semantics
@@ -65,7 +66,9 @@ Synthetic-only tests cover:
 - altered manifest timestamp-token digest;
 - absence of the exact ledger checkpoint from witness batches;
 - a valid same-size fork reported as a split view;
-- one-time normalization of a stateful caller timezone.
+- one-time normalization of a stateful caller timezone;
+- rejection of lazy iterables before their first iteration;
+- rejection of mutable list inputs and tuples above the 32-batch resource bound.
 
 All receipts, policies, custody records, signatures, TSA certificates/tokens, manifests, ledger entries/checkpoints, witness registries and statements are generated test fixtures. No institutional key or real Chispazo physical evidence is embedded.
 
