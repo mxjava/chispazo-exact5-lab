@@ -93,6 +93,8 @@ class DeploymentTrustSnapshot:
     maximum_clock_sample_age_ms: int
     state_backend_id: str
     provisioning_record_sha256: str
+    physical_trust_context_generation: int | None = None
+    physical_trust_context_sha256: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
