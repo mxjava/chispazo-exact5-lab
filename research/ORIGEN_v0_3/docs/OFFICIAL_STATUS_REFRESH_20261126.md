@@ -39,6 +39,7 @@ These are published procedure requirements, not proof that a particular draw com
 
 - Chispazo product and daily schedule: https://www.loterianacional.gob.mx/Chispazo/Chispazo
 - Official result endpoint: https://www.loterianacional.gob.mx/Chispazo/Resultados
+- Official results-publication timing FAQ: https://www.loterianacional.gob.mx/Nosotros/PreguntasFrecuentes
 - Official commercializer home page: https://comercializadores.loterianacional.gob.mx/home/
 - Official 25-Nov-2026 result-mask PDF: https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=25112026221906
 - Procedure SGVO-PRO-05 Rev.39: https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
