@@ -450,7 +450,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             self.snapshot,
             trusted_time_latest_utc=NOW + timedelta(milliseconds=1),
         )
-        with self.assertRaisesRegex(TrustStateRejected, "regressed behind the previously accepted upper bound"):
+        with self.assertRaisesRegex(TrustStateRejected, "regressed behind the persisted time watermark"):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 0)
 
