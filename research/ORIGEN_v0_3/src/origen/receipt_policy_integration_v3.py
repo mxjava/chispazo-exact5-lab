@@ -152,8 +152,10 @@ def verify_receipt_attestation_with_policy_v3(
     provenance = verify_independent_provenance(
         original_receipt_bytes,
         signed_policy_envelope_bytes=signed_policy_envelope_bytes,
-        verified_policy=policy,
-        verified_receipt=receipt,
+        pinned_root_public_key_bytes=pinned_root_public_key_bytes,
+        expected_root_key_id=expected_root_key_id,
+        minimum_policy_sequence=minimum_policy_sequence,
+        verification_time=verified_at,
     )
     if type(provenance) is not ProvenanceStatus:
         raise TypeError("independent provenance gate returned an unexpected status type")
