@@ -328,3 +328,33 @@ exact certificate bytes and fingerprint, complete chain and current status,
 live RFC 3161 response validation, the exact service policy/OID, and a
 separate institutional delegation tying the service to the relevant Chispazo
 records.
+
+
+## 12. Distinguish the earlier two-call diagnostic join from the single-snapshot composition
+
+The research helper `deployment_trust_physical_composition_v1.py` added on the
+current PR #95 branch verifies physical evidence using a caller-supplied
+`physical_verification_kwargs` mapping, then calls
+`inspect_receipt_with_deployment_trust_provider`, which reads provider state
+separately. It compares the exact receipt and policy byte digests, but does
+not prove that the physical verifier used the provider snapshot's root bytes,
+root key ID, sequence floor, signed clock sample, uncertainty interval or
+trust-configuration digest. Its docstring's midpoint-equality requirement is
+not enforced by that helper.
+
+That helper remains a diagnostic join only. A matching receipt/policy digest
+does not prove that two verifiers used the same trust context. Do not treat
+its returned object as evidence that the physical bundle was verified under
+the deployment provider's trust snapshot.
+
+For a single-snapshot provider-backed full evidence composition, use only
+`deployment_evidence_composition_v1.py` from PR #96. That API obtains the
+provider snapshot first, derives root/floor/time from it, validates the clock
+and receipt, checks the complete time interval for all used physical/custody
+keys, runs the full physical evidence chain with the same root/floor/time, and
+then performs the provider CAS through the cached snapshot adapter. The weaker
+two-call helper is not a substitute for this API.
+
+Both paths remain research-only and return `BLOCKED_PROVENANCE`; neither
+authenticates the provider implementation, TSA/log/witness institutional
+roots, physical origin or independent custody.
