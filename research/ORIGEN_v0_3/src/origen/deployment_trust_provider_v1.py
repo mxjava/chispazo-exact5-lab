@@ -201,7 +201,7 @@ def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
 def _clock_sample_sha256(snapshot: DeploymentTrustSnapshot) -> str:
     """Bind the exact provider-issued clock sample descriptor to the CAS."""
     payload = {
-        "schema": "origen.authenticated-clock-sample.v1",
+        "schema": "origen.provider-clock-sample.v1",
         "clock_source_id": snapshot.clock_source_id,
         "clock_sample_id": snapshot.clock_sample_id,
         "trusted_time_utc": snapshot.trusted_time_utc.isoformat(
@@ -297,7 +297,7 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         raise ValueError("clock sample valid-until must be exact normalized UTC")
     sample_lifetime = snapshot.clock_sample_valid_until_utc - snapshot.trusted_time_utc
     if sample_lifetime <= timedelta(0):
-        raise ValueError("authenticated clock sample lease is already expired")
+        raise ValueError("provider clock sample lease is already expired")
     if sample_lifetime > timedelta(milliseconds=snapshot.maximum_clock_sample_age_ms):
         raise ValueError("clock sample lease exceeds the provisioned maximum age")
     if snapshot.clock_uncertainty_ms > snapshot.maximum_clock_uncertainty_ms:
@@ -421,7 +421,7 @@ def inspect_receipt_with_deployment_trust_provider(
     clock_sample_digest = _clock_sample_sha256(snapshot)
     earliest, latest = _time_window(snapshot)
     if latest > snapshot.clock_sample_valid_until_utc:
-        raise ValueError("trusted-time uncertainty interval exceeds the authenticated clock sample lease")
+        raise ValueError("trusted-time uncertainty interval exceeds the provider clock sample lease")
 
     effective_floor = max(
         snapshot.minimum_policy_sequence,
