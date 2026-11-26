@@ -82,5 +82,65 @@ class TestExternalLedgerChain(unittest.TestCase):
             )
 
 
+    def test_hostile_log_id_subclass_is_rejected_before_equality(self):
+        class HostileString(str):
+            def __eq__(self, other):
+                raise AssertionError("untrusted equality hook executed")
+
+        root = tree_hash([b"only"]).hex()
+        old = VerifiedLedgerInclusion(HostileString("log-A"), 1, 0, root, "a" * 64)
+        new = VerifiedLedgerInclusion("log-A", 1, 0, root, "b" * 64)
+        with self.assertRaisesRegex(ValueError, "log_id must be a canonical exact string"):
+            verify_inclusion_chain_consistency(
+                old_inclusion=old, new_inclusion=new, consistency_proof_hex=(),
+            )
+
+    def test_boolean_tree_size_and_leaf_index_are_rejected(self):
+        root = tree_hash([b"only"]).hex()
+        bad_size = VerifiedLedgerInclusion("log-A", True, 0, root, "a" * 64)
+        valid = VerifiedLedgerInclusion("log-A", 1, 0, root, "b" * 64)
+        with self.assertRaisesRegex(ValueError, "tree_size must be"):
+            verify_inclusion_chain_consistency(
+                old_inclusion=bad_size, new_inclusion=valid, consistency_proof_hex=(),
+            )
+        bad_index = VerifiedLedgerInclusion("log-A", 1, False, root, "a" * 64)
+        with self.assertRaisesRegex(ValueError, "leaf_index must"):
+            verify_inclusion_chain_consistency(
+                old_inclusion=bad_index, new_inclusion=valid, consistency_proof_hex=(),
+            )
+
+    def test_malformed_root_and_signed_head_digest_are_rejected(self):
+        root = tree_hash([b"only"]).hex()
+        valid = VerifiedLedgerInclusion("log-A", 1, 0, root, "b" * 64)
+        bad_root = VerifiedLedgerInclusion("log-A", 1, 0, "A" * 64, "a" * 64)
+        with self.assertRaisesRegex(ValueError, "root_hash must"):
+            verify_inclusion_chain_consistency(
+                old_inclusion=bad_root, new_inclusion=valid, consistency_proof_hex=(),
+            )
+        bad_sth = VerifiedLedgerInclusion("log-A", 1, 0, root, "not-a-digest")
+        with self.assertRaisesRegex(ValueError, "signed_tree_head_sha256 must"):
+            verify_inclusion_chain_consistency(
+                old_inclusion=bad_sth, new_inclusion=valid, consistency_proof_hex=(),
+            )
+
+    def test_new_tree_cannot_be_smaller_than_previous_checkpoint(self):
+        items = [f"chain-{i}".encode() for i in range(8)]
+        old = VerifiedLedgerInclusion("log-A", 8, 0, tree_hash(items).hex(), "a" * 64)
+        new = VerifiedLedgerInclusion("log-A", 5, 0, tree_hash(items[:5]).hex(), "b" * 64)
+        with self.assertRaisesRegex(ValueError, "supported bounds"):
+            verify_inclusion_chain_consistency(
+                old_inclusion=old, new_inclusion=new, consistency_proof_hex=(),
+            )
+
+    def test_consistency_proof_container_must_be_exact_tuple(self):
+        root = tree_hash([b"only"]).hex()
+        record = VerifiedLedgerInclusion("log-A", 1, 0, root, "a" * 64)
+        with self.assertRaisesRegex(ValueError, "bounded exact tuple"):
+            verify_inclusion_chain_consistency(
+                old_inclusion=record, new_inclusion=record,
+                consistency_proof_hex=[],
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
