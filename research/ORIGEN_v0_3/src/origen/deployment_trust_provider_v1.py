@@ -339,6 +339,38 @@ def _verify_clock_sample_attestation(snapshot: DeploymentTrustSnapshot) -> None:
         raise ValueError("clock sample Ed25519 signature verification failed") from exc
 
 
+def _require_clock_sample_key_authorized(
+    verified_policy: VerifiedTrustPolicyV3,
+    snapshot: DeploymentTrustSnapshot,
+    *,
+    earliest: datetime,
+    latest: datetime,
+) -> None:
+    """Require the root-signed V3 policy to authorize this exact clock key."""
+    matches = [
+        key for key in verified_policy.policy.issuer_keys
+        if key.issuer_id == snapshot.clock_source_id
+        and key.key_id == snapshot.clock_sample_key_id
+    ]
+    if len(matches) != 1:
+        raise ValueError("signed root policy does not contain exactly one clock-source key")
+    key = matches[0]
+    if key.public_key_bytes != snapshot.clock_sample_public_key_bytes:
+        raise ValueError("clock sample public key does not match the root-authorized key")
+    if key.revoked:
+        raise ValueError("root-authorized clock sample key is revoked")
+    if not (key.valid_from_utc <= earliest and latest <= key.valid_until_utc):
+        raise ValueError("trusted-time uncertainty interval crosses clock key validity")
+    required = (
+        snapshot.clock_source_id,
+        snapshot.clock_sample_key_id,
+        "TRUSTED_TIME_AUTHORITY",
+        ("CLOCK_SAMPLE",),
+    )
+    if required not in verified_policy.key_authorizations:
+        raise ValueError("root-signed policy does not authorize clock-sample attestation role")
+
+
 def _clock_sample_sha256(snapshot: DeploymentTrustSnapshot) -> str:
     """Hash the exact signed source sample bytes supplied to the provider CAS."""
     return hashlib.sha256(snapshot.clock_sample_envelope_bytes).hexdigest()
@@ -568,6 +600,12 @@ def inspect_receipt_with_deployment_trust_provider(
     )
     if type(verified_policy) is not VerifiedTrustPolicyV3:
         raise TypeError("policy verifier returned an unexpected result type")
+    _require_clock_sample_key_authorized(
+        verified_policy,
+        snapshot,
+        earliest=earliest,
+        latest=latest,
+    )
 
     policy_digest = hashlib.sha256(signed_policy_envelope_bytes).hexdigest()
     if verified_policy.envelope_sha256 != policy_digest:
