@@ -31,14 +31,19 @@ from .physical_evidence_manifest_v1 import (
     UnverifiedPhysicalEvidenceManifest,
     parse_unverified_physical_manifest,
 )
-from .physical_evidence_verifier_v2 import _utc_instant
+from .physical_evidence_verifier_v2 import (
+    CLASSIC_PHYSICAL_POLICY_DOMAIN,
+    PhysicalEvidenceSignatureInspection,
+    _utc_instant,
+)
+from .physical_evidence_verifier_v3 import verify_physical_evidence_signatures_v3
 from .transparency_checkpoint_consistency_v1 import (
     ConsistentLedgerInclusionInspection,
     verify_ledger_inclusion_with_checkpoint_continuity,
 )
 
 COMPOSITION_REMAINING_BLOCKERS = (
-    "PHYSICAL_MANIFEST_IS_STRUCTURAL_UNVERIFIED_DECLARATIONS_ONLY",
+    "NESTED_SIGNATURES_PROVE_CRYPTOGRAPHIC_CONSISTENCY_NOT_INSTITUTIONAL_IDENTITY",
     "TSA_ROOT_AND_LOG_ROOT_ARE_CALLER_SUPPLIED_NOT_OUT_OF_BAND_PROVISIONED",
     "WITNESS_REGISTRY_ROOT_IS_CALLER_SUPPLIED_NOT_OUT_OF_BAND_PROVISIONED",
     "ANTI_ROLLBACK_FLOORS_ARE_NOT_BACKED_BY_EXTERNAL_MONOTONIC_STATE",
@@ -57,6 +62,7 @@ class CustodyLedgerWitnessInspectionV1:
     """Diagnostic composition; never an authenticated provenance capability."""
 
     custody_timestamp: CustodySignatureTimestampInspectionV1
+    physical_signatures: PhysicalEvidenceSignatureInspection
     ledger: ConsistentLedgerInclusionInspection
     witness_gossip: WitnessGossipInspection
     manifest_sha256: str
@@ -189,6 +195,8 @@ def verify_custody_timestamp_ledger_witness_v1(
     expected_tsa_root_sha256: str,
     expected_nonce: int,
     raw_manifest_bytes: bytes,
+    artifact_bytes_by_sha256: dict[str, bytes],
+    signature_bytes_by_sha256: dict[str, bytes],
     raw_ledger_entry_bytes: bytes,
     raw_inclusion_proof_bytes: bytes,
     raw_old_checkpoint_bytes: bytes,
@@ -231,6 +239,33 @@ def verify_custody_timestamp_ledger_witness_v1(
         expected_nonce=expected_nonce,
     )
     manifest = parse_unverified_physical_manifest(raw_manifest_bytes)
+    physical_signatures = verify_physical_evidence_signatures_v3(
+        raw_manifest_bytes,
+        artifact_bytes_by_sha256,
+        signature_bytes_by_sha256,
+        signed_policy_envelope_bytes=signed_policy_envelope_bytes,
+        pinned_root_public_key_bytes=pinned_root_public_key_bytes,
+        expected_root_key_id=expected_root_key_id,
+        expected_policy_domain=CLASSIC_PHYSICAL_POLICY_DOMAIN,
+        minimum_policy_sequence=minimum_policy_sequence,
+        verification_time=verified_at,
+    )
+    if type(physical_signatures) is not PhysicalEvidenceSignatureInspection:
+        raise TypeError("physical signature verifier returned an unexpected result type")
+    if physical_signatures.provenance_status is not ProvenanceStatus.BLOCKED_PROVENANCE:
+        raise RuntimeError("physical signature verifier did not preserve BLOCKED_PROVENANCE")
+    if (
+        physical_signatures.manifest_sha256 != manifest.raw_sha256
+        or physical_signatures.policy_envelope_sha256
+        != custody_timestamp.custody_chain.policy_envelope_sha256
+        or physical_signatures.policy_domain != CLASSIC_PHYSICAL_POLICY_DOMAIN
+        or physical_signatures.policy_sequence != custody_timestamp.custody_chain.policy_sequence
+        or physical_signatures.artifact_count != len(manifest.artifacts)
+        or physical_signatures.signatures_verified != len(manifest.signatures)
+    ):
+        raise RuntimeError("nested physical signatures are not bound to the exact custody policy and manifest")
+    if artifact_bytes_by_sha256.get(custody_timestamp.custody_chain.custody_record_sha256) != custody_record_bytes:
+        raise ValueError("exact custody-record bytes are absent from the verified physical artifact map")
     custody_artifact_sha256 = _manifest_binds_signature_timestamp(
         manifest,
         custody_timestamp=custody_timestamp,
@@ -298,12 +333,14 @@ def verify_custody_timestamp_ledger_witness_v1(
 
     blockers = tuple(dict.fromkeys(
         tuple(custody_timestamp.remaining_blockers)
+        + tuple(physical_signatures.remaining_blockers)
         + tuple(ledger.remaining_blockers)
         + tuple(gossip.remaining_blockers)
         + COMPOSITION_REMAINING_BLOCKERS
     ))
     return CustodyLedgerWitnessInspectionV1(
         custody_timestamp=custody_timestamp,
+        physical_signatures=physical_signatures,
         ledger=ledger,
         witness_gossip=gossip,
         manifest_sha256=manifest.raw_sha256,
