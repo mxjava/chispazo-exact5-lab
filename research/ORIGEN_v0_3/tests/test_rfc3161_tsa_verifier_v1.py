@@ -123,6 +123,7 @@ def _token(
     include_legacy_signing_certificate=False,
     include_issuer_serial=False,
     wrong_issuer_serial=False,
+    wrong_issuer_name=False,
 ):
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
@@ -156,10 +157,15 @@ def _token(
         value = {"cert_hash": cert_hash}
         if include_issuer_serial:
             issuer_names = asn1_x509.GeneralNames()
+            issuer_name = (
+                asn1_x509.Name.build({"common_name": "Wrong Synthetic Issuer"})
+                if wrong_issuer_name
+                else cert_asn1.issuer
+            )
             issuer_names.append(
                 asn1_x509.GeneralName(
                     name="directory_name",
-                    value=cert_asn1.issuer,
+                    value=issuer_name,
                 )
             )
             value["issuer_serial"] = {
@@ -390,6 +396,13 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
             wrong_issuer_serial=True,
         )
         with self.assertRaisesRegex(ValueError, "issuerSerial serial number"):
+            _verify(token, root_der)
+
+        token, root_der = _token(
+            include_issuer_serial=True,
+            wrong_issuer_name=True,
+        )
+        with self.assertRaisesRegex(ValueError, "issuerSerial issuer"):
             _verify(token, root_der)
 
     def test_accuracy_millis_explicit_zero_is_rejected(self):
