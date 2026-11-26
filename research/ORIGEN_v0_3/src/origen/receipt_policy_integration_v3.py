@@ -149,7 +149,12 @@ def verify_receipt_attestation_with_policy_v3(
             "for RECEIPT-ROOT-ATTESTER and TRUST-RECEIPT-ROOT-ATTESTATION"
         )
 
-    provenance = verify_independent_provenance(original_receipt_bytes)
+    provenance = verify_independent_provenance(
+        original_receipt_bytes,
+        signed_policy_envelope_bytes=signed_policy_envelope_bytes,
+        verified_policy=policy,
+        verified_receipt=receipt,
+    )
     if type(provenance) is not ProvenanceStatus:
         raise TypeError("independent provenance gate returned an unexpected status type")
     if provenance is not ProvenanceStatus.BLOCKED_PROVENANCE:
