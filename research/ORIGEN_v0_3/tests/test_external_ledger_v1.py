@@ -136,7 +136,7 @@ class TestExternalLedgerInclusion(unittest.TestCase):
 
     def test_boolean_tree_size_and_index_are_not_integers(self):
         leaves = [b"alpha"]
-        with self.assertRaisesRegex(ValueError, "exact integers"):
+        with self.assertRaisesRegex(ValueError, "exact integer"):
             self.verify(leaves, 0, tree_size=True)
         with self.assertRaisesRegex(ValueError, "exact integers"):
             self.verify(leaves, 0, leaf_index=False)
