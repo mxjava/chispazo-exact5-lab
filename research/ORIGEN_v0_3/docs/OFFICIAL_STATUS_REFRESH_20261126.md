@@ -49,3 +49,12 @@ The 25-Nov mask and SGVO-PRO-05 PDF were inspected through the public web text e
 ## Non-promotion invariants
 
 V294 remains frozen. The canonical historical CSV is not changed; its main-branch Git blob remains `2f5ff5bfbd779fe505736398e417b7211955958e`. This refresh does not append draws, establish physical provenance, alter any model, or change `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
+
+## Follow-up status snapshot — 2026-11-26 15:04 America/Mexico_City
+
+- The official product page continues to map Chispazo De las Tres to 15:00 and Chispazo Clásico to 21:00.
+- The official home index lists contest 12397 at 15:00. At 15:04, the dedicated official results page still showed 12396 (25-Nov-2026) as latest; 12397 had not yet appeared as a published result.
+- The home index's separate 21:00 card is Sorteo 3093, not a Chispazo contest. The daily Classic 21:00 slot is confirmed by the product schedule, but its 26-Nov contest ID remains unconfirmed by the reviewed official index.
+- New status-only snapshot: `data/official-overlays/2026-11-26_1504_public_status_only.json` (commit `d7063016622f1cb7079c3f1e029bf4d793f5ae37`). No original PDF bytes or draw-specific physical artifacts were obtained; no SHA-256 is claimed.
+- This record is not a draw result, not a physical-evidence receipt, and is not eligible for the canonical history or prospective scoring.
