@@ -75,6 +75,8 @@ class ReceiptCustodyChainInspectionV3:
     custody_signature_sha256: str
     custodian_id: str
     custodian_key_id: str
+    custodian_key_valid_from_utc: datetime
+    custodian_key_valid_until_utc: datetime
     target_contest_id: int
     covered_generator_id: str
     policy_envelope_sha256: str
@@ -387,6 +389,8 @@ def verify_receipt_and_custody_v3(
         custody_signature_sha256=hashlib.sha256(custody_signature_bytes).hexdigest(),
         custodian_id=record["custodian_id"],
         custodian_key_id=custodian_key_id,
+        custodian_key_valid_from_utc=key.valid_from_utc,
+        custodian_key_valid_until_utc=key.valid_until_utc,
         target_contest_id=record["target_contest_id"],
         covered_generator_id=record["generator_id"],
         policy_envelope_sha256=policy.envelope_sha256,
