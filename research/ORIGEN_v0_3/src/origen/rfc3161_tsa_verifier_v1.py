@@ -312,17 +312,16 @@ def _verify_tstinfo_tsa_name(tst_info, signer_cert: x509.Certificate) -> None:
             signer_cert.public_bytes(serialization.Encoding.DER),
             strict=True,
         )
-        accepted_names = [
-            signer_cert_asn1["tbs_certificate"]["subject"].native
+        # Compare complete DER Name values. asn1crypto Name.native flattens
+        # RDN boundaries into an ordered mapping and can make structurally
+        # different names compare equal.
+        accepted_names_der = [
+            signer_cert_asn1["tbs_certificate"]["subject"].dump()
         ]
         for candidate in subject_alt_names:
             if isinstance(candidate, x509.DirectoryName):
-                candidate_name = asn1_x509.Name.load(
-                    candidate.value.public_bytes(),
-                    strict=True,
-                )
-                accepted_names.append(candidate_name.native)
-        if tsa_name.chosen.native in accepted_names:
+                accepted_names_der.append(candidate.value.public_bytes())
+        if tsa_name.chosen.dump() in accepted_names_der:
             return
     else:
         san_types = {
