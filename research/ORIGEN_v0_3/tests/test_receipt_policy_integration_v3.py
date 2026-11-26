@@ -10,7 +10,10 @@ from datetime import datetime, timedelta, timezone, tzinfo
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from origen.independent_trust_adapter import ProvenanceStatus
+from origen.independent_trust_adapter import (
+    ProvenanceStatus,
+    verify_independent_provenance,
+)
 from origen.physical_evidence_verifier_v2 import CLASSIC_PHYSICAL_POLICY_DOMAIN
 from origen.receipt_policy_integration_v3 import (
     RECEIPT_ATTESTATION_ARTIFACT_TYPE,
@@ -20,6 +23,8 @@ from origen.receipt_policy_integration_v3 import (
 )
 from test_physical_evidence_verifier_v2 import fixture as signed_v2_physical_fixture
 from test_trust_receipt_v1 import encode
+from origen.trust_policy_envelope_v3 import verify_signed_trust_policy_v3
+from origen.trust_verifier_v1 import verify_receipt_attestation
 from test_trust_verifier_v1 import NOW, signed_receipt
 
 
@@ -243,13 +248,33 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
 
 
 
-    def test_independent_provenance_gate_receives_exact_original_receipt_bytes(self):
+    def _verified_context(self, policy_bytes=None, root_public_key=None):
+        exact_policy_bytes = self.policy_bytes if policy_bytes is None else policy_bytes
+        exact_root_public_key = (
+            self.root_public_key if root_public_key is None else root_public_key
+        )
+        policy = verify_signed_trust_policy_v3(
+            exact_policy_bytes,
+            pinned_root_public_key_bytes=exact_root_public_key,
+            expected_root_key_id=ROOT_KEY_ID,
+            expected_policy_domain=CLASSIC_PHYSICAL_POLICY_DOMAIN,
+            minimum_policy_sequence=POLICY_SEQUENCE,
+            verification_time=NOW,
+        )
+        receipt = verify_receipt_attestation(
+            self.receipt_bytes,
+            policy.policy,
+            verification_time=NOW,
+        )
+        return policy, receipt
+
+    def test_independent_provenance_gate_receives_exact_bytes_and_verified_v3_context(self):
         from unittest.mock import patch
 
         observed = []
 
-        def gate(raw):
-            observed.append(raw)
+        def gate(raw, **context):
+            observed.append((raw, context))
             return ProvenanceStatus.BLOCKED_PROVENANCE
 
         with patch(
@@ -258,8 +283,72 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
         ):
             result = self.inspect()
 
-        self.assertEqual(observed, [self.receipt_bytes])
+        self.assertEqual(len(observed), 1)
+        raw, context = observed[0]
+        self.assertEqual(raw, self.receipt_bytes)
+        self.assertEqual(context["signed_policy_envelope_bytes"], self.policy_bytes)
+        self.assertEqual(type(context["verified_policy"]).__name__, "VerifiedTrustPolicyV3")
+        self.assertEqual(type(context["verified_receipt"]).__name__, "CryptographicallyVerifiedReceipt")
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_independent_provenance_v3_context_is_cross_bound_and_still_blocked(self):
+        policy, receipt = self._verified_context()
+        result = verify_independent_provenance(
+            self.receipt_bytes,
+            signed_policy_envelope_bytes=self.policy_bytes,
+            verified_policy=policy,
+            verified_receipt=receipt,
+        )
+        self.assertIs(result, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_independent_provenance_rejects_receipt_bytes_not_bound_by_verified_result(self):
+        policy, receipt = self._verified_context()
+        with self.assertRaisesRegex(ValueError, "exact original receipt bytes"):
+            verify_independent_provenance(
+                self.receipt_bytes + b" ",
+                signed_policy_envelope_bytes=self.policy_bytes,
+                verified_policy=policy,
+                verified_receipt=receipt,
+            )
+
+    def test_independent_provenance_rejects_policy_bytes_not_bound_by_verified_result(self):
+        policy, receipt = self._verified_context()
+        with self.assertRaisesRegex(ValueError, "exact signed policy envelope bytes"):
+            verify_independent_provenance(
+                self.receipt_bytes,
+                signed_policy_envelope_bytes=self.policy_bytes + b" ",
+                verified_policy=policy,
+                verified_receipt=receipt,
+            )
+
+    def test_independent_provenance_requires_complete_v3_context(self):
+        policy, receipt = self._verified_context()
+        with self.assertRaisesRegex(ValueError, "requires signed policy bytes"):
+            verify_independent_provenance(
+                self.receipt_bytes,
+                signed_policy_envelope_bytes=self.policy_bytes,
+                verified_policy=policy,
+            )
+        with self.assertRaisesRegex(ValueError, "requires signed policy bytes"):
+            verify_independent_provenance(
+                self.receipt_bytes,
+                signed_policy_envelope_bytes=self.policy_bytes,
+                verified_receipt=receipt,
+            )
+
+    def test_independent_provenance_rejects_policy_without_receipt_role_authorization(self):
+        policy_bytes, root_public_key = signed_v3_policy(
+            self.receipt_public_key,
+            role="PHYSICAL-RECORDS-SIGNER",
+        )
+        policy, receipt = self._verified_context(policy_bytes, root_public_key)
+        with self.assertRaisesRegex(ValueError, "receipt-attester role/artifact authorization"):
+            verify_independent_provenance(
+                self.receipt_bytes,
+                signed_policy_envelope_bytes=policy_bytes,
+                verified_policy=policy,
+                verified_receipt=receipt,
+            )
 
     def test_future_authenticated_provenance_status_is_rejected(self):
         from enum import Enum
