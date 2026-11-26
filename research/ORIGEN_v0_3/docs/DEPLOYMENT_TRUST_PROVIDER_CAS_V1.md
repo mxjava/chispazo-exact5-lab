@@ -420,7 +420,7 @@ The complete evidence composition no longer accepts caller-supplied RFC 3161
 request nonces. It requires the deployment provider to return an exact
 `TimestampNonceChallengeV1` bound to the snapshot's state generation, root
 generation, physical-trust-context generation and digest. The challenge carries
-separate positive signed-64-bit nonces for the policy-envelope timestamp and
+separate, distinct positive signed-64-bit nonces for the policy-envelope timestamp and
 the detached custody-signature timestamp, plus a canonical issuance/expiry
 window. Its complete canonical digest is passed to the provider CAS.
 
