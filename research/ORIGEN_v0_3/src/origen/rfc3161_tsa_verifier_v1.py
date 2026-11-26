@@ -15,7 +15,7 @@ from datetime import datetime, timedelta, timezone
 from asn1crypto import cms, tsp, x509 as asn1_x509
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519, ed448, padding, rsa
 from cryptography.x509.oid import ExtendedKeyUsageOID
 
@@ -266,6 +266,85 @@ def _match_signer_certificate(signer_info, certificates):
     return matches[0]
 
 
+def _verify_ess_issuer_serial(cert_id, signer_cert: x509.Certificate, label: str) -> None:
+    """If ESS issuerSerial is present, bind it to the exact signer certificate."""
+    issuer_serial = cert_id["issuer_serial"]
+    if issuer_serial.native is None:
+        return
+    if issuer_serial["serial_number"].native != signer_cert.serial_number:
+        raise ValueError(f"RFC3161 {label} issuerSerial serial number does not match signer certificate")
+    expected_issuer_der = signer_cert.issuer.public_bytes()
+    issuer_names = issuer_serial["issuer"]
+    if not any(
+        name.name == "directory_name"
+        and name.chosen.dump() == expected_issuer_der
+        for name in issuer_names
+    ):
+        raise ValueError(f"RFC3161 {label} issuerSerial issuer does not match signer certificate")
+
+
+def _verify_signing_certificate_binding(signed_attrs, signer_cert: x509.Certificate):
+    """Require RFC 3161 ESS signer-certificate identification in signed attrs.
+
+    RFC 3161 requires SigningCertificate (ESSCertID); RFC 5816 also permits
+    SigningCertificateV2 (ESSCertIDv2). If both are present, both must bind
+    the exact DER certificate selected by CMS issuerAndSerialNumber.
+    """
+    attr_types = [item["type"].native for item in signed_attrs]
+    allowed = {
+        "content_type",
+        "message_digest",
+        "signing_certificate",
+        "signing_certificate_v2",
+    }
+    required = {"content_type", "message_digest"}
+    if (
+        len(attr_types) != len(set(attr_types))
+        or not required.issubset(attr_types)
+        or not set(attr_types).issubset(allowed)
+        or not ({"signing_certificate", "signing_certificate_v2"} & set(attr_types))
+    ):
+        raise ValueError(
+            "RFC3161 CMS signed attributes must contain unique contentType, "
+            "messageDigest, and at least one ESS signing-certificate identifier only"
+        )
+    if any(len(item["values"]) != 1 for item in signed_attrs):
+        raise ValueError("RFC3161 CMS signed attributes must contain exactly one value each")
+
+    attrs = {item["type"].native: item["values"][0] for item in signed_attrs}
+    signer_der = signer_cert.public_bytes(serialization.Encoding.DER)
+
+    if "signing_certificate" in attrs:
+        signing_certificate = attrs["signing_certificate"]
+        cert_ids = signing_certificate["certs"]
+        if len(cert_ids) < 1:
+            raise ValueError("RFC3161 SigningCertificate ESSCertID list must not be empty")
+        cert_id = cert_ids[0]
+        expected = hashlib.sha1(signer_der).digest()
+        if cert_id["cert_hash"].native != expected:
+            raise ValueError(
+                "RFC3161 SigningCertificate ESSCertID does not identify the exact signer certificate"
+            )
+        _verify_ess_issuer_serial(cert_id, signer_cert, "SigningCertificate")
+
+    if "signing_certificate_v2" in attrs:
+        signing_certificate_v2 = attrs["signing_certificate_v2"]
+        cert_ids = signing_certificate_v2["certs"]
+        if len(cert_ids) < 1:
+            raise ValueError("RFC3161 SigningCertificateV2 ESSCertIDv2 list must not be empty")
+        cert_id = cert_ids[0]
+        algorithm_name = cert_id["hash_algorithm"]["algorithm"].native
+        _hash_algorithm(algorithm_name)
+        expected = hashlib.new(algorithm_name, signer_der).digest()
+        if cert_id["cert_hash"].native != expected:
+            raise ValueError(
+                "RFC3161 SigningCertificateV2 ESSCertIDv2 does not identify the exact signer certificate"
+            )
+        _verify_ess_issuer_serial(cert_id, signer_cert, "SigningCertificateV2")
+
+    return attrs
+
+
 def verify_rfc3161_timestamp_token(
     token_der: bytes,
     data: bytes,
@@ -406,13 +485,8 @@ def verify_rfc3161_timestamp_token(
     signed_attrs = signer_info["signed_attrs"]
     if signed_attrs.native is None:
         raise ValueError("RFC3161 CMS signer must include signed attributes")
-    attr_types = [item["type"].native for item in signed_attrs]
-    if len(attr_types) != len(set(attr_types)) or set(attr_types) != {"content_type", "message_digest"}:
-        raise ValueError("RFC3161 CMS signed attributes must contain unique contentType and messageDigest only")
-    if any(len(item["values"]) != 1 for item in signed_attrs):
-        raise ValueError("RFC3161 CMS signed attributes must contain exactly one value each")
-    attrs = {item["type"].native: item["values"][0].native for item in signed_attrs}
-    if attrs["content_type"] != "tst_info":
+    attrs = _verify_signing_certificate_binding(signed_attrs, signer_cert)
+    if attrs["content_type"].native != "tst_info":
         raise ValueError("RFC3161 CMS contentType signed attribute must be TSTInfo")
     cms_digest_name = signer_info["digest_algorithm"]["algorithm"].native
     cms_digest = _hash_algorithm(cms_digest_name)
@@ -421,7 +495,7 @@ def verify_rfc3161_timestamp_token(
     ]
     if declared_digests != [cms_digest_name]:
         raise ValueError("CMS digestAlgorithms must contain exactly the signer's digest")
-    if attrs["message_digest"] != hashlib.new(cms_digest_name, tst_bytes).digest():
+    if attrs["message_digest"].native != hashlib.new(cms_digest_name, tst_bytes).digest():
         raise ValueError("RFC3161 CMS messageDigest does not match encapsulated TSTInfo")
     signature_algorithm = signer_info["signature_algorithm"]["algorithm"].native
     signature = signer_info["signature"].native
