@@ -23,7 +23,12 @@ from .physical_evidence_manifest_v1 import (
     _WEIGHING_STRIP_REQUIRED_ROLES,
     _array,
     _object,
-    _parse_artifact,
+    _CONTEST_ID,
+    _LOCAL_DATE,
+    _MEDIA_TYPE,
+    _digest,
+    _identifier,
+    _positive_integer,
     _parse_custody_event,
     _parse_ledger_anchor,
     _parse_signature,
@@ -59,11 +64,24 @@ class PhysicalManifestTargetV2:
 
 
 @dataclass(frozen=True, slots=True)
+class PhysicalArtifactClaimV2:
+    artifact_type: str
+    sha256: str
+    byte_length: int
+    scope: str
+    contest_id: str | None
+    scope_date_local: str
+    source_id: str
+    source_object_id: str
+    media_type: str
+
+
+@dataclass(frozen=True, slots=True)
 class UnverifiedPhysicalEvidenceManifestV2:
     """Parsed structural claims only; never an authenticated evidence receipt."""
 
     target: PhysicalManifestTargetV2
-    artifacts: tuple
+    artifacts: tuple[PhysicalArtifactClaimV2, ...]
     signatures: tuple
     custody_events: tuple
     trusted_time_proofs: tuple
@@ -126,6 +144,78 @@ def _parse_target_v2(value: object) -> PhysicalManifestTargetV2:
     )
 
 
+def _parse_artifact_v2(
+    value: object,
+    index: int,
+    target: PhysicalManifestTargetV2,
+) -> PhysicalArtifactClaimV2:
+    item = _object(
+        value,
+        {
+            "artifact_type", "sha256", "byte_length", "scope",
+            "contest_id", "scope_date_local", "source_id",
+            "source_object_id", "media_type",
+        },
+        f"artifacts[{index}]",
+    )
+    artifact_type = item["artifact_type"]
+    if type(artifact_type) is not str or artifact_type not in V1_REQUIRED_ARTIFACT_TYPES:
+        raise ValueError(f"artifacts[{index}].artifact_type is not an allowed required type")
+    scope = item["scope"]
+    if type(scope) is not str or scope not in {"DRAW", "DAILY"}:
+        raise ValueError(f"artifacts[{index}].scope must be DRAW or DAILY")
+    scope_date = item["scope_date_local"]
+    if type(scope_date) is not str or not _LOCAL_DATE.fullmatch(scope_date):
+        raise ValueError(f"artifacts[{index}].scope_date_local must be canonical YYYY-MM-DD")
+    try:
+        parsed_scope_date = date.fromisoformat(scope_date)
+    except ValueError as exc:
+        raise ValueError(f"artifacts[{index}].scope_date_local is not a valid date") from exc
+    if parsed_scope_date.isoformat() != target.draw_date_local or scope_date != target.draw_date_local:
+        raise ValueError(f"artifacts[{index}].scope_date_local must match target draw date")
+
+    is_daily_master = artifact_type in _NIGHTLY_ONLY_ARTIFACTS
+    if is_daily_master:
+        if scope != "DAILY" or item["contest_id"] is not None:
+            raise ValueError(
+                f"{artifact_type} must use DAILY scope with a null contest_id"
+            )
+    else:
+        if scope != "DRAW":
+            raise ValueError(f"{artifact_type} must use DRAW scope")
+        contest_id = item["contest_id"]
+        if type(contest_id) is not str or not _CONTEST_ID.fullmatch(contest_id):
+            raise ValueError(f"artifacts[{index}].contest_id is not canonical")
+        if contest_id != target.contest_id:
+            raise ValueError("every DRAW-scoped artifact must bind to the target contest")
+    if item["contest_id"] is not None and (
+        type(item["contest_id"]) is not str or not _CONTEST_ID.fullmatch(item["contest_id"])
+    ):
+        raise ValueError(f"artifacts[{index}].contest_id is not canonical or null")
+
+    media_type = item["media_type"]
+    if type(media_type) is not str or not _MEDIA_TYPE.fullmatch(media_type):
+        raise ValueError(f"artifacts[{index}].media_type must be a canonical MIME type")
+    is_recording = artifact_type in {"DRAW-RECORDING-FULL", "DRAW-RECORDING-EDITED"}
+    if is_recording != media_type.startswith("video/"):
+        raise ValueError(
+            f"artifacts[{index}].media_type is incompatible with {artifact_type}"
+        )
+    return PhysicalArtifactClaimV2(
+        artifact_type=artifact_type,
+        sha256=_digest(item["sha256"], f"artifacts[{index}].sha256"),
+        byte_length=_positive_integer(item["byte_length"], f"artifacts[{index}].byte_length"),
+        scope=scope,
+        contest_id=item["contest_id"],
+        scope_date_local=scope_date,
+        source_id=_identifier(item["source_id"], f"artifacts[{index}].source_id"),
+        source_object_id=_identifier(
+            item["source_object_id"], f"artifacts[{index}].source_object_id"
+        ),
+        media_type=media_type,
+    )
+
+
 def parse_unverified_physical_manifest_v2(raw: bytes) -> UnverifiedPhysicalEvidenceManifestV2:
     """Parse bounded canonical V2 JSON while retaining every claim as unverified."""
     if type(raw) is not bytes:
@@ -163,7 +253,7 @@ def parse_unverified_physical_manifest_v2(raw: bytes) -> UnverifiedPhysicalEvide
         minimum=0, maximum=len(V1_REQUIRED_ARTIFACT_TYPES),
     )
     artifacts = tuple(
-        _parse_artifact(item, index, target.contest_id)
+        _parse_artifact_v2(item, index, target)
         for index, item in enumerate(artifact_values)
     )
     artifact_types = [item.artifact_type for item in artifacts]
@@ -257,6 +347,20 @@ def parse_unverified_physical_manifest_v2(raw: bytes) -> UnverifiedPhysicalEvide
         raise ValueError("custody_events contain duplicate receipt digests")
     if {item.artifact_sha256 for item in custody_events} != artifact_digests:
         raise ValueError("every required artifact must have at least one custody event")
+    daily_master_digests = {
+        item.sha256 for item in artifacts if item.scope == "DAILY"
+    }
+    for digest in daily_master_digests:
+        if not any(
+            event.artifact_sha256 == digest
+            and datetime.fromisoformat(event.received_at_utc[:-1] + "+00:00")
+                >= datetime.fromisoformat(target.sales_close_at_utc[:-1] + "+00:00")
+            for event in custody_events
+        ):
+            raise ValueError(
+                "DAILY-scoped MJF artifacts require a custody event at or after "
+                "the 21:00 automatic sales close"
+            )
 
     time_values = _array(
         root["trusted_time_proofs"], "trusted_time_proofs",
