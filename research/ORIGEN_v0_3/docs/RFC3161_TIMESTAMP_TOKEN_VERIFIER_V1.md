@@ -79,6 +79,21 @@ fixture remains accepted and still reports `BLOCKED_PROVENANCE`.
 
 Reference: [RFC 3161 §2.4.2](https://www.rfc-editor.org/rfc/rfc3161.html#section-2.4.2).
 
+## TSTInfo TSA name binding
+
+RFC 3161 says that when the optional `tsa` GeneralName is present, it must
+correspond to one of the subject names in the certificate used to verify the
+token. The verifier now checks a `directoryName` against the signer
+certificate subject and any SAN `DirectoryName` values. Other GeneralName
+forms are rejected as unsupported rather than silently ignored. The field
+remains optional.
+
+Synthetic regressions cover a matching subject name, a mismatched name, and an
+unsupported DNS-name form. This is a bounded implementation, not a claim of
+complete GeneralName support or institutional TSA identity.
+
+Reference: [RFC 3161 §2.4.2](https://www.rfc-editor.org/rfc/rfc3161.html#section-2.4.2).
+
 ## ESS signer-certificate identification
 
 RFC 3161 §2.4.2 requires the TSA certificate identifier in a signed
