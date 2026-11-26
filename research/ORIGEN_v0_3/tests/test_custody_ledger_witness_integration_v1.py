@@ -201,7 +201,10 @@ def _build_physical_signature_bundle(data: dict) -> dict:
         accuracy={"seconds": 1},
     )
     document["trusted_time_proofs"].append({
-        "authority_id": "tsa-root-sha256:" + hashlib.sha256(policy_tsa_root_der).hexdigest(),
+        "authority_id": (
+            "tsa-root-sha256:" + hashlib.sha256(policy_tsa_root_der).hexdigest()
+            + ":policy-oid:1.2.3.4.5"
+        ),
         "event_id": "trust-policy-envelope-sha256:" + hashlib.sha256(policy_bytes).hexdigest(),
         "event_at_utc": "2026-11-23T02:48:30Z",
         "proof_sha256": hashlib.sha256(policy_timestamp_token_der).hexdigest(),
@@ -224,6 +227,7 @@ def _build_physical_signature_bundle(data: dict) -> dict:
         "policy_timestamp_token_der": policy_timestamp_token_der,
         "pinned_policy_tsa_root_certificate_der": policy_tsa_root_der,
         "expected_policy_tsa_root_sha256": hashlib.sha256(policy_tsa_root_der).hexdigest(),
+        "expected_policy_tsa_policy_oid": "1.2.3.4.5",
         "policy_timestamp_expected_nonce": 54321,
         "pinned_root_public_key_bytes": raw_public_key(root_private),
         "expected_root_key_id": ROOT_KEY_ID,
@@ -421,6 +425,7 @@ def _verify(data, ledger, batches, **overrides):
         "policy_timestamp_token_der": data["policy_timestamp_token_der"],
         "pinned_policy_tsa_root_certificate_der": data["pinned_policy_tsa_root_certificate_der"],
         "expected_policy_tsa_root_sha256": data["expected_policy_tsa_root_sha256"],
+        "expected_policy_tsa_policy_oid": data["expected_policy_tsa_policy_oid"],
         "policy_timestamp_expected_nonce": data["policy_timestamp_expected_nonce"],
         "pinned_root_public_key_bytes": data["pinned_root_public_key_bytes"],
         "expected_root_key_id": data["expected_root_key_id"],
@@ -469,6 +474,7 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
             hashlib.sha256(data["signed_policy_envelope_bytes"]).hexdigest(),
         )
         self.assertTrue(result.policy_envelope_timestamp.existence_before_effective_time_verified)
+        self.assertEqual(result.policy_envelope_timestamp.expected_policy_oid, "1.2.3.4.5")
         self.assertTrue(result.policy_envelope_timestamp_proof_in_manifest_commitment_verified)
         self.assertEqual(
             result.policy_envelope_timestamp.timestamp.message_imprint_hex,
@@ -523,6 +529,16 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
                 pinned_policy_tsa_root_certificate_der=root_der,
                 expected_policy_tsa_root_sha256=hashlib.sha256(root_der).hexdigest(),
             )
+
+    def test_policy_timestamp_oid_must_match_the_caller_pinned_policy(self):
+        data, ledger, batches, _ = _build_case()
+        with self.assertRaisesRegex(ValueError, "policy OID does not match"):
+            _verify(data, ledger, batches, expected_policy_tsa_policy_oid="1.2.3.4.6")
+
+    def test_malformed_expected_policy_oid_is_rejected(self):
+        data, ledger, batches, _ = _build_case()
+        with self.assertRaisesRegex(ValueError, "canonical numeric OID"):
+            _verify(data, ledger, batches, expected_policy_tsa_policy_oid="1.2..3")
 
     def test_policy_envelope_timestamp_nonce_is_checked(self):
         data, ledger, batches, _ = _build_case()
