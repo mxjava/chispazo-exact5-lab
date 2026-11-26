@@ -53,6 +53,10 @@ from .trust_verifier_v1 import (
     CryptographicallyVerifiedReceipt,
     verify_receipt_attestation,
 )
+from .timestamp_nonce_challenge_v1 import (
+    copy_timestamp_nonce_challenge,
+    timestamp_nonce_challenge_sha256,
+)
 
 
 CLASSIC_PHYSICAL_POLICY_DOMAIN = "origen.chispazo.classic.physical"
@@ -66,6 +70,7 @@ PROVIDER_COMPOSITION_BLOCKERS = (
     "TRANSPARENCY_LOG_AND_WITNESS_REGISTRY_ROOTS_NOT_INSTITUTIONALLY_AUTHENTICATED",
     "PHYSICAL_ARTIFACT_ORIGIN_AND_INSTITUTIONAL_DELEGATION_NOT_AUTHENTICATED",
     "INDEPENDENT_CUSTODY_AND_PROSPECTIVE_EDGE_CRITERIA_NOT_MET",
+    "RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED",
 )
 
 # The lower-level verifier is intentionally caller-parameterized. In this
@@ -100,6 +105,9 @@ class DeploymentEvidenceInspectionV1:
     clock_sample_sha256: str
     physical_trust_context_sha256: str
     physical_trust_context_generation: int
+    timestamp_nonce_challenge_id: str
+    timestamp_nonce_challenge_sha256: str
+    timestamp_nonce_challenge_generation: int
     trusted_time_earliest_utc: datetime
     trusted_time_latest_utc: datetime
     provenance_status: ProvenanceStatus
@@ -231,8 +239,6 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     custodian_key_id: str,
     timestamp_token_der: bytes,
     policy_timestamp_token_der: bytes,
-    policy_timestamp_expected_nonce: int,
-    expected_nonce: int,
     raw_manifest_bytes: bytes,
     artifact_bytes_by_sha256: dict[str, bytes],
     signature_bytes_by_sha256: dict[str, bytes],
@@ -300,6 +306,35 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     earliest, latest = _time_window(snapshot)
     if latest > snapshot.clock_sample_valid_until_utc:
         raise ValueError("trusted-time uncertainty interval exceeds the provider clock sample lease")
+
+    read_nonce_challenge = getattr(provider, "read_timestamp_nonce_challenge", None)
+    if not callable(read_nonce_challenge):
+        raise TrustProviderUnavailable("deployment provider lacks read_timestamp_nonce_challenge")
+    try:
+        supplied_nonce_challenge = read_nonce_challenge(
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            expected_state_generation=snapshot.state_generation,
+            expected_root_generation=snapshot.root_generation,
+            expected_physical_trust_context_generation=physical_context.context_generation,
+            expected_physical_trust_context_sha256=physical_context_digest,
+        )
+    except Exception as exc:
+        raise TrustProviderUnavailable("provider timestamp nonce challenge could not be read") from exc
+    nonce_challenge = copy_timestamp_nonce_challenge(supplied_nonce_challenge)
+    if (
+        nonce_challenge.state_generation != snapshot.state_generation
+        or nonce_challenge.root_generation != snapshot.root_generation
+        or nonce_challenge.physical_trust_context_generation != physical_context.context_generation
+        or nonce_challenge.physical_trust_context_sha256 != physical_context_digest
+    ):
+        raise TrustStateRejected("timestamp nonce challenge is not bound to the exact provider snapshot and physical trust context")
+    if (
+        nonce_challenge.issued_at_utc > earliest
+        or latest >= nonce_challenge.expires_at_utc
+        or nonce_challenge.expires_at_utc > snapshot.clock_sample_valid_until_utc
+    ):
+        raise TrustStateRejected("timestamp nonce challenge is outside the complete trusted-time interval or clock lease")
+    nonce_challenge_digest = timestamp_nonce_challenge_sha256(nonce_challenge)
 
     effective_floor = max(
         snapshot.minimum_policy_sequence,
@@ -373,13 +408,13 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         physical_context.policy_tsa_root_certificate_der,
         physical_context.policy_tsa_root_sha256,
         physical_context.policy_tsa_policy_oid,
-        policy_timestamp_expected_nonce,
+        nonce_challenge.policy_timestamp_nonce,
         snapshot.root_public_key_bytes,
         snapshot.root_key_id,
         effective_floor,
         physical_context.custody_tsa_root_certificate_der,
         physical_context.custody_tsa_root_sha256,
-        expected_nonce,
+        nonce_challenge.custody_timestamp_nonce,
         raw_manifest_bytes,
         artifact_bytes_by_sha256,
         signature_bytes_by_sha256,
@@ -422,6 +457,8 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         signed_policy_envelope_bytes,
         provider=provider,
         provider_snapshot=snapshot,
+        timestamp_nonce_challenge_id=nonce_challenge.challenge_id,
+        timestamp_nonce_challenge_sha256=nonce_challenge_digest,
     )
     if type(deployment_trust) is not DeploymentTrustInspection:
         raise TypeError("deployment trust boundary returned an unexpected result type")
@@ -433,6 +470,8 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         or deployment_trust.root_generation != snapshot.root_generation
         or deployment_trust.trust_configuration_sha256 != trust_configuration_digest
         or deployment_trust.clock_sample_sha256 != clock_sample_digest
+        or deployment_trust.timestamp_nonce_challenge_id != nonce_challenge.challenge_id
+        or deployment_trust.timestamp_nonce_challenge_sha256 != nonce_challenge_digest
     ):
         raise RuntimeError("deployment trust commit is not bound to the exact verified snapshot")
 
@@ -455,6 +494,9 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         clock_sample_sha256=clock_sample_digest,
         physical_trust_context_sha256=physical_context_digest,
         physical_trust_context_generation=physical_context.context_generation,
+        timestamp_nonce_challenge_id=nonce_challenge.challenge_id,
+        timestamp_nonce_challenge_sha256=nonce_challenge_digest,
+        timestamp_nonce_challenge_generation=nonce_challenge.state_generation,
         trusted_time_earliest_utc=earliest,
         trusted_time_latest_utc=latest,
         provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
