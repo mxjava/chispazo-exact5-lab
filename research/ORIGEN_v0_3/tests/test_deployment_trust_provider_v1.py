@@ -64,7 +64,7 @@ def signed_clock_sample(
     }
     unsigned = dict(document)
     unsigned.pop("signature")
-    message = b"ORIGEN_CLOCK_SAMPLE_V1\\x00" + _canonical(unsigned)
+    message = b"ORIGEN_CLOCK_SAMPLE_V1\x00" + _canonical(unsigned)
     document["signature"]["signature_b64"] = base64.b64encode(
         private_key.sign(message)
     ).decode("ascii")
@@ -354,7 +354,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         unsigned.pop("signature")
         document["signature"]["signature_b64"] = base64.b64encode(
             self.clock_private_key.sign(
-                b"ORIGEN_CLOCK_SAMPLE_V1\\x00" + _canonical(unsigned)
+                b"ORIGEN_CLOCK_SAMPLE_V1\x00" + _canonical(unsigned)
             )
         ).decode("ascii")
         self.provider.snapshot = replace(
