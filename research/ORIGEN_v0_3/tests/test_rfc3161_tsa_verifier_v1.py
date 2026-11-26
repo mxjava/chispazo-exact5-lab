@@ -348,7 +348,7 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
 
 
     def test_signing_certificate_v2_must_bind_exact_tsa_signer_certificate(self):
-        token, root_der = _token(signing_certificate_hash=b"\\x00" * 32)
+        token, root_der = _token(signing_certificate_hash=bytes(32))
         with self.assertRaisesRegex(ValueError, "SigningCertificateV2 ESSCertIDv2"):
             _verify(token, root_der)
 
@@ -364,7 +364,7 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
 
         token, root_der = _token(
             signing_certificate_version="v1",
-            signing_certificate_hash=b"\\x00" * 20,
+            signing_certificate_hash=bytes(20),
         )
         with self.assertRaisesRegex(ValueError, "SigningCertificate ESSCertID"):
             _verify(token, root_der)
