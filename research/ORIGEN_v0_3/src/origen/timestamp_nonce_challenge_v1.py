@@ -14,8 +14,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 _MAX_NONCE = (1 << 63) - 1
-_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\\Z")
-_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
+_IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 @dataclass(frozen=True, slots=True)
