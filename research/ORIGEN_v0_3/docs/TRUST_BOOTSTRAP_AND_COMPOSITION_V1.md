@@ -72,3 +72,10 @@ No caller-created booleans, strings, status labels or `VerifiedTrustPolicy` obje
 `external_ledger_consistency_v1.py` adds a bounded RFC 6962 consistency-proof verifier. It checks that a later Merkle root is an append-only extension of an earlier root, including equal-size handling, exact immutable 32-byte nodes, exact integer sizes, and bounded proof length. Synthetic tests generate every old/new tree-size pair through 40 leaves and exercise tampering and invalid shapes.
 
 This primitive only connects two roots mathematically. It does not authenticate signed tree heads, provision a log key, persist the latest accepted checkpoint, prevent rollback across process restarts, or provide an independent witness. It must be composed with independently authenticated signed tree heads and an externally controlled monotonic checkpoint before it can support provenance. No production or prediction status changes.
+
+
+## Inclusion-to-consistency composition (2026-11-26)
+
+`external_ledger_chain_v1.py` composes the result records produced by the signed inclusion verifier with the bounded RFC 6962 consistency verifier. It checks same-log identity and proves that the later authenticated-root value is append-only consistent with the earlier root. Its inputs are ordinary forgeable Python dataclasses, so this helper is not an authorization or provenance boundary. Callers must keep both inclusion verifications and the consistency check in one trusted control flow, and must still obtain log identity/key pins and a persistent monotonic checkpoint out of band.
+
+Synthetic tests cover a valid 5-to-13 leaf chain, log identity mismatch, root tampering, and malformed result records. The public provenance adapter remains fail-closed. No production or prediction status changes.
