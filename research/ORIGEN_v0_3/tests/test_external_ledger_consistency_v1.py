@@ -10,11 +10,11 @@ from origen.external_ledger_consistency_v1 import (
 
 
 def leaf(data: bytes) -> bytes:
-    return hashlib.sha256(b"\\x00" + data).digest()
+    return hashlib.sha256(b"\x00" + data).digest()
 
 
 def node(left: bytes, right: bytes) -> bytes:
-    return hashlib.sha256(b"\\x01" + left + right).digest()
+    return hashlib.sha256(b"\x01" + left + right).digest()
 
 
 def split_point(n: int) -> int:
