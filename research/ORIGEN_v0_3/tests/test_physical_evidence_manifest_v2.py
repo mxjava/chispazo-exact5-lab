@@ -19,9 +19,12 @@ NIGHTLY_ONLY = {"MJF-TRANSACTION-FILE", "MJF-SIGNATURE-PRINTED-FORM"}
 def document_for(modality: str) -> dict:
     doc = copy.deepcopy(valid_document())
     doc["schema_version"] = SCHEMA_VERSION
+    target_id = "12395" if modality == "DE_LAS_TRES" else "12396"
+    for artifact in doc["artifacts"]:
+        artifact["contest_id"] = target_id
     doc["target"] = {
         "modality": modality,
-        "contest_id": "12395" if modality == "DE_LAS_TRES" else "12396",
+        "contest_id": target_id,
         "draw_date_local": "2026-11-25",
         "sales_close_at_utc": (
             "2026-11-25T21:00:00Z" if modality == "DE_LAS_TRES"
@@ -104,10 +107,11 @@ class PhysicalEvidenceManifestV2Tests(unittest.TestCase):
     def test_de_las_tres_rejects_nightly_only_mjf_artifacts(self):
         doc = document_for("DE_LAS_TRES")
         classic = document_for("CLASSIC")
-        mjf = next(
+        mjf = copy.deepcopy(next(
             item for item in classic["artifacts"]
             if item["artifact_type"] == "MJF-TRANSACTION-FILE"
-        )
+        ))
+        mjf["contest_id"] = "12395"
         doc["artifacts"].append(mjf)
         with self.assertRaisesRegex(ValueError, "do not match DE_LAS_TRES requirements"):
             parse_unverified_physical_manifest_v2(encode(doc))
