@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from .external_ledger_v1 import VerifiedLedgerInclusion
 from .external_ledger_consistency_v1 import verify_consistency_proof
 
-_HEX64 = re.compile(r"[0-9a-f]{64}\\Z")
+_HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 @dataclass(frozen=True, slots=True)
