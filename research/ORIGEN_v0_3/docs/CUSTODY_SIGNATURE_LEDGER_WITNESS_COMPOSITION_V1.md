@@ -37,8 +37,8 @@ The V3 and RFC 3161 verifiers still validate the exact source bytes independentl
 ## Composition order
 
 1. Normalize the caller-supplied verification time once to UTC.
-2. Verify V3 signed policy, root receipt attestation, custody record, portfolio and detached custodian signature.
-3. Verify the RFC 3161 token over the exact detached signature bytes and require its complete accuracy interval to be after receipt and strictly before Classic 21:00.
+2. Verify V3 signed policy, root receipt attestation, custody record, portfolio and detached custodian signature. The receipt attestation's signed time must fall inside the signed policy's effective interval.
+3. Verify the RFC 3161 token over the exact detached signature bytes and require its complete accuracy interval to be after receipt, strictly before Classic 21:00, and fully inside both the signed policy's effective interval and the delegated custodian key's validity interval.
 4. Parse the exact canonical physical manifest and cross-bind the custody record, receipt digest, detached signature event, token digest, TSA-root fingerprint and genTime.
 5. Verify manifest-bound ledger inclusion and append-only checkpoint consistency using the exact same new checkpoint bytes.
 6. Require the composition boundary to receive an exact immutable tuple of 2..32 witness batches; lazy iterables and mutable lists are rejected before iteration.
@@ -74,7 +74,7 @@ All receipts, policies, custody records, signatures, TSA certificates/tokens, ma
 
 ## Remaining trust boundary
 
-The caller still supplies the V3 policy root, TSA root, log key, witness-registry root, policy/registry/tree-size floors and verification clock. The module does not provision or persist those values outside the caller. It does not check TSA revocation, authenticate TSA policy authorization, establish legal identity or organizational independence of custodians/witnesses, persist observation batches, implement network gossip, or verify original institutional Acta/CS-11/Sumario/Tira de Pesaje bytes.
+The caller still supplies the V3 policy root, TSA root, log key, witness-registry root, policy/registry/tree-size floors and verification clock. The module does not provision or persist those values outside the caller. Policy-effective-time checks prevent a currently valid signed policy from retroactively authorizing a receipt or custody signature whose signed/timestamped time predates the policy window; they do not authenticate the supplied clock or TSA root. It does not check TSA revocation, authenticate TSA policy authorization, establish legal identity or organizational independence of custodians/witnesses, persist observation batches, implement network gossip, or verify original institutional Acta/CS-11/Sumario/Tira de Pesaje bytes.
 
 Production remains:
 
