@@ -32,7 +32,7 @@ The provider returns one immutable snapshot containing:
 
 - root public-key bytes, root key ID, and root generation;
 - fixed CLASSIC policy domain;
-- minimum sequence, accepted sequence, exact accepted-envelope digest, and state generation;
+- minimum sequence, accepted sequence, exact accepted-envelope digest, last accepted clock-interval upper bound, and state generation;
 - one normalized UTC time, its uncertainty, and a provisioned maximum uncertainty;
 - identifiers for the clock source and state backend;
 - the provisioning-record digest.
@@ -74,6 +74,8 @@ The external implementation must provide a linearizable compare-and-advance tran
 
 The provider must scope state by root generation and policy domain. A policy sequence from another domain must never satisfy the CLASSIC floor. Root rotation must be a separate, independently authorized transition and cannot reset the sequence.
 
+For every higher-sequence acceptance, the provider must also enforce a trusted-time rollback floor atomically: candidate earliest time (accepted_at_utc minus clock uncertainty) must be greater than or equal to the previously stored accepted interval's upper bound. On successful advance it stores candidate latest time (accepted_at_utc plus clock uncertainty) together with the new sequence and exact envelope digest. The commit response must echo that exact upper bound. Same-sequence/same-digest idempotency returns the previously stored upper bound without changing it. A provider that restores or regresses this clock floor must fail closed.
+
 The application checks the returned commit shape and exact policy digest, but only the provider's independently reviewed implementation can guarantee linearizability and durable anti-rollback.
 
 ## 5. Trusted-time uncertainty
@@ -113,6 +115,8 @@ All keys, receipts, envelopes, provider state, and time sources in this test mod
 - same-sequence/different-digest equivocation;
 - rollback below accepted sequence;
 - compare-and-swap generation race;
+- trusted-clock interval rollback behind the last accepted upper bound;
+- missing prior accepted-time state, clock-floor race and commit-response time-bound substitution;
 - provider read and durable commit outages;
 - receipt tampering before state advancement;
 - clock uncertainty crossing activation, expiration, and receipt-signing order;
