@@ -627,6 +627,18 @@ def verify_rfc3161_timestamp_token(
         millis = 0 if millis_value is None else millis_value
         micros = 0 if micros_value is None else micros_value
         accuracy_microseconds = seconds * 1_000_000 + millis * 1_000 + micros
+        # Validate the full uncertainty interval at the verifier boundary.
+        # Downstream consumers construct datetime bounds from this value; an
+        # oversized ASN.1 INTEGER must fail here rather than escape as an
+        # unhandled OverflowError in a later composition layer.
+        try:
+            accuracy_delta = timedelta(microseconds=accuracy_microseconds)
+            gen_time - accuracy_delta
+            gen_time + accuracy_delta
+        except OverflowError as exc:
+            raise ValueError(
+                "RFC3161 accuracy interval exceeds supported datetime range"
+            ) from exc
     ordering = tst_info["ordering"].native
     if type(ordering) is not bool:
         raise ValueError("RFC3161 ordering must be an exact boolean")
