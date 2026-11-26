@@ -35,7 +35,7 @@ from .trust_verifier_v1 import (
 RECEIPT_ATTESTER_ROLE = "RECEIPT-ROOT-ATTESTER"
 RECEIPT_ATTESTATION_ARTIFACT_TYPE = "TRUST-RECEIPT-ROOT-ATTESTATION"
 CLASSIC_POLICY_DOMAIN = "origen.chispazo.classic.provenance"
-_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 class ProvenanceStatus(str, Enum):
