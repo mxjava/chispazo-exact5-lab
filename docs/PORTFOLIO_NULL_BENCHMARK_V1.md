@@ -18,6 +18,17 @@ The external anchors and cutoff metadata must be retained outside the files they
 python -m src.portfolio_benchmark --registrations registrations.json --trusted-registration-hashes registration_anchors.json --target-cutoffs target_cutoffs.json --draws official_draws.csv --trusted-draw-hashes draw_anchors.json --out benchmark.json --replicates 5000 --seed 20261126
 ```
 
+## Exact mathematical reference for 30 distinct random lines
+
+The benchmark now reports an exact hypergeometric reference in addition to Monte Carlo replicates. For a uniformly sampled set of 30 distinct combinations from the 98,280 possible combinations, the probability of at least one line reaching each threshold is:
+
+- Best line >= 3/5: approximately 55.9078%.
+- Best line >= 4/5: approximately 3.48147%.
+- Best line = 5/5: exactly 30/98,280 = approximately 0.0305250%.
+- Expected best-hit count: approximately 2.59325.
+
+These are random-baseline probabilities, not performance claims for the model. The exact 5/5 probability is invariant to which 30 distinct lines are selected under a uniform draw; selection strategy cannot improve it without a genuine non-uniform predictive signal.
+
 ## Interpretation
 
 Primary statistic: mean best-hit count across targets. Secondary statistics: number of targets with a best line >=4/5 and exact 5/5. Each Monte Carlo replicate independently samples 30 distinct combinations for every target. Empirical upper-tail p-values are diagnostic only; they are not prospective evidence or anytime-valid e-values and do not correct for model/portfolio search performed outside the replicate loop. If candidate selection used any evaluated outcomes, repeat the complete selection process inside each null replicate.
