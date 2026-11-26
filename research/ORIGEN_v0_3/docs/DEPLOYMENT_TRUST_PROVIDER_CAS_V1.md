@@ -38,7 +38,7 @@ The provider returns one immutable snapshot containing:
 - the exact canonical signed clock-sample envelope bytes, its 32-byte Ed25519 verification key, and the provisioned clock-key ID;
 - identifiers for the clock source and state backend;
 - the provisioning-record digest;
-- a locally computed canonical trust-configuration SHA-256 binding the policy domain, root-key fingerprint/ID/generation, minimum sequence, maximum clock uncertainty and maximum sample age, clock/backend identifiers, and provisioning-record digest;
+- a locally computed canonical trust-configuration SHA-256 binding the policy domain, root-key fingerprint/ID/generation, minimum sequence, maximum clock uncertainty and maximum sample age, clock-source ID, clock-key ID/fingerprint, backend ID, and provisioning-record digest;
 - a locally computed clock-sample SHA-256 over the exact signed envelope bytes; the envelope signature binds the source ID, sample ID, exact UTC instant, uncertainty, validity deadline, CLASSIC domain, and clock-key ID.
 
 The application request cannot independently override those values. The snapshot is copied and strictly type-checked before verification. A boolean is not accepted as an integer sequence or generation.
@@ -62,7 +62,7 @@ The operation is ordered as follows:
 11. Atomically compare-and-advance the provider state using the exact snapshot generation, both digests, root generation, policy sequence, envelope digest, accepted time, and uncertainty. The provider must recompute the configuration digest from its authoritative configuration and the sample digest from its current authenticated clock sample inside the same transaction.
 12. Return a diagnostic inspection with the exact byte hashes, both digests, sample lease deadline, and before/after state generations. Its provenance status remains `BLOCKED_PROVENANCE`.
 
-No state commit is attempted when policy signature, receipt signature, role authorization, time-window, or independent-boundary verification fails.
+No state commit is attempted when policy signature, receipt signature, clock-sample signature, role authorization, time-window, or independent-boundary verification fails.
 
 ## 4. Required provider transaction semantics
 
@@ -94,9 +94,7 @@ The provider must independently recompute this value from its authoritative prov
 
 ### Provider clock-sample binding
 
-The application computes `clock_sample_sha256` over canonical JSON containing the fixed schema ID, clock source ID, source-issued sample ID, exact UTC sample instant, uncertainty, and sample validity deadline. The sample descriptor is not a signature and this hash is not proof of clock authenticity.
-
-The application first verifies the exact canonical ASCII JSON envelope under the Ed25519 clock key in the provider snapshot. The signature uses the domain separator `ORIGEN_CLOCK_SAMPLE_V1\\x00`; duplicate JSON keys, unknown/missing fields, non-canonical bytes/base64, unsupported schema/domain, source/key/sample mismatch, timestamp mismatch, and invalid signatures are rejected. The application then hashes the exact signed bytes and passes that digest to CAS.
+The `origen.clock-sample-attestation.v1` envelope is canonical ASCII JSON with exact fields for the CLASSIC domain, clock-source ID, sample ID, sampled UTC instant, uncertainty in milliseconds, lease deadline, clock-key ID, and Ed25519 signature. The application verifies the signature over the canonical claims (excluding the signature object) with the domain separator `ORIGEN_CLOCK_SAMPLE_V1\\x00`. Duplicate JSON keys, unknown/missing fields, non-canonical bytes/base64, unsupported schema/domain, source/key/sample mismatch, timestamp mismatch, and invalid signatures are rejected. `clock_sample_sha256` is SHA-256 of the exact signed envelope bytes, not a reconstructed descriptor.
 
 The provider must independently obtain the authoritative current source sample, validate its signature under its independently provisioned clock key and source policy, recompute this digest, and compare it with `expected_clock_sample_sha256` inside the same linearizable CAS transaction. It must also reject a sample whose lease has expired at commit time, whose validity deadline is older than the complete uncertainty interval, or whose lifetime exceeds the provisioned maximum sample age. A changed sample between read and commit returns conflict and must not advance sequence or time state. The sample ID must be unique within the clock source's replay domain.
 
