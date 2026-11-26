@@ -10,6 +10,7 @@ BLOCKED_PROVENANCE: all roots, sequence floors and the clock are caller inputs.
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -79,6 +80,12 @@ def _manifest_binds_signature_timestamp(
     """Bind exact V3 custody bytes and detached RFC 3161 sidecar to manifest claims."""
     chain = custody_timestamp.custody_chain
     target = manifest.target
+    if hashlib.sha256(original_receipt_bytes).hexdigest() != chain.receipt_sha256:
+        raise RuntimeError("V3 custody verifier returned a mismatched exact receipt digest")
+    if hashlib.sha256(custody_record_bytes).hexdigest() != chain.custody_record_sha256:
+        raise RuntimeError("V3 custody verifier returned a mismatched exact custody-record digest")
+    if custody_timestamp.signature_sha256 != chain.custody_signature_sha256:
+        raise RuntimeError("custody timestamp and V3 verifier disagree on exact signature digest")
     if target.modality != "CLASSIC":
         raise ValueError("custody ledger composition requires a CLASSIC physical manifest")
     if target.contest_id != str(chain.target_contest_id):
@@ -97,11 +104,15 @@ def _manifest_binds_signature_timestamp(
         raise ValueError("manifest custody-record artifact length does not match exact V3 record bytes")
 
     try:
-        record = __import__("json").loads(custody_record_bytes.decode("utf-8"))
+        record = json.loads(custody_record_bytes.decode("utf-8"))
     except (UnicodeDecodeError, ValueError) as exc:
         raise ValueError("verified custody record cannot be decoded for manifest cross-binding") from exc
     if type(record) is not dict:
         raise ValueError("verified custody record must be a JSON object")
+    if record.get("target_contest_id") != chain.target_contest_id:
+        raise ValueError("exact custody record contest ID does not match verified V3 target")
+    if record.get("custodian_id") != chain.custodian_id:
+        raise ValueError("exact custody record custodian ID does not match verified V3 custodian")
     close_at = record.get("official_draw_close_at_utc")
     received_at = record.get("received_at_utc")
     if type(close_at) is not str or target.draw_close_at_utc != close_at:
@@ -124,6 +135,8 @@ def _manifest_binds_signature_timestamp(
         raise ValueError("manifest custody receipt digest does not match exact root-signed receipt bytes")
     if event.received_at_utc != received_at:
         raise ValueError("manifest custody receipt time does not match exact V3 custody record")
+    if event.event_id == custody_timestamp.timestamp_event_id:
+        raise ValueError("signature timestamp event must not be reused as the custody receipt event")
 
     signature_sha256 = custody_timestamp.signature_sha256
     expected_event_id = custody_signature_timestamp_event_id(signature_sha256)
