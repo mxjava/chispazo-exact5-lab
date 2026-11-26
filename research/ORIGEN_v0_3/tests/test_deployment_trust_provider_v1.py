@@ -82,6 +82,7 @@ class SyntheticTrustProvider:
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
+            self.snapshot.accepted_time_latest_utc,
             )
         if policy_domain != self.snapshot.policy_domain:
             return DeploymentTrustCommit(
@@ -89,6 +90,7 @@ class SyntheticTrustProvider:
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
+            self.snapshot.accepted_time_latest_utc,
             )
         if root_key_id != self.snapshot.root_key_id or root_generation != self.snapshot.root_generation:
             return DeploymentTrustCommit(
@@ -96,13 +98,28 @@ class SyntheticTrustProvider:
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
+            self.snapshot.accepted_time_latest_utc,
             )
+        if policy_sequence > self.snapshot.accepted_policy_sequence:
+            candidate_earliest = accepted_at_utc - timedelta(milliseconds=clock_uncertainty_ms)
+            if (
+                self.snapshot.accepted_time_latest_utc is not None
+                and candidate_earliest < self.snapshot.accepted_time_latest_utc
+            ):
+                return DeploymentTrustCommit(
+                    TrustStateOutcome.TIME_ROLLBACK,
+                    self.snapshot.state_generation,
+                    policy_sequence,
+                    policy_envelope_sha256,
+                    self.snapshot.accepted_time_latest_utc,
+                )
         if policy_sequence < self.snapshot.accepted_policy_sequence:
             return DeploymentTrustCommit(
                 TrustStateOutcome.ROLLBACK,
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
+            self.snapshot.accepted_time_latest_utc,
             )
         if policy_sequence == self.snapshot.accepted_policy_sequence:
             if policy_envelope_sha256 != self.snapshot.accepted_policy_envelope_sha256:
@@ -111,12 +128,14 @@ class SyntheticTrustProvider:
                     self.snapshot.state_generation,
                     policy_sequence,
                     policy_envelope_sha256,
+            self.snapshot.accepted_time_latest_utc,
                 )
             return DeploymentTrustCommit(
                 TrustStateOutcome.IDEMPOTENT,
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
+            self.snapshot.accepted_time_latest_utc,
             )
 
         next_generation = self.snapshot.state_generation + 1
@@ -125,12 +144,14 @@ class SyntheticTrustProvider:
             state_generation=next_generation,
             accepted_policy_sequence=policy_sequence,
             accepted_policy_envelope_sha256=policy_envelope_sha256,
+            accepted_time_latest_utc=accepted_at_utc + timedelta(milliseconds=clock_uncertainty_ms),
         )
         return DeploymentTrustCommit(
             TrustStateOutcome.ADVANCED,
             next_generation,
             policy_sequence,
             policy_envelope_sha256,
+            self.snapshot.accepted_time_latest_utc,
         )
 
 
@@ -149,6 +170,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             state_generation=7,
             accepted_policy_sequence=POLICY_SEQUENCE - 1,
             accepted_policy_envelope_sha256="a" * 64,
+            accepted_time_latest_utc=NOW - timedelta(seconds=1),
             trusted_time_utc=NOW,
             clock_uncertainty_ms=0,
             maximum_clock_uncertainty_ms=100,
@@ -175,6 +197,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.assertEqual(result.state_generation_after, 8)
         self.assertIs(result.state_outcome, TrustStateOutcome.ADVANCED)
         self.assertEqual(self.provider.snapshot.accepted_policy_sequence, POLICY_SEQUENCE)
+        self.assertEqual(self.provider.snapshot.accepted_time_latest_utc, NOW)
         self.assertEqual(
             self.provider.snapshot.accepted_policy_envelope_sha256,
             result.policy_envelope_sha256,
@@ -336,6 +359,38 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "lowercase SHA-256"):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 0)
+
+    def test_higher_sequence_rejects_trusted_clock_rollback_before_commit(self):
+        self.provider.snapshot = replace(
+            self.snapshot,
+            accepted_time_latest_utc=NOW + timedelta(milliseconds=1),
+        )
+        with self.assertRaisesRegex(TrustStateRejected, "regressed behind the previously accepted upper bound"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_snapshot_rejects_missing_accepted_time_for_nonempty_sequence(self):
+        self.provider.snapshot = replace(
+            self.snapshot,
+            accepted_time_latest_utc=None,
+        )
+        with self.assertRaisesRegex(ValueError, "requires an exact normalized UTC accepted-time upper bound"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_provider_commit_must_bind_candidate_time_upper_bound(self):
+        original = self.provider.compare_and_advance
+
+        def wrong_time(**kwargs):
+            commit = original(**kwargs)
+            return replace(
+                commit,
+                accepted_time_latest_utc=NOW - timedelta(seconds=2),
+            )
+
+        self.provider.compare_and_advance = wrong_time
+        with self.assertRaisesRegex(TrustStateRejected, "candidate clock upper bound"):
+            self.inspect()
 
     def test_provider_commit_must_bind_exact_policy_digest(self):
         original = self.provider.compare_and_advance
