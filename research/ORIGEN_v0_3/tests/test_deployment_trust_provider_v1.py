@@ -1,11 +1,13 @@
 """Synthetic adversarial tests for the deployment trust-provider contract."""
 from __future__ import annotations
 
+import base64
 import json
 import unittest
 from dataclasses import replace
 from datetime import timedelta, timezone
 
+from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from origen.deployment_trust_provider_v1 import (
@@ -17,6 +19,7 @@ from origen.deployment_trust_provider_v1 import (
     TrustStateRejected,
     _clock_sample_sha256,
     _trust_configuration_sha256,
+    _verify_clock_sample_attestation,
     inspect_receipt_with_deployment_trust_provider,
 )
 from origen.independent_trust_adapter import ProvenanceStatus
@@ -26,6 +29,46 @@ from test_receipt_policy_integration_v3 import (
     signed_v3_policy,
 )
 from test_trust_verifier_v1 import NOW, signed_receipt
+
+
+def _canonical(value):
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("ascii")
+
+
+def signed_clock_sample(
+    private_key,
+    *,
+    clock_source_id,
+    clock_sample_id,
+    key_id,
+    trusted_time_utc,
+    uncertainty_ms,
+    valid_until_utc,
+):
+    document = {
+        "schema": "origen.clock-sample-attestation.v1",
+        "policy_domain": CLASSIC_POLICY_DOMAIN,
+        "clock_source_id": clock_source_id,
+        "clock_sample_id": clock_sample_id,
+        "sampled_at_utc": trusted_time_utc.isoformat(
+            timespec="microseconds"
+        ).replace("+00:00", "Z"),
+        "uncertainty_ms": uncertainty_ms,
+        "valid_until_utc": valid_until_utc.isoformat(
+            timespec="microseconds"
+        ).replace("+00:00", "Z"),
+        "key_id": key_id,
+        "signature": {"algorithm": "ed25519", "signature_b64": ""},
+    }
+    unsigned = dict(document)
+    unsigned.pop("signature")
+    message = b"ORIGEN_CLOCK_SAMPLE_V1\\x00" + _canonical(unsigned)
+    document["signature"]["signature_b64"] = base64.b64encode(
+        private_key.sign(message)
+    ).decode("ascii")
+    return _canonical(document)
 
 
 class SyntheticTrustProvider:
@@ -84,6 +127,16 @@ class SyntheticTrustProvider:
                 state_generation=self.snapshot.state_generation + 1,
             )
         if expected_state_generation != self.snapshot.state_generation:
+            return DeploymentTrustCommit(
+                TrustStateOutcome.CONFLICT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
+        try:
+            _verify_clock_sample_attestation(self.snapshot)
+        except (TypeError, ValueError):
             return DeploymentTrustCommit(
                 TrustStateOutcome.CONFLICT,
                 self.snapshot.state_generation,
@@ -214,6 +267,23 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.policy_bytes, self.root_public_key = signed_v3_policy(
             self.receipt_public_key
         )
+        self.clock_private_key = Ed25519PrivateKey.generate()
+        self.clock_public_key_bytes = self.clock_private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        self.clock_sample_key_id = "synthetic-clock-key-1"
+        self.clock_sample_id = "synthetic-clock-sample-0001"
+        self.clock_sample_valid_until_utc = NOW + timedelta(seconds=60)
+        self.clock_sample_envelope_bytes = signed_clock_sample(
+            self.clock_private_key,
+            clock_source_id="synthetic-clock",
+            clock_sample_id=self.clock_sample_id,
+            key_id=self.clock_sample_key_id,
+            trusted_time_utc=NOW,
+            uncertainty_ms=0,
+            valid_until_utc=self.clock_sample_valid_until_utc,
+        )
         self.snapshot = DeploymentTrustSnapshot(
             policy_domain=CLASSIC_POLICY_DOMAIN,
             root_public_key_bytes=self.root_public_key,
@@ -228,13 +298,29 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             clock_uncertainty_ms=0,
             maximum_clock_uncertainty_ms=100,
             clock_source_id="synthetic-clock",
-            clock_sample_id="synthetic-clock-sample-0001",
+            clock_sample_key_id=self.clock_sample_key_id,
+            clock_sample_public_key_bytes=self.clock_public_key_bytes,
+            clock_sample_envelope_bytes=self.clock_sample_envelope_bytes,
+            clock_sample_id=self.clock_sample_id,
             clock_sample_valid_until_utc=NOW + timedelta(seconds=60),
             maximum_clock_sample_age_ms=120_000,
             state_backend_id="synthetic-cas-store",
             provisioning_record_sha256="b" * 64,
         )
         self.provider = SyntheticTrustProvider(self.snapshot)
+
+    def with_signed_sample(self, snapshot, **changes):
+        candidate = replace(snapshot, **changes)
+        envelope = signed_clock_sample(
+            self.clock_private_key,
+            clock_source_id=candidate.clock_source_id,
+            clock_sample_id=candidate.clock_sample_id,
+            key_id=candidate.clock_sample_key_id,
+            trusted_time_utc=candidate.trusted_time_utc,
+            uncertainty_ms=candidate.clock_uncertainty_ms,
+            valid_until_utc=candidate.clock_sample_valid_until_utc,
+        )
+        return replace(candidate, clock_sample_envelope_bytes=envelope)
 
     def inspect(self, **overrides):
         args = {
@@ -244,6 +330,43 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         }
         args.update(overrides)
         return inspect_receipt_with_deployment_trust_provider(**args)
+
+    def test_clock_sample_signature_and_exact_bytes_are_verified_before_commit(self):
+        document = json.loads(self.snapshot.clock_sample_envelope_bytes)
+        document["signature"]["signature_b64"] = base64.b64encode(
+            bytes(64)
+        ).decode("ascii")
+        self.provider.snapshot = replace(
+            self.snapshot,
+            clock_sample_envelope_bytes=_canonical(document),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "clock sample Ed25519 signature verification failed",
+        ):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_clock_sample_claims_must_match_provider_snapshot(self):
+        document = json.loads(self.snapshot.clock_sample_envelope_bytes)
+        document["clock_source_id"] = "attacker-clock"
+        unsigned = dict(document)
+        unsigned.pop("signature")
+        document["signature"]["signature_b64"] = base64.b64encode(
+            self.clock_private_key.sign(
+                b"ORIGEN_CLOCK_SAMPLE_V1\\x00" + _canonical(unsigned)
+            )
+        ).decode("ascii")
+        self.provider.snapshot = replace(
+            self.snapshot,
+            clock_sample_envelope_bytes=_canonical(document),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "clock sample attestation source does not match provider snapshot",
+        ):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
 
     def test_valid_policy_and_receipt_atomically_advance_but_remain_blocked(self):
         result = self.inspect()
@@ -433,7 +556,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.assertEqual(self.provider.commit_count, 0)
 
     def test_uncertainty_interval_must_prove_receipt_precedes_verification(self):
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
             trusted_time_latest_utc=NOW - timedelta(hours=2),
             clock_uncertainty_ms=60 * 60 * 1000,
@@ -553,7 +676,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
 
 
     def test_clock_sample_expiry_and_maximum_age_are_enforced_before_commit(self):
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
             clock_sample_valid_until_utc=NOW - timedelta(microseconds=1),
         )
@@ -561,7 +684,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 0)
 
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
             clock_sample_valid_until_utc=NOW + timedelta(seconds=121),
             maximum_clock_sample_age_ms=120_000,
@@ -571,7 +694,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.assertEqual(self.provider.commit_count, 0)
 
     def test_clock_uncertainty_interval_must_fit_inside_sample_lease(self):
-        self.provider.snapshot = replace(
+        self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
             clock_uncertainty_ms=61_000,
             maximum_clock_uncertainty_ms=61_000,
