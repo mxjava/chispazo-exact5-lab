@@ -2,10 +2,10 @@
 
 This is a research diagnostic only. It verifies raw policy bytes into a
 VerifiedTrustPolicy, uses that policy to verify the exact receipt bytes, and
-then invokes the independent provenance kill switch. V1 has no signed
-policy-domain field and this composition has no durable anti-rollback provider
-or authenticated clock. Every successful inspection therefore remains
-BLOCKED_PROVENANCE.
+then asks the independent provenance boundary to re-verify those same raw
+bytes. V1 has no signed policy-domain field and this composition has no durable
+anti-rollback provider or authenticated clock. Every successful inspection
+therefore remains BLOCKED_PROVENANCE.
 """
 from __future__ import annotations
 
@@ -70,11 +70,13 @@ def inspect_signed_root_attestation_chain_v1(
     minimum_policy_sequence: int,
     verification_time: datetime,
 ) -> SignedRootAttestationInspectionV1:
-    """Verify raw V1 policy and receipt bytes, then preserve the provenance block.
+    """Verify raw V1 policy/receipt bytes and preserve the provenance block.
 
     Only raw bytes are accepted. A caller cannot inject a preconstructed
-    VerifiedTrustPolicy or CryptographicallyVerifiedReceipt. Root pin, key ID,
-    minimum sequence, and time are still caller-supplied research inputs.
+    VerifiedTrustPolicy or receipt-verification result. The independent
+    provenance boundary then re-verifies the exact original bytes itself.
+    Root pin, key ID, minimum sequence and time remain caller-supplied research
+    inputs.
     """
     if type(original_receipt_bytes) is not bytes:
         raise TypeError("original_receipt_bytes must be exact bytes")
@@ -113,7 +115,14 @@ def inspect_signed_root_attestation_chain_v1(
     if type(verified_receipt) is not CryptographicallyVerifiedReceipt:
         raise TypeError("receipt verifier returned an unexpected result type")
 
-    provenance_status = verify_independent_provenance(original_receipt_bytes)
+    provenance_status = verify_independent_provenance(
+        original_receipt_bytes,
+        signed_policy_envelope_bytes=signed_policy_envelope_bytes,
+        pinned_root_public_key_bytes=pinned_root_public_key_bytes,
+        expected_root_key_id=expected_root_key_id,
+        minimum_policy_sequence=minimum_policy_sequence,
+        verification_time=normalized_time,
+    )
     if (
         type(provenance_status) is not ProvenanceStatus
         or provenance_status is not ProvenanceStatus.BLOCKED_PROVENANCE
