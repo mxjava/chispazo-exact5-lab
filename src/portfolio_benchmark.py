@@ -4,7 +4,7 @@ Research evaluator only. Registration and result hashes must be anchored in
 separate externally controlled files; this program cannot authenticate custody.
 """
 from __future__ import annotations
-import argparse, csv, hashlib, itertools, json, random, re
+import argparse, csv, hashlib, itertools, json, math, random, re
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -146,6 +146,23 @@ def validate_records(portfolios: dict, trusted_registration_hashes: dict,
 def score_masks(masks: list[int], result_mask: int) -> int:
     return max((mask & result_mask).bit_count() for mask in masks)
 
+def exact_uniform_portfolio_null(lines: int = 30) -> dict:
+    """Exact hypergeometric null for a uniformly sampled set of distinct lines."""
+    universe = math.comb(28, 5)
+    tail = {}
+    for threshold in range(1, 6):
+        favorable = sum(math.comb(5, j) * math.comb(23, 5-j)
+                        for j in range(threshold, 6))
+        no_favorable = math.comb(universe - favorable, lines) / math.comb(universe, lines)
+        tail[str(threshold)] = 1.0 - no_favorable
+    return {
+        "universe": universe,
+        "lines": lines,
+        "probability_best_hits_at_least_k": tail,
+        "expected_best_hits": sum(tail.values()),
+        "expected_exact5_per_target": tail["5"],
+    }
+
 def benchmark(records: list[dict], replicates: int = 5000, seed: int = 20261126) -> dict:
     if not records:
         raise ValueError("no_validated_records")
@@ -170,6 +187,7 @@ def benchmark(records: list[dict], replicates: int = 5000, seed: int = 20261126)
         "state": "RESEARCH_ONLY_NO_EDGE",
         "targets": len(records), "replicates": replicates, "seed": seed,
         "portfolio_lines_per_target": 30,
+        "exact_uniform_null": exact_uniform_portfolio_null(30),
         "observed": {"mean_best_hits": observed_mean, "targets_best_ge_4": observed_ge4, "targets_exact5": observed_exact5},
         "matched_random_null": {
             "mean_best_hits_mean": mean(null_means),
