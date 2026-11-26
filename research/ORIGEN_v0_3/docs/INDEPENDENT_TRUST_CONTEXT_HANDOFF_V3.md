@@ -1,51 +1,49 @@
-# ORIGEN v0.3 — V3 independent-trust context handoff
+# ORIGEN v0.3 — V3 independent-trust boundary re-verification
 
 **Classification:** RESEARCH ONLY / FAIL CLOSED. This interface does not authenticate institutional provenance or enable eligibility.
 
-## Problem addressed
+## Reproducible boundary gap
 
-The V3 receipt bridge verified a signed policy envelope and the root-attested receipt, then called `verify_independent_provenance(original_receipt_bytes)` without passing the exact policy envelope or the verifier outputs. The adapter could only return `BLOCKED_PROVENANCE`, but it could not detect accidental cross-wiring between one receipt's bytes, another policy's bytes, and different verifier results.
+The earlier V3 adapter accepted VerifiedTrustPolicyV3 and CryptographicallyVerifiedReceipt objects from its caller. It cross-checked their fields against the supplied receipt and policy-envelope digests, but it did not itself re-run the Ed25519 policy and receipt verifiers. Python result objects are not unforgeable capabilities: a caller with arbitrary code execution can construct or mutate objects through low-level mechanisms. The bridge normally created them correctly, but the adapter's own boundary did not independently establish that fact.
 
-## Handoff contract
+## Change in this revision
 
-The V3 bridge now passes all of the following together:
+The adapter now accepts only:
 
 - exact original receipt bytes;
 - exact signed V3 policy-envelope bytes;
-- the `VerifiedTrustPolicyV3` returned after verifying those policy bytes against the caller's root pin, key ID, domain, sequence floor and clock;
-- the `CryptographicallyVerifiedReceipt` returned after verifying the receipt's Ed25519 attestation under that policy.
+- a 32-byte caller-pinned deployment root public key;
+- the expected root key ID;
+- a caller-supplied minimum policy sequence;
+- one exact, already-normalized UTC verification instant.
 
-The adapter checks:
+When a V3 context is present, the adapter itself:
 
-1. receipt digest equals the parsed verifier result's `raw_sha256`;
-2. policy-envelope digest equals the verified policy's `envelope_sha256`;
-3. receipt policy version equals the policy version;
-4. receipt issuer/key IDs equal the verified receipt issuer/key IDs;
-5. exactly one policy issuer key matches that identity and is not revoked;
-6. policy and issuer-key validity intervals cover both the receipt signing time and verification time;
-7. exactly one signed authorization binds the receipt issuer/key to `RECEIPT-ROOT-ATTESTER` and `TRUST-RECEIPT-ROOT-ATTESTATION`;
-8. the policy domain is the fixed CLASSIC physical-provenance domain.
+1. verifies the exact policy-envelope bytes with verify_signed_trust_policy_v3, requiring the fixed CLASSIC provenance domain and the supplied sequence floor;
+2. verifies the exact receipt bytes with verify_receipt_attestation under the policy just verified;
+3. checks that the receipt and policy verifier results bind the exact input bytes;
+4. checks policy/key validity intervals, issuer/key identity, revocation declaration and the unique root-signed role/artifact authorization;
+5. returns only BLOCKED_PROVENANCE.
 
-Incomplete contexts, mismatched bytes, mismatched identities, and missing role/artifact authorization are rejected before the backend gate.
+The adapter no longer accepts caller-created VerifiedTrustPolicyV3 or CryptographicallyVerifiedReceipt objects. The V3 bridge still performs its own verification to build its diagnostic result, then passes only bytes and explicit verifier inputs to the boundary for a second verification from source bytes.
 
-## Security limits
+## What this closes—and what it does not
 
-This is an **in-process consistency handoff**, not an unforgeable capability. Python code with arbitrary execution can fabricate objects or bypass private constructors. The adapter does not trust these objects as independent evidence, does not accept caller booleans or callbacks, and does not produce an authenticated status.
+This closes the concrete object-handoff gap: a forged result object cannot stand in for an Ed25519 verification at the adapter boundary. It also makes the exact byte-to-policy-to-receipt chain explicit at the final fail-closed gate.
 
-Even a fully consistent V3 handoff returns only `BLOCKED_PROVENANCE`. The enum intentionally has no `AUTHENTICATED` member.
+It does not create independent institutional trust. The root public key, root key ID, minimum sequence and verification clock still come from the caller. Repeating cryptographic verification with the same caller-supplied values is not out-of-band provisioning, external anti-rollback, trusted time or legal identity verification. A caller able to choose a malicious root can still establish a self-consistent synthetic chain; the adapter will nevertheless remain blocked.
 
-Still caller supplied and not independently provisioned:
+The adapter intentionally has no AUTHENTICATED status. A successful diagnostic verification is not an eligibility decision.
 
-- deployment root public key and root key ID;
-- minimum policy sequence;
-- verification clock;
-- TSA root and revocation state;
-- log key, witness-registry root and anti-rollback floors.
+## Required deployment boundary
 
-The repository has no deployed independent trust backend, authenticated institutional identity, external monotonic state, or original physical evidence custody.
+A future production-capable provider must independently and atomically load:
 
-## Required next implementation boundary
+- the root pin and root key ID from a protected, reviewed deployment trust store;
+- the monotonic policy-sequence floor from rollback-resistant durable state;
+- authenticated verification time from a trusted time source;
+- current key/TSA revocation and authorization state.
 
-A future provider must independently load the root pin and monotonic sequence from protected deployment state, obtain authenticated time, re-verify exact policy and receipt bytes at the boundary, check revocation and institutional role authorization, and bind policy-envelope existence time to an independently witnessed timestamp/ledger record. Failure to read or advance any trusted state must fail closed. That provider requires separate security review and must not be simulated by test fixtures.
+It must re-verify the exact policy and receipt bytes at the boundary, advance anti-rollback state atomically only after all checks pass, and fail closed if any read, signature, time, revocation, compare-and-swap or durable-write operation fails. Root rotation must require an independently authorized transition, not a caller-selected replacement key. This provider requires separate threat modeling, deployment controls and security review; synthetic fixtures must not masquerade as provisioning.
 
-All test keys and envelopes in this branch are synthetic. Production remains **`BLOCKED / RESEARCH_ONLY_NO_EDGE`**.
+All test keys, receipts and policy envelopes in this branch are synthetic. No institutional root, monotonic store, trusted clock, physical record or independent custody is claimed. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
