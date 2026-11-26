@@ -25,6 +25,17 @@ class TestIndependentTrustAdapter(unittest.TestCase):
         )
         self.assertNotIn("AUTHENTICATED", ProvenanceStatus.__members__)
 
+    def test_parsed_unverified_claim_object_cannot_cross_raw_bytes_boundary(self):
+        raw = encode(valid_document())
+        parsed = parse_unverified_receipt(raw)
+        self.assertEqual(parsed.declared_status, "AUTHENTICATED")
+        with self.assertRaisesRegex(TypeError, "exact bytes"):
+            verify_independent_provenance(parsed)
+        self.assertIs(
+            verify_independent_provenance(raw),
+            ProvenanceStatus.BLOCKED_PROVENANCE,
+        )
+
     def test_structurally_valid_v1_receipt_still_cannot_authenticate_at_boundary(self):
         raw = encode(valid_document())
         parsed = parse_unverified_receipt(raw)
