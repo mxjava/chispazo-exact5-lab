@@ -6,6 +6,7 @@ separate externally controlled files; this program cannot authenticate custody.
 from __future__ import annotations
 import argparse, csv, hashlib, itertools, json, random, re
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from statistics import mean
 from urllib.parse import urlparse
@@ -106,6 +107,16 @@ def validate_records(portfolios: dict, trusted_registration_hashes: dict,
             raise ValueError("registration_history_not_target_minus_one")
         if not isinstance(record.get("model_version"), str) or not record["model_version"].strip():
             raise ValueError("invalid_model_version")
+        try:
+            registered_utc = _utc(record.get("registered_at_utc"))
+            registered_local = datetime.fromisoformat(str(record.get("registered_at_mexico_city", "")).replace("Z", "+00:00"))
+            mexico_zone = ZoneInfo("America/Mexico_City")
+            if registered_local.tzinfo is None or registered_local.utcoffset() != mexico_zone.utcoffset(registered_local):
+                raise ValueError("registration_mexico_city_timezone_mismatch")
+            if registered_utc != registered_local.astimezone(timezone.utc):
+                raise ValueError("registration_timestamps_disagree")
+        except (ValueError, TypeError, OverflowError) as exc:
+            raise ValueError("invalid_registration_timestamps") from exc
         if not HEX40.fullmatch(str(record.get("commit_sha", ""))):
             raise ValueError("invalid_commit_sha")
         for key in ("history_sha256", "ranking_sha256", "registration_sha256"):
