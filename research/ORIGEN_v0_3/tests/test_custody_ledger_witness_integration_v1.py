@@ -33,6 +33,7 @@ from test_custody_receipt_verifier_v3 import (
 from test_custody_signature_timestamp_integration_v1 import (
     timestamped_bundle,
 )
+from test_rfc3161_tsa_verifier_v1 import _token
 from origen.checkpoint_witness_gossip_v1 import WitnessObservationBatch
 from test_checkpoint_witness_gossip_v1 import make_batch
 from test_checkpoint_witness_quorum_v1 import (
@@ -123,15 +124,7 @@ def _build_physical_signature_bundle(data: dict) -> dict:
         "proof_sha256": hashlib.sha256(data["timestamp_token_der"]).hexdigest(),
     })
     document["ledger_anchor"]["inclusion_proof_sha256"] = "0" * 64
-
-    payload = canonical_physical_manifest_signature_payload_v2(encode(document))
     signature_bytes_by_sha256 = {}
-    for claim in document["signatures"]:
-        identity = (claim["subject_id"], claim["key_id"])
-        signature = physical["private_by_identity"][identity].sign(payload)
-        digest = hashlib.sha256(signature).hexdigest()
-        claim["signature_sha256"] = digest
-        signature_bytes_by_sha256[digest] = signature
 
     delegated: dict[tuple[str, str], dict] = {}
 
@@ -188,7 +181,7 @@ def _build_physical_signature_bundle(data: dict) -> dict:
         "issuer_id": "synthetic-policy-authority",
         "root_key_id": ROOT_KEY_ID,
         "issued_at_utc": "2026-11-22T00:00:00Z",
-        "not_before_utc": "2026-11-22T00:00:00Z",
+        "not_before_utc": "2026-11-23T02:49:00Z",
         "expires_at_utc": "2026-12-01T00:00:00Z",
         "issuer_keys": issuer_keys,
     }
@@ -200,13 +193,38 @@ def _build_physical_signature_bundle(data: dict) -> dict:
         "algorithm": "ed25519",
         "signature_b64": base64.b64encode(policy_signature).decode("ascii"),
     }
+    policy_bytes = encode(policy_document)
+    policy_timestamp_token_der, policy_tsa_root_der = _token(
+        data=policy_bytes,
+        nonce=54321,
+        gen_time=datetime(2026, 11, 23, 2, 48, 30, tzinfo=timezone.utc),
+        accuracy={"seconds": 1},
+    )
+    document["trusted_time_proofs"].append({
+        "authority_id": "tsa-root-sha256:" + hashlib.sha256(policy_tsa_root_der).hexdigest(),
+        "event_id": "trust-policy-envelope-sha256:" + hashlib.sha256(policy_bytes).hexdigest(),
+        "event_at_utc": "2026-11-23T02:48:30Z",
+        "proof_sha256": hashlib.sha256(policy_timestamp_token_der).hexdigest(),
+    })
+
+    payload = canonical_physical_manifest_signature_payload_v2(encode(document))
+    for claim in document["signatures"]:
+        identity = (claim["subject_id"], claim["key_id"])
+        signature = physical["private_by_identity"][identity].sign(payload)
+        digest = hashlib.sha256(signature).hexdigest()
+        claim["signature_sha256"] = digest
+        signature_bytes_by_sha256[digest] = signature
 
     data.update({
         "document": document,
         "artifact_bytes_by_sha256": artifact_bytes,
         "signature_bytes_by_sha256": signature_bytes_by_sha256,
         "raw_manifest_bytes": encode(document),
-        "signed_policy_envelope_bytes": encode(policy_document),
+        "signed_policy_envelope_bytes": policy_bytes,
+        "policy_timestamp_token_der": policy_timestamp_token_der,
+        "pinned_policy_tsa_root_certificate_der": policy_tsa_root_der,
+        "expected_policy_tsa_root_sha256": hashlib.sha256(policy_tsa_root_der).hexdigest(),
+        "policy_timestamp_expected_nonce": 54321,
         "pinned_root_public_key_bytes": raw_public_key(root_private),
         "expected_root_key_id": ROOT_KEY_ID,
         "minimum_policy_sequence": POLICY_SEQUENCE,
@@ -400,6 +418,10 @@ def _verify(data, ledger, batches, **overrides):
         "custody_signature_bytes": data["custody_signature_bytes"],
         "custodian_key_id": data["custodian_key_id"],
         "timestamp_token_der": data["timestamp_token_der"],
+        "policy_timestamp_token_der": data["policy_timestamp_token_der"],
+        "pinned_policy_tsa_root_certificate_der": data["pinned_policy_tsa_root_certificate_der"],
+        "expected_policy_tsa_root_sha256": data["expected_policy_tsa_root_sha256"],
+        "policy_timestamp_expected_nonce": data["policy_timestamp_expected_nonce"],
         "pinned_root_public_key_bytes": data["pinned_root_public_key_bytes"],
         "expected_root_key_id": data["expected_root_key_id"],
         "minimum_policy_sequence": data["minimum_policy_sequence"],
@@ -442,8 +464,63 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
             "NO_CONFLICT_FOUND_IN_SUPPLIED_BATCHES_NOT_GLOBAL_PROOF",
         )
         self.assertEqual(result.timestamp_event_id, result.custody_timestamp.timestamp_event_id)
+        self.assertEqual(
+            result.policy_envelope_timestamp.policy_envelope_sha256,
+            hashlib.sha256(data["signed_policy_envelope_bytes"]).hexdigest(),
+        )
+        self.assertTrue(result.policy_envelope_timestamp.existence_before_effective_time_verified)
+        self.assertTrue(result.policy_envelope_timestamp_proof_in_manifest_commitment_verified)
+        self.assertEqual(
+            result.policy_envelope_timestamp.timestamp.message_imprint_hex,
+            hashlib.sha256(data["signed_policy_envelope_bytes"]).hexdigest(),
+        )
         self.assertEqual(result.ledger_checkpoint_sha256, sha(ledger["new_bytes"]))
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_policy_timestamp_token_must_imprint_exact_signed_v3_envelope(self):
+        data, ledger, batches, _ = _build_case()
+        with self.assertRaisesRegex(ValueError, "message imprint"):
+            _verify(
+                data, ledger, batches,
+                policy_timestamp_token_der=data["timestamp_token_der"],
+            )
+
+    def test_policy_envelope_must_exist_before_its_signed_effective_time(self):
+        data, ledger, batches, _ = _build_case()
+        token, root_der = _token(
+            data=data["signed_policy_envelope_bytes"],
+            nonce=data["policy_timestamp_expected_nonce"],
+            gen_time=datetime(2026, 11, 23, 2, 49, 1, tzinfo=timezone.utc),
+            accuracy={"seconds": 0},
+        )
+        with self.assertRaisesRegex(ValueError, "must end strictly before signed not_before_utc"):
+            _verify(
+                data, ledger, batches,
+                policy_timestamp_token_der=token,
+                pinned_policy_tsa_root_certificate_der=root_der,
+                expected_policy_tsa_root_sha256=hashlib.sha256(root_der).hexdigest(),
+            )
+
+    def test_policy_envelope_timestamp_requires_accuracy(self):
+        data, ledger, batches, _ = _build_case()
+        token, root_der = _token(
+            data=data["signed_policy_envelope_bytes"],
+            nonce=data["policy_timestamp_expected_nonce"],
+            gen_time=datetime(2026, 11, 23, 2, 48, 30, tzinfo=timezone.utc),
+            accuracy=None,
+        )
+        with self.assertRaisesRegex(ValueError, "accuracy is required"):
+            _verify(
+                data, ledger, batches,
+                policy_timestamp_token_der=token,
+                pinned_policy_tsa_root_certificate_der=root_der,
+                expected_policy_tsa_root_sha256=hashlib.sha256(root_der).hexdigest(),
+            )
+
+    def test_policy_envelope_timestamp_nonce_is_checked(self):
+        data, ledger, batches, _ = _build_case()
+        with self.assertRaisesRegex(ValueError, "nonce does not match"):
+            _verify(data, ledger, batches, policy_timestamp_expected_nonce=54322)
 
     def test_manifest_must_bind_exact_timestamp_token_digest(self):
         data, ledger, batches, _ = _build_case()
