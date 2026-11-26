@@ -55,15 +55,21 @@ def logprob_conditional5(p, S):
     return sum(math.log(w[n-1]) for n in S)-math.log(e[5])
 
 
-def load_history(path):
+def load_history(path, modality_column):
     df=pd.read_csv(path)
-    req=['CONCURSO','R1','R2','R3','R4','R5','FECHA']
+    if not isinstance(modality_column, str) or not modality_column.strip():
+        raise ValueError('An explicit modality column is required; draw modality must never be inferred from row order')
+    req=['CONCURSO','R1','R2','R3','R4','R5','FECHA',modality_column]
     miss=[c for c in req if c not in df.columns]
     if miss: raise ValueError(f'Missing columns: {miss}')
     for c in ['CONCURSO','R1','R2','R3','R4','R5']:
         df[c]=pd.to_numeric(df[c],errors='raise').astype(int)
+    if df[modality_column].isna().any(): raise ValueError('Missing draw modality; refusing to mix or infer modalities')
+    df[modality_column]=df[modality_column].astype(str).str.strip()
+    if (df[modality_column]=='').any(): raise ValueError('Empty draw modality; refusing to infer modality')
     df['FECHA']=pd.to_datetime(df['FECHA'])
-    df=df.sort_values('CONCURSO').drop_duplicates('CONCURSO',keep='last').reset_index(drop=True)
+    if df['CONCURSO'].duplicated().any(): raise ValueError('Duplicate contest IDs; refusing silent deduplication')
+    df=df.sort_values('CONCURSO').reset_index(drop=True)
     nums=df[['R1','R2','R3','R4','R5']].to_numpy()
     if ((nums<1)|(nums>28)).any(): raise ValueError('Numbers outside 1..28')
     if any(len(set(map(int,r)))!=5 for r in nums): raise ValueError('Repeated number inside draw')
@@ -74,15 +80,26 @@ def sets_from(df):
     return [set(map(int,r)) for r in df[['R1','R2','R3','R4','R5']].to_numpy()]
 
 
-def same_day_pairs(df):
-    x=df.copy(); x['slot']=x.groupby('FECHA').cumcount()+1
+def same_day_pairs(df, modality_column, early_value, classic_value):
+    """Pair explicitly labelled same-day early and Clásico draws; never infer by row order."""
+    if early_value == classic_value:
+        raise ValueError('Early and Clásico modality labels must be different')
+    observed=set(df[modality_column].astype(str))
+    unexpected=observed-{early_value,classic_value}
+    if unexpected:
+        raise ValueError(f'Unexpected modality labels: {sorted(unexpected)}')
     rows=[]
-    for date,g in x.groupby('FECHA'):
-        if len(g)!=2: continue
-        g=g.sort_values('CONCURSO')
-        a=set(map(int,g.iloc[0][['R1','R2','R3','R4','R5']]))
-        b=set(map(int,g.iloc[1][['R1','R2','R3','R4','R5']]))
-        rows.append((date,int(g.iloc[0].CONCURSO),int(g.iloc[1].CONCURSO),a,b))
+    for date,g in df.groupby('FECHA'):
+        early=g[g[modality_column]==early_value]
+        classic=g[g[modality_column]==classic_value]
+        if len(early)>1 or len(classic)>1:
+            raise ValueError(f'Multiple draws for a modality on {date}; cannot pair unambiguously')
+        if len(early)!=1 or len(classic)!=1:
+            continue
+        e=early.iloc[0]; c=classic.iloc[0]
+        a=set(map(int,e[['R1','R2','R3','R4','R5']]))
+        b=set(map(int,c[['R1','R2','R3','R4','R5']]))
+        rows.append((date,int(e.CONCURSO),int(c.CONCURSO),a,b))
     return rows
 
 
@@ -224,12 +241,21 @@ def metadata_template(path):
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument('--history',required=True)
+    ap.add_argument('--modality-column',required=True, help='CSV column containing explicit draw modality labels')
+    ap.add_argument('--early-value',required=True, help='Exact label for De las Tres / earlier draw')
+    ap.add_argument('--classic-value',required=True, help='Exact label for Chispazo Clásico')
     ap.add_argument('--out-dir',default='v265_outputs')
     ap.add_argument('--machine-cutover',default='2022-03-10')
     args=ap.parse_args()
+    if args.early_value == args.classic_value:
+        ap.error('--early-value and --classic-value must differ')
     out=Path(args.out_dir); out.mkdir(parents=True,exist_ok=True)
-    df=load_history(args.history); draws=sets_from(df)
-    pairs=same_day_pairs(df)
+    all_df=load_history(args.history,args.modality_column)
+    pairs=same_day_pairs(all_df,args.modality_column,args.early_value,args.classic_value)
+    df=all_df[all_df[args.modality_column]==args.classic_value].copy().reset_index(drop=True)
+    if df.empty:
+        raise SystemExit('No explicitly labelled Clásico rows found; refusing to run')
+    draws=sets_from(df)
     sd=same_day_prequential(pairs,prior=112,burn=100); sd.to_csv(out/'v265_same_day_prequential.csv',index=False)
     sd_summary={c:float(sd[c].mean()) for c in ['slot_freq','global_repeat','num_repeat','weekday','blend']}
     all_persist=persistence(draws)
@@ -256,7 +282,7 @@ def main():
     state='RESEARCH_ONLY_METADATA_REQUIRED'
     report={
       'version':'V265_PHYSICAL_REGIME_SCANNER',
-      'history':{'rows':len(df),'min_concurso':int(df.CONCURSO.min()),'max_concurso':int(df.CONCURSO.max()),'dual_day_pairs':len(pairs)},
+      'history':{'classic_rows':len(df),'all_modalities_rows':len(all_df),'min_classic_contest':int(df.CONCURSO.min()),'max_classic_contest':int(df.CONCURSO.max()),'paired_early_classic_dates':len(pairs),'modality_column':args.modality_column,'early_value':args.early_value,'classic_value':args.classic_value},
       'machine_cutover':str(cut.date()),'post_cutover_rows':len(post),
       'same_day_mean_loglift':sd_summary,
       'same_day_any_positive_mean':bool(any(v>0 for v in sd_summary.values())),
