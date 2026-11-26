@@ -351,8 +351,8 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
             x509.RelativeDistinguishedName(list(attributes)),
         ])
         certificate_name = x509.Name([
-            x509.RelativeDistinguishedName([attributes[0]]),
             x509.RelativeDistinguishedName([attributes[1]]),
+            x509.RelativeDistinguishedName([attributes[0]]),
         ])
         tsa_asn1 = asn1_x509.Name.load(tsa_name.public_bytes(), strict=True)
         certificate_asn1 = asn1_x509.Name.load(
