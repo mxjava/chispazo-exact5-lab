@@ -2,7 +2,7 @@
 - Added a private composition path that verifies the signed trust-policy envelope against a deployment-owned bootstrap snapshot, then passes the resulting `VerifiedTrustPolicy.policy` directly into `verify_receipt_attestation`.
 - Added a single-snapshot UTC normalization for the bootstrap clock so a stateful caller-supplied `tzinfo` cannot make the policy and receipt verifiers observe different instants.
 - The bootstrap provider still returns `None`; no institutional root, anti-rollback store or trusted clock is provisioned. The public `verify_independent_provenance` remains `BLOCKED_PROVENANCE` even when synthetic root/receipt signatures verify, because nested signatures, original bytes, RFC 3161, ledger, custody and two pre-close seals remain unverified.
-- Added synthetic-only adversarial composition tests and deployment provisioning/anti-rollback documentation. No test key is a production trust anchor.
+- Added synthetic-only adversarial composition tests, including bootstrap-store outage fail-closed coverage, and deployment provisioning/anti-rollback documentation. No test key is a production trust anchor.
 - PR #99 draft based on PR #41; exact-head CI pending for the final commit.
 
 ## Acta role separation and official 13:10 status refresh (2026-11-24)
