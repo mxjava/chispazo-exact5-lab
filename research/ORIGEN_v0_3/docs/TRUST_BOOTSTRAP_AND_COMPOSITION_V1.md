@@ -65,3 +65,10 @@ No caller-created booleans, strings, status labels or `VerifiedTrustPolicy` obje
 - Follow-up adversarial review added duplicate-JSON-key rejection for signed tree heads and a 1 MiB exact-leaf bound; minimum tree size is also range-checked. These checks prevent ambiguous JSON interpretation and unbounded leaf hashing but do not add external trust or persistent rollback protection.
 
 - Boundary review also validates the expected log ID's exact built-in string type and length before equality comparison, preventing a hostile caller object from executing comparison hooks. A regression test covers this case.
+
+
+## Research implementation: Merkle consistency proofs (2026-11-26)
+
+`external_ledger_consistency_v1.py` adds a bounded RFC 6962 consistency-proof verifier. It checks that a later Merkle root is an append-only extension of an earlier root, including equal-size handling, exact immutable 32-byte nodes, exact integer sizes, and bounded proof length. Synthetic tests generate every old/new tree-size pair through 40 leaves and exercise tampering and invalid shapes.
+
+This primitive only connects two roots mathematically. It does not authenticate signed tree heads, provision a log key, persist the latest accepted checkpoint, prevent rollback across process restarts, or provide an independent witness. It must be composed with independently authenticated signed tree heads and an externally controlled monotonic checkpoint before it can support provenance. No production or prediction status changes.
