@@ -386,6 +386,19 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not match signer certificate"):
             _verify(token, root_der)
 
+    def test_tstinfo_tsa_ip_address_does_not_accept_network_san(self):
+        import ipaddress
+
+        network = ipaddress.ip_network("192.0.2.0/24")
+        token, root_der = _token(
+            tsa_general_name_type="ip_address",
+            tsa_general_name_value="192.0.2.0/24",
+            tsa_san_names=(x509.IPAddress(network),),
+        )
+        with self.assertRaisesRegex(ValueError, "does not match signer certificate"):
+            _verify(token, root_der)
+
+
     def test_wrong_artifact_bytes_fail_imprint_binding(self):
         token, root_der = _token()
         with self.assertRaisesRegex(ValueError, "message imprint"):
