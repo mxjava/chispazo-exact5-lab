@@ -329,6 +329,11 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             provider.snapshot,
             physical_trust_context_sha256=physical_trust_context_sha256(provider.physical_context),
         )
+        provider.nonce_challenge = replace(
+            provider.nonce_challenge,
+            physical_trust_context_sha256=provider.snapshot.physical_trust_context_sha256,
+        )
+        provider.pending_timestamp_nonce_challenge = provider.nonce_challenge
 
         with self.assertRaisesRegex(ValueError, "trust-policy root signature verification failed"):
             _inspect(data, ledger, batches, provider)
@@ -509,6 +514,11 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             provider.snapshot,
             physical_trust_context_sha256=physical_trust_context_sha256(changed),
         )
+        provider.nonce_challenge = replace(
+            provider.nonce_challenge,
+            physical_trust_context_sha256=provider.snapshot.physical_trust_context_sha256,
+        )
+        provider.pending_timestamp_nonce_challenge = provider.nonce_challenge
 
         with self.assertRaises(ValueError):
             _inspect(data, ledger, batches, provider)
@@ -517,7 +527,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.physical_context_read_count, 1)
         self.assertEqual(provider.commit_count, 0)
 
-    def test_provider_owned_registry_sequence_floor_is_enforced(self):
+    def test_provider_owned_registry_sequence_floor_is_enforced(self)
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger)
         changed = replace(
@@ -529,6 +539,11 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             provider.snapshot,
             physical_trust_context_sha256=physical_trust_context_sha256(changed),
         )
+        provider.nonce_challenge = replace(
+            provider.nonce_challenge,
+            physical_trust_context_sha256=provider.snapshot.physical_trust_context_sha256,
+        )
+        provider.pending_timestamp_nonce_challenge = provider.nonce_challenge
 
         with self.assertRaises(ValueError):
             _inspect(data, ledger, batches, provider)
@@ -537,7 +552,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.physical_context_read_count, 1)
         self.assertEqual(provider.commit_count, 0)
 
-    def test_provider_without_physical_context_fails_before_evidence_and_cas(self):
+    def test_provider_without_physical_context_fails_before_evidence_and_cas(self)
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger)
         provider_without_context = SyntheticTrustProvider(provider.snapshot)
