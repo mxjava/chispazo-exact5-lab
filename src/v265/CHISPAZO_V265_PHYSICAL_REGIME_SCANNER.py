@@ -4,7 +4,7 @@ from pathlib import Path
 from collections import Counter
 import numpy as np
 import pandas as pd
-from scipy.stats import fisher_exact, norm, pearsonr, spearmanr
+from scipy.stats import binomtest, fisher_exact, norm, pearsonr, spearmanr
 from scipy.special import logsumexp
 from scipy import sparse
 
@@ -27,6 +27,23 @@ def holm_adjust(pvals):
     for r,idx in enumerate(order):
         a=min(1.0,(m-r)*p[idx]); run=max(run,a); out[idx]=run
     return out
+
+
+def exact_binomial_pvalues(counts, trials, probability):
+    """Two-sided exact binomial p-values, cached by distinct observed count."""
+    if isinstance(trials, bool) or not isinstance(trials, (int, np.integer)) or trials <= 0:
+        raise ValueError("trials_must_be_positive_integer")
+    if not np.isfinite(probability) or not 0.0 < float(probability) < 1.0:
+        raise ValueError("probability_must_be_between_zero_and_one")
+    values=np.asarray(counts)
+    if values.ndim != 1 or not np.isfinite(values.astype(float)).all():
+        raise ValueError("counts_must_be_finite_vector")
+    numeric=values.astype(float)
+    if not np.equal(numeric, np.floor(numeric)).all() or (numeric < 0).any() or (numeric > trials).any():
+        raise ValueError("counts_must_be_integers_between_zero_and_trials")
+    cache={int(k):float(binomtest(int(k),int(trials),float(probability),alternative="two-sided").pvalue)
+           for k in np.unique(numeric)}
+    return np.asarray([cache[int(k)] for k in numeric],dtype=float)
 
 
 def logprob_conditional5(p, S):
@@ -124,11 +141,13 @@ def persistence(draws):
     def z(c,n,p): return (c-n*p)/math.sqrt(n*p*(1-p))
     zp=z(pc,N,PAIR_P); z1=z(pc1,h,PAIR_P); z2=z(pc2,n2,PAIR_P)
     zt=z(tp,N,TRIPLE_P); t1=z(tp1,h,TRIPLE_P); t2=z(tp2,n2,TRIPLE_P)
-    pp=2*norm.sf(np.abs(zp)); pt=2*norm.sf(np.abs(zt))
+    # Counts are discrete and the triple expected count is modest; normal tails
+    # materially understate extreme probabilities here. Use exact binomial tests.
+    pp=exact_binomial_pvalues(pc,N,PAIR_P); pt=exact_binomial_pvalues(tp,N,TRIPLE_P)
     pair_adj=holm_adjust(pp); trip_adj=holm_adjust(pt)
     pi=int(np.argmin(pp)); ti=int(np.argmin(pt))
     return {
-        'n':N,
+        'n':N,\n        'p_value_method':'two-sided exact binomial; Holm family-wise adjustment',\n        'pair_family_size':len(PAIR_LIST),\n        'triple_family_size':len(TRIPLE_LIST),
         'pairs_holm_sig':int((pair_adj<0.05).sum()),
         'triples_holm_sig':int((trip_adj<0.05).sum()),
         'pair_half_pearson':float(pearsonr(z1,z2).statistic),
