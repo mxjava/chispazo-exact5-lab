@@ -43,6 +43,7 @@ class VerifiedTrustPolicyV3:
     root_key_id: str
     envelope_sha256: str
     issued_at_utc: datetime
+    not_before_utc: datetime
     expires_at_utc: datetime
     # (issuer_id, key_id, role, allowed artifact types), all from signed bytes.
     key_authorizations: tuple[tuple[str, str, str, tuple[str, ...]], ...]
@@ -253,6 +254,7 @@ def verify_signed_trust_policy_v3(
         root_key_id=root_key_id,
         envelope_sha256=hashlib.sha256(raw).hexdigest(),
         issued_at_utc=issued,
+        not_before_utc=not_before,
         expires_at_utc=expires,
         key_authorizations=tuple(authorizations),
     )
