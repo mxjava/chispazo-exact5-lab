@@ -1,22 +1,26 @@
 # Official Chispazo source status refresh — 2026-11-26
 
-**Classification: public web status only. No draw-specific physical evidence obtained.**
+**Review time:** 14:56:51 America/Mexico_City  
+**Classification:** public web status only. No draw-specific physical evidence obtained.
 
-## Modality separation
+## Modality separation and contest-ID correction
 
-Lotería Nacional's official Chispazo product page states two daily slots: **De las Tres at 15:00** and **Clásico at 21:00** local time. The page is explicit about the modality/time mapping. Do not infer a draw's modality from contest-number order alone.
+The official Chispazo product page states two daily slots: **De las Tres at 15:00** and **Clásico at 21:00** local time. This establishes the product schedule and modality mapping, not a contest ID for every slot.
 
-The official results page still displayed contest **12396**, dated 25-Nov-2026, with **05 07 21 24 28**, and contest 12395 dated 25-Nov with **01 13 19 23 28**. It displayed 26-Nov as the next draw date but did not show a 26-Nov result at review. The official commercializer home index listed contest **12398** at 21:00 on 26-Nov; the official home search-index snippet listed contest **12397** at 15:00. These are schedule records only, not winning-result evidence.
+The official results endpoint still displayed contest **12396**, dated 25-Nov-2026, with **05 07 21 24 28**, and contest 12395 dated 25-Nov with **01 13 19 23 28**. It showed 26-Nov as the next draw date but no 26-Nov result at review.
 
-Consequently:
-- Contest 12397: schedule-only De las Tres 15:00; no result confirmed in the results endpoint at review.
-- Contest 12398: schedule-only Clásico 21:00; no result confirmed in the results endpoint at review.
+The official commercializer home page explicitly listed **Chispazo contest 12397 at 15:00 on 26-Nov**. Combined with the official product page's slot mapping, this is schedule-only evidence for **De las Tres**. No result was yet published at review.
 
-The result page's historical rows do not state time/modality. Keep the time/modality inference separate from the result record until a draw-specific official mask/result record confirms it.
+**Correction to an earlier status overlay:** the same commercializer home page has a separate item at 21:00 labelled **“Sorteo | 3093”**. It is not labelled Chispazo and must not be assigned to Chispazo contest 12398. The product page confirms that Chispazo Clásico is scheduled daily at 21:00, but the reviewed home-page snapshot does **not** publish a Chispazo contest ID for that slot. Therefore:
+- Contest 12397: schedule-only De las Tres 15:00; no result confirmed.
+- Clásico 21:00 on 26-Nov: schedule-only; contest ID not independently confirmed in the reviewed index.
+- Contest 12398: **not confirmed by the reviewed sources**; do not use it as a target identifier.
+
+The result page's historical rows omit time/modality. A draw must not be classified from contest-number order alone.
 
 ## Procedure-derived physical record requirements
 
-The Lotería Nacional public procedure **SGVO-PRO-05, revision 39**, published 20-Mar-2026, identifies a concrete evidence chain:
+Lotería Nacional's public procedure **SGVO-PRO-05, revision 39**, was published on 20-Mar-2026. Its current public PDF path identifies the procedure as “Procedimiento Sorteos Electrónicos”. Relevant requirements include:
 
 - Each draw's spheres are weighed individually and in numerical order in the presence of the SEGOB inspector and Lotería Nacional representatives.
 - Smartballs: 4.25–5.25 g, with maximum set spread 0.30 g. Ping-pong spheres: 2.30–3.00 g, maximum set spread 0.15 g.
@@ -24,18 +28,17 @@ The Lotería Nacional public procedure **SGVO-PRO-05, revision 39**, published 2
 - The weighing strip is signed by the weighing representative and initialled by Lotería Nacional/SEGOB representatives, then attached to the act.
 - The act must identify place, date, time, commissioned Lotería Nacional officials by name/role/signature, and the SEGOB inspector with commission order; incidents must be recorded.
 - The recording covers the weighing through the electronic draw and is included with the act as documentary evidence.
-- The SICAL sales-close summary is generated after automatic close and before winning-number entry; it includes draw identity, date, close time and sales state/figures and receives the required initials.
-- The post-result SICAL summary includes winning numbers, winner divisions and prize totals and is reconciled against the winner-selection system.
+- The SICAL sales-close summary and post-result summary are attached/reconciled as described by the procedure.
 
-SEGOB's Dirección General de Juegos y Sorteos describes its Inspection and Surveillance area as responsible for attesting legality and transparency of draws conducted by institutions including Lotería Nacional. This establishes the published oversight role, not the identity or signature of the inspector for a particular draw.
+The PDF also describes the roles of the SEGOB inspector and Lotería Nacional representatives in verifying sales close, weighing, sphere placement, draw conduct and result entry. These are procedure requirements, not proof of compliance in a specific draw.
 
-**Important distinction:** these are procedure requirements and institutional role statements. They do not prove that the 26-Nov draws complied. This review did not obtain original draw acts, pre-close SICAL summaries, CS-11 records, signed weighing strips, calibration certificates, original recordings, signed participation/cancellation files, or independent custody/time/ledger proofs. The SGVO-PRO-05 PDF bytes were not captured locally, so no SHA-256 is claimed for that PDF.
+**No draw-specific physical evidence was obtained** for the 26-Nov De las Tres or the 21:00 Clásico slot: no original signed act, pre-close SICAL summary, CS-11, signed weighing strip, calibration certificate, original recording, signed participation/cancellation files, or independent custody/time/ledger proofs. The PDF bytes could not be captured locally, so no SHA-256 is claimed.
 
 ## Source ledger
 
-- Product and schedule: https://www.loterianacional.gob.mx/Chispazo/Chispazo
+- Chispazo product and daily schedule: https://www.loterianacional.gob.mx/Chispazo/Chispazo
 - Official result endpoint: https://www.loterianacional.gob.mx/Chispazo/Resultados
-- Official commercializer schedule index: https://comercializadores.loterianacional.gob.mx/
+- Official commercializer home page: https://comercializadores.loterianacional.gob.mx/home/
 - Procedure SGVO-PRO-05 Rev.39: https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
 - SEGOB Inspection and Surveillance: https://www.juegosysorteos.gob.mx/es/Juegos_y_Sorteos/inspecciones_lotenal_pronosticos
 
