@@ -25,7 +25,7 @@ POLICY = b"synthetic exact signed policy"
 
 
 
-def physical_context():
+def physical_context(**overrides):
     policy_tsa = b"synthetic policy TSA certificate"
     custody_tsa = b"synthetic custody TSA certificate"
     return PhysicalTrustContextV1(
@@ -44,6 +44,7 @@ def physical_context():
         registry_root_key_id="synthetic-registry-root",
         registry_id="synthetic-registry",
         minimum_registry_sequence=4,
+        **overrides,
     )
 
 def physical_result():
@@ -111,7 +112,7 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
         provider = Provider()
 
         def physical(receipt, policy, **kwargs):
-            events.append(("physical", receipt, policy, kwargs["verification_time"]))
+            events.append(("physical", receipt, policy, kwargs["verification_time"], kwargs))
             return physical_result()
 
         def deployment(receipt, policy, *, provider, **kwargs):
