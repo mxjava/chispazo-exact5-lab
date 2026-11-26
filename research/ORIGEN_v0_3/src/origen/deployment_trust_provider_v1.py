@@ -546,6 +546,7 @@ def inspect_receipt_with_deployment_trust_provider(
     signed_policy_envelope_bytes: bytes,
     *,
     provider: DeploymentTrustProvider,
+    provider_snapshot: DeploymentTrustSnapshot | None = None,
 ) -> DeploymentTrustInspection:
     """Inspect policy and receipt through provider-supplied deployment state.
 
@@ -558,8 +559,12 @@ def inspect_receipt_with_deployment_trust_provider(
     It verifies exact bytes, requires the complete trusted-time uncertainty
     interval to fit policy and signer validity, calls the independent
     provenance boundary, and then performs an atomic sequence/digest
-    compare-and-advance. Any provider failure or state conflict raises and
-    yields no inspection result. Success remains BLOCKED_PROVENANCE.
+    compare-and-advance. An optional snapshot lets a composed verifier share
+    the exact same immutable provider observation with another verifier; the
+    final provider CAS must still match its authoritative generation,
+    configuration digest, and clock-sample digest. Any provider failure or
+    state conflict raises and yields no inspection result. Success remains
+    BLOCKED_PROVENANCE.
     """
     if type(original_receipt_bytes) is not bytes or not original_receipt_bytes:
         raise ValueError("original_receipt_bytes must be non-empty exact bytes")
@@ -575,10 +580,16 @@ def inspect_receipt_with_deployment_trust_provider(
     if not callable(read_snapshot) or not callable(compare_and_advance):
         raise TypeError("provider must implement read_snapshot and compare_and_advance")
 
-    try:
-        supplied_snapshot = read_snapshot(policy_domain=CLASSIC_POLICY_DOMAIN)
-    except Exception as exc:
-        raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
+    if provider_snapshot is None:
+        try:
+            supplied_snapshot = read_snapshot(policy_domain=CLASSIC_POLICY_DOMAIN)
+        except Exception as exc:
+            raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
+    else:
+        # A composed verifier may pass the exact snapshot it already used.
+        # The final CAS below binds this snapshot to authoritative provider
+        # state; a caller-fabricated or stale snapshot cannot commit.
+        supplied_snapshot = provider_snapshot
     snapshot = _snapshot_copy(supplied_snapshot)
     trust_configuration_digest = _trust_configuration_sha256(snapshot)
     clock_sample_digest = _clock_sample_sha256(snapshot)
