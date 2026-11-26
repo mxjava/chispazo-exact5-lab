@@ -125,6 +125,8 @@ def _token(
     wrong_issuer_serial=False,
     wrong_issuer_name=False,
     tst_version="v1",
+    tsa_common_name=None,
+    tsa_general_name_type="directory_name",
 ):
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
@@ -134,7 +136,7 @@ def _token(
         certificate_policies_on=certificate_policies_on,
         gen_time=gen_time,
     )
-    tst_info = tsp.TSTInfo({
+    tst_info_fields = {
         "version": tst_version,
         "policy": "1.2.3.4.5",
         "message_imprint": {
@@ -145,7 +147,18 @@ def _token(
         "gen_time": gen_time,
         "nonce": nonce,
         "accuracy": accuracy,
-    })
+    }
+    if tsa_common_name is not None:
+        tsa_value = (
+            asn1_x509.Name.build({"common_name": tsa_common_name})
+            if tsa_general_name_type == "directory_name"
+            else tsa_common_name
+        )
+        tst_info_fields["tsa"] = asn1_x509.GeneralName(
+            name=tsa_general_name_type,
+            value=tsa_value,
+        )
+    tst_info = tsp.TSTInfo(tst_info_fields)
     tst_bytes = tst_info.dump()
     cert_der = tsa.public_bytes(serialization.Encoding.DER)
     cert_asn1 = asn1_x509.Certificate.load(cert_der)
@@ -280,6 +293,22 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
     def test_non_v1_tstinfo_version_is_rejected(self):
         token, root_der = _token(tst_version=2)
         with self.assertRaisesRegex(ValueError, "TSTInfo version must be v1"):
+            _verify(token, root_der)
+
+    def test_tstinfo_tsa_directory_name_must_match_signer_certificate(self):
+        token, root_der = _token(tsa_common_name="Synthetic TSA")
+        _verify(token, root_der)
+
+        token, root_der = _token(tsa_common_name="Wrong Synthetic TSA")
+        with self.assertRaisesRegex(ValueError, "does not match signer certificate subject names"):
+            _verify(token, root_der)
+
+    def test_tstinfo_tsa_unsupported_general_name_is_rejected(self):
+        token, root_der = _token(
+            tsa_common_name="tsa.example.test",
+            tsa_general_name_type="dns_name",
+        )
+        with self.assertRaisesRegex(ValueError, "GeneralName form is unsupported"):
             _verify(token, root_der)
 
     def test_wrong_artifact_bytes_fail_imprint_binding(self):
