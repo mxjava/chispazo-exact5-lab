@@ -11,6 +11,7 @@ Every successful inspection still returns BLOCKED_PROVENANCE.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -95,8 +96,11 @@ class DeploymentTrustProvider(Protocol):
     sequence state, generation, and authenticated clock metadata.
 
     compare_and_advance must be linearizable. It must compare the exact state
-    generation observed by read_snapshot and atomically enforce monotonic
-    sequence/digest/time semantics for every inspection. Candidate earliest
+    generation and expected trust-configuration digest observed by read_snapshot
+    and atomically enforce monotonic sequence/digest/time semantics for every
+    inspection. It must recompute the configuration digest from authoritative
+    provider state; it must not trust the caller's digest as a replacement for
+    that comparison. Candidate earliest
     time (accepted_at_utc - clock_uncertainty) must not precede the stored
     trusted_time_latest_utc. For a higher sequence, persist the candidate
     sequence, digest, and latest time. For the same sequence and digest, persist
@@ -112,6 +116,7 @@ class DeploymentTrustProvider(Protocol):
         self,
         *,
         expected_state_generation: int,
+        expected_trust_configuration_sha256: str,
         policy_domain: str,
         root_key_id: str,
         root_generation: int,
@@ -134,6 +139,7 @@ class DeploymentTrustInspection:
     root_key_id: str
     root_generation: int
     provisioning_record_sha256: str
+    trust_configuration_sha256: str
     clock_source_id: str
     state_backend_id: str
     time_window_start_utc: datetime
@@ -162,6 +168,26 @@ def _require_sha256(value: object, field: str) -> str:
     if type(value) is not str or not _SHA256.fullmatch(value):
         raise ValueError(f"{field} must be a lowercase SHA-256 digest")
     return value
+
+
+def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
+    """Fingerprint immutable deployment trust configuration, not its authenticity."""
+    payload = {
+        "schema": "origen.deployment-trust-configuration.v1",
+        "policy_domain": snapshot.policy_domain,
+        "root_public_key_sha256": hashlib.sha256(snapshot.root_public_key_bytes).hexdigest(),
+        "root_key_id": snapshot.root_key_id,
+        "root_generation": snapshot.root_generation,
+        "minimum_policy_sequence": snapshot.minimum_policy_sequence,
+        "maximum_clock_uncertainty_ms": snapshot.maximum_clock_uncertainty_ms,
+        "clock_source_id": snapshot.clock_source_id,
+        "state_backend_id": snapshot.state_backend_id,
+        "provisioning_record_sha256": snapshot.provisioning_record_sha256,
+    }
+    canonical = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("ascii")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
@@ -348,6 +374,7 @@ def inspect_receipt_with_deployment_trust_provider(
     except Exception as exc:
         raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
     snapshot = _snapshot_copy(supplied_snapshot)
+    trust_configuration_digest = _trust_configuration_sha256(snapshot)
     earliest, latest = _time_window(snapshot)
 
     effective_floor = max(
@@ -411,6 +438,7 @@ def inspect_receipt_with_deployment_trust_provider(
     try:
         supplied_commit = compare_and_advance(
             expected_state_generation=snapshot.state_generation,
+            expected_trust_configuration_sha256=trust_configuration_digest,
             policy_domain=CLASSIC_POLICY_DOMAIN,
             root_key_id=snapshot.root_key_id,
             root_generation=snapshot.root_generation,
@@ -464,6 +492,7 @@ def inspect_receipt_with_deployment_trust_provider(
         root_key_id=snapshot.root_key_id,
         root_generation=snapshot.root_generation,
         provisioning_record_sha256=snapshot.provisioning_record_sha256,
+        trust_configuration_sha256=trust_configuration_digest,
         clock_source_id=snapshot.clock_source_id,
         state_backend_id=snapshot.state_backend_id,
         time_window_start_utc=earliest,
