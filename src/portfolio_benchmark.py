@@ -103,6 +103,10 @@ def validate_records(portfolios: dict, trusted_registration_hashes: dict,
         seen.add(target)
         if record.get("preflight_state") != "PASS":
             raise ValueError("registration_preflight_not_pass")
+        gate_summary = record.get("gate_summary")
+        if (not isinstance(gate_summary, dict) or gate_summary.get("state") != "PASS"
+                or gate_summary.get("failed_checks") != []):
+            raise ValueError("registration_gate_summary_not_pass")
         if record.get("history_max") != target - 1:
             raise ValueError("registration_history_not_target_minus_one")
         if not isinstance(record.get("model_version"), str) or not record["model_version"].strip():
