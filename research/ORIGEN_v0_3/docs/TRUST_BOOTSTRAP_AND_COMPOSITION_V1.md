@@ -63,3 +63,5 @@ No caller-created booleans, strings, status labels or `VerifiedTrustPolicy` obje
 **This is a verification primitive, not an authenticated ledger deployment.** The log public-key pin, expected log identity and minimum tree size are still inputs to the function. No persistent monotonic checkpoint, independent witness, consistency-proof verification, log-operator identity, or custody is provisioned. The primitive is not wired into `verify_independent_provenance`; public provenance remains `BLOCKED_PROVENANCE`. Fixtures use generated in-process Ed25519 keys and are synthetic only.
 
 - Follow-up adversarial review added duplicate-JSON-key rejection for signed tree heads and a 1 MiB exact-leaf bound; minimum tree size is also range-checked. These checks prevent ambiguous JSON interpretation and unbounded leaf hashing but do not add external trust or persistent rollback protection.
+
+- Boundary review also validates the expected log ID's exact built-in string type and length before equality comparison, preventing a hostile caller object from executing comparison hooks. A regression test covers this case.
