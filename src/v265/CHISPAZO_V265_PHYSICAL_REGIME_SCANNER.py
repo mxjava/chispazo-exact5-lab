@@ -4,7 +4,7 @@ from pathlib import Path
 from collections import Counter
 import numpy as np
 import pandas as pd
-from scipy.stats import fisher_exact, norm, pearsonr, spearmanr
+from scipy.stats import binomtest, fisher_exact, pearsonr, spearmanr
 from scipy.special import logsumexp
 from scipy import sparse
 
@@ -29,6 +29,23 @@ def holm_adjust(pvals):
     return out
 
 
+def exact_binomial_pvalues(counts, trials, probability):
+    """Two-sided exact binomial p-values, cached by distinct observed count."""
+    if isinstance(trials, bool) or not isinstance(trials, (int, np.integer)) or trials <= 0:
+        raise ValueError("trials_must_be_positive_integer")
+    if not np.isfinite(probability) or not 0.0 < float(probability) < 1.0:
+        raise ValueError("probability_must_be_between_zero_and_one")
+    values=np.asarray(counts)
+    if values.ndim != 1 or not np.isfinite(values.astype(float)).all():
+        raise ValueError("counts_must_be_finite_vector")
+    numeric=values.astype(float)
+    if not np.equal(numeric, np.floor(numeric)).all() or (numeric < 0).any() or (numeric > trials).any():
+        raise ValueError("counts_must_be_integers_between_zero_and_trials")
+    cache={int(k):float(binomtest(int(k),int(trials),float(probability),alternative="two-sided").pvalue)
+           for k in np.unique(numeric)}
+    return np.asarray([cache[int(k)] for k in numeric],dtype=float)
+
+
 def logprob_conditional5(p, S):
     p=np.clip(np.asarray(p,float),1e-12,1-1e-12)
     w=p/(1-p)
@@ -38,15 +55,23 @@ def logprob_conditional5(p, S):
     return sum(math.log(w[n-1]) for n in S)-math.log(e[5])
 
 
-def load_history(path):
+def load_history(path, modality_column):
     df=pd.read_csv(path)
+    if not isinstance(modality_column, str) or not modality_column.strip():
+        raise ValueError('An explicit modality column is required; draw modality must never be inferred from row order')
+    if modality_column not in df.columns:
+        raise ValueError(f'explicit modality column {modality_column!r} is missing; draw modality must never be inferred from row order')
     req=['CONCURSO','R1','R2','R3','R4','R5','FECHA']
     miss=[c for c in req if c not in df.columns]
     if miss: raise ValueError(f'Missing columns: {miss}')
     for c in ['CONCURSO','R1','R2','R3','R4','R5']:
         df[c]=pd.to_numeric(df[c],errors='raise').astype(int)
+    if df[modality_column].isna().any(): raise ValueError('Missing draw modality; refusing to mix or infer modalities')
+    df[modality_column]=df[modality_column].astype(str).str.strip()
+    if (df[modality_column]=='').any(): raise ValueError('Empty draw modality; refusing to infer modality')
     df['FECHA']=pd.to_datetime(df['FECHA'])
-    df=df.sort_values('CONCURSO').drop_duplicates('CONCURSO',keep='last').reset_index(drop=True)
+    if df['CONCURSO'].duplicated().any(): raise ValueError('Duplicate contest IDs; refusing silent deduplication')
+    df=df.sort_values('CONCURSO').reset_index(drop=True)
     nums=df[['R1','R2','R3','R4','R5']].to_numpy()
     if ((nums<1)|(nums>28)).any(): raise ValueError('Numbers outside 1..28')
     if any(len(set(map(int,r)))!=5 for r in nums): raise ValueError('Repeated number inside draw')
@@ -57,15 +82,26 @@ def sets_from(df):
     return [set(map(int,r)) for r in df[['R1','R2','R3','R4','R5']].to_numpy()]
 
 
-def same_day_pairs(df):
-    x=df.copy(); x['slot']=x.groupby('FECHA').cumcount()+1
+def same_day_pairs(df, modality_column, early_value, classic_value):
+    """Pair explicitly labelled same-day early and Clásico draws; never infer by row order."""
+    if early_value == classic_value:
+        raise ValueError('Early and Clásico modality labels must be different')
+    observed=set(df[modality_column].astype(str))
+    unexpected=observed-{early_value,classic_value}
+    if unexpected:
+        raise ValueError(f'Unexpected modality labels: {sorted(unexpected)}')
     rows=[]
-    for date,g in x.groupby('FECHA'):
-        if len(g)!=2: continue
-        g=g.sort_values('CONCURSO')
-        a=set(map(int,g.iloc[0][['R1','R2','R3','R4','R5']]))
-        b=set(map(int,g.iloc[1][['R1','R2','R3','R4','R5']]))
-        rows.append((date,int(g.iloc[0].CONCURSO),int(g.iloc[1].CONCURSO),a,b))
+    for date,g in df.groupby('FECHA'):
+        early=g[g[modality_column]==early_value]
+        classic=g[g[modality_column]==classic_value]
+        if len(early)>1 or len(classic)>1:
+            raise ValueError(f'Multiple draws for a modality on {date}; cannot pair unambiguously')
+        if len(early)!=1 or len(classic)!=1:
+            continue
+        e=early.iloc[0]; c=classic.iloc[0]
+        a=set(map(int,e[['R1','R2','R3','R4','R5']]))
+        b=set(map(int,c[['R1','R2','R3','R4','R5']]))
+        rows.append((date,int(e.CONCURSO),int(c.CONCURSO),a,b))
     return rows
 
 
@@ -124,11 +160,16 @@ def persistence(draws):
     def z(c,n,p): return (c-n*p)/math.sqrt(n*p*(1-p))
     zp=z(pc,N,PAIR_P); z1=z(pc1,h,PAIR_P); z2=z(pc2,n2,PAIR_P)
     zt=z(tp,N,TRIPLE_P); t1=z(tp1,h,TRIPLE_P); t2=z(tp2,n2,TRIPLE_P)
-    pp=2*norm.sf(np.abs(zp)); pt=2*norm.sf(np.abs(zt))
+    # Counts are discrete and the triple expected count is modest; normal tails
+    # materially understate extreme probabilities here. Use exact binomial tests.
+    pp=exact_binomial_pvalues(pc,N,PAIR_P); pt=exact_binomial_pvalues(tp,N,TRIPLE_P)
     pair_adj=holm_adjust(pp); trip_adj=holm_adjust(pt)
     pi=int(np.argmin(pp)); ti=int(np.argmin(pt))
     return {
         'n':N,
+        'p_value_method':'two-sided exact binomial; Holm family-wise adjustment',
+        'pair_family_size':len(PAIR_LIST),
+        'triple_family_size':len(TRIPLE_LIST),
         'pairs_holm_sig':int((pair_adj<0.05).sum()),
         'triples_holm_sig':int((trip_adj<0.05).sum()),
         'pair_half_pearson':float(pearsonr(z1,z2).statistic),
@@ -202,12 +243,23 @@ def metadata_template(path):
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument('--history',required=True)
+    ap.add_argument('--modality-column',required=True, help='CSV column containing explicit draw modality labels')
+    ap.add_argument('--early-value',required=True, help='Exact label for De las Tres / earlier draw')
+    ap.add_argument('--classic-value',required=True, help='Exact label for Chispazo Clásico')
     ap.add_argument('--out-dir',default='v265_outputs')
     ap.add_argument('--machine-cutover',default='2022-03-10')
     args=ap.parse_args()
+    if args.early_value == args.classic_value:
+        ap.error('--early-value and --classic-value must differ')
     out=Path(args.out_dir); out.mkdir(parents=True,exist_ok=True)
-    df=load_history(args.history); draws=sets_from(df)
-    pairs=same_day_pairs(df)
+    all_df=load_history(args.history,args.modality_column)
+    pairs=same_day_pairs(all_df,args.modality_column,args.early_value,args.classic_value)
+    if not pairs:
+        raise SystemExit('No unambiguous same-day early/Clásico pairs found; refusing to report carryover statistics')
+    df=all_df[all_df[args.modality_column]==args.classic_value].copy().reset_index(drop=True)
+    if df.empty:
+        raise SystemExit('No explicitly labelled Clásico rows found; refusing to run')
+    draws=sets_from(df)
     sd=same_day_prequential(pairs,prior=112,burn=100); sd.to_csv(out/'v265_same_day_prequential.csv',index=False)
     sd_summary={c:float(sd[c].mean()) for c in ['slot_freq','global_repeat','num_repeat','weekday','blend']}
     all_persist=persistence(draws)
@@ -234,7 +286,7 @@ def main():
     state='RESEARCH_ONLY_METADATA_REQUIRED'
     report={
       'version':'V265_PHYSICAL_REGIME_SCANNER',
-      'history':{'rows':len(df),'min_concurso':int(df.CONCURSO.min()),'max_concurso':int(df.CONCURSO.max()),'dual_day_pairs':len(pairs)},
+      'history':{'classic_rows':len(df),'all_modalities_rows':len(all_df),'min_classic_contest':int(df.CONCURSO.min()),'max_classic_contest':int(df.CONCURSO.max()),'paired_early_classic_dates':len(pairs),'modality_column':args.modality_column,'early_value':args.early_value,'classic_value':args.classic_value},
       'machine_cutover':str(cut.date()),'post_cutover_rows':len(post),
       'same_day_mean_loglift':sd_summary,
       'same_day_any_positive_mean':bool(any(v>0 for v in sd_summary.values())),
