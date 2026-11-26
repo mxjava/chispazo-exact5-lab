@@ -264,9 +264,6 @@ class SyntheticTrustProvider:
 class TestDeploymentTrustProviderV1(unittest.TestCase):
     def setUp(self):
         self.receipt_bytes, self.receipt_public_key, _ = signed_receipt()
-        self.policy_bytes, self.root_public_key = signed_v3_policy(
-            self.receipt_public_key
-        )
         self.clock_private_key = Ed25519PrivateKey.generate()
         self.clock_public_key_bytes = self.clock_private_key.public_key().public_bytes(
             encoding=serialization.Encoding.Raw,
@@ -274,6 +271,11 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         )
         self.clock_sample_key_id = "synthetic-clock-key-1"
         self.clock_sample_id = "synthetic-clock-sample-0001"
+        clock_authorization = self.clock_policy_key_entry()
+        self.policy_bytes, self.root_public_key = signed_v3_policy(
+            self.receipt_public_key,
+            additional_issuer_keys=(clock_authorization,),
+        )
         self.clock_sample_valid_until_utc = NOW + timedelta(seconds=60)
         self.clock_sample_envelope_bytes = signed_clock_sample(
             self.clock_private_key,
@@ -321,6 +323,19 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             valid_until_utc=candidate.clock_sample_valid_until_utc,
         )
         return replace(candidate, clock_sample_envelope_bytes=envelope)
+
+    def clock_policy_key_entry(self, *, revoked=False, role="TRUSTED_TIME_AUTHORITY"):
+        return {
+            "issuer_id": "synthetic-clock",
+            "key_id": self.clock_sample_key_id,
+            "public_key_b64": base64.b64encode(self.clock_public_key_bytes).decode("ascii"),
+            "valid_from_utc": "2026-01-01T00:00:00Z",
+            "valid_until_utc": "2027-01-01T00:00:00Z",
+            "revoked": revoked,
+            "authorizations": [
+                {"role": role, "artifact_types": ["CLOCK_SAMPLE"]}
+            ],
+        }
 
     def inspect(self, **overrides):
         args = {
@@ -394,6 +409,35 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             ValueError,
             "clock sample attestation source does not match provider snapshot",
         ):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_clock_key_must_be_authorized_by_root_signed_policy(self):
+        policy_bytes, root_public = signed_v3_policy(self.receipt_public_key)
+        self.provider.snapshot = replace(
+            self.snapshot,
+            root_public_key_bytes=root_public,
+        )
+        self.policy_bytes = policy_bytes
+        with self.assertRaisesRegex(
+            ValueError,
+            "does not contain exactly one clock-source key",
+        ):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_revoked_clock_key_in_root_signed_policy_is_rejected(self):
+        clock_authorization = self.clock_policy_key_entry(revoked=True)
+        policy_bytes, root_public = signed_v3_policy(
+            self.receipt_public_key,
+            additional_issuer_keys=(clock_authorization,),
+        )
+        self.provider.snapshot = replace(
+            self.snapshot,
+            root_public_key_bytes=root_public,
+        )
+        self.policy_bytes = policy_bytes
+        with self.assertRaisesRegex(ValueError, "clock sample key is revoked"):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 0)
 
@@ -511,11 +555,13 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             self.receipt_public_key,
             root_private=root_private,
             expires_at_utc="2026-12-01T00:00:00Z",
+            additional_issuer_keys=(self.clock_policy_key_entry(),),
         )
         second, _ = signed_v3_policy(
             self.receipt_public_key,
             root_private=root_private,
             expires_at_utc="2026-12-02T00:00:00Z",
+            additional_issuer_keys=(self.clock_policy_key_entry(),),
         )
         import hashlib
         self.provider.snapshot = replace(
@@ -573,6 +619,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             self.receipt_public_key,
             root_private=None,
             not_before_utc=activation.isoformat().replace("+00:00", "Z"),
+            additional_issuer_keys=(self.clock_policy_key_entry(),),
         )
         self.provider.snapshot = self.with_signed_sample(
             self.snapshot,
@@ -601,6 +648,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.policy_bytes, self.root_public_key = signed_v3_policy(
             self.receipt_public_key,
             expires_at_utc="2026-11-23T04:00:00.500Z",
+            additional_issuer_keys=(self.clock_policy_key_entry(),),
         )
         self.provider.snapshot = self.with_signed_sample(
             self.snapshot,

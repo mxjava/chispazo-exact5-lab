@@ -51,6 +51,7 @@ def signed_v3_policy(
     issued_at_utc="2026-11-22T00:00:00Z",
     not_before_utc="2026-11-22T00:00:00Z",
     expires_at_utc="2026-12-01T00:00:00Z",
+    additional_issuer_keys=(),
 ):
     if root_private is None:
         root_private = Ed25519PrivateKey.generate()
@@ -78,7 +79,8 @@ def signed_v3_policy(
                         "artifact_types": sorted(set(artifact_types)),
                     }
                 ],
-            }
+            },
+            *list(additional_issuer_keys),
         ],
     }
     unsigned = json.dumps(
