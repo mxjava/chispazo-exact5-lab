@@ -12,8 +12,8 @@ from dataclasses import dataclass
 from .external_ledger_v1 import VerifiedLedgerInclusion
 from .external_ledger_consistency_v1 import verify_consistency_proof
 
-_HEX64 = re.compile(r"[0-9a-f]{64}\\Z")
-_LOG_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\\Z")
+_HEX64 = re.compile(r"[0-9a-f]{64}\Z")
+_LOG_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
 _MAX_TREE_SIZE = (1 << 63) - 1
 
 
