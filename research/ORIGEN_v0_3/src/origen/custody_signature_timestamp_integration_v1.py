@@ -162,6 +162,22 @@ def verify_receipt_custody_signature_timestamp_v1(
             "RFC 3161 upper accuracy bound must be strictly before the Classic draw close"
         )
 
+    policy_window = custody_chain.receipt_policy
+    if (
+        lower_bound < policy_window.policy_not_before_utc
+        or upper_bound >= policy_window.policy_expires_at_utc
+    ):
+        raise ValueError(
+            "RFC 3161 signature accuracy interval falls outside signed V3 policy validity interval"
+        )
+    if (
+        lower_bound < custody_chain.custodian_key_valid_from_utc
+        or upper_bound > custody_chain.custodian_key_valid_until_utc
+    ):
+        raise ValueError(
+            "RFC 3161 signature accuracy interval falls outside custodian key validity interval"
+        )
+
     blockers = tuple(dict.fromkeys(
         tuple(custody_chain.remaining_blockers)
         + CUSTODY_SIGNATURE_TIMESTAMP_BLOCKERS
