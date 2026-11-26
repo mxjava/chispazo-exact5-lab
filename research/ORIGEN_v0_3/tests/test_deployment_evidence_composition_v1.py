@@ -22,6 +22,10 @@ from origen.deployment_trust_provider_v1 import (
 )
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.physical_evidence_manifest_v1 import parse_unverified_physical_manifest
+from origen.physical_trust_context_v1 import (
+    PhysicalTrustContextV1,
+    physical_trust_context_sha256,
+)
 from origen.trust_policy_envelope_v3 import verify_signed_trust_policy_v3
 from test_custody_ledger_witness_integration_v1 import _build_case
 from test_custody_receipt_verifier_v3 import POLICY_SEQUENCE, ROOT_KEY_ID
@@ -39,7 +43,50 @@ from test_checkpoint_witness_quorum_v1 import (
 from test_transparency_checkpoint_consistency_v1 import public_bytes
 
 
-def _provider_for(data):
+class SyntheticPhysicalTrustProvider(SyntheticTrustProvider):
+    def __init__(self, snapshot, context):
+        super().__init__(snapshot)
+        self.physical_context = context
+        self.physical_context_read_count = 0
+        self.context_drift_before_commit = False
+
+    def read_physical_trust_context(self, *, policy_domain):
+        self.physical_context_read_count += 1
+        if policy_domain != "origen.chispazo.classic.physical":
+            raise ValueError("wrong physical trust policy domain")
+        return self.physical_context
+
+    def compare_and_advance(self, **kwargs):
+        if self.context_drift_before_commit:
+            self.snapshot = replace(
+                self.snapshot,
+                physical_trust_context_generation=self.snapshot.physical_trust_context_generation + 1,
+                physical_trust_context_sha256="c" * 64,
+            )
+        return super().compare_and_advance(**kwargs)
+
+
+def _provider_for(data, ledger):
+    context = PhysicalTrustContextV1(
+        policy_tsa_root_certificate_der=data["pinned_policy_tsa_root_certificate_der"],
+        policy_tsa_root_sha256=data["expected_policy_tsa_root_sha256"],
+        policy_tsa_policy_oid=data["expected_policy_tsa_policy_oid"],
+        policy_root_public_key_bytes=data["pinned_root_public_key_bytes"],
+        policy_root_key_id=data["expected_root_key_id"],
+        minimum_policy_sequence=data["minimum_policy_sequence"],
+        custody_tsa_root_certificate_der=data["pinned_tsa_root_certificate_der"],
+        custody_tsa_root_sha256=data["expected_tsa_root_sha256"],
+        log_public_key_bytes=ledger["log_public"],
+        log_id=LEDGER_LOG_ID,
+        log_key_id=LOG_KEY_ID,
+        registry_root_public_key_bytes=public_bytes(ROOT_PRIVATE),
+        registry_root_key_id=WITNESS_ROOT_KEY_ID,
+        registry_id=REGISTRY_ID,
+        minimum_registry_sequence=7,
+        minimum_log_tree_size=len(ledger["leaves"]),
+        context_generation=4,
+    )
+    context_digest = physical_trust_context_sha256(context)
     clock_private = data["clock_private"]
     clock_public = data["clock_public_key_bytes"]
     clock_key_id = data["clock_key_id"]
@@ -75,8 +122,10 @@ def _provider_for(data):
         maximum_clock_sample_age_ms=120_000,
         state_backend_id="synthetic-cas-store",
         provisioning_record_sha256="b" * 64,
+        physical_trust_context_generation=context.context_generation,
+        physical_trust_context_sha256=context_digest,
     )
-    return SyntheticTrustProvider(snapshot)
+    return SyntheticPhysicalTrustProvider(snapshot, context)
 
 
 def _arguments(data, ledger, batches):
@@ -89,12 +138,7 @@ def _arguments(data, ledger, batches):
         "custodian_key_id": data["custodian_key_id"],
         "timestamp_token_der": data["timestamp_token_der"],
         "policy_timestamp_token_der": data["policy_timestamp_token_der"],
-        "pinned_policy_tsa_root_certificate_der": data["pinned_policy_tsa_root_certificate_der"],
-        "expected_policy_tsa_root_sha256": data["expected_policy_tsa_root_sha256"],
-        "expected_policy_tsa_policy_oid": data["expected_policy_tsa_policy_oid"],
         "policy_timestamp_expected_nonce": data["policy_timestamp_expected_nonce"],
-        "pinned_tsa_root_certificate_der": data["pinned_tsa_root_certificate_der"],
-        "expected_tsa_root_sha256": data["expected_tsa_root_sha256"],
         "expected_nonce": data["expected_nonce"],
         "raw_manifest_bytes": ledger["manifest_bytes"],
         "artifact_bytes_by_sha256": data["artifact_bytes_by_sha256"],
@@ -105,14 +149,6 @@ def _arguments(data, ledger, batches):
         "raw_new_checkpoint_bytes": ledger["new_bytes"],
         "raw_consistency_proof_bytes": ledger["consistency_bytes"],
         "witness_observation_batches": batches,
-        "pinned_log_public_key_bytes": ledger["log_public"],
-        "expected_log_id": LEDGER_LOG_ID,
-        "expected_log_key_id": LOG_KEY_ID,
-        "minimum_new_tree_size": len(ledger["leaves"]),
-        "pinned_registry_root_public_key_bytes": public_bytes(ROOT_PRIVATE),
-        "expected_registry_root_key_id": WITNESS_ROOT_KEY_ID,
-        "expected_registry_id": REGISTRY_ID,
-        "minimum_registry_sequence": 7,
     }
 
 
@@ -126,7 +162,7 @@ def _inspect(data, ledger, batches, provider, **overrides):
 class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
     def test_full_evidence_chain_uses_one_snapshot_and_advances_only_after_success(self):
         data, ledger, batches, _ = _build_case()
-        provider = _provider_for(data)
+        provider = _provider_for(data, ledger)
 
         result = _inspect(data, ledger, batches, provider)
 
@@ -136,9 +172,12 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertIs(result.evidence.independent_boundary_status, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertEqual(result.policy_envelope_sha256, hashlib.sha256(data["signed_policy_envelope_bytes"]).hexdigest())
         self.assertEqual(result.policy_sequence, data["minimum_policy_sequence"])
+        self.assertEqual(result.physical_trust_context_generation, 4)
+        self.assertEqual(result.physical_trust_context_sha256, provider.snapshot.physical_trust_context_sha256)
         self.assertEqual(result.trusted_time_earliest_utc, NOW)
         self.assertEqual(result.trusted_time_latest_utc, NOW)
         self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.physical_context_read_count, 1)
         self.assertEqual(provider.commit_count, 1)
         self.assertEqual(provider.snapshot.accepted_policy_sequence, data["minimum_policy_sequence"])
         self.assertEqual(provider.snapshot.trusted_time_latest_utc, NOW)
@@ -151,7 +190,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
     def test_nested_signature_failure_does_not_advance_provider_state(self):
         data, ledger, batches, _ = _build_case()
-        provider = _provider_for(data)
+        provider = _provider_for(data, ledger)
         altered = dict(data["signature_bytes_by_sha256"])
         digest = next(iter(altered))
         altered[digest] = altered[digest][:-1] + bytes([altered[digest][-1] ^ 1])
@@ -171,7 +210,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
     def test_missing_exact_witness_checkpoint_does_not_advance_provider_state(self):
         data, ledger, batches, _ = _build_case(omit_ledger_checkpoint=True)
-        provider = _provider_for(data)
+        provider = _provider_for(data, ledger)
 
         with self.assertRaisesRegex(ValueError, "ledger checkpoint is absent"):
             _inspect(data, ledger, batches, provider)
@@ -181,7 +220,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
     def test_clock_sample_signature_failure_prevents_evidence_and_cas(self):
         data, ledger, batches, _ = _build_case()
-        provider = _provider_for(data)
+        provider = _provider_for(data, ledger)
         document = json.loads(provider.snapshot.clock_sample_envelope_bytes)
         document["signature"]["signature_b64"] = base64.b64encode(bytes(64)).decode("ascii")
         provider.snapshot = replace(
@@ -199,7 +238,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
     def test_wrong_policy_root_fails_before_evidence_or_cas(self):
         data, ledger, batches, _ = _build_case()
-        provider = _provider_for(data)
+        provider = _provider_for(data, ledger)
         other_private = Ed25519PrivateKey.generate()
         other_public = other_private.public_key().public_bytes(
             encoding=serialization.Encoding.Raw,
@@ -215,7 +254,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
     def test_provider_cas_race_fails_closed_after_full_evidence(self):
         data, ledger, batches, _ = _build_case()
-        provider = _provider_for(data)
+        provider = _provider_for(data, ledger)
         provider.race_before_commit = True
 
         with self.assertRaises(TrustStateRejected):
@@ -259,6 +298,66 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
                 earliest=NOW - timedelta(milliseconds=1),
                 latest=NOW + timedelta(milliseconds=2),
             )
+
+    def test_physical_context_policy_root_must_match_deployment_snapshot(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        other_private = Ed25519PrivateKey.generate()
+        other_public = other_private.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        mismatched = replace(provider.physical_context, policy_root_public_key_bytes=other_public)
+        provider.physical_context = mismatched
+        provider.snapshot = replace(
+            provider.snapshot,
+            physical_trust_context_sha256=physical_trust_context_sha256(mismatched),
+        )
+
+        with self.assertRaisesRegex(TrustStateRejected, "policy root/key ID/bootstrap floor differs"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.physical_context_read_count, 1)
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_physical_context_digest_mismatch_fails_before_evidence_and_cas(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.physical_context = replace(
+            provider.physical_context,
+            log_public_key_bytes=b"x" * 32,
+        )
+
+        with self.assertRaisesRegex(TrustStateRejected, "exact generation and digest"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.physical_context_read_count, 1)
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_physical_context_generation_is_bound_to_provider_cas(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.context_drift_before_commit = True
+
+        with self.assertRaises(TrustStateRejected):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.physical_context_read_count, 1)
+        self.assertEqual(provider.commit_count, 1)
+
+    def test_provider_without_physical_context_fails_before_evidence_and_cas(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider_without_context = SyntheticTrustProvider(provider.snapshot)
+
+        with self.assertRaisesRegex(Exception, "lacks read_physical_trust_context"):
+            _inspect(data, ledger, batches, provider_without_context)
+
+        self.assertEqual(provider_without_context.read_count, 1)
+        self.assertEqual(provider_without_context.commit_count, 0)
 
     def test_request_api_does_not_accept_caller_root_floor_or_clock(self):
         parameters = inspect.signature(
