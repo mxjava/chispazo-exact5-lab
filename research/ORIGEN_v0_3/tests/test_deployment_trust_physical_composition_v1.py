@@ -28,24 +28,25 @@ POLICY = b"synthetic exact signed policy"
 def physical_context(**overrides):
     policy_tsa = b"synthetic policy TSA certificate"
     custody_tsa = b"synthetic custody TSA certificate"
-    return PhysicalTrustContextV1(
-        policy_tsa_root_certificate_der=policy_tsa,
-        policy_tsa_root_sha256=hashlib.sha256(policy_tsa).hexdigest(),
-        policy_tsa_policy_oid="1.2.3.4",
-        policy_root_public_key_bytes=b"p" * 32,
-        policy_root_key_id="synthetic-policy-root",
-        minimum_policy_sequence=7,
-        custody_tsa_root_certificate_der=custody_tsa,
-        custody_tsa_root_sha256=hashlib.sha256(custody_tsa).hexdigest(),
-        log_public_key_bytes=b"l" * 32,
-        log_id="synthetic-log",
-        log_key_id="synthetic-log-key",
-        registry_root_public_key_bytes=b"r" * 32,
-        registry_root_key_id="synthetic-registry-root",
-        registry_id="synthetic-registry",
-        minimum_registry_sequence=4,
-        **overrides,
-    )
+    values = {
+        "policy_tsa_root_certificate_der": policy_tsa,
+        "policy_tsa_root_sha256": hashlib.sha256(policy_tsa).hexdigest(),
+        "policy_tsa_policy_oid": "1.2.3.4",
+        "policy_root_public_key_bytes": b"p" * 32,
+        "policy_root_key_id": "synthetic-policy-root",
+        "minimum_policy_sequence": 7,
+        "custody_tsa_root_certificate_der": custody_tsa,
+        "custody_tsa_root_sha256": hashlib.sha256(custody_tsa).hexdigest(),
+        "log_public_key_bytes": b"l" * 32,
+        "log_id": "synthetic-log",
+        "log_key_id": "synthetic-log-key",
+        "registry_root_public_key_bytes": b"r" * 32,
+        "registry_root_key_id": "synthetic-registry-root",
+        "registry_id": "synthetic-registry",
+        "minimum_registry_sequence": 4,
+    }
+    values.update(overrides)
+    return PhysicalTrustContextV1(**values)
 
 def physical_result():
     return CustodyLedgerWitnessInspectionV1(
