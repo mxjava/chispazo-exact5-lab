@@ -433,6 +433,11 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
     _require_identifier(snapshot.clock_sample_id, "clock_sample_id")
     _require_identifier(snapshot.state_backend_id, "state_backend_id")
     _require_sha256(snapshot.provisioning_record_sha256, "provisioning_record_sha256")
+    if snapshot.physical_trust_context_sha256 is not None:
+        _require_sha256(
+            snapshot.physical_trust_context_sha256,
+            "physical_trust_context_sha256",
+        )
 
     integer_fields = (
         ("root_generation", snapshot.root_generation, 1, MAX_POLICY_SEQUENCE),
