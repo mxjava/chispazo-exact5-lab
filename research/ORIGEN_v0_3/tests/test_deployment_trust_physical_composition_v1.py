@@ -13,7 +13,10 @@ from origen.deployment_trust_physical_composition_v1 import (
 )
 from origen.custody_ledger_witness_integration_v1 import CustodyLedgerWitnessInspectionV1
 from origen.independent_trust_adapter import ProvenanceStatus
-from origen.physical_trust_context_v1 import PhysicalTrustContextV1
+from origen.physical_trust_context_v1 import (
+    PhysicalTrustContextV1,
+    physical_trust_context_sha256,
+)
 
 
 NOW = datetime(2026, 11, 26, 20, 0, tzinfo=timezone.utc)
@@ -90,7 +93,11 @@ def deployment_result():
 class DeploymentPhysicalCompositionTests(unittest.TestCase):
     def test_physical_bundle_precedes_provider_commit_and_exact_bytes_are_reused(self):
         events = []
-        snapshot = SimpleNamespace(trusted_time_utc=NOW)
+        context = physical_context()
+        snapshot = SimpleNamespace(
+            trusted_time_utc=NOW,
+            physical_trust_context_sha256=physical_trust_context_sha256(context),
+        )
 
         class Provider:
             def read_snapshot(self, *, policy_domain):
@@ -99,7 +106,7 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
 
             def read_physical_trust_context(self, *, policy_domain):
                 events.append(("physical-context", policy_domain))
-                return physical_context()
+                return context
 
         provider = Provider()
 
@@ -151,18 +158,24 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
         )
 
     def test_failed_physical_bundle_never_reads_or_advances_provider(self):
+        context = physical_context()
+        snapshot = SimpleNamespace(
+            trusted_time_utc=NOW,
+            physical_trust_context_sha256=physical_trust_context_sha256(context),
+        )
+
         class Provider:
             def read_snapshot(self, *, policy_domain):
                 return object()
 
             def read_physical_trust_context(self, *, policy_domain):
-                return physical_context()
+                return context
 
         provider = Provider()
         with (
             patch(
                 "origen.deployment_trust_physical_composition_v1._snapshot_copy",
-                return_value=SimpleNamespace(trusted_time_utc=NOW),
+                return_value=snapshot,
             ),
             patch(
                 "origen.deployment_trust_physical_composition_v1.verify_custody_timestamp_ledger_witness_v1",
