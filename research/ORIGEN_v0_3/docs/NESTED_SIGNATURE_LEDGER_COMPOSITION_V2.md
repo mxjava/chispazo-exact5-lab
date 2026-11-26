@@ -54,6 +54,7 @@ The verifier checks:
 
 - the exact V3 envelope signature/domain/key/sequence using the same caller-supplied root pin as the custody chain;
 - the RFC 3161 token, TSA chain, nonce and exact envelope message imprint using a separately supplied TSA root pin;
+- exact equality between the token's TSA policy OID and the caller-pinned expected OID; the manifest authority identity binds both the TSA-root fingerprint and that OID;
 - non-negative, present accuracy and the full interval `genTime ± accuracy`;
 - the full interval starts no earlier than the signed `issued_at_utc` and ends strictly before signed `not_before_utc`, proving existence before activation relative to the supplied TSA root;
 - exactly one manifest event whose event ID is `trust-policy-envelope-sha256:<SHA-256(envelope)>`, whose authority ID identifies the exact TSA-root fingerprint, whose event time equals RFC 3161 `genTime`, and whose proof digest equals the exact token bytes;
@@ -61,16 +62,35 @@ The verifier checks:
 
 That event is included in the nested physical-signature payload and in the ledger manifest commitment. The ledger normalizes only `ledger_anchor.inclusion_proof_sha256`; it does not omit `trusted_time_proofs`. The exact token bytes are therefore committed by the manifest digest and the ledger leaf, while the RFC 3161 token independently proves the imprint over the exact policy envelope relative to the caller's TSA root.
 
-The additional result field `policy_envelope_timestamp_proof_in_manifest_commitment_verified` describes this byte-binding chain only. It does not mean the log is institutionally operated, the TSA root is authentic, or the TSA clock/revocation state is independently trusted.
+The additional result field `policy_envelope_timestamp_proof_in_manifest_commitment_verified` describes this byte-binding chain only. The expected TSA policy OID is also caller supplied and compared exactly; it is not yet authenticated by an out-of-band deployment policy. This does not mean the log is institutionally operated, the TSA root is authentic, or the TSA clock/revocation state is independently trusted.
 
 Synthetic adversarial tests cover wrong-envelope imprint, nonce mismatch, absent accuracy, and a timestamp interval at/after policy activation. The fixture's policy is deliberately issued before its activation time to make the chronology test meaningful.
+
+## Institutional RFC 3161 source assessment (2026-11-26; candidate only)
+
+The official Secretaría de Economía PSC directory currently lists ATEB Servicios, S.A. de C.V. with a DOF accreditation entry for digital time seals dated 23/08/2022, alongside other accredited providers. The linked DOF notice confirms that ATEB was accredited for time seals, NOM-151 conservation records and physical-document digitization. This is evidence of a public accreditation record, not proof that a particular endpoint or certificate is currently operational.
+
+ATEB's public PSC page links a time-seal policy, practices declaration and certificate bundle. The published policy PDF identifies TSA policy OID `2.16.484.101.10.316.100.9.1.3.1.3` and says its clock is synchronized to CENAM Cronos. However, the accessible policy is version 1.3 updated 02/May/2022 and explicitly states a six-month validity ending 01/Nov/2022; the accessible practices declaration is version 1.4 updated 20/May/2022 and states validity ending 18/Nov/2022. Those documents are stale for a 2026 trust decision. The linked certificate archive could not be retrieved in this run, so no certificate bytes, fingerprint, chain or current revocation data were pinned.
+
+The normative NOM-151-SCFI-2016 text references RFC 3161 and requires verification against a certificate obtained from a trustworthy source, signature verification and exact message-imprint comparison. The Secretaría de Economía directory is therefore a useful discovery/verification source for PSC accreditation, but it does not by itself provide the live TSA root, current policy, OCSP/CRL state or a deployment-specific authorization.
+
+Decision: ATEB is recorded as a **verified accredited-provider candidate only**, not selected or provisioned. Do not hard-code its historical OID into production. Before accepting it, obtain current signed policy and practice documents, current TSA certificate chain and trust-anchor bytes from an independently verified channel, endpoint and protocol details, current OCSP/CRL material, current accreditation status, and a signed deployment authorization that pins the exact root fingerprint and TSA policy OID. Cross-check the root certificate against the official PSC/Secretaría de Economía channel and preserve the downloaded bytes and hashes.
+
+Official discovery links:
+
+- Secretaría de Economía PSC directory: https://psc.economia.gob.mx/Directorio
+- ATEB accreditation notice (DOF, 23/08/2022): https://psc.economia.gob.mx/docs_l/ATEB_Servicio_de_sellos_digitales_de_tiempo_DOF%2023-08-2022.pdf
+- NOM-151-SCFI-2016 (official SIDOF text): https://sidof.segob.gob.mx/notas/docFuente/5478024
+- ATEB public PSC page: https://ateb.mx/psc.html
+- ATEB public time-seal policy PDF (stale; not an accepted trust input): https://ateb.mx/recursos/Pol%C3%ADticas_ESDT.pdf
+- ATEB public practices declaration PDF (stale; not an accepted trust input): https://ateb.mx/recursos/Declaraci%C3%B3nPr%C3%A1cticas_ESDT.pdf
 
 ## Adversarial coverage
 
 Synthetic tests exercise:
 - successful nested-signature + custody + RFC 3161 + policy-envelope timestamp + ledger + witness composition while still blocked;
 - exact V3 policy-envelope timestamp imprint and pre-effective accuracy interval;
-- policy timestamp nonce, accuracy, and post-activation rejection;
+- policy timestamp nonce, accuracy, post-activation rejection and exact caller-pinned TSA policy OID;
 - a modified trusted-time proof claim, which invalidates nested signatures;
 - a modified inclusion-proof digest, which is not part of the nested-signature payload but is rejected by the ledger verifier;
 - altered original artifact bytes;
