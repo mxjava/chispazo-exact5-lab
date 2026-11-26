@@ -50,6 +50,9 @@ class ReceiptPolicyInspectionV3:
     policy_envelope_sha256: str
     policy_domain: str
     policy_sequence: int
+    policy_issued_at_utc: datetime
+    policy_not_before_utc: datetime
+    policy_expires_at_utc: datetime
     verification_time_utc: datetime
     verified_issuer_id: str
     verified_key_id: str
@@ -106,6 +109,20 @@ def verify_receipt_attestation_with_policy_v3(
     if type(receipt) is not CryptographicallyVerifiedReceipt:
         raise TypeError("receipt verifier returned an unexpected result type")
 
+    # The root-signed role authorization must already be effective when the
+    # receipt attestation claims to have been signed; a policy issued later
+    # cannot retroactively authorize an earlier signature.
+    try:
+        receipt_signed_at = datetime.fromisoformat(
+            receipt.receipt.attestation.signed_at_utc.replace("Z", "+00:00")
+        )
+    except (AttributeError, ValueError) as exc:
+        raise ValueError("receipt attestation signing time is not parseable") from exc
+    if not (policy.not_before_utc <= receipt_signed_at < policy.expires_at_utc):
+        raise ValueError(
+            "receipt root attestation signing time is outside the signed V3 policy validity interval"
+        )
+
     authorized = False
     if type(policy.key_authorizations) is not tuple:
         raise ValueError("verified policy authorizations must be an exact tuple")
@@ -142,6 +159,9 @@ def verify_receipt_attestation_with_policy_v3(
         policy_envelope_sha256=policy.envelope_sha256,
         policy_domain=policy.policy_domain,
         policy_sequence=policy.policy_sequence,
+        policy_issued_at_utc=policy.issued_at_utc,
+        policy_not_before_utc=policy.not_before_utc,
+        policy_expires_at_utc=policy.expires_at_utc,
         verification_time_utc=verified_at,
         verified_issuer_id=receipt.verified_issuer_id,
         verified_key_id=receipt.verified_key_id,
