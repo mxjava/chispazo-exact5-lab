@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "scope": "COMBINATORIAL_COVERAGE_ONLY_NOT_PREDICTIVE",
+  "method": "seeded stochastic local search from the prior 30-line V2 portfolio; one- and two-position line mutations; reject any mutation causing pairwise line intersection above two; score exact union of all 5-number draws with at least three hits; exhaustive final enumeration",
+  "seed": 20261126,
+  "universe": {"v": 28, "draw_size": 5, "draws": 98280},
+  "portfolio": {"lines": 30, "unique_lines": 30, "max_pairwise_intersection": 2},
+  "best_hit_distribution": {"0": 0, "1": 0, "2": 30903, "3": 63897, "4": 3450, "5": 30},
+  "coverage": {
+    "3plus_count": 67377,
+    "3plus_rate": 0.6855616605616606,
+    "4plus_count": 3480,
+    "4plus_rate": 0.03540903540903541,
+    "5of5_count": 30,
+    "5of5_rate": 0.00030525030525030525
+  },
+  "baseline_v1": {"3plus_count": 59859, "3plus_rate": 0.6090669515657285, "4plus_count": 3480},
+  "baseline_v2": {"3plus_count": 66849, "3plus_rate": 0.6801587301587302, "4plus_count": 3480},
+  "delta_vs_v2": {"3plus_count": 528, "percentage_points": 0.5372930402930403},
+  "delta_vs_v1": {"3plus_count": 7518, "percentage_points": 7.649470899650205},
+  "historical_check_12396": {"winning_draw": "05-07-21-24-28", "best_hits": 3, "note": "post-hoc observation only; not a prospective test and not evidence of predictive edge"},
+  "limitations": [
+    "The search is heuristic; no global optimality claim is made.",
+    "The 4+ count is preserved by the pairwise-intersection-at-most-two constraint.",
+    "Coverage rates are fractions of the finite combination universe, not probabilities of predicting a fair future draw beyond the exact portfolio coverage.",
+    "No prospective performance or predictive edge is established."
+  ]
+}
