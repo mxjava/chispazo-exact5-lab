@@ -134,18 +134,26 @@ def _timestamp_token(
         "nonce": nonce,
     })
     tst_bytes = tst_info.dump()
+    tsa_der = tsa.public_bytes(serialization.Encoding.DER)
+    tsa_asn1 = asn1_x509.Certificate.load(tsa_der)
+    signing_certificate_v2 = tsp.SigningCertificateV2({
+        "certs": [{
+            "cert_hash": hashlib.sha256(tsa_der).digest(),
+        }],
+    })
     attrs = cms.CMSAttributes([
         cms.CMSAttribute({"type": "content_type", "values": ["tst_info"]}),
         cms.CMSAttribute({
             "type": "message_digest",
             "values": [hashlib.sha256(tst_bytes).digest()],
         }),
+        cms.CMSAttribute({
+            "type": "signing_certificate_v2",
+            "values": [signing_certificate_v2],
+        }),
     ])
     signature = tsa_key.sign(
         attrs.untag().dump(), padding.PKCS1v15(), hashes.SHA256()
-    )
-    tsa_asn1 = asn1_x509.Certificate.load(
-        tsa.public_bytes(serialization.Encoding.DER)
     )
     signer = cms.SignerInfo({
         "version": "v1",

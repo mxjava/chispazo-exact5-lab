@@ -12,7 +12,7 @@ The module is standalone. It is not yet wired into trust_receipt_v1, the physica
 
 - Bounded exact-byte DER parsing of ContentInfo, TSTInfo, certificates and CMS structures.
 - Exactly one CMS signer, using issuer-and-serial-number signer identification.
-- CMS signed attributes restricted to one contentType=tst_info and one messageDigest; the message digest must match the encapsulated TSTInfo bytes.
+- CMS signed attributes must contain unique contentType=tst_info, messageDigest, and at least one ESS SigningCertificate/SigningCertificateV2 identifier. The first ESS certificate hash is checked against the exact DER certificate selected by CMS issuerAndSerialNumber; if both ESS versions are present, both must match. Optional issuerSerial fields are also checked. The message digest must match the encapsulated TSTInfo bytes.
 - Exact artifact binding: TSTInfo message imprint is recomputed over the exact supplied data bytes. SHA-256, SHA-384 and SHA-512 are accepted; weaker/unknown digests are rejected.
 - Optional request nonce equality, when the caller supplies an expected nonce.
 - TSA leaf certificate must contain a critical EKU consisting only of id-kp-timeStamping, and KeyUsage must allow digital signatures. It must not assert `keyCertSign`: RFC 5280 §4.2.1.9 requires `cA` to be true whenever `keyCertSign` is asserted, while this verifier rejects CA signer leaves.
@@ -70,6 +70,35 @@ Policies on the root. A further regression builds a TSA leaf with `cA=false`
 and `keyCertSign=true`, which must be rejected under RFC 5280 §4.2.1.9.
 These fixtures are generated test certificates only.
 
+## ESS signer-certificate identification
+
+RFC 3161 §2.4.2 requires the TSA certificate identifier in a signed
+SigningCertificate attribute (ESSCertID). RFC 5816 updates this requirement to
+also permit SigningCertificateV2 (ESSCertIDv2), and allows both versions for
+backward compatibility. The verifier now requires at least one of these signed
+attributes and binds its first certificate identifier to the exact DER
+certificate selected by CMS issuerAndSerialNumber.
+
+- ESSCertID uses its specified SHA-1 certificate hash.
+- ESSCertIDv2 accepts SHA-256, SHA-384 or SHA-512; its declared algorithm is
+  validated and applied to the exact DER certificate.
+- If both attributes are present, both identifiers must match the same signer
+  certificate.
+- When issuerSerial is present, both its serial number and directoryName issuer
+  must match the selected signer certificate.
+- Duplicate attributes, empty certificate-ID sequences, absent ESS attributes,
+  unsupported ESSCertIDv2 digests and mismatched hashes/issuerSerial values are
+  rejected.
+
+The previous synthetic fixture omitted the mandatory ESS certificate
+identifier and was therefore not a conforming RFC 3161 token. The fixture now
+signs SigningCertificateV2 by default and has adversarial cases for
+absent/mismatched ESS attributes, legacy ESSCertID, both versions together,
+and issuerSerial.
+
+References: [RFC 3161 §2.4.2](https://www.rfc-editor.org/rfc/rfc3161.html#section-2.4.2),
+[RFC 5816](https://www.rfc-editor.org/rfc/rfc5816.html).
+
 ## Explicit non-guarantees
 
 This is not a complete RFC 5280 path-validation engine. It does not evaluate name constraints, certificate policies, policy mappings, CRL distribution points, OCSP, revocation freshness, or every critical extension. It does not authenticate the TSA's institutional identity or authorize the returned policy OID.
@@ -88,7 +117,7 @@ Every successful diagnostic returns:
 
 The tests generate an ephemeral RSA TSA key, a synthetic self-signed root, a synthetic TSA leaf certificate, and CMS/TSTInfo bytes at test time. No institutional key, live TSA, production timestamp, Lotería Nacional record, or physical artifact is included.
 
-Adversarial cases cover exact artifact imprint mismatch, nonce mismatch and omission, wrong root fingerprint, invalid CMS signature, non-critical TSA EKU, trailing bytes/non-DER input, verification time before genTime, root certificate included in the CMS certificate set, preservation of timestamp accuracy, and rejection of a non-CA TSA leaf that asserts `keyCertSign`.
+Adversarial cases cover exact artifact imprint mismatch, nonce mismatch and omission, wrong root fingerprint, invalid CMS signature, non-critical TSA EKU, trailing bytes/non-DER input, verification time before genTime, root certificate included in the CMS certificate set, preservation of timestamp accuracy, rejection of a non-CA TSA leaf that asserts `keyCertSign`, and required ESS signer-certificate identification including hash and issuerSerial mismatches.
 
 ## Deployment prerequisites before any real use
 
