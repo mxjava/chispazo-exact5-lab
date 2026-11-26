@@ -29,6 +29,7 @@ def _certs(
     name_constraints_on=None,
     certificate_policies_on=None,
     gen_time=GEN_TIME,
+    tsa_san_names=(),
 ):
     root_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     root_name = _name("Synthetic TSA Root")
@@ -95,6 +96,11 @@ def _certs(
             critical=critical_eku,
         )
     )
+    if tsa_san_names:
+        tsa_builder = tsa_builder.add_extension(
+            x509.SubjectAlternativeName(list(tsa_san_names)),
+            critical=False,
+        )
     if critical_custom_extension_on == "leaf":
         tsa_builder = tsa_builder.add_extension(
             x509.UnrecognizedExtension(ObjectIdentifier("1.3.6.1.4.1.55555.1"), b"\\x05\\x00"),
@@ -127,6 +133,8 @@ def _token(
     tst_version="v1",
     tsa_common_name=None,
     tsa_general_name_type="directory_name",
+    tsa_general_name_value=None,
+    tsa_san_names=(),
 ):
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
@@ -135,6 +143,7 @@ def _token(
         name_constraints_on=name_constraints_on,
         certificate_policies_on=certificate_policies_on,
         gen_time=gen_time,
+        tsa_san_names=tsa_san_names,
     )
     tst_info_fields = {
         "version": tst_version,
@@ -148,12 +157,18 @@ def _token(
         "nonce": nonce,
         "accuracy": accuracy,
     }
-    if tsa_common_name is not None:
-        tsa_value = (
-            asn1_x509.Name.build({"common_name": tsa_common_name})
-            if tsa_general_name_type == "directory_name"
-            else tsa_common_name
-        )
+    if tsa_general_name_value is None:
+        tsa_general_name_value = tsa_common_name
+    if tsa_general_name_value is not None:
+        if tsa_general_name_type == "directory_name":
+            tsa_value = asn1_x509.Name.build(
+                {"common_name": tsa_general_name_value}
+            )
+        elif tsa_general_name_type == "ip_address" and type(tsa_general_name_value) is str:
+            import ipaddress
+            tsa_value = ipaddress.ip_address(tsa_general_name_value).packed
+        else:
+            tsa_value = tsa_general_name_value
         tst_info_fields["tsa"] = asn1_x509.GeneralName(
             name=tsa_general_name_type,
             value=tsa_value,
@@ -303,12 +318,75 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not match signer certificate subject names"):
             _verify(token, root_der)
 
-    def test_tstinfo_tsa_unsupported_general_name_is_rejected(self):
+    def test_tstinfo_tsa_directory_name_may_match_subject_alt_name(self):
+        alternate_name = x509.DirectoryName(_name("Alternate Synthetic TSA"))
         token, root_der = _token(
-            tsa_common_name="tsa.example.test",
-            tsa_general_name_type="dns_name",
+            tsa_general_name_value="Alternate Synthetic TSA",
+            tsa_general_name_type="directory_name",
+            tsa_san_names=(alternate_name,),
         )
-        with self.assertRaisesRegex(ValueError, "GeneralName form is unsupported"):
+        _verify(token, root_der)
+
+    def test_tstinfo_tsa_supported_general_names_must_match_subject_alt_name(self):
+        import ipaddress
+
+        cases = (
+            (
+                "dns_name",
+                "tsa.example.test",
+                x509.DNSName("tsa.example.test"),
+                "other.example.test",
+            ),
+            (
+                "rfc822_name",
+                "tsa@example.test",
+                x509.RFC822Name("tsa@example.test"),
+                "other@example.test",
+            ),
+            (
+                "uniform_resource_identifier",
+                "https://tsa.example.test/timestamp",
+                x509.UniformResourceIdentifier(
+                    "https://tsa.example.test/timestamp"
+                ),
+                "https://other.example.test/timestamp",
+            ),
+            (
+                "ip_address",
+                "192.0.2.10",
+                x509.IPAddress(ipaddress.ip_address("192.0.2.10")),
+                "192.0.2.11",
+            ),
+            (
+                "registered_id",
+                "1.3.6.1.4.1.55555.1",
+                x509.RegisteredID(ObjectIdentifier("1.3.6.1.4.1.55555.1")),
+                "1.3.6.1.4.1.55555.2",
+            ),
+        )
+        for name_type, matching_value, san_name, mismatching_value in cases:
+            with self.subTest(name_type=name_type, outcome="match"):
+                token, root_der = _token(
+                    tsa_general_name_type=name_type,
+                    tsa_general_name_value=matching_value,
+                    tsa_san_names=(san_name,),
+                )
+                _verify(token, root_der)
+            with self.subTest(name_type=name_type, outcome="mismatch"):
+                token, root_der = _token(
+                    tsa_general_name_type=name_type,
+                    tsa_general_name_value=mismatching_value,
+                    tsa_san_names=(san_name,),
+                )
+                with self.assertRaisesRegex(ValueError, "does not match signer certificate"):
+                    _verify(token, root_der)
+
+    def test_tstinfo_tsa_dns_name_without_matching_san_is_rejected(self):
+        token, root_der = _token(
+            tsa_general_name_type="dns_name",
+            tsa_general_name_value="tsa.example.test",
+        )
+        with self.assertRaisesRegex(ValueError, "does not match signer certificate"):
             _verify(token, root_der)
 
     def test_wrong_artifact_bytes_fail_imprint_binding(self):
