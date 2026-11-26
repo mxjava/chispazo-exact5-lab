@@ -83,16 +83,26 @@ Reference: [RFC 3161 §2.4.2](https://www.rfc-editor.org/rfc/rfc3161.html#sectio
 
 RFC 3161 says that when the optional `tsa` GeneralName is present, it must
 correspond to one of the subject names in the certificate used to verify the
-token. The verifier now checks a `directoryName` against the signer
-certificate subject and any SAN `DirectoryName` values. Other GeneralName
-forms are rejected as unsupported rather than silently ignored. The field
-remains optional.
+token. The verifier supports these forms:
 
-Synthetic regressions cover a matching subject name, a mismatched name, and an
-unsupported DNS-name form. This is a bounded implementation, not a claim of
-complete GeneralName support or institutional TSA identity.
+- `directoryName`: the certificate subject or a SAN DirectoryName;
+- `rfc822Name`, `dNSName`, and `uniformResourceIdentifier`: exact SAN value;
+- `iPAddress`: exact packed address match against a SAN IPAddress;
+- `registeredID`: exact dotted OID match against a SAN RegisteredID.
 
-Reference: [RFC 3161 §2.4.2](https://www.rfc-editor.org/rfc/rfc3161.html#section-2.4.2).
+Textual values are compared exactly and conservatively; no case folding or URI
+normalization is performed. Other GeneralName choices (including otherName,
+x400Address and ediPartyName) are rejected as unsupported. A present name that
+does not match a certificate subject/SAN entry is rejected. The field remains
+optional. This bounded verifier is not a complete RFC 5280 path-validation
+engine and does not establish institutional TSA identity.
+
+Synthetic regressions cover subject and SAN directoryName matches, matching and
+mismatching values for all five supported SAN forms, and absence of a matching
+SAN.
+
+References: [RFC 3161 §2.4.2](https://www.rfc-editor.org/rfc/rfc3161.html#section-2.4.2),
+[RFC 5280 §4.2.1.6](https://www.rfc-editor.org/rfc/rfc5280.html#section-4.2.1.6).
 
 ## ESS signer-certificate identification
 
