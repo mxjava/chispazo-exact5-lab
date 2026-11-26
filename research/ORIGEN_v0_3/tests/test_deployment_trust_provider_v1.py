@@ -39,6 +39,7 @@ class SyntheticTrustProvider:
         self.race_before_commit = False
         self.fail_read = False
         self.fail_commit = False
+        self.commit_time_utc = None
 
     def read_snapshot(self, *, policy_domain):
         self.read_count += 1
@@ -91,6 +92,17 @@ class SyntheticTrustProvider:
                 self.snapshot.trusted_time_latest_utc,
             )
         if expected_clock_sample_sha256 != _clock_sample_sha256(self.snapshot):
+            return DeploymentTrustCommit(
+                TrustStateOutcome.CONFLICT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
+        if (
+            self.commit_time_utc is not None
+            and self.commit_time_utc > self.snapshot.clock_sample_valid_until_utc
+        ):
             return DeploymentTrustCommit(
                 TrustStateOutcome.CONFLICT,
                 self.snapshot.state_generation,
@@ -569,6 +581,22 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "uncertainty interval exceeds the provider clock sample lease"):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 0)
+
+
+    def test_provider_rejects_sample_lease_expired_at_cas_time(self):
+        # The snapshot was valid when read, but the provider's authoritative
+        # clock has passed the source-issued lease by the time CAS executes.
+        self.provider.commit_time_utc = NOW + timedelta(seconds=61)
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "did not commit exactly one generation",
+        ):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 1)
+        self.assertEqual(
+            self.provider.snapshot.accepted_policy_sequence,
+            POLICY_SEQUENCE - 1,
+        )
 
     def test_provider_rejects_clock_sample_drift_between_read_and_cas(self):
         original_read = self.provider.read_snapshot
