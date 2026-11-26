@@ -12,7 +12,12 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from origen.custody_ledger_witness_integration_v1 import (
     verify_custody_timestamp_ledger_witness_v1,
 )
-from origen.custody_receipt_verifier_v3 import (\n    CUSTODY_ARTIFACT_TYPE,\n    CUSTODY_SIGNER_ROLE,\n)\nfrom origen.physical_evidence_verifier_v2 import CLASSIC_PHYSICAL_POLICY_DOMAIN\nfrom origen.physical_evidence_verifier_v3 import canonical_physical_manifest_signature_payload_v2
+from origen.custody_receipt_verifier_v3 import (
+    CUSTODY_ARTIFACT_TYPE,
+    CUSTODY_SIGNER_ROLE,
+)
+from origen.physical_evidence_verifier_v2 import CLASSIC_PHYSICAL_POLICY_DOMAIN
+from origen.physical_evidence_verifier_v3 import canonical_physical_manifest_signature_payload_v2
 from origen.independent_trust_adapter import ProvenanceStatus
 from test_custody_receipt_verifier_v3 import (
     ROOT_KEY_ID,
@@ -35,7 +40,8 @@ from test_checkpoint_witness_quorum_v1 import (
     ROOT_PRIVATE,
     signed_registry,
 )
-from test_physical_evidence_manifest_v1 import encode\nfrom test_physical_evidence_verifier_v2 import fixture as physical_fixture
+from test_physical_evidence_manifest_v1 import encode
+from test_physical_evidence_verifier_v2 import fixture as physical_fixture
 from test_transparency_checkpoint_consistency_v1 import (
     CONSISTENCY_PROOF_SCHEMA,
     KEY_ID,
