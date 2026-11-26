@@ -118,6 +118,17 @@ class TestExternalLedgerInclusion(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "identity"):
             self.verify(leaves, 0, expected_log_id="different-log")
 
+
+    def test_hostile_expected_log_id_is_rejected_before_comparison(self):
+        leaves = [b"alpha"]
+
+        class HostileIdentity:
+            def __eq__(self, other):
+                raise AssertionError("untrusted equality must not execute")
+
+        with self.assertRaisesRegex(ValueError, "expected_log_id"):
+            self.verify(leaves, 0, expected_log_id=HostileIdentity())
+
     def test_tree_size_rollback_is_rejected(self):
         leaves = [b"alpha", b"beta"]
         with self.assertRaisesRegex(ValueError, "below externally pinned minimum"):
