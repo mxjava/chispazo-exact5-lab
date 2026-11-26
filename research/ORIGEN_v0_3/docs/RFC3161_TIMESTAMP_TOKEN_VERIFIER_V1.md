@@ -85,7 +85,7 @@ RFC 3161 says that when the optional `tsa` GeneralName is present, it must
 correspond to one of the subject names in the certificate used to verify the
 token. The verifier supports these forms:
 
-- `directoryName`: the certificate subject or a SAN DirectoryName;
+- `directoryName`: exact DER Name match against the certificate subject or a SAN DirectoryName; RDN sequence/set structure is preserved, so differently encoded but semantically equivalent names may be conservatively rejected;
 - `rfc822Name`, `dNSName`, and `uniformResourceIdentifier`: exact SAN value;
 - `iPAddress`: exact parsed IP-address value match against a SAN IPAddress;
 - `registeredID`: exact dotted OID match against a SAN RegisteredID.
