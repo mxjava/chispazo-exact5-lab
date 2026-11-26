@@ -177,7 +177,7 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         provisioning_record_sha256=value.provisioning_record_sha256,
     )
 
-    if snapshot.policy_domain != CLASSIC_POLICY_DOMAIN:
+    if type(snapshot.policy_domain) is not str or snapshot.policy_domain != CLASSIC_POLICY_DOMAIN:
         raise ValueError("deployment trust snapshot is not scoped to the fixed CLASSIC domain")
     if type(snapshot.root_public_key_bytes) is not bytes or len(snapshot.root_public_key_bytes) != 32:
         raise ValueError("deployment root pin must be exactly 32 immutable bytes")
