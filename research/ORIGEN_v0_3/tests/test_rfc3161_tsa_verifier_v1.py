@@ -117,6 +117,12 @@ def _token(
     name_constraints_on=None,
     certificate_policies_on=None,
     gen_time=GEN_TIME,
+    include_signing_certificate=True,
+    signing_certificate_version="v2",
+    signing_certificate_hash=None,
+    include_legacy_signing_certificate=False,
+    include_issuer_serial=False,
+    wrong_issuer_serial=False,
 ):
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
@@ -139,14 +145,65 @@ def _token(
         "accuracy": accuracy,
     })
     tst_bytes = tst_info.dump()
-    attrs = cms.CMSAttributes([
+    cert_der = tsa.public_bytes(serialization.Encoding.DER)
+    cert_asn1 = asn1_x509.Certificate.load(cert_der)
+    attrs_list = [
         cms.CMSAttribute({"type": "content_type", "values": ["tst_info"]}),
         cms.CMSAttribute({"type": "message_digest", "values": [hashlib.sha256(tst_bytes).digest()]}),
-    ])
+    ]
+
+    def _ess_cert_id(cert_hash):
+        value = {"cert_hash": cert_hash}
+        if include_issuer_serial:
+            value["issuer_serial"] = {
+                "issuer": [{"directory_name": cert_asn1.issuer}],
+                "serial_number": cert_asn1.serial_number + (1 if wrong_issuer_serial else 0),
+            }
+        return value
+
+    if include_signing_certificate:
+        if signing_certificate_version == "v1":
+            cert_hash = (
+                hashlib.sha1(cert_der).digest()
+                if signing_certificate_hash is None
+                else signing_certificate_hash
+            )
+            signing_certificate = tsp.SigningCertificate({
+                "certs": [_ess_cert_id(cert_hash)],
+            })
+            attrs_list.append(cms.CMSAttribute({
+                "type": "signing_certificate",
+                "values": [signing_certificate],
+            }))
+        elif signing_certificate_version == "v2":
+            cert_hash = (
+                hashlib.sha256(cert_der).digest()
+                if signing_certificate_hash is None
+                else signing_certificate_hash
+            )
+            signing_certificate = tsp.SigningCertificateV2({
+                "certs": [_ess_cert_id(cert_hash)],
+            })
+            attrs_list.append(cms.CMSAttribute({
+                "type": "signing_certificate_v2",
+                "values": [signing_certificate],
+            }))
+        else:
+            raise ValueError("unsupported synthetic ESS signing-certificate version")
+
+    if include_legacy_signing_certificate and signing_certificate_version != "v1":
+        legacy_certificate = tsp.SigningCertificate({
+            "certs": [_ess_cert_id(hashlib.sha1(cert_der).digest())],
+        })
+        attrs_list.append(cms.CMSAttribute({
+            "type": "signing_certificate",
+            "values": [legacy_certificate],
+        }))
+
+    attrs = cms.CMSAttributes(attrs_list)
     signature = tsa_key.sign(attrs.untag().dump(), padding.PKCS1v15(), hashes.SHA256())
     if tamper_signature:
         signature = bytes([signature[0] ^ 1]) + signature[1:]
-    cert_asn1 = asn1_x509.Certificate.load(tsa.public_bytes(serialization.Encoding.DER))
     signer = cms.SignerInfo({
         "version": "v1",
         "sid": {
@@ -288,6 +345,45 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         token, root_der = _token(include_root=True)
         result = _verify(token, root_der)
         self.assertEqual(result.certificate_chain_length, 2)
+
+
+    def test_signing_certificate_v2_must_bind_exact_tsa_signer_certificate(self):
+        token, root_der = _token(signing_certificate_hash=b"\\x00" * 32)
+        with self.assertRaisesRegex(ValueError, "SigningCertificateV2 ESSCertIDv2"):
+            _verify(token, root_der)
+
+    def test_missing_ess_signing_certificate_attribute_is_rejected(self):
+        token, root_der = _token(include_signing_certificate=False)
+        with self.assertRaisesRegex(ValueError, "at least one ESS signing-certificate identifier"):
+            _verify(token, root_der)
+
+    def test_legacy_signing_certificate_v1_sha1_binding_is_verified(self):
+        token, root_der = _token(signing_certificate_version="v1")
+        result = _verify(token, root_der)
+        self.assertEqual(result.provenance_status, "BLOCKED_PROVENANCE")
+
+        token, root_der = _token(
+            signing_certificate_version="v1",
+            signing_certificate_hash=b"\\x00" * 20,
+        )
+        with self.assertRaisesRegex(ValueError, "SigningCertificate ESSCertID"):
+            _verify(token, root_der)
+
+    def test_both_ess_signing_certificate_versions_must_bind_signer(self):
+        token, root_der = _token(include_legacy_signing_certificate=True)
+        result = _verify(token, root_der)
+        self.assertEqual(result.provenance_status, "BLOCKED_PROVENANCE")
+
+    def test_optional_ess_issuer_serial_must_match_signer_certificate(self):
+        token, root_der = _token(include_issuer_serial=True)
+        _verify(token, root_der)
+
+        token, root_der = _token(
+            include_issuer_serial=True,
+            wrong_issuer_serial=True,
+        )
+        with self.assertRaisesRegex(ValueError, "issuerSerial serial number"):
+            _verify(token, root_der)
 
     def test_accuracy_millis_explicit_zero_is_rejected(self):
         token, root_der = _token(accuracy={"millis": 0})
