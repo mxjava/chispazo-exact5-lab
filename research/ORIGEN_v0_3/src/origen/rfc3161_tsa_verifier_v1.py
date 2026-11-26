@@ -321,7 +321,7 @@ def _verify_tstinfo_tsa_name(tst_info, signer_cert: x509.Certificate) -> None:
         for candidate in subject_alt_names:
             if isinstance(candidate, x509.DirectoryName):
                 accepted_names_der.append(candidate.value.public_bytes())
-        if tsa_name.chosen.dump() in accepted_names_der:
+        if tsa_name.chosen.untag().dump() in accepted_names_der:
             return
     else:
         san_types = {
