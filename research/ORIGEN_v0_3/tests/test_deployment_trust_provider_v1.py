@@ -123,7 +123,6 @@ class SyntheticTrustProvider:
         self.snapshot = replace(
             self.snapshot,
             state_generation=next_generation,
-            minimum_policy_sequence=policy_sequence,
             accepted_policy_sequence=policy_sequence,
             accepted_policy_envelope_sha256=policy_envelope_sha256,
         )
@@ -185,7 +184,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
     def test_same_sequence_and_same_exact_digest_is_idempotent(self):
         self.provider.snapshot = replace(
             self.snapshot,
-            minimum_policy_sequence=POLICY_SEQUENCE,
+            minimum_policy_sequence=POLICY_SEQUENCE - 1,
             accepted_policy_sequence=POLICY_SEQUENCE,
             accepted_policy_envelope_sha256=__import__("hashlib").sha256(self.policy_bytes).hexdigest(),
         )
