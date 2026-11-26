@@ -248,11 +248,14 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
 
 
 
-    def _verified_context(self, policy_bytes=None):
+    def _verified_context(self, policy_bytes=None, root_public_key=None):
         exact_policy_bytes = self.policy_bytes if policy_bytes is None else policy_bytes
+        exact_root_public_key = (
+            self.root_public_key if root_public_key is None else root_public_key
+        )
         policy = verify_signed_trust_policy_v3(
             exact_policy_bytes,
-            pinned_root_public_key_bytes=self.root_public_key,
+            pinned_root_public_key_bytes=exact_root_public_key,
             expected_root_key_id=ROOT_KEY_ID,
             expected_policy_domain=CLASSIC_PHYSICAL_POLICY_DOMAIN,
             minimum_policy_sequence=POLICY_SEQUENCE,
@@ -334,11 +337,11 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
             )
 
     def test_independent_provenance_rejects_policy_without_receipt_role_authorization(self):
-        policy_bytes, _ = signed_v3_policy(
+        policy_bytes, root_public_key = signed_v3_policy(
             self.receipt_public_key,
             role="PHYSICAL-RECORDS-SIGNER",
         )
-        policy, receipt = self._verified_context(policy_bytes)
+        policy, receipt = self._verified_context(policy_bytes, root_public_key)
         with self.assertRaisesRegex(ValueError, "receipt-attester role/artifact authorization"):
             verify_independent_provenance(
                 self.receipt_bytes,
