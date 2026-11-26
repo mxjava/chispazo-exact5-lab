@@ -545,7 +545,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             self.snapshot,
             clock_sample_valid_until_utc=NOW - timedelta(microseconds=1),
         )
-        with self.assertRaisesRegex(ValueError, "clock sample lease is already expired"):
+        with self.assertRaisesRegex(ValueError, "provider clock sample lease is already expired"):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 0)
 
@@ -566,7 +566,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             clock_sample_valid_until_utc=NOW + timedelta(seconds=60),
             maximum_clock_sample_age_ms=120_000,
         )
-        with self.assertRaisesRegex(ValueError, "uncertainty interval exceeds the authenticated clock sample lease"):
+        with self.assertRaisesRegex(ValueError, "uncertainty interval exceeds the provider clock sample lease"):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 0)
 
