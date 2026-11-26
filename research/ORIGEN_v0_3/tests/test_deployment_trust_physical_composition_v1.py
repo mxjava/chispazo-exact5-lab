@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import unittest
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from origen.deployment_trust_provider_v1 import DeploymentTrustInspection
@@ -12,12 +13,35 @@ from origen.deployment_trust_physical_composition_v1 import (
 )
 from origen.custody_ledger_witness_integration_v1 import CustodyLedgerWitnessInspectionV1
 from origen.independent_trust_adapter import ProvenanceStatus
+from origen.physical_trust_context_v1 import PhysicalTrustContextV1
 
 
 NOW = datetime(2026, 11, 26, 20, 0, tzinfo=timezone.utc)
 RECEIPT = b"synthetic exact receipt"
 POLICY = b"synthetic exact signed policy"
 
+
+
+def physical_context():
+    policy_tsa = b"synthetic policy TSA certificate"
+    custody_tsa = b"synthetic custody TSA certificate"
+    return PhysicalTrustContextV1(
+        policy_tsa_root_certificate_der=policy_tsa,
+        policy_tsa_root_sha256=hashlib.sha256(policy_tsa).hexdigest(),
+        policy_tsa_policy_oid="1.2.3.4",
+        policy_root_public_key_bytes=b"p" * 32,
+        policy_root_key_id="synthetic-policy-root",
+        minimum_policy_sequence=7,
+        custody_tsa_root_certificate_der=custody_tsa,
+        custody_tsa_root_sha256=hashlib.sha256(custody_tsa).hexdigest(),
+        log_public_key_bytes=b"l" * 32,
+        log_id="synthetic-log",
+        log_key_id="synthetic-log-key",
+        registry_root_public_key_bytes=b"r" * 32,
+        registry_root_key_id="synthetic-registry-root",
+        registry_id="synthetic-registry",
+        minimum_registry_sequence=4,
+    )
 
 def physical_result():
     return CustodyLedgerWitnessInspectionV1(
@@ -66,17 +90,32 @@ def deployment_result():
 class DeploymentPhysicalCompositionTests(unittest.TestCase):
     def test_physical_bundle_precedes_provider_commit_and_exact_bytes_are_reused(self):
         events = []
-        provider = object()
+        snapshot = SimpleNamespace(trusted_time_utc=NOW)
+
+        class Provider:
+            def read_snapshot(self, *, policy_domain):
+                events.append(("snapshot", policy_domain))
+                return snapshot
+
+            def read_physical_trust_context(self, *, policy_domain):
+                events.append(("physical-context", policy_domain))
+                return physical_context()
+
+        provider = Provider()
 
         def physical(receipt, policy, **kwargs):
             events.append(("physical", receipt, policy, kwargs["verification_time"]))
             return physical_result()
 
-        def deployment(receipt, policy, *, provider):
-            events.append(("provider", receipt, policy, provider))
+        def deployment(receipt, policy, *, provider, **kwargs):
+            events.append(("provider", receipt, policy, provider, kwargs.get("provider_snapshot")))
             return deployment_result()
 
         with (
+            patch(
+                "origen.deployment_trust_physical_composition_v1._snapshot_copy",
+                return_value=snapshot,
+            ),
             patch(
                 "origen.deployment_trust_physical_composition_v1.verify_custody_timestamp_ledger_witness_v1",
                 side_effect=physical,
@@ -90,23 +129,41 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
                 RECEIPT,
                 POLICY,
                 provider=provider,
-                physical_verification_kwargs={"verification_time": NOW},
+                physical_verification_kwargs={"verification_time": datetime(2026, 11, 26, 21, 0, tzinfo=timezone.utc)},
             )
 
-        self.assertEqual([event[0] for event in events], ["physical", "provider"])
-        self.assertEqual(events[0][1:3], (RECEIPT, POLICY))
-        self.assertEqual(events[1][1:3], (RECEIPT, POLICY))
-        self.assertIs(events[1][3], provider)
+        self.assertEqual(
+            [event[0] for event in events],
+            ["snapshot", "physical-context", "physical", "provider"],
+        )
+        self.assertEqual(events[2][1:3], (RECEIPT, POLICY))
+        self.assertEqual(events[2][3], NOW)  # caller time is overwritten
+        self.assertEqual(events[2][4]["pinned_log_public_key_bytes"], b"l" * 32)
+        self.assertEqual(events[2][4]["pinned_registry_root_public_key_bytes"], b"r" * 32)
+        self.assertEqual(events[3][1:3], (RECEIPT, POLICY))
+        self.assertIs(events[3][3], provider)
+        self.assertIs(events[3][4], snapshot)
         self.assertEqual(result.receipt_sha256, hashlib.sha256(RECEIPT).hexdigest())
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
-        self.assertIn(
+        self.assertNotIn(
             "PHYSICAL_VERIFIER_CLOCK_IS_CALLER_SUPPLIED_NOT_PROVIDER_SNAPSHOT",
             result.remaining_blockers,
         )
 
     def test_failed_physical_bundle_never_reads_or_advances_provider(self):
-        provider = object()
+        class Provider:
+            def read_snapshot(self, *, policy_domain):
+                return object()
+
+            def read_physical_trust_context(self, *, policy_domain):
+                return physical_context()
+
+        provider = Provider()
         with (
+            patch(
+                "origen.deployment_trust_physical_composition_v1._snapshot_copy",
+                return_value=SimpleNamespace(trusted_time_utc=NOW),
+            ),
             patch(
                 "origen.deployment_trust_physical_composition_v1.verify_custody_timestamp_ledger_witness_v1",
                 side_effect=ValueError("synthetic nested signature failure"),
@@ -123,6 +180,17 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
                     physical_verification_kwargs={"verification_time": NOW},
                 )
         deployment.assert_not_called()
+
+    def test_caller_cannot_supply_physical_trust_anchors_or_floors(self):
+        with self.assertRaisesRegex(ValueError, "caller must not supply physical trust anchors"):
+            verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
+                RECEIPT,
+                POLICY,
+                provider=object(),
+                physical_verification_kwargs={
+                    "pinned_log_public_key_bytes": b"caller-controlled",
+                },
+            )
 
     def test_shared_bytes_cannot_be_overridden_in_physical_kwargs(self):
         with self.assertRaisesRegex(ValueError, "must not override shared trust inputs"):

@@ -207,7 +207,6 @@ in Sections 2–4 remains mandatory. No caller-supplied root, floor, clock,
 callback, verifier result or repository file is an acceptable production
 substitute.
 
-
 ## 10. Provider-backed composition with the complete physical evidence bundle
 
 PR #96 adds `src/origen/deployment_evidence_composition_v1.py` and the
