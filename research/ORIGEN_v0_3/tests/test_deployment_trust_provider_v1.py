@@ -25,7 +25,7 @@ from origen.deployment_trust_provider_v1 import (
     inspect_receipt_with_deployment_trust_provider,
 )
 from origen.independent_trust_adapter import ProvenanceStatus, verify_independent_provenance
-from origen.timestamp_nonce_challenge_v1 import timestamp_nonce_challenge_sha256
+from origen.timestamp_nonce_challenge_v1 import timestamp_nonce_challenge_sha256 as compute_timestamp_nonce_challenge_sha256
 from test_receipt_policy_integration_v3 import (
     POLICY_SEQUENCE,
     ROOT_KEY_ID,
@@ -200,7 +200,7 @@ class SyntheticTrustProvider:
             if (
                 challenge is None
                 or challenge.challenge_id != timestamp_nonce_challenge_id
-                or timestamp_nonce_challenge_sha256(challenge) != timestamp_nonce_challenge_sha256
+                or compute_timestamp_nonce_challenge_sha256(challenge) != timestamp_nonce_challenge_sha256
                 or challenge.challenge_id in self.consumed_timestamp_nonce_challenge_ids
                 or challenge.policy_timestamp_nonce in self.consumed_timestamp_nonce_values
                 or challenge.custody_timestamp_nonce in self.consumed_timestamp_nonce_values
