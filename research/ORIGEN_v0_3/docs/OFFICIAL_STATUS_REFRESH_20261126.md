@@ -1,26 +1,29 @@
 # Official Chispazo source status refresh — 2026-11-26
 
 **Review time:** 14:56:51 America/Mexico_City  
-**Classification:** public web status only. No draw-specific physical evidence obtained.
+**Classification:** official public schedule/result records only. No draw-specific physical evidence obtained.
 
 ## Modality separation and contest-ID correction
 
-The official Chispazo product page states two daily slots: **De las Tres at 15:00** and **Clásico at 21:00** local time. This establishes the product schedule and modality mapping, not a contest ID for every slot.
+The official Chispazo product page states two daily slots: **De las Tres at 15:00** and **Clásico at 21:00** local time.
 
-The official results endpoint still displayed contest **12396**, dated 25-Nov-2026, with **05 07 21 24 28**, and contest 12395 dated 25-Nov with **01 13 19 23 28**. It showed 26-Nov as the next draw date but no 26-Nov result at review.
+A newly reviewed official Lotería Nacional result-mask PDF for **25-Nov-2026** explicitly labels:
+- Contest **12395** as **Chispazo De las Tres**, numbers **01 13 19 23 28**.
+- Contest **12396** as **Chispazo Clásico**, numbers **05 07 21 24 28**.
 
-The official commercializer home page explicitly listed **Chispazo contest 12397 at 15:00 on 26-Nov**. Combined with the official product page's slot mapping, this is schedule-only evidence for **De las Tres**. No result was yet published at review.
+This resolves the modality of the two 25-Nov contests from the official PDF itself, rather than guessing from contest order or the results table.
 
-**Correction to an earlier status overlay:** the same commercializer home page has a separate item at 21:00 labelled **“Sorteo | 3093”**. It is not labelled Chispazo and must not be assigned to Chispazo contest 12398. The product page confirms that Chispazo Clásico is scheduled daily at 21:00, but the reviewed home-page snapshot does **not** publish a Chispazo contest ID for that slot. Therefore:
-- Contest 12397: schedule-only De las Tres 15:00; no result confirmed.
-- Clásico 21:00 on 26-Nov: schedule-only; contest ID not independently confirmed in the reviewed index.
-- Contest 12398: **not confirmed by the reviewed sources**; do not use it as a target identifier.
+For 26-Nov:
+- The official commercializer home page explicitly lists **Chispazo contest 12397 at 15:00**. Combined with the official product page's slot mapping, this is schedule-only evidence for **De las Tres**. No result was published at the 14:56 review.
+- The Chispazo product page confirms that **Clásico is scheduled daily at 21:00**, but the reviewed commercializer home-page snapshot does not list a Chispazo contest ID for that slot.
+- The separate 21:00 home-page card is labelled **“Sorteo | 3093”**. It is not labelled Chispazo and must not be assigned to Chispazo contest 12398.
+- Therefore, **contest 12398 remains unconfirmed by the reviewed official index/results sources**. A nonofficial aggregator is not used to upgrade this to official evidence.
 
-The result page's historical rows omit time/modality. A draw must not be classified from contest-number order alone.
+The official Chispazo results endpoint still displayed contest **12396**, dated 25-Nov-2026, as its latest result and showed 26-Nov as the next draw date. The 26-Nov results were not yet published at review.
 
 ## Procedure-derived physical record requirements
 
-Lotería Nacional's public procedure **SGVO-PRO-05, revision 39**, was published on 20-Mar-2026. Its current public PDF path identifies the procedure as “Procedimiento Sorteos Electrónicos”. Relevant requirements include:
+Lotería Nacional's public procedure **SGVO-PRO-05, revision 39**, was published on 20-Mar-2026. Its public PDF identifies the procedure as “Procedimiento Sorteos Electrónicos”. Relevant requirements include:
 
 - Each draw's spheres are weighed individually and in numerical order in the presence of the SEGOB inspector and Lotería Nacional representatives.
 - Smartballs: 4.25–5.25 g, with maximum set spread 0.30 g. Ping-pong spheres: 2.30–3.00 g, maximum set spread 0.15 g.
@@ -30,19 +33,18 @@ Lotería Nacional's public procedure **SGVO-PRO-05, revision 39**, was published
 - The recording covers the weighing through the electronic draw and is included with the act as documentary evidence.
 - The SICAL sales-close summary and post-result summary are attached/reconciled as described by the procedure.
 
-The PDF also describes the roles of the SEGOB inspector and Lotería Nacional representatives in verifying sales close, weighing, sphere placement, draw conduct and result entry. These are procedure requirements, not proof of compliance in a specific draw.
-
-**No draw-specific physical evidence was obtained** for the 26-Nov De las Tres or the 21:00 Clásico slot: no original signed act, pre-close SICAL summary, CS-11, signed weighing strip, calibration certificate, original recording, signed participation/cancellation files, or independent custody/time/ledger proofs. The PDF bytes could not be captured locally, so no SHA-256 is claimed.
+These are published procedure requirements, not proof that a particular draw complied. No original signed act, pre-close SICAL summary, CS-11, signed weighing strip, calibration certificate, original recording, signed participation/cancellation files, or independent custody/time/ledger proofs were obtained for 26-Nov.
 
 ## Source ledger
 
 - Chispazo product and daily schedule: https://www.loterianacional.gob.mx/Chispazo/Chispazo
 - Official result endpoint: https://www.loterianacional.gob.mx/Chispazo/Resultados
 - Official commercializer home page: https://comercializadores.loterianacional.gob.mx/home/
+- Official 25-Nov-2026 result-mask PDF: https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=25112026221906
 - Procedure SGVO-PRO-05 Rev.39: https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
 - SEGOB Inspection and Surveillance: https://www.juegosysorteos.gob.mx/es/Juegos_y_Sorteos/inspecciones_lotenal_pronosticos
 
-Machine-readable status is stored in `data/official-overlays/2026-11-26_public_web_status_only.json`. It contains no invented source-byte digest and makes no claim of physical authentication.
+The 25-Nov mask and SGVO-PRO-05 PDF were inspected through the public web text extraction. Their original bytes were not captured locally; no SHA-256 is claimed for either PDF. Machine-readable status is stored in `data/official-overlays/2026-11-26_public_web_status_only.json`.
 
 ## Non-promotion invariants
 
