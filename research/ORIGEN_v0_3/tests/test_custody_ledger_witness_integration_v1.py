@@ -475,6 +475,10 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
             hashlib.sha256(data["signed_policy_envelope_bytes"]).hexdigest(),
         )
         self.assertEqual(result.ledger_checkpoint_sha256, sha(ledger["new_bytes"]))
+        self.assertEqual(
+            result.ledger.inclusion.manifest_commitment_sha256,
+            manifest_commitment(ledger["document"]),
+        )
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
 
     def test_policy_timestamp_token_must_imprint_exact_signed_v3_envelope(self):
@@ -534,6 +538,18 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "nested Ed25519 signature verification failed"):
             _verify(data, {**ledger, "manifest_bytes": bad_manifest}, batches)
 
+
+    def test_policy_timestamp_token_digest_is_signed_and_included_in_ledger_commitment(self):
+        data, ledger, batches, _ = _build_case()
+        document = copy.deepcopy(ledger["document"])
+        proof = next(
+            item for item in document["trusted_time_proofs"]
+            if item["event_id"].startswith("trust-policy-envelope-sha256:")
+        )
+        proof["proof_sha256"] = "0" * 64
+        bad_manifest = encode(document)
+        with self.assertRaisesRegex(ValueError, "nested Ed25519 signature verification failed"):
+            _verify(data, {**ledger, "manifest_bytes": bad_manifest}, batches)
 
     def test_ledger_inclusion_proof_digest_is_not_part_of_nested_signature_payload_but_is_verified_separately(self):
         data, ledger, batches, _ = _build_case()
