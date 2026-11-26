@@ -124,6 +124,7 @@ def _token(
     include_issuer_serial=False,
     wrong_issuer_serial=False,
     wrong_issuer_name=False,
+    tst_version="v1",
 ):
     root, tsa, tsa_key = _certs(
         critical_eku=critical_eku,
@@ -134,7 +135,7 @@ def _token(
         gen_time=gen_time,
     )
     tst_info = tsp.TSTInfo({
-        "version": "v1",
+        "version": tst_version,
         "policy": "1.2.3.4.5",
         "message_imprint": {
             "hash_algorithm": {"algorithm": "sha256"},
@@ -275,6 +276,11 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         self.assertEqual(result.verification_clock_source, "CALLER_SUPPLIED_UNAUTHENTICATED")
         self.assertEqual(result.revocation_status, "NOT_CHECKED")
         self.assertEqual(result.provenance_status, "BLOCKED_PROVENANCE")
+
+    def test_non_v1_tstinfo_version_is_rejected(self):
+        token, root_der = _token(tst_version=2)
+        with self.assertRaisesRegex(ValueError, "TSTInfo version must be v1"):
+            _verify(token, root_der)
 
     def test_wrong_artifact_bytes_fail_imprint_binding(self):
         token, root_der = _token()

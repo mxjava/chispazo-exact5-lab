@@ -424,6 +424,13 @@ def verify_rfc3161_timestamp_token(
             raise
         raise ValueError("timestamp token has malformed CMS/TSTInfo structure") from exc
 
+    tst_version = tst_info["version"].native
+    if not (
+        (type(tst_version) is int and tst_version == 1)
+        or (type(tst_version) is str and tst_version == "v1")
+    ):
+        raise ValueError("RFC3161 TSTInfo version must be v1 (1)")
+
     if len(signer_infos) != 1:
         raise ValueError("timestamp token must contain exactly one CMS signer")
     if cert_choices is None or not 1 <= len(cert_choices) <= MAX_CERTIFICATES:

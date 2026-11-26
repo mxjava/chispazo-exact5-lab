@@ -70,6 +70,15 @@ Policies on the root. A further regression builds a TSA leaf with `cA=false`
 and `keyCertSign=true`, which must be rejected under RFC 5280 §4.2.1.9.
 These fixtures are generated test certificates only.
 
+## TSTInfo version constraint
+
+RFC 3161 defines the TSTInfo version as `INTEGER { v1(1) }`. The verifier now
+rejects any other encoded version before downstream timestamp interpretation.
+A synthetic version-2 token is an adversarial regression; the ordinary v1
+fixture remains accepted and still reports `BLOCKED_PROVENANCE`.
+
+Reference: [RFC 3161 §2.4.2](https://www.rfc-editor.org/rfc/rfc3161.html#section-2.4.2).
+
 ## ESS signer-certificate identification
 
 RFC 3161 §2.4.2 requires the TSA certificate identifier in a signed
