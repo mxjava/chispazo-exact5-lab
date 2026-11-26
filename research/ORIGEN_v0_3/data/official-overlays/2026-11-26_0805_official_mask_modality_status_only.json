@@ -1,0 +1,63 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "classification": "OFFICIAL_PUBLICATION_STATUS_ONLY_NOT_PHYSICAL_PROVENANCE",
+  "observed_at_local": "2026-11-26T08:05:26-06:00",
+  "observed_at_utc": "2026-11-26T14:05:26Z",
+  "target_date": "2026-11-26",
+  "official_schedule": {
+    "chispazo_de_las_tres_local_time": "15:00",
+    "chispazo_clasico_local_time": "21:00",
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  },
+  "latest_published_chispazo_results_page": {
+    "page_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "latest_contest_id": "12396",
+    "latest_contest_date": "2026-11-25",
+    "latest_winning_numbers": [5, 7, 21, 24, 28],
+    "next_draw_date_label": "26/11/2026",
+    "no_2026_11_26_result_visible_at_observation": true
+  },
+  "latest_official_mask_index": {
+    "page_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "latest_mask_date": "2026-11-25",
+    "mask_pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=25112026221906",
+    "original_pdf_bytes_captured": false,
+    "original_pdf_sha256": "NOT_CAPTURED"
+  },
+  "mask_confirmed_contests_2026_11_25": [
+    {
+      "contest_id": "12395",
+      "modality": "CHISPAZO_DE_LAS_TRES",
+      "local_slot": "15:00",
+      "winning_numbers": [1, 13, 19, 23, 28],
+      "confirmation": "official_mask_visually_labels_the_De_las_tres_logo_and_contest_number"
+    },
+    {
+      "contest_id": "12396",
+      "modality": "CHISPAZO_CLASICO",
+      "local_slot": "21:00",
+      "winning_numbers": [5, 7, 21, 24, 28],
+      "confirmation": "official_mask_visually_labels_the_Clasico_logo_and_contest_number"
+    }
+  ],
+  "draw_specific_physical_evidence_found_for_2026_11_26": false,
+  "missing_primary_evidence": [
+    "signed_draw_act",
+    "CS-11",
+    "sale_close_summary_and_signed_participation_cancellation_files",
+    "original_per_draw_weighing_strip",
+    "all_28_individual_sphere_measurements",
+    "calibration_certificate_and_scale_identity",
+    "machine_case_and_sphere_set_mapping",
+    "institutional_signature_verification_material",
+    "RFC3161_token_and_validated_TSA_chain",
+    "external_ledger_inclusion_and_independent_custody_receipt",
+    "two_independently_sealed_pre_close_outputs"
+  ],
+  "interpretation": {
+    "contest_12395_and_12396_modality": "MASK_CONFIRMED",
+    "2026_11_26_draw_status": "NOT_YET_DUE_AT_OBSERVATION_TIME",
+    "result_publication_is_not_physical_provenance": true,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
