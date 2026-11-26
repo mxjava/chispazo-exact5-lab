@@ -161,3 +161,8 @@ Every successful call returns `BLOCKED_PROVENANCE`. Production remains:
 `BLOCKED / RESEARCH_ONLY_NO_EDGE`
 
 No `EDGE_SUPPORTED` claim is possible without the full prospective Classic sample, preregistered positive lift, Holm threshold, anytime e-value, two pre-close seals, clean hashes, and authentic independent custody.
+
+
+### Root-policy authorization of the clock-signing key
+
+The signed V3 trust-policy envelope must contain exactly one issuer-key entry matching the clock source ID and clock key ID. Its public key bytes must equal the snapshot key, the key must not be revoked, its validity interval must contain the complete trusted-time uncertainty interval, and its root-signed authorization matrix must grant role `TRUSTED_TIME_AUTHORITY` for artifact type `CLOCK_SAMPLE`. Missing, duplicate, revoked, expired, or differently pinned clock keys fail before receipt verification or CAS. This is authorization relative to the deployment root pin supplied by the provider; it does not establish that the root pin itself was provisioned institutionally. Test clock keys are synthetic.
