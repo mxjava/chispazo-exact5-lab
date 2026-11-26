@@ -135,6 +135,31 @@ class TestExternalLedgerInclusion(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "bounded exact tuple"):
             self.verify(leaves, 0, audit_path_hex=("0" * 64,) * 65)
 
+
+    def test_duplicate_signed_tree_head_json_keys_are_rejected(self):
+        leaves = [b"alpha"]
+        root = tree_hash(leaves)
+        signature = self.key.sign(DOMAIN + canonical({
+            "schema": "ORIGEN_STH_V1",
+            "log_id": LOG_ID,
+            "tree_size": 1,
+            "root_hash": root.hex(),
+        }))
+        sig = base64.b64encode(signature).decode("ascii")
+        raw = (
+            b'{"schema":"ORIGEN_STH_V1","schema":"ORIGEN_STH_V1",'
+            + b'"log_id":"synthetic-log-only","tree_size":1,"root_hash":"'
+            + root.hex().encode("ascii")
+            + b'","signature_b64":"' + sig.encode("ascii") + b'"}'
+        )
+        with self.assertRaisesRegex(ValueError, "duplicate JSON keys"):
+            self.verify(leaves, 0, signed_tree_head=raw)
+
+    def test_oversized_leaf_is_rejected_before_hashing(self):
+        leaves = [b"alpha"]
+        with self.assertRaisesRegex(ValueError, "size limit"):
+            self.verify(leaves, 0, leaf_bytes=b"x" * (1_048_576 + 1))
+
     def test_signed_head_tampering_is_rejected(self):
         leaves = [b"alpha"]
         root = tree_hash(leaves)
