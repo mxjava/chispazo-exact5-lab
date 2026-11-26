@@ -5,7 +5,11 @@ import unittest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from origen.independent_trust_adapter import ProvenanceStatus
-from origen.physical_evidence_verifier_v3 import (\n    ROLE_STATUS,\n    canonical_physical_manifest_signature_payload_v2,\n    verify_physical_evidence_signatures_v3,\n)
+from origen.physical_evidence_verifier_v3 import (
+    ROLE_STATUS,
+    canonical_physical_manifest_signature_payload_v2,
+    verify_physical_evidence_signatures_v3,
+)
 from origen.trust_policy_envelope_v3 import SCHEMA_VERSION_V3, verify_signed_trust_policy_v3
 from test_physical_evidence_manifest_v1 import encode
 from test_physical_evidence_verifier_v2 import (
