@@ -21,7 +21,9 @@ Request-specific nonces and evidence bytes remain request inputs; they are not t
 
 ## Important security boundary
 
-A Python Protocol, frozen dataclass, repository commit, environment variable or synthetic provider does not prove institutional provisioning. The provider must load this context from a separately administered trust store with authenticated provisioning records, two-person approval, key rotation/revocation controls and rollback-resistant state. The interface added here does not implement that infrastructure.
+A Python Protocol, frozen dataclass, repository commit, environment variable or synthetic provider does not prove institutional provisioning. The canonical SHA-256 of this context is required in the deployment snapshot. That digest is included in the deployment trust-configuration fingerprint used by the final CAS. The provider must recompute it from authoritative physical trust configuration inside the same transaction; otherwise a changed TSA/log/registry root between the two reads could evade the deployment CAS.
+
+The provider must load this context from a separately administered trust store with authenticated provisioning records, two-person approval, key rotation/revocation controls and rollback-resistant state. The interface added here does not implement that infrastructure.
 
 The Incode PSC material remains only a public-metadata candidate: the actual DER certificates, current TSA policy/practices bytes, path validation, revocation evidence and live RFC 3161 response have not been captured and verified. No Incode certificate fingerprint is pinned by this change. No public Lotería Nacional signing key or authorization for a third-party TSA to attest Chispazo physical events has been established.
 
@@ -30,6 +32,7 @@ The Incode PSC material remains only a public-metadata candidate: the actual DER
 - The evidence submitter cannot override trust roots, key IDs, policy OIDs or sequence floors through `physical_verification_kwargs`.
 - The provider's deployment snapshot supplies one clock instant shared by physical and deployment verification.
 - The provider-owned physical context is fetched before physical verification; absent context means no verification and no CAS.
+- The physical-context digest must match the digest in the deployment snapshot and be included in the provider's authoritative CAS fingerprint; a context swap between reads is rejected.
 - Physical verification must succeed before the deployment provider's monotonic compare-and-advance.
 - Outputs remain `BLOCKED_PROVENANCE`; production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
 
