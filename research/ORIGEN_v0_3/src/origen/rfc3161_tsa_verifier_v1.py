@@ -287,6 +287,47 @@ def _verify_ess_issuer_serial(cert_id, signer_cert: x509.Certificate, label: str
         raise ValueError(f"RFC3161 {label} issuerSerial issuer does not match signer certificate")
 
 
+def _verify_tstinfo_tsa_name(tst_info, signer_cert: x509.Certificate) -> None:
+    """Check a present TSTInfo tsa name against the signer certificate.
+
+    RFC 3161 says the optional tsa GeneralName must correspond to a subject
+    name in the certificate used to verify the token. This diagnostic supports
+    directoryName (certificate subject or SAN DirectoryName) and rejects other
+    GeneralName forms rather than silently ignoring them.
+    """
+    tsa_name = tst_info["tsa"]
+    if tsa_name.native is None:
+        return
+    if tsa_name.name != "directory_name":
+        raise ValueError(
+            "RFC3161 TSTInfo tsa GeneralName form is unsupported by this verifier"
+        )
+    signer_cert_asn1 = asn1_x509.Certificate.load(
+        signer_cert.public_bytes(serialization.Encoding.DER),
+        strict=True,
+    )
+    accepted_names = [
+        signer_cert_asn1["tbs_certificate"]["subject"].native
+    ]
+    try:
+        subject_alt_names = signer_cert.extensions.get_extension_for_class(
+            x509.SubjectAlternativeName
+        ).value
+    except x509.ExtensionNotFound:
+        subject_alt_names = ()
+    for candidate in subject_alt_names:
+        if isinstance(candidate, x509.DirectoryName):
+            candidate_name = asn1_x509.Name.load(
+                candidate.value.public_bytes(),
+                strict=True,
+            )
+            accepted_names.append(candidate_name.native)
+    if tsa_name.chosen.native not in accepted_names:
+        raise ValueError(
+            "RFC3161 TSTInfo tsa directoryName does not match signer certificate subject names"
+        )
+
+
 def _verify_signing_certificate_binding(signed_attrs, signer_cert: x509.Certificate):
     """Require RFC 3161 ESS signer-certificate identification in signed attrs.
 
@@ -455,6 +496,7 @@ def verify_rfc3161_timestamp_token(
     signer_info = signer_infos[0]
     signer_cert = _match_signer_certificate(signer_info, certificates)
     _require_tsa_leaf(signer_cert)
+    _verify_tstinfo_tsa_name(tst_info, signer_cert)
 
     imprint = tst_info["message_imprint"]
     imprint_algorithm = imprint["hash_algorithm"]["algorithm"].native
