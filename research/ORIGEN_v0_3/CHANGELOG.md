@@ -3,7 +3,7 @@
 - Added a single-snapshot UTC normalization for the bootstrap clock so a stateful caller-supplied `tzinfo` cannot make the policy and receipt verifiers observe different instants.
 - The bootstrap provider still returns `None`; no institutional root, anti-rollback store or trusted clock is provisioned. The public `verify_independent_provenance` remains `BLOCKED_PROVENANCE` even when synthetic root/receipt signatures verify, because nested signatures, original bytes, RFC 3161, ledger, custody and two pre-close seals remain unverified.
 - Added synthetic-only adversarial composition tests, including bootstrap-store outage fail-closed coverage, and deployment provisioning/anti-rollback documentation. No test key is a production trust anchor.
-- Final-head isolated ORIGEN workflow [45891432145](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/45891432145) passed; root CI is still running. PR #99 remains draft based on PR #41.
+- Final-head isolated ORIGEN workflow [45891626401](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/45891626401) passed on `622673cbca0dfef73ee7e609847d2d79ca8eba3d`. Root CI passed on the implementation head `cf1437d47f0781cc7e0808009d36a1bd18caa5f3` ([45891432215](https://github.com/mxjava/chispazo-exact5-lab/actions/runs/45891432215)); root CI for the changelog-only final head remains in progress. PR #99 remains draft based on PR #41.
 
 ## Acta role separation and official 13:10 status refresh (2026-11-24)
 - Physical manifest regression: all four required DRAW-ACTA roles could reuse one subject_id; parser now requires distinct declared subjects for the General Directorate, Sales Operations, IT and SEGOB roles.
