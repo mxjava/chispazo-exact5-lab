@@ -64,6 +64,11 @@ def _portfolio_bytes():
 def _signed_policy(
     receipt_private, custodian_private, root_private, *,
     custody_role=CUSTODY_SIGNER_ROLE, custodian_key_id=CUSTODIAN_KEY_ID,
+    policy_issued_at_utc="2026-11-22T00:00:00Z",
+    policy_not_before_utc="2026-11-22T00:00:00Z",
+    policy_expires_at_utc="2026-12-01T00:00:00Z",
+    custodian_key_valid_from_utc="2026-01-01T00:00:00Z",
+    custodian_key_valid_until_utc="2027-01-01T00:00:00Z",
 ):
     authorizations = {
         RECEIPT_ISSUER: {
@@ -86,8 +91,14 @@ def _signed_policy(
             "issuer_id": issuer_id,
             "key_id": item["key_id"],
             "public_key_b64": base64.b64encode(item["public_key"]).decode("ascii"),
-            "valid_from_utc": "2026-01-01T00:00:00Z",
-            "valid_until_utc": "2027-01-01T00:00:00Z",
+            "valid_from_utc": (
+                custodian_key_valid_from_utc
+                if issuer_id == CUSTODIAN_ID else "2026-01-01T00:00:00Z"
+            ),
+            "valid_until_utc": (
+                custodian_key_valid_until_utc
+                if issuer_id == CUSTODIAN_ID else "2027-01-01T00:00:00Z"
+            ),
             "revoked": False,
             "authorizations": [{
                 "role": item["role"],
@@ -101,9 +112,9 @@ def _signed_policy(
         "policy_sequence": POLICY_SEQUENCE,
         "issuer_id": "synthetic-policy-authority",
         "root_key_id": ROOT_KEY_ID,
-        "issued_at_utc": "2026-11-22T00:00:00Z",
-        "not_before_utc": "2026-11-22T00:00:00Z",
-        "expires_at_utc": "2026-12-01T00:00:00Z",
+        "issued_at_utc": policy_issued_at_utc,
+        "not_before_utc": policy_not_before_utc,
+        "expires_at_utc": policy_expires_at_utc,
         "issuer_keys": issuer_keys,
     }
     unsigned = json.dumps(
@@ -122,6 +133,11 @@ def _signed_policy(
 def bundle(
     *, custody_role=CUSTODY_SIGNER_ROLE, root_reused=False,
     custodian_key_id=CUSTODIAN_KEY_ID,
+    policy_issued_at_utc="2026-11-22T00:00:00Z",
+    policy_not_before_utc="2026-11-22T00:00:00Z",
+    policy_expires_at_utc="2026-12-01T00:00:00Z",
+    custodian_key_valid_from_utc="2026-01-01T00:00:00Z",
+    custodian_key_valid_until_utc="2027-01-01T00:00:00Z",
 ):
     receipt_private = Ed25519PrivateKey.generate()
     custodian_private = Ed25519PrivateKey.generate()
@@ -166,6 +182,11 @@ def bundle(
         root_private,
         custody_role=custody_role,
         custodian_key_id=custodian_key_id,
+        policy_issued_at_utc=policy_issued_at_utc,
+        policy_not_before_utc=policy_not_before_utc,
+        policy_expires_at_utc=policy_expires_at_utc,
+        custodian_key_valid_from_utc=custodian_key_valid_from_utc,
+        custodian_key_valid_until_utc=custodian_key_valid_until_utc,
     )
     signature = custodian_private.sign(
         canonical_custody_signature_payload(
