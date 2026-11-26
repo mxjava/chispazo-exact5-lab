@@ -222,6 +222,12 @@ def verify_custody_timestamp_ledger_witness_v1(
     diagnostics; a split view is never converted into a successful status.
     """
     verified_at = _utc_instant(verification_time, "verification_time")
+    if type(artifact_bytes_by_sha256) is not dict:
+        raise TypeError("artifact_bytes_by_sha256 must be an exact dict")
+    if type(signature_bytes_by_sha256) is not dict:
+        raise TypeError("signature_bytes_by_sha256 must be an exact dict")
+    artifact_snapshot = dict(artifact_bytes_by_sha256)
+    signature_snapshot = dict(signature_bytes_by_sha256)
     custody_timestamp = verify_receipt_custody_signature_timestamp_v1(
         original_receipt_bytes,
         signed_policy_envelope_bytes,
@@ -241,8 +247,8 @@ def verify_custody_timestamp_ledger_witness_v1(
     manifest = parse_unverified_physical_manifest(raw_manifest_bytes)
     physical_signatures = verify_physical_evidence_signatures_v3(
         raw_manifest_bytes,
-        artifact_bytes_by_sha256,
-        signature_bytes_by_sha256,
+        artifact_snapshot,
+        signature_snapshot,
         signed_policy_envelope_bytes=signed_policy_envelope_bytes,
         pinned_root_public_key_bytes=pinned_root_public_key_bytes,
         expected_root_key_id=expected_root_key_id,
@@ -264,7 +270,7 @@ def verify_custody_timestamp_ledger_witness_v1(
         or physical_signatures.signatures_verified != len(manifest.signatures)
     ):
         raise RuntimeError("nested physical signatures are not bound to the exact custody policy and manifest")
-    if artifact_bytes_by_sha256.get(custody_timestamp.custody_chain.custody_record_sha256) != custody_record_bytes:
+    if artifact_snapshot.get(custody_timestamp.custody_chain.custody_record_sha256) != custody_record_bytes:
         raise ValueError("exact custody-record bytes are absent from the verified physical artifact map")
     custody_artifact_sha256 = _manifest_binds_signature_timestamp(
         manifest,
