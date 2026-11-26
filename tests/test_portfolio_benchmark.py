@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from pathlib import Path
 
 from src.portfolio_benchmark import (
-    _line_mask, benchmark, canonical_draw_hash, canonical_registration_hash,
+    _line_mask, benchmark, canonical_draw_hash, canonical_registration_hash, exact_uniform_portfolio_null,
     load_draws, validate_records,
 )
 
@@ -84,6 +84,13 @@ class PortfolioBenchmarkTests(unittest.TestCase):
                 writer.writeheader(); writer.writerow(row)
             with self.assertRaisesRegex(ValueError, "draw_hash_not_in_external_anchor_file"):
                 load_draws(path, {})
+
+    def test_exact_uniform_null_matches_30_over_98280_exact5_mass(self):
+        null = exact_uniform_portfolio_null(30)
+        self.assertEqual(null["universe"], 98280)
+        self.assertAlmostEqual(null["probability_best_hits_at_least_k"]["5"], 30/98280, places=14)
+        self.assertAlmostEqual(null["expected_best_hits"],
+            sum(null["probability_best_hits_at_least_k"].values()), places=14)
 
     def test_random_null_reproducible_and_research_only(self):
         masks = [_line_mask("-".join(f"{n:02d}" for n in c))
