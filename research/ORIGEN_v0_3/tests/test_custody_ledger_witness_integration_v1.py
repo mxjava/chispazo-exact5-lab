@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import copy
 import hashlib
 import json
@@ -11,12 +12,17 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from origen.custody_ledger_witness_integration_v1 import (
     verify_custody_timestamp_ledger_witness_v1,
 )
-from origen.custody_receipt_verifier_v3 import CUSTODY_SIGNER_ROLE
+from origen.custody_receipt_verifier_v3 import (\n    CUSTODY_ARTIFACT_TYPE,\n    CUSTODY_SIGNER_ROLE,\n)\nfrom origen.physical_evidence_verifier_v2 import CLASSIC_PHYSICAL_POLICY_DOMAIN\nfrom origen.physical_evidence_verifier_v3 import canonical_physical_manifest_signature_payload_v2
 from origen.independent_trust_adapter import ProvenanceStatus
 from test_custody_receipt_verifier_v3 import (
     ROOT_KEY_ID,
     POLICY_SEQUENCE,
     StatefulOffsetTimezone,
+    CUSTODIAN_ID,
+    CUSTODIAN_KEY_ID,
+    RECEIPT_ISSUER,
+    RECEIPT_KEY_ID,
+    raw_public_key,
 )
 from test_custody_signature_timestamp_integration_v1 import (
     timestamped_bundle,
@@ -29,7 +35,7 @@ from test_checkpoint_witness_quorum_v1 import (
     ROOT_PRIVATE,
     signed_registry,
 )
-from test_physical_evidence_manifest_v1 import encode, valid_document
+from test_physical_evidence_manifest_v1 import encode\nfrom test_physical_evidence_verifier_v2 import fixture as physical_fixture
 from test_transparency_checkpoint_consistency_v1 import (
     CONSISTENCY_PROOF_SCHEMA,
     KEY_ID,
@@ -52,36 +58,46 @@ from test_transparency_ledger_verifier_v1 import (
 )
 
 
-def _signature_timestamp_manifest(data: dict) -> dict:
+def _build_physical_signature_bundle(data: dict) -> dict:
+    """Build one synthetic V3 policy covering receipt, custody and nested signers."""
     from origen.custody_signature_timestamp_integration_v1 import (
         verify_receipt_custody_signature_timestamp_v1,
     )
 
-    args = dict(data)
-    args.pop("receipt_private", None)
-    args.pop("custodian_private", None)
-    args["verification_time"] = NOW
-    timestamp = verify_receipt_custody_signature_timestamp_v1(**args)
+    timestamp_args = dict(data)
+    timestamp_args.pop("receipt_private", None)
+    timestamp_args.pop("custodian_private", None)
+    timestamp_args["verification_time"] = NOW
+    timestamp = verify_receipt_custody_signature_timestamp_v1(**timestamp_args)
     record = json.loads(data["custody_record_bytes"].decode("utf-8"))
-    document = valid_document()
+
+    physical = physical_fixture()
+    document = copy.deepcopy(physical["document"])
+    artifact_bytes = dict(physical["artifact_bytes_by_sha256"])
     contest_id = str(record["target_contest_id"])
     document["target"]["contest_id"] = contest_id
+
+    old_custody_digest = None
+    custody_digest = hashlib.sha256(data["custody_record_bytes"]).hexdigest()
     for artifact in document["artifacts"]:
         artifact["contest_id"] = contest_id
         if artifact["artifact_type"] == "SEGOB-OIC-CUSTODY-RECORD":
-            artifact["sha256"] = timestamp.custody_chain.custody_record_sha256
+            old_custody_digest = artifact["sha256"]
+            artifact["sha256"] = custody_digest
             artifact["byte_length"] = len(data["custody_record_bytes"])
             artifact["media_type"] = "application/json"
+    if old_custody_digest is None:
+        raise AssertionError("synthetic manifest has no custody-record artifact")
+    artifact_bytes.pop(old_custody_digest, None)
+    artifact_bytes[custody_digest] = data["custody_record_bytes"]
 
-    custody_artifact_sha = timestamp.custody_chain.custody_record_sha256
-    event = next(
-        item for item in document["custody_events"]
-        if item["artifact_sha256"] == next(
-            artifact["sha256"] for artifact in valid_document()["artifacts"]
-            if artifact["artifact_type"] == "SEGOB-OIC-CUSTODY-RECORD"
-        )
-    )
-    event["artifact_sha256"] = custody_artifact_sha
+    for claim in document["signatures"]:
+        if claim["artifact_sha256"] == old_custody_digest:
+            claim["artifact_sha256"] = custody_digest
+    for event in document["custody_events"]:
+        if event["artifact_sha256"] == old_custody_digest:
+            event["artifact_sha256"] = custody_digest
+    event = next(item for item in document["custody_events"] if item["artifact_sha256"] == custody_digest)
     event["custodian_subject_id"] = timestamp.custody_chain.custodian_id
     event["custodian_role"] = CUSTODY_SIGNER_ROLE
     event["received_at_utc"] = record["received_at_utc"]
@@ -91,18 +107,104 @@ def _signature_timestamp_manifest(data: dict) -> dict:
         if item["proof_sha256"] == event["timestamp_proof_sha256"]
     )
     receipt_time_proof["event_at_utc"] = record["received_at_utc"]
-
     document["trusted_time_proofs"].append({
         "authority_id": (
-            "tsa-root-sha256:"
-            + timestamp.timestamp.tsa_root_certificate_sha256
+            "tsa-root-sha256:" + timestamp.timestamp.tsa_root_certificate_sha256
         ),
         "event_id": timestamp.timestamp_event_id,
         "event_at_utc": timestamp.timestamp.gen_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "proof_sha256": hashlib.sha256(data["timestamp_token_der"]).hexdigest(),
     })
-    return document
+    document["ledger_anchor"]["inclusion_proof_sha256"] = "0" * 64
 
+    payload = canonical_physical_manifest_signature_payload_v2(encode(document))
+    signature_bytes_by_sha256 = {}
+    for claim in document["signatures"]:
+        identity = (claim["subject_id"], claim["key_id"])
+        signature = physical["private_by_identity"][identity].sign(payload)
+        digest = hashlib.sha256(signature).hexdigest()
+        claim["signature_sha256"] = digest
+        signature_bytes_by_sha256[digest] = signature
+
+    delegated: dict[tuple[str, str], dict] = {}
+
+    def add_delegation(subject_id, key_id, private_key, role, artifact_type):
+        identity = (subject_id, key_id)
+        public_key = raw_public_key(private_key)
+        entry = delegated.get(identity)
+        if entry is None:
+            entry = {"public_key": public_key, "authorizations": {}}
+            delegated[identity] = entry
+        elif entry["public_key"] != public_key:
+            raise AssertionError("synthetic signer identity maps to two public keys")
+        entry["authorizations"].setdefault(role, set()).add(artifact_type)
+
+    add_delegation(
+        RECEIPT_ISSUER, RECEIPT_KEY_ID, data["receipt_private"],
+        "RECEIPT-ROOT-ATTESTER", "TRUST-RECEIPT-ROOT-ATTESTATION",
+    )
+    add_delegation(
+        CUSTODIAN_ID, CUSTODIAN_KEY_ID, data["custodian_private"],
+        CUSTODY_SIGNER_ROLE, CUSTODY_ARTIFACT_TYPE,
+    )
+    artifact_types = {item["sha256"]: item["artifact_type"] for item in document["artifacts"]}
+    for claim in document["signatures"]:
+        identity = (claim["subject_id"], claim["key_id"])
+        add_delegation(
+            claim["subject_id"], claim["key_id"],
+            physical["private_by_identity"][identity],
+            claim["role"], artifact_types[claim["artifact_sha256"]],
+        )
+
+    issuer_keys = []
+    for (issuer_id, key_id), entry in sorted(delegated.items()):
+        authorizations = [
+            {"role": role, "artifact_types": sorted(types)}
+            for role, types in sorted(entry["authorizations"].items())
+        ]
+        issuer_keys.append({
+            "issuer_id": issuer_id,
+            "key_id": key_id,
+            "public_key_b64": base64.b64encode(entry["public_key"]).decode("ascii"),
+            "valid_from_utc": "2026-01-01T00:00:00Z",
+            "valid_until_utc": "2027-01-01T00:00:00Z",
+            "revoked": False,
+            "authorizations": authorizations,
+        })
+
+    root_private = Ed25519PrivateKey.generate()
+    policy_document = {
+        "schema_version": "origen.trust-policy-envelope.v3",
+        "policy_domain": CLASSIC_PHYSICAL_POLICY_DOMAIN,
+        "policy_version": "synthetic-combined-physical-custody-v3",
+        "policy_sequence": POLICY_SEQUENCE,
+        "issuer_id": "synthetic-policy-authority",
+        "root_key_id": ROOT_KEY_ID,
+        "issued_at_utc": "2026-11-22T00:00:00Z",
+        "not_before_utc": "2026-11-22T00:00:00Z",
+        "expires_at_utc": "2026-12-01T00:00:00Z",
+        "issuer_keys": issuer_keys,
+    }
+    unsigned_policy = copy.deepcopy(policy_document)
+    policy_signature = root_private.sign(json.dumps(
+        unsigned_policy, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("ascii"))
+    policy_document["signature"] = {
+        "algorithm": "ed25519",
+        "signature_b64": base64.b64encode(policy_signature).decode("ascii"),
+    }
+
+    data.update({
+        "document": document,
+        "artifact_bytes_by_sha256": artifact_bytes,
+        "signature_bytes_by_sha256": signature_bytes_by_sha256,
+        "raw_manifest_bytes": encode(document),
+        "signed_policy_envelope_bytes": encode(policy_document),
+        "pinned_root_public_key_bytes": raw_public_key(root_private),
+        "expected_root_key_id": ROOT_KEY_ID,
+        "minimum_policy_sequence": POLICY_SEQUENCE,
+    })
+    return document
 
 def _build_ledger(document: dict):
     document = copy.deepcopy(document)
@@ -271,8 +373,9 @@ def _witness_batches(ledger, *, split_view=False, omit_ledger_checkpoint=False):
 
 def _build_case(*, split_view=False, omit_ledger_checkpoint=False):
     data = timestamped_bundle(accuracy={"seconds": 1})
-    document = _signature_timestamp_manifest(data)
+    document = _build_physical_signature_bundle(data)
     ledger = _build_ledger(document)
+    data["raw_manifest_bytes"] = ledger["manifest_bytes"]
     batches, registry_bytes = _witness_batches(
         ledger,
         split_view=split_view,
@@ -297,6 +400,8 @@ def _verify(data, ledger, batches, **overrides):
         "expected_tsa_root_sha256": data["expected_tsa_root_sha256"],
         "expected_nonce": data["expected_nonce"],
         "raw_manifest_bytes": ledger["manifest_bytes"],
+        "artifact_bytes_by_sha256": data["artifact_bytes_by_sha256"],
+        "signature_bytes_by_sha256": data["signature_bytes_by_sha256"],
         "raw_ledger_entry_bytes": ledger["entry_bytes"],
         "raw_inclusion_proof_bytes": ledger["inclusion_bytes"],
         "raw_old_checkpoint_bytes": ledger["old_bytes"],
@@ -322,6 +427,8 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
         data, ledger, batches, _ = _build_case()
         result = _verify(data, ledger, batches)
         self.assertTrue(result.ledger_checkpoint_observed_in_witness_batches)
+        self.assertEqual(result.physical_signatures.signatures_verified, len(data["signature_bytes_by_sha256"]))
+        self.assertIs(result.physical_signatures.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertFalse(result.witness_gossip.split_view_detected)
         self.assertEqual(
             result.witness_comparison_status,
@@ -340,8 +447,33 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
         )
         proof["proof_sha256"] = "0" * 64
         bad_manifest = encode(document)
-        with self.assertRaisesRegex(ValueError, "exact RFC 3161 token bytes"):
+        with self.assertRaisesRegex(ValueError, "nested Ed25519 signature verification failed"):
             _verify(data, {**ledger, "manifest_bytes": bad_manifest}, batches)
+
+
+    def test_ledger_inclusion_proof_digest_is_not_part_of_nested_signature_payload_but_is_verified_separately(self):
+        data, ledger, batches, _ = _build_case()
+        document = copy.deepcopy(ledger["document"])
+        document["ledger_anchor"]["inclusion_proof_sha256"] = "0" * 64
+        bad_manifest = encode(document)
+        with self.assertRaisesRegex(ValueError, "exact inclusion-proof bytes"):
+            _verify(data, {**ledger, "manifest_bytes": bad_manifest}, batches)
+
+    def test_exact_artifact_byte_map_is_required_by_composed_verifier(self):
+        data, ledger, batches, _ = _build_case()
+        altered = dict(data["artifact_bytes_by_sha256"])
+        digest = next(iter(altered))
+        altered[digest] = altered[digest] + b"x"
+        with self.assertRaisesRegex(ValueError, "artifact byte length mismatch|artifact SHA-256 mismatch"):
+            _verify(data, ledger, batches, artifact_bytes_by_sha256=altered)
+
+    def test_exact_nested_signature_byte_map_is_required_by_composed_verifier(self):
+        data, ledger, batches, _ = _build_case()
+        altered = dict(data["signature_bytes_by_sha256"])
+        digest = next(iter(altered))
+        altered[digest] = altered[digest][:-1] + bytes([altered[digest][-1] ^ 1])
+        with self.assertRaisesRegex(ValueError, "signature SHA-256"):
+            _verify(data, ledger, batches, signature_bytes_by_sha256=altered)
 
     def test_ledger_checkpoint_must_be_observed_by_at_least_one_witness_batch(self):
         data, ledger, batches, _ = _build_case(omit_ledger_checkpoint=True)
