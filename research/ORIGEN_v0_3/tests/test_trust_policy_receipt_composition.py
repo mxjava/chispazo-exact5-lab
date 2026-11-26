@@ -170,6 +170,17 @@ class TestTrustPolicyReceiptComposition(unittest.TestCase):
                 ProvenanceStatus.BLOCKED_PROVENANCE,
             )
 
+    def test_bootstrap_loader_outage_fails_closed(self):
+        _, receipt_bytes = synthetic_bootstrap()
+        with patch(
+            "origen.independent_trust_adapter._load_provisioned_trust_bootstrap",
+            side_effect=OSError("deployment trust store unavailable"),
+        ):
+            self.assertIs(
+                verify_independent_provenance(receipt_bytes),
+                ProvenanceStatus.BLOCKED_PROVENANCE,
+            )
+
     def test_invalid_provisioned_root_chain_fails_closed(self):
         bootstrap, receipt_bytes = synthetic_bootstrap(wrong_root=True)
         with patch(
