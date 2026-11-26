@@ -1,14 +1,13 @@
 {
   "schema_version": "origen.official-status-overlay.v1",
-  "captured_at_local": "2026-11-25T22:53:35-06:00",
-  "scope": "post-21-00_official_mask_result_status_only_no_draw_specific_physical_custody_evidence",
+  "captured_at_local": "2026-11-25T20:53:22-06:00",
+  "scope": "pre-21-00_classic_status_only_no_physical_evidence",
   "sources": [
     "https://www.loterianacional.gob.mx/Chispazo/Resultados",
     "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxNYXlvcg%3D%3D",
     "https://www.loterianacional.gob.mx/home/index",
     "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
-    "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
-    "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=25112026221906"
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
   ],
   "observations": {
     "dedicated_chispazo_results": {
@@ -48,16 +47,10 @@
         "modality_basis": "first Chispazo contest row plus official schedule; modality inferred, not printed in row"
       },
       "contest_12396": {
-        "numbers": [
-          5,
-          7,
-          21,
-          24,
-          28
-        ],
+        "numbers": null,
         "scheduled_time_local": "21:00",
         "modality": "CLASSIC",
-        "modality_basis": "Official 2026-11-25 mask PDF explicitly labels Chispazo Clásico, Sorteo No. 12396; the 21:00 product schedule is corroborative"
+        "modality_basis": "second Chispazo contest row and official schedule; modality inferred, not printed in row"
       }
     },
     "official_home_index": {
@@ -74,64 +67,27 @@
       }
     },
     "official_mask_index": {
-      "newest_visible_result_date": "2026-11-25",
-      "newest_visible_document": "RESULTADOS 2026-11-25",
-      "2026_11_25_mask_visible": true,
-      "2026_11_25_mask_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=25112026221906",
-      "original_25nov_pdf_bytes_captured": false,
-      "original_25nov_pdf_sha256": "NOT_CAPTURED"
+      "newest_visible_result_date": "2026-11-24",
+      "newest_visible_document": "RESULTADOS 2026-11-24",
+      "2026_11_25_mask_visible": false,
+      "original_24nov_pdf_bytes_captured": false,
+      "original_24nov_pdf_sha256": "NOT_CAPTURED"
     },
     "official_chispazo_schedule": {
       "de_las_tres_local": "15:00",
       "classic_local": "21:00",
       "source_explicitly_maps_each_slot": true
-    },
-    "official_2026_11_25_mask_pdf": {
-      "draw_date_local": "2026-11-25",
-      "draw_date_label": "Sorteos celebrados el miércoles 25 de noviembre de 2026",
-      "page_count": 1,
-      "contest_12395": {
-        "modality": "DE_LAS_TRES",
-        "modality_label_explicit": true,
-        "numbers": [
-          1,
-          13,
-          19,
-          23,
-          28
-        ],
-        "first_place_winners": 3,
-        "first_place_individual_mxn": 67272.55,
-        "total_winners": 32821,
-        "total_payout_mxn": 887400.77
-      },
-      "contest_12396": {
-        "modality": "CLASSIC",
-        "modality_label_explicit": true,
-        "numbers": [
-          5,
-          7,
-          21,
-          24,
-          28
-        ],
-        "first_place_winners": 1,
-        "first_place_individual_mxn": 319504.7,
-        "second_place_winners": 248,
-        "third_place_winners": 6710,
-        "fourth_place_winners": 47607,
-        "total_winners": 54566,
-        "total_payout_mxn": 1428363.74
-      }
     }
   },
   "physical_evidence_obtained": false,
   "limitations": [
-    "The official 2026-11-25 mask PDF explicitly labels contest 12395 as Chispazo De las Tres and contest 12396 as Chispazo Clásico; the earlier pre-close schedule inference is superseded by this post-draw primary publication.",
-    "The dedicated Chispazo results page still showed 12395 as latest when checked; the 25-Nov mask PDF is the source that publishes the 12396 Classic result.",
-    "The official mask PDF is post-draw publication and is not pre-close evidence of draw operations or physical custody.",
-    "The PDF page was inspected in the web viewer, but original PDF bytes were not captured in the repository or local runtime; SHA-256 is NOT_CAPTURED.",
-    "No signed Acta and annexes, CS-11, Sumario/cierre de venta, original Tira de Pesaje with 28 readings, calibration certificate, machine/set/sphere mapping, signed participation/cancellation archive, institutional signature-verification material, RFC3161 token, external ledger proof, independent custody receipt or two sealed pre-close outputs were obtained."
+    "12395 is classified as De las Tres from first-row order and official schedule; its dedicated result row does not explicitly label the modality.",
+    "12396 is identified by the official Chispazo home-results row and homepage card at 21:00; its modality is schedule-inferred as Classic, not explicitly printed in the result row.",
+    "At 20:53:22 local, no winning numbers were visible for 12396; this is a pre-21:00 snapshot.",
+    "The separate generic 21:00 card 4296 is not assigned to Chispazo.",
+    "The mask index still lists 24-Nov as newest; no 25-Nov mask is visible.",
+    "No original 25-Nov mask bytes were captured; no PDF digest is claimed.",
+    "No Acta, CS-11, Sumario/cierre de venta, original Tira de Pesaje, 28 sphere readings, calibration certificate, machine/set/sphere mapping, signed participation/cancellation archive, institutional signature-verification material, RFC3161 token, external ledger proof, independent custody receipt or two sealed pre-close outputs were obtained."
   ],
   "eligibility": {
     "snapshot_preclose": false,
