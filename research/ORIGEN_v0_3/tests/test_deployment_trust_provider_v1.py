@@ -82,7 +82,7 @@ class SyntheticTrustProvider:
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
-            self.snapshot.accepted_time_latest_utc,
+                self.snapshot.accepted_time_latest_utc,
             )
         if policy_domain != self.snapshot.policy_domain:
             return DeploymentTrustCommit(
@@ -90,7 +90,7 @@ class SyntheticTrustProvider:
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
-            self.snapshot.accepted_time_latest_utc,
+                self.snapshot.accepted_time_latest_utc,
             )
         if root_key_id != self.snapshot.root_key_id or root_generation != self.snapshot.root_generation:
             return DeploymentTrustCommit(
@@ -98,7 +98,7 @@ class SyntheticTrustProvider:
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
-            self.snapshot.accepted_time_latest_utc,
+                self.snapshot.accepted_time_latest_utc,
             )
         if policy_sequence > self.snapshot.accepted_policy_sequence:
             candidate_earliest = accepted_at_utc - timedelta(milliseconds=clock_uncertainty_ms)
@@ -119,7 +119,7 @@ class SyntheticTrustProvider:
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
-            self.snapshot.accepted_time_latest_utc,
+                self.snapshot.accepted_time_latest_utc,
             )
         if policy_sequence == self.snapshot.accepted_policy_sequence:
             if policy_envelope_sha256 != self.snapshot.accepted_policy_envelope_sha256:
@@ -128,14 +128,14 @@ class SyntheticTrustProvider:
                     self.snapshot.state_generation,
                     policy_sequence,
                     policy_envelope_sha256,
-            self.snapshot.accepted_time_latest_utc,
+                    self.snapshot.accepted_time_latest_utc,
                 )
             return DeploymentTrustCommit(
                 TrustStateOutcome.IDEMPOTENT,
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
-            self.snapshot.accepted_time_latest_utc,
+                self.snapshot.accepted_time_latest_utc,
             )
 
         next_generation = self.snapshot.state_generation + 1
