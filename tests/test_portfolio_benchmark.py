@@ -171,6 +171,13 @@ class PortfolioBenchmarkTests(unittest.TestCase):
         self.assertAlmostEqual(tail["5"], 30/98280, places=14)
         self.assertAlmostEqual(null["expected_best_hits"], 2.5932521779452404, places=13)
 
+    def test_exact_uniform_null_handles_full_universe_portfolio(self):
+        null = exact_uniform_portfolio_null(98280)
+        self.assertEqual(null["probability_best_hits_at_least_k"],
+                         {"1": 1.0, "2": 1.0, "3": 1.0, "4": 1.0, "5": 1.0})
+        self.assertEqual(null["expected_best_hits"], 5.0)
+        self.assertEqual(null["expected_exact5_per_target"], 1.0)
+
     def test_exact_uniform_null_rejects_invalid_portfolio_size(self):
         for value in (0, -1, 98281, True, 30.0):
             with self.subTest(value=value):
