@@ -2,6 +2,8 @@ import hashlib
 import json
 import os
 import sqlite3
+import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -266,6 +268,86 @@ class SQLiteReferenceExternalEvidenceCASTests(unittest.TestCase):
             SQLiteReferenceExternalEvidenceCASV1(
                 self.path, state_backend_id=self.backend
             )
+
+    def _run_crash_subprocess(self, script, *arguments):
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        tests_dir = os.path.dirname(os.path.abspath(__file__))
+        env = os.environ.copy()
+        existing = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = os.pathsep.join(
+            part for part in (project_root, tests_dir, existing) if part
+        )
+        return subprocess.run(
+            [sys.executable, "-c", script, *arguments],
+            check=True,
+            timeout=20,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+        )
+
+    def test_committed_advance_survives_immediate_process_exit(self):
+        script = r"""
+import os
+import sys
+from test_sqlite_reference_external_evidence_cas_v1 import _advance
+from origen.sqlite_reference_external_evidence_cas_v1 import SQLiteReferenceExternalEvidenceCASV1
+
+path, backend, generation, digest = sys.argv[1:]
+store = SQLiteReferenceExternalEvidenceCASV1(path, state_backend_id=backend)
+snapshot = store.read_watermark_snapshot()
+if snapshot.state_generation != int(generation) or snapshot.watermark_sha256 != digest:
+    raise SystemExit("unexpected pre-crash snapshot")
+store.compare_and_advance_watermark(
+    expected_state_generation=snapshot.state_generation,
+    expected_watermark_sha256=snapshot.watermark_sha256,
+    advance=_advance(snapshot.watermark),
+)
+os._exit(0)
+"""
+        self._run_crash_subprocess(
+            script,
+            self.path,
+            self.backend,
+            str(self.snapshot.state_generation),
+            self.snapshot.watermark_sha256,
+        )
+
+        reopened = SQLiteReferenceExternalEvidenceCASV1(
+            self.path, state_backend_id=self.backend
+        )
+        observed = reopened.read_watermark_snapshot()
+        self.assertEqual(observed.state_generation, 1)
+        self.assertEqual(observed.watermark.ledger_tree_size, 2)
+        self.assertEqual(observed.watermark.registry_sequence, 2)
+
+    def test_uncommitted_wal_update_is_rolled_back_after_process_exit(self):
+        script = r"""
+import os
+import sqlite3
+import sys
+
+connection = sqlite3.connect(sys.argv[1], isolation_level=None)
+connection.execute("PRAGMA synchronous=FULL")
+mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
+if type(mode) is not str or mode.lower() != "wal":
+    raise SystemExit("database is not in WAL mode")
+connection.execute("BEGIN IMMEDIATE")
+connection.execute(
+    "UPDATE external_evidence_state "
+    "SET state_generation=999, watermark_json=?, watermark_sha256=? "
+    "WHERE singleton=1",
+    (sqlite3.Binary(b'{"uncommitted":true}'), "f" * 64),
+)
+os._exit(0)
+"""
+        self._run_crash_subprocess(script, self.path)
+
+        reopened = SQLiteReferenceExternalEvidenceCASV1(
+            self.path, state_backend_id=self.backend
+        )
+        observed = reopened.read_watermark_snapshot()
+        self.assertEqual(observed, self.snapshot)
 
     def test_memory_database_is_rejected(self):
         with self.assertRaises(ValueError):
