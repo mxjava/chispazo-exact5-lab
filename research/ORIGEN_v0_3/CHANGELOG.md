@@ -1,3 +1,9 @@
+## Provider-raised rejection exceptions are ambiguous (2026-11-27)
+- Removed the special pass-through for provider-thrown `TrustStateRejected` exceptions. A remote provider or RPC adapter can commit durably and then raise any local exception class; the exception type alone is not an authenticated CAS outcome.
+- All exceptions raised by `compare_and_advance` now become `TrustProviderUnavailable` with an explicit unknown-outcome/reconciliation instruction. Only a validated `DeploymentTrustCommit` with an explicit conflict/rollback/time-rollback/equivocation outcome is classified as `TrustStateRejected`.
+- Added an adversarial synthetic regression that commits first and then raises `TrustStateRejected`; the pre-fix exact-head CI failed on this test.
+- This does not add a durable reconciliation endpoint or an institutional provider. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
 ## Ambiguous provider CAS acknowledgement handling (2026-11-27)
 - A malformed or mismatched acknowledgement after `compare_and_advance` no longer masquerades as an explicit transaction rejection. Because the provider may have committed before returning, the application raises `TrustProviderUnavailable` with an unknown-outcome/reconciliation instruction.
 - Explicit provider conflict, rollback, time rollback and equivocation outcomes remain `TrustStateRejected`.

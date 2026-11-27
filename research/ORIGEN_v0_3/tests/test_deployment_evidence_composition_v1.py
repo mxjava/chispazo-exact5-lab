@@ -503,7 +503,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         provider = _provider_for(data, ledger)
         provider.watermark_drift_before_commit = True
 
-        with self.assertRaisesRegex(TrustStateRejected, "external evidence watermark changed since the provider snapshot"):
+        with self.assertRaisesRegex(TrustProviderUnavailable, "transaction outcome is unknown"):
             _inspect(data, ledger, batches, provider)
 
         self.assertEqual(provider.commit_count, 1)
