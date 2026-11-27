@@ -61,19 +61,22 @@ def canonical_draw_hash(row: dict) -> str:
 def load_draws(path: str | Path, trusted_draw_hashes: dict) -> dict[int, int]:
     draws: dict[int, int] = {}
     with Path(path).open(newline="", encoding="utf-8-sig") as stream:
-        reader = csv.DictReader(stream)
+        raw_rows = list(csv.reader(stream))
         required = ["CONCURSO", "MODALITY", "R1", "R2", "R3", "R4", "R5",
                     "SOURCE_URL", "SOURCE_SHA256", "VERIFICATION"]
-        headers = reader.fieldnames or []
+        if not raw_rows or not raw_rows[0]:
+            raise ValueError("draw_csv_missing_header")
+        headers = raw_rows[0]
         if len(headers) != len(set(headers)):
             raise ValueError("draw_csv_duplicate_columns")
         if len(headers) != len(required) or set(headers) != set(required):
             raise ValueError("draw_csv_columns_must_match_exact_schema")
-        for row in reader:
-            # DictReader stores surplus cells under key None and missing cells
-            # as None values. Reject both before any normalization or hashing.
-            if None in row or any(value is None or value == "" for value in row.values()):
+        for values in raw_rows[1:]:
+            # csv.DictReader silently skips blank physical lines. Preserve strict
+            # row accounting: every physical record must have the exact width.
+            if not values or len(values) != len(headers) or any(value == "" for value in values):
                 raise ValueError("draw_csv_malformed_row_width_or_empty_value")
+            row = dict(zip(headers, values))
             if not re.fullmatch(r"[1-9][0-9]*", row["CONCURSO"]):
                 raise ValueError("invalid_draw_contest_id")
             if row["MODALITY"].strip().upper() != "CLASSIC":
