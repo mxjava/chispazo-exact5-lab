@@ -1,0 +1,88 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-25T19:02:59-06:00",
+  "scope": "post-15-00_pre-21-00_status_only_no_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxHb3JkaXRv",
+    "https://www.loterianacional.gob.mx/home/index",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  ],
+  "observations": {
+    "dedicated_chispazo_results": {
+      "latest_contest": 12395,
+      "latest_date": "2026-11-25",
+      "latest_numbers": [
+        1,
+        13,
+        19,
+        23,
+        28
+      ],
+      "prize_breakdown": {
+        "five_hit_winners": 3,
+        "five_hit_individual_mxn": 67272.55,
+        "four_hit_winners": 181,
+        "four_hit_individual_mxn": 1051.53,
+        "three_hit_winners": 4051,
+        "three_hit_individual_mxn": 51.69,
+        "two_hit_winners": 28586,
+        "two_hit_individual_mxn": 10,
+        "total_winners": 32821,
+        "total_payout_mxn": 887400.77
+      },
+      "modality": "DE_LAS_TRES",
+      "modality_status": "SCHEDULE_INFERRED_NOT_PRINTED_ON_RESULT_ROW"
+    },
+    "official_home_results": {
+      "date_block": "2026-11-25",
+      "contest_12395_numbers": [
+        1,
+        13,
+        19,
+        23,
+        28
+      ],
+      "contest_12396_numbers": null,
+      "classic_result_visible": false
+    },
+    "official_home_index": {
+      "classic_contest_id": 12396,
+      "scheduled_local": "21:00",
+      "schedule_status": "EXPLICIT_ON_OFFICIAL_HOME_INDEX",
+      "separate_4296_card_at_21h": "NOT_ATTRIBUTED_TO_CHISPAZO"
+    },
+    "official_chispazo_product_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00"
+    },
+    "official_mask_index": {
+      "newest_visible_result_date": "2026-11-24",
+      "newest_visible_document": "RESULTADOS 2026-11-24",
+      "no_2026_11_25_mask_visible": true,
+      "original_25nov_pdf_bytes_captured": false,
+      "original_25nov_pdf_sha256": "NOT_CAPTURED"
+    }
+  },
+  "interpretation": "At 19:02:59 America/Mexico_City, the dedicated Chispazo results page shows contest 12395 dated 25-Nov with 01 13 19 23 28 and a published prize breakdown (3 first-place winners; 32,821 total winners; MXN 887,400.77 total payout). The result row does not print the modality; it remains schedule-inferred De las Tres from the daily sequence and official 15:00/21:00 schedule. The official home index schedules Chispazo contest 12396 for 21:00, and the Chispazo product page identifies that slot as Clásico. No winning numbers for 12396 are visible before the 21:00 close. A separate 4296 card is not attributed to Chispazo. The mask index remains at 24-Nov. This is public publication metadata only, not evidence of the physical draw process.",
+  "physical_evidence_obtained": false,
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "limitations": [
+    "Contest 12395 is published with numbers and prize distribution; De las Tres modality is inferred from the daily sequence and official schedule, not printed on the result row.",
+    "Contest 12396 is scheduled for 25-Nov at 21:00 on the official home index and is Clásico by the official Chispazo product schedule; no winning numbers are visible at this pre-close capture.",
+    "The separate 4296 card is not assigned to Chispazo.",
+    "The mask index still lists RESULTADOS 2026-11-24; no 25-Nov mask is visible.",
+    "No Acta, CS-11, Sumario, original Tira de Pesaje, 28 sphere readings, calibration certificate, machine/set/sphere mapping, signed participation/cancellation archive, institutional signature verification material, RFC3161 token, external ledger proof, independent custody receipt or pre-close seals were obtained.",
+    "Public result publication and schedule metadata do not establish physical provenance, independent custody, or an authentic prospective observation."
+  ]
+}

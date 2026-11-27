@@ -1,0 +1,92 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-25T17:04:17-06:00",
+  "scope": "post-15-00_pre-21-00_status_only_no_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://www.loterianacional.gob.mx/Home/Resultados",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  ],
+  "observations": {
+    "dedicated_results_page": {
+      "latest_contest": 12394,
+      "latest_date": "2026-11-24",
+      "latest_numbers": [
+        1,
+        9,
+        12,
+        16,
+        24
+      ],
+      "page_still_shows_next_draw_date": "2026-11-25",
+      "no_2026_11_25_result_visible_at_observation": true
+    },
+    "official_mask_index": {
+      "newest_visible_result_date": "2026-11-24",
+      "newest_visible_document": "RESULTADOS 2026-11-24",
+      "no_2026_11_25_mask_visible": true,
+      "original_24nov_pdf_bytes_captured": false,
+      "original_24nov_pdf_sha256": "NOT_CAPTURED"
+    },
+    "official_home_results": {
+      "date": "2026-11-25",
+      "contest_12395": {
+        "numbers": [
+          1,
+          13,
+          19,
+          23,
+          28
+        ],
+        "modality": "DE_LAS_TRES",
+        "modality_basis": "15:00 official home card for 12395 plus Chispazo product schedule; schedule-inferred, not explicitly labelled in results row"
+      },
+      "contest_12396": {
+        "numbers": null,
+        "modality": "CLASSIC_CANDIDATE_NOT_CONFIRMED",
+        "modality_basis": "second Chispazo contest row for 25-Nov; 21:00 Clásico follows the daily schedule, but this row has no explicit modality label and no result"
+      }
+    },
+    "official_home_index": {
+      "15:00_card": {
+        "displayed_title": "Ilumina tu suerte",
+        "contest_id": 12395,
+        "product_label_explicitly_visible": false,
+        "modality": "DE_LAS_TRES",
+        "modality_basis": "official_chispazo_product_schedule",
+        "result_visible": true
+      },
+      "21:00_card": {
+        "displayed_contest_id": 4296,
+        "product_label_explicitly_visible": false,
+        "assigned_to_chispazo": false
+      },
+      "classic_21_00_contest_id": null,
+      "possible_second_daily_chispazo_contest_id": 12396
+    },
+    "official_chispazo_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00"
+    }
+  },
+  "interpretation": "At 17:04:17, the official home results table exposed 12395 for 25-Nov with numbers 01 13 19 23 28. The 15:00 home card and Chispazo schedule make DE LAS TRES the schedule-inferred modality, while the dedicated Chispazo results page still lagged at 12394 and the mask index still ended on 24-Nov. The home results table also listed 12396 with no numbers; it is a candidate for the second daily Chispazo draw, but its Clásico modality is not explicitly confirmed in that row. The separate generic 21:00 card 4296 is not assigned to Chispazo. This is publication status only, not physical provenance.",
+  "physical_evidence_obtained": false,
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "limitations": [
+    "12395 result 01 13 19 23 28 is visible on the official home results table; DE LAS TRES is schedule-inferred from the 15:00 card and product schedule, not explicitly printed on the result row.",
+    "The dedicated Chispazo results page still lists 12394 as latest; the official mask index still lists 24-Nov as newest.",
+    "12396 appears as the second Chispazo contest row for 25-Nov with no result; Clásico 21:00 is a candidate mapping only, not yet an explicitly labelled contest ID.",
+    "Generic 21:00 card 4296 is not assigned to Chispazo.",
+    "No Acta, CS-11, Sumario, original Tira de Pesaje, 28 readings, calibration, machine/set/sphere mapping, signed participation/cancellation archive, institutional signature verification material, RFC3161 token, ledger proof, custody receipt or pre-close seals were obtained."
+  ]
+}

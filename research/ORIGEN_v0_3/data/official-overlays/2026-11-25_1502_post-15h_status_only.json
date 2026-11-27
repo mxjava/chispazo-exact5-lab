@@ -1,0 +1,70 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-25T15:02:22-06:00",
+  "scope": "post-scheduled-15-00-status_only_no_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://www.loterianacional.gob.mx/home/index",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  ],
+  "observations": {
+    "dedicated_results_page": {
+      "latest_contest": 12394,
+      "latest_date": "2026-11-24",
+      "latest_numbers": [
+        1,
+        9,
+        12,
+        16,
+        24
+      ],
+      "page_still_shows_next_draw_date": "2026-11-25",
+      "no_2026_11_25_result_visible_at_observation": true
+    },
+    "official_mask_index": {
+      "newest_visible_result_date": "2026-11-24",
+      "newest_visible_document": "RESULTADOS 2026-11-24",
+      "no_2026_11_25_mask_visible": true,
+      "original_24nov_pdf_bytes_captured": false,
+      "original_24nov_pdf_sha256": "NOT_CAPTURED"
+    },
+    "official_home_index": {
+      "15:00_card": {
+        "displayed_title": "Ilumina tu suerte",
+        "contest_id": 12395,
+        "product_label_explicitly_visible": false,
+        "modality": "DE_LAS_TRES",
+        "modality_basis": "official_chispazo_product_schedule",
+        "result_visible": false
+      },
+      "21:00_card": {
+        "displayed_contest_id": 4296,
+        "product_label_explicitly_visible": false,
+        "assigned_to_chispazo": false
+      },
+      "classic_21_00_contest_id": null
+    },
+    "official_chispazo_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00"
+    }
+  },
+  "interpretation": "At 15:02:22, the public Chispazo results page and mask index had not yet exposed a 25-Nov result/mask. This does not establish that the 15:00 draw did not occur or was delayed; it records only public publication state at observation time.",
+  "physical_evidence_obtained": false,
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "limitations": [
+    "12395 remains schedule-inferred De las Tres; no result or mask confirms its outcome at this observation.",
+    "4296 remains an unlabeled 21:00 home-index card and is not assigned to Chispazo; Classic contest ID remains unknown.",
+    "No Acta, CS-11, Sumario, original Tira de Pesaje, 28 readings, calibration, machine/set/sphere mapping, signed participation/cancellation archive, institutional signature verification material, RFC3161 token, ledger proof, custody receipt or pre-close seals were obtained."
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-25T19:54:40-06:00",
+  "scope": "pre-21-00_status_only_no_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxab2RpYWNv",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://www.loterianacional.gob.mx/",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  ],
+  "observations": {
+    "dedicated_chispazo_results": {
+      "latest_contest": 12395,
+      "date": "2026-11-25",
+      "numbers": [1, 13, 19, 23, 28],
+      "modality": "DE_LAS_TRES",
+      "modality_basis": "schedule-inferred from the first daily Chispazo contest and official 15:00 De las Tres schedule; the result row itself does not print modality",
+      "prize_table": {
+        "first_place_winners": 3,
+        "first_place_individual_mxn": 67272.55,
+        "second_place_winners": 181,
+        "third_place_winners": 4051,
+        "fourth_place_winners": 28586,
+        "total_winners": 32821,
+        "total_payout_mxn": 887400.77
+      }
+    },
+    "official_home_results_table": {
+      "date": "2026-11-25",
+      "contest_12395": {
+        "numbers": [1, 13, 19, 23, 28],
+        "modality": "DE_LAS_TRES",
+        "modality_basis": "first daily Chispazo row; schedule-inferred from official 15:00 slot"
+      },
+      "contest_12396": {
+        "numbers": null,
+        "scheduled_time_local": "21:00",
+        "modality": "CLASSIC",
+        "modality_basis": "second Chispazo contest row dated 25-Nov combined with official Chispazo schedule mapping 21:00 to Clásico; inferred from row order and schedule, not a modality label printed in the row"
+      }
+    },
+    "official_home_index": {
+      "separate_generic_21_00_card": {
+        "displayed_contest_id": 4296,
+        "assigned_to_chispazo": false,
+        "reason": "The card is not explicitly labelled Chispazo; contest 12396 is separately listed in the Chispazo results table."
+      }
+    },
+    "official_mask_index": {
+      "newest_visible_result_date": "2026-11-24",
+      "newest_visible_document": "RESULTADOS 2026-11-24",
+      "2026_11_25_mask_visible": false,
+      "original_24nov_pdf_bytes_captured": false,
+      "original_24nov_pdf_sha256": "NOT_CAPTURED"
+    },
+    "official_chispazo_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00",
+      "source_explicitly_maps_each_slot": true
+    }
+  },
+  "physical_evidence_obtained": false,
+  "limitations": [
+    "The 12395 result row does not print its modality; De las Tres is schedule-inferred.",
+    "Contest 12396 is listed as the second Chispazo contest for 25-Nov and is mapped to the 21:00 Clásico slot by the official schedule, but the result row itself does not print the modality.",
+    "At 19:54:40 local, no 12396 winning numbers were visible; this is a pre-21:00 publication snapshot.",
+    "The mask index still lists 24-Nov as newest; no 25-Nov mask is visible.",
+    "No original 25-Nov mask bytes were captured; no PDF SHA-256 is claimed.",
+    "No Acta, CS-11, Sumario/cierre de venta, original Tira de Pesaje, 28 sphere readings, scale calibration certificate, machine/set/sphere mapping, signed participation/cancellation archive, institutional signature-verification material, RFC 3161 token, external ledger proof, independent custody receipt, or two sealed pre-close outputs were obtained."
+  ],
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "schema_version": "origen.official-chispazo-status-overlay.v1",
+  "classification": "STATUS_ONLY_NO_PHYSICAL_PROVENANCE",
+  "observed_at_local": "2026-11-25T23:56:44-06:00",
+  "timezone": "America/Mexico_City",
+  "draws": [
+    {
+      "contest_id": "12395",
+      "date": "2026-11-25",
+      "scheduled_slot_local": "15:00",
+      "modality": "DE_LAS_TRES",
+      "modality_basis": "INFERRED_FROM_FIRST_DAILY_RESULT_ORDER_AND_OFFICIAL_PRODUCT_SCHEDULE; RESULT_ROW_DOES_NOT_PRINT_MODALITY",
+      "winning_numbers": [1, 13, 19, 23, 28],
+      "winners_by_place": [3, 181, 4051, 28586],
+      "prize_per_winner_mxn": [67272.55, 1051.53, 51.69, 10.00],
+      "total_winners": 32821,
+      "total_prize_mxn": 887400.77,
+      "source_url": "https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados"
+    },
+    {
+      "contest_id": "12396",
+      "date": "2026-11-25",
+      "scheduled_slot_local": "21:00",
+      "modality": "CLASSIC",
+      "modality_basis": "INFERRED_FROM_SECOND_DAILY_RESULT_ORDER_AND_OFFICIAL_PRODUCT_SCHEDULE; RESULT_ROW_DOES_NOT_PRINT_MODALITY",
+      "winning_numbers": [5, 7, 21, 24, 28],
+      "winners_by_place": [1, 248, 6710, 47607],
+      "prize_per_winner_mxn": [319504.70, 1214.98, 49.40, 10.00],
+      "total_winners": 54566,
+      "total_prize_mxn": 1428363.74,
+      "source_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados"
+    }
+  ],
+  "official_schedule": {
+    "DE_LAS_TRES": "15:00",
+    "CLASSIC": "21:00",
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  },
+  "mask_index": {
+    "latest_visible_date": "2026-11-24",
+    "2026-11-25_mask_visible": false,
+    "source_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "original_pdf_bytes_captured": false,
+    "original_pdf_sha256": "NOT_CAPTURED"
+  },
+  "generic_home_card_4296": {
+    "product": "MELATE_REVANCHA_REVANCHITA",
+    "assigned_to_chispazo": false,
+    "note": "Separate generic card; not a Chispazo contest identifier"
+  },
+  "portfolio_comparison": {
+    "branch": "research/optimal-4of5-coverage-20261123",
+    "artifact_path": "runs/optimal_4hit_coverage_20261123.csv",
+    "artifact_git_blob_sha1": "e2d8d4ca7e361661c34378e59db5830c744eb669",
+    "portfolio_size": 30,
+    "classic_contest_id": "12396",
+    "maximum_hits": 2,
+    "combinations_with_2_hits": [
+      "07-08-16-23-28",
+      "09-18-21-24-25",
+      "07-15-17-19-28",
+      "09-14-19-21-28"
+    ],
+    "combinations_with_3_or_more_hits": 0,
+    "interpretation": "DESCRIPTIVE_RETROSPECTIVE_ONLY; portfolio mode is COMBINATORIAL_4HIT_COVERAGE_NOT_PREDICTIVE; no predictive edge is inferred"
+  },
+  "physical_provenance": {
+    "original_mask_pdf_captured": false,
+    "acta_captured": false,
+    "cs11_captured": false,
+    "sumario_or_sales_close_captured": false,
+    "original_weighing_strip_captured": false,
+    "28_sphere_readings_captured": false,
+    "calibration_certificate_captured": false,
+    "institutional_signatures_verified": false,
+    "independent_custody_verified": false,
+    "trusted_timestamp_verified": false
+  },
+  "canonical_history_updated": false,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}

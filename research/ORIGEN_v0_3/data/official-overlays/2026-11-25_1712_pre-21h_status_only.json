@@ -1,0 +1,71 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-25T17:12:05-06:00",
+  "scope": "post-15-00_pre-21-00_status_only_no_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://www.loterianacional.gob.mx/Home/Resultados",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  ],
+  "observations": {
+    "dedicated_results_page": {
+      "latest_contest": 12395,
+      "latest_date": "2026-11-25",
+      "latest_numbers": [
+        1,
+        13,
+        19,
+        23,
+        28
+      ],
+      "next_draw_date": "2026-11-25",
+      "next_classic_result_visible": false,
+      "modality": "DE_LAS_TRES",
+      "modality_basis": "first of two daily Chispazo contest sequence plus official 15:00 De las Tres schedule; inferred because the result row itself does not print modality"
+    },
+    "official_mask_index": {
+      "newest_visible_result_date": "2026-11-24",
+      "newest_visible_document": "RESULTADOS 2026-11-24",
+      "no_2026_11_25_mask_visible": true,
+      "original_24nov_pdf_bytes_captured": false,
+      "original_24nov_pdf_sha256": "NOT_CAPTURED"
+    },
+    "official_home_results": {
+      "chispazo_latest_contest": 12394,
+      "chispazo_latest_date": "2026-11-24",
+      "chispazo_latest_numbers": [
+        1,
+        9,
+        12,
+        16,
+        24
+      ],
+      "page_lags_dedicated_chispazo_results": true,
+      "classic_2026_11_25_contest_id": null
+    },
+    "official_chispazo_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00"
+    }
+  },
+  "interpretation": "At 17:12:05 local, the dedicated Chispazo results page had advanced to contest 12395 for 25-Nov with 01 13 19 23 28. Its modality is inferred as De las Tres from the daily contest sequence and the official 15:00 schedule; the result row itself does not label the modality. The official home results table still lagged at 12394 (24-Nov), and the mask index still listed only through 24-Nov. The 21:00 Clásico result and contest ID were not visible at this pre-close observation. No draw-specific physical evidence was obtained.",
+  "physical_evidence_obtained": false,
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "limitations": [
+    "12395 is officially published as 01 13 19 23 28; De las Tres is inferred from the daily sequence and official 15:00 schedule, not explicitly printed in the result row.",
+    "The official home results table still showed Chispazo 12394 dated 24-Nov at this observation; the dedicated Chispazo page had advanced to 12395.",
+    "The mask index still listed RESULTADOS 2026-11-24; no 25-Nov mask was visible.",
+    "The 21:00 Clásico contest ID and result remain unknown at this pre-close observation.",
+    "No Acta, CS-11, Sumario, original Tira de Pesaje, 28 readings, calibration, machine/set/sphere mapping, signed participation/cancellation archive, institutional signature verification material, RFC3161 token, ledger proof, custody receipt or pre-close seals were obtained."
+  ]
+}

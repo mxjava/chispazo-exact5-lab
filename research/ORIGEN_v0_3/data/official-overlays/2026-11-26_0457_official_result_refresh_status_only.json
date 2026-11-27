@@ -1,0 +1,75 @@
+{
+  "schema_version": "origen.official-result-refresh.status-only.v1",
+  "classification": "STATUS_ONLY_NO_CANONICAL_APPEND",
+  "observed_at_local": "2026-11-26T04:57:17-06:00",
+  "observed_at_utc": "2026-11-26T10:57:17Z",
+  "official_results_page": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+  "official_home_page": "https://www.loterianacional.gob.mx/home/index",
+  "official_chispazo_schedule_page": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+  "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+  "latest_published_mask": {
+    "date": "2026-11-25",
+    "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=25112026221906",
+    "sha256_original_pdf": "NOT_CAPTURED",
+    "capture_limitation": "The official PDF was opened and visually inspected in the web viewer; downloading its original bytes to the working environment failed, so no local SHA-256 is claimed."
+  },
+  "published_results": [
+    {
+      "contest": 12395,
+      "date": "2026-11-25",
+      "modality": "DE_LAS_TRES",
+      "scheduled_time_local": "15:00",
+      "numbers": [1, 13, 19, 23, 28],
+      "modality_basis": "The official 2026-11-25 mask visually prints the Chispazo De las tres logo beside contest 12395."
+    },
+    {
+      "contest": 12396,
+      "date": "2026-11-25",
+      "modality": "CLASSIC",
+      "scheduled_time_local": "21:00",
+      "numbers": [5, 7, 21, 24, 28],
+      "modality_basis": "The official 2026-11-25 mask visually prints the Chispazo Clásico logo beside contest 12396."
+    }
+  ],
+  "next_published_schedule": {
+    "contest": 12397,
+    "date": "2026-11-26",
+    "scheduled_time_local": "15:00",
+    "modality": "DE_LAS_TRES",
+    "status": "SCHEDULED_NOT_RESULT",
+    "basis": "The official homepage lists contest 12397 at 15:00; the official Chispazo product page identifies 15:00 as De las Tres."
+  },
+  "classic_21_00": {
+    "date": "2026-11-26",
+    "scheduled_time_local": "21:00",
+    "modality": "CLASSIC",
+    "status": "SCHEDULED_BY_DAILY_PRODUCT_RULE_NOT_YET_PUBLISHED_AS_A_RESULT",
+    "contest_number": null,
+    "numbers": null,
+    "basis": "The official Chispazo product page states that Clásico is held daily at 21:00. The current homepage/result pages do not identify a 26-Nov Clásico contest number or winning combination."
+  },
+  "result_page_state": {
+    "latest_contest": 12396,
+    "latest_date": "2026-11-25",
+    "latest_numbers": [5, 7, 21, 24, 28],
+    "next_draw_date": "2026-11-26",
+    "no_26_nov_result_published_at_observation": true
+  },
+  "physical_evidence_scope": {
+    "official_public_mask_confirms_modality_and_published_numbers": true,
+    "acta_original_obtained": false,
+    "cs11_obtained": false,
+    "sumario_obtained": false,
+    "original_weighing_strip_obtained": false,
+    "28_sphere_measurements_obtained": false,
+    "calibration_certificate_obtained": false,
+    "signed_participation_or_cancellation_archive_obtained": false,
+    "rfc3161_token_obtained": false,
+    "independent_custody_obtained": false
+  },
+  "canonical_history_updated": false,
+  "v294_changed": false,
+  "model_parameters_changed": false,
+  "prediction_or_edge_claimed": false,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
