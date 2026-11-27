@@ -29,7 +29,7 @@ from .custody_signature_timestamp_integration_v1 import (
 )
 from .independent_trust_adapter import (
     ProvenanceStatus,
-    verify_independent_provenance,
+    _verify_independent_provenance_with_explicit_context,
 )
 from .physical_evidence_manifest_v1 import (
     UnverifiedPhysicalEvidenceManifest,
@@ -541,7 +541,7 @@ def verify_custody_timestamp_ledger_witness_v1(
     # physical, timestamp, ledger, and witness evidence has been verified.
     # The boundary independently re-verifies the original receipt and signed
     # policy bytes; it does not accept any verifier-result object from above.
-    independent_boundary_status = verify_independent_provenance(
+    independent_boundary_status = _verify_independent_provenance_with_explicit_context(
         original_receipt_bytes,
         signed_policy_envelope_bytes=signed_policy_envelope_bytes,
         pinned_root_public_key_bytes=pinned_root_public_key_bytes,

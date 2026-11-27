@@ -21,7 +21,7 @@ from origen.physical_evidence_verifier_v2 import CLASSIC_PHYSICAL_POLICY_DOMAIN
 from origen.physical_evidence_verifier_v3 import canonical_physical_manifest_signature_payload_v2
 from origen.independent_trust_adapter import (
     ProvenanceStatus,
-    verify_independent_provenance,
+    _verify_independent_provenance_with_explicit_context,
 )
 from test_custody_receipt_verifier_v3 import (
     ROOT_KEY_ID,
@@ -676,8 +676,8 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
     def test_independent_boundary_reverifies_exact_receipt_and_policy_after_evidence_chain(self):
         data, ledger, batches, _ = _build_case()
         with patch(
-            "origen.custody_ledger_witness_integration_v1.verify_independent_provenance",
-            wraps=verify_independent_provenance,
+            "origen.custody_ledger_witness_integration_v1._verify_independent_provenance_with_explicit_context",
+            wraps=_verify_independent_provenance_with_explicit_context,
         ) as boundary:
             result = _verify(data, ledger, batches)
 
@@ -698,7 +698,7 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
     def test_non_blocked_or_stringified_independent_boundary_status_fails_closed(self):
         data, ledger, batches, _ = _build_case()
         with patch(
-            "origen.custody_ledger_witness_integration_v1.verify_independent_provenance",
+            "origen.custody_ledger_witness_integration_v1._verify_independent_provenance_with_explicit_context",
             return_value="BLOCKED_PROVENANCE",
         ):
             with self.assertRaisesRegex(
@@ -713,8 +713,8 @@ class CustodyLedgerWitnessIntegrationV1Tests(unittest.TestCase):
         digest = next(iter(altered))
         altered[digest] = altered[digest][:-1] + bytes([altered[digest][-1] ^ 1])
         with patch(
-            "origen.custody_ledger_witness_integration_v1.verify_independent_provenance",
-            wraps=verify_independent_provenance,
+            "origen.custody_ledger_witness_integration_v1._verify_independent_provenance_with_explicit_context",
+            wraps=_verify_independent_provenance_with_explicit_context,
         ) as boundary:
             with self.assertRaisesRegex(ValueError, "signature SHA-256"):
                 _verify(data, ledger, batches, signature_bytes_by_sha256=altered)
