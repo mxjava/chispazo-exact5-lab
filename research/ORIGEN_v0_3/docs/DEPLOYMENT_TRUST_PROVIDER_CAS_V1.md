@@ -529,3 +529,20 @@ The initial ledger checkpoint and registry digest must be established by a
 separate out-of-band, independently witnessed genesis ceremony. Until that exists,
 full provider-backed physical composition remains fail-closed and production stays
 BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
+
+### Exact-byte and key-fingerprint binding
+
+The external-evidence advance carries the exact manifest, ledger entry, inclusion proof,
+old/new signed checkpoint bytes, consistency proof, signed registry bytes and the
+bounded tuple of signed witness statements. Its checkpoint/registry digests must
+match those exact byte strings. It also binds SHA-256 fingerprints of the log
+verification key and witness-registry root key; reusing a key ID with different
+key bytes is not an ordinary state advance.
+
+A production CAS must independently re-verify these exact bytes using the
+provisioned physical context and trusted time inside its transaction (or accept
+the request only through an equivalently isolated, reviewed verification service).
+A digest-only caller assertion is insufficient. The synthetic provider exercises
+monotonic state transitions and exact-byte binding only; it does not implement
+institutional signature verification or durable storage.
