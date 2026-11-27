@@ -1271,6 +1271,22 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.assertGreater(self.provider.snapshot.state_generation, generation_before)
         self.assertEqual(self.provider.commit_count, 1)
 
+    def test_provider_raised_rejection_before_commit_is_also_unknown_outcome(self):
+        generation_before = self.provider.snapshot.state_generation
+
+        def raise_rejection_without_commit(**kwargs):
+            self.provider.commit_count += 1
+            raise TrustStateRejected("synthetic provider exception before commit")
+
+        self.provider.compare_and_advance = raise_rejection_without_commit
+        with self.assertRaisesRegex(TrustProviderUnavailable, "transaction outcome is unknown"):
+            self.inspect()
+
+        # Even a pre-commit-looking provider exception is not a protocol result.
+        # The caller cannot prove from the exception alone whether persistence occurred.
+        self.assertEqual(self.provider.snapshot.state_generation, generation_before)
+        self.assertEqual(self.provider.commit_count, 1)
+
     def test_provider_commit_must_bind_exact_policy_digest(self):
         original = self.provider.compare_and_advance
 
