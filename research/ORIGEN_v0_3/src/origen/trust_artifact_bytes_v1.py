@@ -159,6 +159,25 @@ def verify_independent_provenance_with_artifacts(
         original_receipt_bytes,
         artifact_bytes_by_sha256,
     )
+
+    required_types = verified_trust_policy.required_artifact_types
+    if (
+        type(required_types) is not tuple
+        or not required_types
+        or any(type(item) is not str or not item for item in required_types)
+        or len(set(required_types)) != len(required_types)
+    ):
+        raise ValueError(
+            "verified trust policy must contain a non-empty unique tuple "
+            "of required artifact types"
+        )
+    declared_types = {item.artifact_type for item in byte_check.artifact_matches}
+    missing_types = sorted(set(required_types) - declared_types)
+    if missing_types:
+        raise ValueError(
+            f"receipt omits trust-policy-required artifact types: {missing_types}"
+        )
+
     return IndependentReceiptArtifactCheck(
         provenance_status=status,
         receipt_sha256=byte_check.receipt_sha256,
