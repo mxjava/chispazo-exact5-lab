@@ -66,7 +66,7 @@ def _verify_mapping_claim_byte_binding(
     claim: PhysicalArtifactClaim,
     original_bytes: bytes,
     *,
-    manifest_sha256: str,
+    manifest_sha256: str = "0" * 64,
 ) -> MappingArtifactByteBinding:
     """Internal structural check for a claim already extracted from parsed bytes."""
     if type(claim) is not PhysicalArtifactClaim:
