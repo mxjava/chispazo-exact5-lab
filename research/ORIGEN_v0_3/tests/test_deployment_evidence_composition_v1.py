@@ -354,7 +354,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
         self.assertEqual(provider.commit_count, 0)
 
-    def test_ledger_checkpoint_rollback_is_rejected_before_provider_cas):
+    def test_ledger_checkpoint_rollback_is_rejected_before_provider_cas(self):
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger)
         provider.snapshot = replace(
