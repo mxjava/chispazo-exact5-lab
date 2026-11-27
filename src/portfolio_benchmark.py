@@ -62,13 +62,25 @@ def load_draws(path: str | Path, trusted_draw_hashes: dict) -> dict[int, int]:
     draws: dict[int, int] = {}
     with Path(path).open(newline="", encoding="utf-8-sig") as stream:
         reader = csv.DictReader(stream)
-        required = {"CONCURSO", "MODALITY", "R1", "R2", "R3", "R4", "R5",
-                    "SOURCE_URL", "SOURCE_SHA256", "VERIFICATION"}
-        if not required.issubset(reader.fieldnames or []):
-            raise ValueError("draw_csv_missing_required_columns")
+        required = ["CONCURSO", "MODALITY", "R1", "R2", "R3", "R4", "R5",
+                    "SOURCE_URL", "SOURCE_SHA256", "VERIFICATION"]
+        headers = reader.fieldnames or []
+        if len(headers) != len(set(headers)):
+            raise ValueError("draw_csv_duplicate_columns")
+        if len(headers) != len(required) or set(headers) != set(required):
+            raise ValueError("draw_csv_columns_must_match_exact_schema")
         for row in reader:
+            # DictReader stores surplus cells under key None and missing cells
+            # as None values. Reject both before any normalization or hashing.
+            if None in row or any(value is None or value == "" for value in row.values()):
+                raise ValueError("draw_csv_malformed_row_width_or_empty_value")
+            if not re.fullmatch(r"[1-9][0-9]*", row["CONCURSO"]):
+                raise ValueError("invalid_draw_contest_id")
             if row["MODALITY"].strip().upper() != "CLASSIC":
                 continue
+            if any(not re.fullmatch(r"(?:[1-9]|1[0-9]|2[0-8])", row[f"R{i}"])
+                   for i in range(1, 6)):
+                raise ValueError("invalid_draw_number_encoding")
             payload = canonical_draw_payload(row)
             contest = payload["contest"]
             if contest in draws:
