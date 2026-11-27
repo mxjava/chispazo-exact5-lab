@@ -1191,10 +1191,15 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
             timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
             timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
         )
-    except TrustStateRejected:
-        raise
     except Exception as exc:
-        raise TrustProviderUnavailable("deployment trust sequence transaction failed") from exc
+        # A provider/RPC exception is not an authenticated transaction result.
+        # The backend may have committed before an adapter raised any local
+        # exception class, including TrustStateRejected. Only a validated
+        # DeploymentTrustCommit outcome below can establish an explicit rejection.
+        raise TrustProviderUnavailable(
+            "deployment trust sequence transaction failed; transaction outcome is unknown; "
+            "reconcile durable provider state before retrying"
+        ) from exc
     try:
         commit = _commit_copy(supplied_commit)
     except (TypeError, ValueError) as exc:
