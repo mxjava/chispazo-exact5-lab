@@ -591,7 +591,6 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     raw_new_checkpoint_bytes: bytes,
     raw_consistency_proof_bytes: bytes,
     witness_observation_batches: tuple,
-    *,
 ) -> DeploymentEvidenceInspectionV1:
 
     """Public fail-closed facade; provider resolution is deployment-owned."""
