@@ -726,6 +726,8 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
         provider.nonce_challenge = TimestampNonceChallengeV1(
             challenge_id="synthetic-timestamp-challenge-0002",
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            state_backend_id=provider.snapshot.state_backend_id,
             policy_timestamp_nonce=data["policy_timestamp_expected_nonce"],
             custody_timestamp_nonce=data["expected_nonce"],
             state_generation=provider.snapshot.state_generation,
