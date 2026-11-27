@@ -178,11 +178,13 @@ def _provider_for(data, ledger):
             state_backend_id="synthetic-cas-store",
             log_id=context.log_id,
             log_key_id=context.log_key_id,
+            log_public_key_sha256=hashlib.sha256(context.log_public_key_bytes).hexdigest(),
             ledger_tree_size=ledger["old_checkpoint"]["tree_size"],
             ledger_root_sha256=ledger["old_checkpoint"]["root_hash"],
             ledger_checkpoint_sha256=hashlib.sha256(ledger["old_bytes"]).hexdigest(),
             registry_id=context.registry_id,
             registry_root_key_id=context.registry_root_key_id,
+            registry_root_public_key_sha256=hashlib.sha256(context.registry_root_public_key_bytes).hexdigest(),
             registry_sequence=6,
             registry_sha256="d" * 64,
         ),
@@ -280,11 +282,13 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
                 state_backend_id="synthetic-cas-store",
                 log_id=provider.physical_context.log_id,
                 log_key_id=provider.physical_context.log_key_id,
+                log_public_key_sha256=hashlib.sha256(provider.physical_context.log_public_key_bytes).hexdigest(),
                 ledger_tree_size=ledger["old_checkpoint"]["tree_size"],
                 ledger_root_sha256=ledger["old_checkpoint"]["root_hash"],
                 ledger_checkpoint_sha256=hashlib.sha256(ledger["old_bytes"]).hexdigest(),
                 registry_id=provider.physical_context.registry_id,
                 registry_root_key_id=provider.physical_context.registry_root_key_id,
+                registry_root_public_key_sha256=hashlib.sha256(provider.physical_context.registry_root_public_key_bytes).hexdigest(),
                 registry_sequence=6,
                 registry_sha256="d" * 64,
             )),
@@ -333,7 +337,24 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
         self.assertEqual(provider.commit_count, 0)
 
-    def test_ledger_checkpoint_rollback_is_rejected_before_provider_cas(self):
+    def test_log_key_rotation_without_watermark_transition_is_rejected(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.physical_context = replace(
+            provider.physical_context,
+            log_public_key_bytes=b"z" * 32,
+        )
+        provider.snapshot = replace(
+            provider.snapshot,
+            physical_trust_context_sha256=physical_trust_context_sha256(provider.physical_context),
+        )
+
+        with self.assertRaisesRegex(TrustStateRejected, "persisted ledger/witness watermark identity differs"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_ledger_checkpoint_rollback_is_rejected_before_provider_cas):
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger)
         provider.snapshot = replace(
