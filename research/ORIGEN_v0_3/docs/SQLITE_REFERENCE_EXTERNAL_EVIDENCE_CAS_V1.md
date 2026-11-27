@@ -15,6 +15,7 @@ Status: **research-only reference and conformance fixture**. This is not a produ
 - Atomic generation increment with checkpoint and registry watermark update.
 - Fail-closed handling for missing genesis, stale generation, stale digest, corrupt bytes, and SQL transaction failure.
 - Reopen and concurrent-writer tests.
+- Subprocess crash-recovery tests: a committed watermark advance remains visible after immediate process exit, while an uncommitted WAL update is discarded on recovery.
 - A journal-mode drift regression switches an initialized database to DELETE through an external connection and verifies that both an existing CAS instance and a newly constructed instance reject it.
 
 The implementation reuses the exact application-side `ExternalEvidenceWatermarkV1` and `ExternalEvidenceAdvanceV1` validation. It deliberately does **not** implement `DeploymentTrustProvider`; it cannot be passed to the full evidence-composition entry point.
@@ -38,6 +39,6 @@ A production backend must be separately administered and must:
 3. Compare and advance policy sequence, trusted-time upper bound, nonce consumption, ledger checkpoint, and registry digest atomically.
 4. Anchor monotonic state outside the database's own backup/restore domain, or provide an independently witnessed recovery protocol that detects rollback and split-brain.
 5. Produce externally retained signed transaction receipts and an independently audited access/recovery trail.
-6. Pass process-crash, power-loss, concurrent-writer, stale-read, equivocation, backup-restore, failover, and split-brain exercises.
+6. Pass power-loss, concurrent-writer, stale-read, equivocation, backup-restore, failover, and split-brain exercises. The subprocess tests cover process-exit recovery only; they do not simulate power loss or validate storage-controller fsync guarantees.
 
 Until that exists, the SQLite reference is only an executable local conformance aid. Every successful ORIGEN result remains `BLOCKED_PROVENANCE`; production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
