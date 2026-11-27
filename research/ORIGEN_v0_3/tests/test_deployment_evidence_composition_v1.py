@@ -320,6 +320,19 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             result.remaining_blockers,
         )
 
+    def test_missing_external_evidence_genesis_is_rejected_before_evidence(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.snapshot = replace(
+            provider.snapshot,
+            accepted_external_evidence_watermark=None,
+        )
+
+        with self.assertRaisesRegex(TrustStateRejected, "no independently provisioned ledger/witness genesis watermark"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.commit_count, 0)
+
     def test_ledger_checkpoint_rollback_is_rejected_before_provider_cas(self):
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger)
