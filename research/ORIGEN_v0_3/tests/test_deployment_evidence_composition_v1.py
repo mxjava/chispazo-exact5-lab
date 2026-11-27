@@ -893,3 +893,12 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.snapshot.accepted_policy_sequence, accepted_sequence_after_first)
         self.assertEqual(len(provider.consumed_timestamp_nonce_values), 2)
         self.assertEqual(len(provider.consumed_timestamp_nonce_challenge_ids), 1)
+
+
+    def test_public_full_evidence_entrypoint_does_not_accept_caller_provider(self):
+        self.assertNotIn(
+            "provider",
+            inspect.signature(
+                inspect_custody_ledger_witness_with_deployment_provider_v1
+            ).parameters,
+        )
