@@ -95,6 +95,58 @@ class PortfolioBenchmarkTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "draw_hash_not_in_external_anchor_file"):
                 load_draws(path, {})
 
+    def test_draw_csv_rejects_duplicate_headers(self):
+        row = draw_row()
+        header = list(row)
+        header[-1] = "SOURCE_SHA256"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "draws.csv"
+            path.write_text(",".join(header) + "\\n" + ",".join(row[k] for k in row) + "\\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "draw_csv_duplicate_columns"):
+                load_draws(path, {})
+
+    def test_draw_csv_rejects_extra_columns(self):
+        row = draw_row()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "draws.csv"
+            with path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(row) + ["UNEXPECTED"])
+                writer.writeheader()
+                writer.writerow({**row, "UNEXPECTED": "x"})
+            with self.assertRaisesRegex(ValueError, "draw_csv_columns_must_match_exact_schema"):
+                load_draws(path, {})
+
+    def test_draw_csv_rejects_short_rows(self):
+        row = draw_row()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "draws.csv"
+            path.write_text(",".join(row) + "\\n" + ",".join(list(row.values())[:-1]) + "\\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "draw_csv_malformed_row_width_or_empty_value"):
+                load_draws(path, {})
+
+    def test_draw_csv_rejects_surplus_cells(self):
+        row = draw_row()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "draws.csv"
+            path.write_text(",".join(row) + "\\n" + ",".join(row.values()) + ",surplus\\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "draw_csv_malformed_row_width_or_empty_value"):
+                load_draws(path, {})
+
+    def test_draw_csv_rejects_noncanonical_number_encoding(self):
+        row = draw_row()
+        row["R1"] = "01"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "draws.csv"
+            with path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(row))
+                writer.writeheader()
+                writer.writerow(row)
+            with self.assertRaisesRegex(ValueError, "invalid_draw_number_encoding"):
+                load_draws(path, {})
+
     def test_exact_uniform_null_matches_30_over_98280_exact5_mass(self):
         null = exact_uniform_portfolio_null(30)
         self.assertEqual(null["universe"], 98280)
