@@ -3,15 +3,15 @@
 
 ## Delimitación de producto
 
-Chispazo Clásico se evalúa bajo el procedimiento de Sorteos Electrónicos SGVO-PRO-05, que incluye Chispazo en su flujo operativo. No se trasladan a Chispazo los formatos, pesos, instrumentos ni reglas de los sorteos tradicionales. El Reglamento de Sorteos Tradicionales publicado en el DOF el 2 de enero de 2026 limita expresamente su objeto a sorteos tradicionales; se usa sólo para delimitar alcance, no como procedimiento de Chispazo.
+La clasificación no depende de extrapolar un sorteo tradicional: el Informe de Gestión Gubernamental 2018–2024 ubica a Chispazo en la sección de Concursos y Sorteos Electrónicos (página impresa 42), y SGVO-PRO-05 es el procedimiento público vigente de Sorteos Electrónicos que incluye Chispazo en su flujo operativo. El Reglamento de Sorteos Tradicionales publicado por SEGOB/SIDOF el 2 de enero de 2026 limita expresamente su objeto a sorteos tradicionales (artículo 1); no se usa como procedimiento de Chispazo. No se trasladan a Chispazo formatos, pesos ni instrumentos tradicionales.
 
 ## Fuentes oficiales consultadas
 
 1. **Lotería Nacional — SGVO-PRO-05, revisión 39, DN-07 v09**, publicado en el PDF el 20-mar-2026 y listado en Normateca como Sustantivas Vigentes. PDF: https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf ; Normateca: https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2
 2. **Lotería Nacional — SAF-MAN-12, Manual de Organización General**, tipo público, emisión febrero 2026: https://www.loterianacional.gob.mx/documentos/Manual_de_Organizacion_General_de_Loteria_Nacional.pdf
-3. **Lotería Nacional — Informe de Gestión Gubernamental 2018–2024**, páginas impresas 43–44 y 58: https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf
+3. **Lotería Nacional — Informe de Gestión Gubernamental 2018–2024**, páginas impresas 42–44 y 58: https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf
 4. **Lotería Nacional — Invitación IA-06-HJY-006HJY001-N-222-2026**, aprobada el 20-oct-2026, publicada el 29-oct-2026; fallo programado para 10-nov-2026: https://loterianacional.gob.mx/Documentos/Legal/AdqLic/IA-06-HJY-006HJY001-N-222-2026.PDF
-5. **SEGOB/SIDOF — Reglamento de Sorteos Tradicionales**, publicado el 2-ene-2026: https://sidof.segob.gob.mx/notas/docFuente/5777789
+5. **SEGOB/SIDOF — Reglamento de Sorteos Tradicionales**, publicado el 2-ene-2026, artículo 1: https://sidof.segob.gob.mx/notas/docFuente/5777789
 
 El Manual SAF-MAN-12 identifica una Subgerencia específica para sorteos electrónicos e instantáneos, distinta de la Subgerencia de sorteos tradicionales. A la primera asigna supervisión del calendario anual de mantenimiento, control de incidencias, custodia de actas, videograbaciones y registros operativos, y la obligación de facilitar expedientes originales bajo su resguardo. Esto identifica la unidad responsable; no equivale a tener publicados los registros por concurso.
 

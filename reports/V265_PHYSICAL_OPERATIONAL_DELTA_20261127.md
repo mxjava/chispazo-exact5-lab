@@ -1,6 +1,10 @@
 # V265 — Actualización de evidencia física y operativa
 **Corte: 27 de noviembre de 2026 · Chispazo Clásico electrónico**
 
+## Separación estricta de procesos
+
+El Informe de Gestión Gubernamental 2018–2024 ubica expresamente a Chispazo en la sección de Concursos y Sorteos Electrónicos (p. 42). SGVO-PRO-05 revisión 39 es el procedimiento público vigente de Sorteos Electrónicos e incluye Chispazo. El Reglamento de Sorteos Tradicionales de SEGOB/SIDOF, publicado el 2-ene-2026, limita su objeto a sorteos tradicionales (art. 1); no se usa para describir Chispazo. Así se evita mezclar bolas de madera, ábacos, cilindros, pesos o procedimientos tradicionales con las máquinas y esferas electrónicas de Chispazo.
+
 ## Avances nuevos
 
 ### 1. Corrección de CS-11: ya no existe la supuesta copia sin destinatario
@@ -11,7 +15,7 @@ Lo que sigue faltando son constancias reales de entrega/recepción por concurso.
 
 ### 2. RFID: infraestructura acreditada históricamente; trazabilidad física no publicada
 
-El Informe de Gestión Gubernamental 2018–2024 afirma que las 14 máquinas entregadas en marzo de 2022 y las esferas contaban con RFID. Pero el mismo informe declara diez juegos por cada uno de siete productos y reporta un total de 60 juegos; 10 × 7 daría 70. Se conserva la discrepancia, sin corregirla por inferencia.
+El Informe de Gestión 2018–2024 afirma que las 14 máquinas entregadas en marzo de 2022 y las esferas contaban con RFID. Pero el mismo informe declara diez juegos por cada uno de siete productos y reporta un total de 60 juegos; 10 × 7 daría 70. Se conserva la discrepancia, sin corregirla por inferencia.
 
 El informe también indica que la adquisición de ocho máquinas adicionales y dos sistemas RFID, así como cuatro balanzas de precisión, no fue autorizada al cierre de junio de 2024. Esto no demuestra el inventario actual ni que no existieran equipos alternos; sólo impide asumir que esas compras propuestas se ejecutaron.
 
@@ -33,7 +37,7 @@ El PDF es una invitación: por sí solo no acredita adjudicación ni ejecución.
 
 ### 5. Custodia y responsabilidades
 
-El Manual SAF-MAN-12 de febrero de 2026, tipo público, asigna a la Subgerencia de Operación de Concursos, Juegos y Sorteos Electrónicos e Instantáneos funciones de supervisión de mantenimiento, control de incidencias y resguardo de actas, videos y registros operativos. Es el área organizacional más directamente relacionada para solicitar expedientes originales. No se obtuvo ningún registro por concurso.
+El Manual SAF-MAN-12 de febrero de 2026, tipo público, asigna a la Subgerencia de Operación de Concursos, Juegos y Sorteos Electrónicos e Instantáneos funciones de supervisión del calendario anual de mantenimiento, control de incidencias y resguardo de actas, videos y registros operativos. Es el área organizacional más directamente relacionada para solicitar expedientes originales. No se obtuvo ningún registro por concurso.
 
 ### 6. Evaluador V265: límite confirmado en el código
 
@@ -63,7 +67,7 @@ No consume pesos individuales, mapeo RFID esfera-número, orden de extracción n
 - Pruebas nuevas: tests/test_v265_physical_operational_delta.py
 - Salida estructurada: reports/V265_PHYSICAL_OPERATIONAL_DELTA_20261127.json
 - El script lee la transcripción controlada y el código V265; no descarga PDFs, no lee resultados, no genera registros y no ejecuta pruebas estadísticas.
-- La auditoría anterior de semántica V265 se hizo portable entre Python 3.11 y 3.12 usando AST canónico, corrigiendo dos fallos de CI por diferencias de paréntesis de ast.unparse.
+- La auditoría anterior de semántica V265 se hizo portable entre Python 3.11 y 3.13 usando AST normalizado, corrigiendo diferencias de representación de campos vacíos en ast.dump.
 - No se capturaron bytes de los PDF oficiales en el entorno, por lo que no se inventa SHA-256 de fuentes. Los SHA-256 de los artefactos del repositorio se reportan después de su confirmación en GitHub.
 
 ## Bloqueo real
