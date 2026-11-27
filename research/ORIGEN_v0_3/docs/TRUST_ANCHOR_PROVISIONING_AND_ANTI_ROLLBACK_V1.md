@@ -76,7 +76,9 @@ Every provider CAS call now carries the original `raw_policy_envelope_bytes` and
 
 The CAS API intentionally does not accept caller-supplied accepted time or uncertainty. The provider derives those values from its own authenticated signed clock sample, rechecks the sample digest and lease, and serializes those checks with state advancement. Successful commits must return the exact receipt SHA-256 as well as the policy and external-evidence watermark digests; the application rejects a response that does not bind the receipt bytes it supplied.
 
-The synthetic provider tests exercise the receipt/policy/time contract only. They are not an independent provider implementation. No institutional CAS, clock, root provisioning or custody is installed.
+A malformed or mismatched acknowledgement returned after `compare_and_advance` is treated as an **unknown transaction outcome**, not as a rejected CAS: the provider may already have committed before returning the invalid response. The application raises `TrustProviderUnavailable` and explicitly requires durable-state reconciliation before retry. Only explicit provider conflict/rollback/equivocation outcomes are classified as `TrustStateRejected`. The provider deployment must expose an auditable reconciliation path; the current protocol does not ship one and therefore remains research-only.
+
+The synthetic provider tests exercise the receipt/policy/time contract and this ambiguous-acknowledgement behavior only. They are not an independent provider implementation. No institutional CAS, clock, root provisioning or custody is installed.
 
 ## 6. Required adversarial deployment tests
 

@@ -1,3 +1,9 @@
+## Ambiguous provider CAS acknowledgement handling (2026-11-27)
+- A malformed or mismatched acknowledgement after `compare_and_advance` no longer masquerades as an explicit transaction rejection. Because the provider may have committed before returning, the application raises `TrustProviderUnavailable` with an unknown-outcome/reconciliation instruction.
+- Explicit provider conflict, rollback, time rollback and equivocation outcomes remain `TrustStateRejected`.
+- Added synthetic regressions where provider state advances before returning a wrong receipt/policy digest or malformed object.
+- This does not supply a durable reconciliation endpoint or a real provider; deployments must reconcile authoritative state before retry. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
 ## Institutional PSC candidate assessment (2026-11-27)
 - Added a source-grounded assessment of Incode PSC, Cincel, ATEB and PSC Codex using Secretaría de Economía accreditation notices and each provider's public technical repository/API documentation.
 - Incode is the strongest public candidate for a first RFC 3161 interoperability request because its current public repository lists timestamp policy/practices and its trusted repository publishes TSA/TSU certificate and CRL metadata. However, the actual DER/CRL bytes were not retrieved, the cross-entity linkage to the Mexican PSC policy OID was not cryptographically verified, and client-supplied nonce echo is undocumented.

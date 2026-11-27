@@ -1055,8 +1055,10 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             )
 
         self.provider.compare_and_advance = wrong_time
-        with self.assertRaisesRegex(TrustStateRejected, "atomically commit the exact policy/time/evidence state transition"):
+        generation_before = self.provider.snapshot.state_generation
+        with self.assertRaisesRegex(TrustProviderUnavailable, "commit acknowledgement"):
             self.inspect()
+        self.assertGreater(self.provider.snapshot.state_generation, generation_before)
 
 
     def test_clock_sample_expiry_and_maximum_age_are_enforced_before_commit(self):
@@ -1227,11 +1229,30 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             return replace(commit, receipt_sha256="f" * 64)
 
         self.provider.compare_and_advance = wrong_receipt_digest
+        generation_before = self.provider.snapshot.state_generation
         with self.assertRaisesRegex(
-            TrustStateRejected,
-            "does not bind the exact verified receipt",
+            TrustProviderUnavailable,
+            "commit acknowledgement",
         ):
             self.inspect()
+        # The provider's CAS already advanced before returning its bad response.
+        # The caller must treat this as an unknown outcome and reconcile, not
+        # misclassify it as a rejected transaction and blindly retry.
+        self.assertGreater(self.provider.snapshot.state_generation, generation_before)
+
+    def test_malformed_commit_acknowledgement_after_provider_advance_is_outcome_unknown(self):
+        original = self.provider.compare_and_advance
+        generation_before = self.provider.snapshot.state_generation
+
+        def malformed_acknowledgement(**kwargs):
+            original(**kwargs)
+            return object()
+
+        self.provider.compare_and_advance = malformed_acknowledgement
+        with self.assertRaisesRegex(TrustProviderUnavailable, "commit acknowledgement"):
+            self.inspect()
+        self.assertGreater(self.provider.snapshot.state_generation, generation_before)
+        self.assertEqual(self.provider.commit_count, 1)
 
     def test_provider_commit_must_bind_exact_policy_digest(self):
         original = self.provider.compare_and_advance
@@ -1241,7 +1262,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             return replace(commit, policy_envelope_sha256="f" * 64)
 
         self.provider.compare_and_advance = wrong_digest
-        with self.assertRaisesRegex(TrustStateRejected, "does not bind the exact verified policy"):
+        with self.assertRaisesRegex(TrustProviderUnavailable, "commit acknowledgement"):
             self.inspect()
 
     def test_provider_snapshot_override_is_rejected_at_application_boundary(self):
