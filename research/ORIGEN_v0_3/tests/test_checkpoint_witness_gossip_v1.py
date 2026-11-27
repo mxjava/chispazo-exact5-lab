@@ -378,5 +378,32 @@ class WitnessGossipComparisonV1Tests(unittest.TestCase):
             inspect((self.first_batch, conflicting_registry_batch))
 
 
+    def test_mixed_registry_sequences_are_rejected_before_combining_witnesses(self):
+        next_registry, next_registry_bytes = signed_registry(
+            sequence=self.registry["registry_sequence"] + 1,
+        )
+        next_statements = signed_statements(
+            self.first_pair,
+            next_registry,
+            next_registry_bytes,
+            witness_ids=("witness-2", "witness-3"),
+        )
+        next_batch = make_batch_from_statements(
+            self.first_pair,
+            next_registry_bytes,
+            tuple(next_statements),
+        )
+
+        self.assertNotEqual(
+            sha(self.registry_bytes),
+            sha(next_registry_bytes),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "all witness batches must use one exact registry sequence",
+        ):
+            inspect((self.first_batch, next_batch))
+
+
 if __name__ == "__main__":
     unittest.main()
