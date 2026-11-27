@@ -126,6 +126,15 @@ class PortfolioBenchmarkTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "draw_csv_malformed_row_width_or_empty_value"):
                 load_draws(path, {})
 
+    def test_draw_csv_rejects_blank_physical_records(self):
+        row = draw_row()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "draws.csv"
+            path.write_text(",".join(row) + "\n\n" + ",".join(row.values()) + "\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "draw_csv_malformed_row_width_or_empty_value"):
+                load_draws(path, {})
+
     def test_draw_csv_rejects_surplus_cells(self):
         row = draw_row()
         with tempfile.TemporaryDirectory() as tmp:
