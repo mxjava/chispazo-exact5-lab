@@ -55,3 +55,28 @@ The next evidence target is not another copy of the public result page: it is a 
 ## Safety
 
 Status-only research overlay. No canonical history append, no predictor/model changes, V294 unchanged, no main write or merge. Production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
+
+## Same-day official publication check — 2026-11-27 09:56:45 America/Mexico_City
+
+A fresh check of the official results page, home index, Chispazo product page, and
+mask index found no 27-Nov result mask or published result at capture:
+
+- The dedicated results page still showed contest **12398**, dated 26-Nov-2026,
+  with **01 03 17 26 28**; it displayed 27-Nov as the next draw date.
+- The official home index listed contest **12399** for 27-Nov at **15:00**.
+- The official Chispazo product page continues to map **15:00 to De las Tres**
+  and **21:00 to Clásico**. The 21:00 contest ID was not established by this
+  capture and is deliberately left unassigned.
+- The official mask index listed 26-Nov as its newest visible result mask; no
+  27-Nov mask was visible.
+
+Status-only overlay:
+`data/official-overlays/2026-11-27_0956_official_status_only.json`.
+
+This is a publication-state observation, not new physical evidence. No original
+27-Nov PDF bytes or SHA-256 were captured. No signed Acta, CS-11, weighing
+strip, CS-02, calibration certificate, signed participation file, original
+video, RFC 3161 token, external ledger proof, or independent custody record was
+obtained. Do not infer the 21:00 contest ID from sequence order.
+
