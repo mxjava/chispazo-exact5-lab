@@ -18,6 +18,7 @@ from origen.deployment_evidence_composition_v1 import (
     _require_used_policy_keys_cover_time_window,
     inspect_custody_ledger_witness_with_deployment_provider_v1,
     _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider,
+    verify_custody_timestamp_ledger_witness_v1,
 )
 from origen.deployment_trust_provider_v1 import (
     CLASSIC_POLICY_DOMAIN,
