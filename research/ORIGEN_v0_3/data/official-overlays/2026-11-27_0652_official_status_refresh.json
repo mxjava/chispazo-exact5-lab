@@ -1,0 +1,71 @@
+{
+  "schema_version": "origen.official-source-status.v1",
+  "status": "PUBLIC_WEB_AND_MASK_STATUS_ONLY_NOT_DRAW_PHYSICAL_EVIDENCE",
+  "reviewed_at_local": "2026-11-27T06:52:03-06:00",
+  "timezone": "America/Mexico_City",
+  "sources": {
+    "official_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_mask_pdf_2026_11_26": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226",
+    "official_product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "official_home_index": "https://www.loterianacional.gob.mx/home/index/"
+  },
+  "modality_schedule": {
+    "DE_LAS_TRES": "15:00",
+    "CLASSIC": "21:00"
+  },
+  "last_published_day": {
+    "date": "2026-11-26",
+    "source_pdf": {
+      "status": "VISUALLY_INSPECTED_THROUGH_OFFICIAL_BROWSER_VIEWER",
+      "original_pdf_bytes_captured": false,
+      "sha256": null
+    },
+    "de_las_tres": {
+      "contest_id": 12397,
+      "winning_numbers": [5, 20, 23, 26, 28],
+      "modality_evidence": "OFFICIAL_MASK_LOGO",
+      "scheduled_local": "15:00"
+    },
+    "classic": {
+      "contest_id": 12398,
+      "winning_numbers": [1, 3, 17, 26, 28],
+      "modality_evidence": "OFFICIAL_MASK_LOGO",
+      "scheduled_local": "21:00"
+    }
+  },
+  "next_day_schedule": {
+    "date": "2026-11-27",
+    "de_las_tres": {
+      "contest_id": 12399,
+      "scheduled_local": "15:00",
+      "classification": "OFFICIAL_HOME_INDEX_LISTING_CONSISTENT_WITH_PRODUCT_MODALITY_SCHEDULE",
+      "result_status": "NOT_YET_PUBLISHED_ON_OFFICIAL_RESULTS_PAGE_AT_06_52"
+    },
+    "classic": {
+      "contest_id": null,
+      "scheduled_local": "21:00",
+      "classification": "OFFICIAL_PRODUCT_DAILY_SCHEDULE_ONLY",
+      "result_status": "NOT_YET_DUE_AT_REVIEW",
+      "note": "The separate 21:00 home-index card displays Sorteo 4297; it is not attributed to Chispazo and is not used as a Classic contest ID."
+    }
+  },
+  "official_results_page_at_review": {
+    "latest_contest_id": 12398,
+    "date": "2026-11-26",
+    "winning_numbers": [1, 3, 17, 26, 28],
+    "next_draw_date": "2026-11-27"
+  },
+  "evidence_limits": [
+    "The official mask is publication/modality evidence, not the signed Acta or physical custody evidence.",
+    "No signed Acta, CS-11, sale-close participation/cancellation file, weighing strip, 28 sphere measurements, calibration certificate, machine/set mapping, institutional signature verification, RFC3161 token, independent ledger checkpoint, custody receipt, or two pre-close output seals were obtained.",
+    "Original official PDF bytes were not captured; no source-byte SHA-256 is claimed.",
+    "The 15:00 De las Tres observation is not a Classic prospective target."
+  ],
+  "guardrails": {
+    "canonical_history_appended": false,
+    "v294_changed": false,
+    "main_written": false,
+    "production_state": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
