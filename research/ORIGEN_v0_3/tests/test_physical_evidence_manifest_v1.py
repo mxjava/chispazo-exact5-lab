@@ -130,6 +130,20 @@ def encode(document: dict) -> bytes:
     ).encode("utf-8")
 
 
+def replace_artifact_bytes(document: dict, artifact: dict, raw: bytes) -> None:
+    """Keep manifest-internal references consistent when a fixture artifact changes."""
+    old_digest = artifact["sha256"]
+    new_digest = hashlib.sha256(raw).hexdigest()
+    artifact["sha256"] = new_digest
+    artifact["byte_length"] = len(raw)
+    for signature in document["signatures"]:
+        if signature["artifact_sha256"] == old_digest:
+            signature["artifact_sha256"] = new_digest
+    for event in document["custody_events"]:
+        if event["artifact_sha256"] == old_digest:
+            event["artifact_sha256"] = new_digest
+
+
 class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
     def test_valid_manifest_is_explicitly_unverified_and_adapter_stays_blocked(self):
         raw = encode(valid_document())
@@ -490,8 +504,7 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
             item for item in document["artifacts"]
             if item["artifact_type"] == "SPHERE-NUMBER-MAPPING-REGISTER"
         )
-        mapping_claim["sha256"] = hashlib.sha256(mapping_bytes).hexdigest()
-        mapping_claim["byte_length"] = len(mapping_bytes)
+        replace_artifact_bytes(document, mapping_claim, mapping_bytes)
         manifest_bytes = encode(document)
         rows = [
             {
@@ -539,8 +552,7 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
             item for item in document["artifacts"]
             if item["artifact_type"] == "SPHERE-NUMBER-MAPPING-REGISTER"
         )
-        mapping_claim["sha256"] = hashlib.sha256(mapping_bytes).hexdigest()
-        mapping_claim["byte_length"] = len(mapping_bytes)
+        replace_artifact_bytes(document, mapping_claim, mapping_bytes)
         manifest_bytes = encode(document)
         rows = [
             {
