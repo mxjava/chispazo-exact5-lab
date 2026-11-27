@@ -951,33 +951,26 @@ def _require_policy_and_receipt_inside_time_window(
         raise ValueError("trusted-time uncertainty interval crosses the receipt issuer-key validity boundary")
 
 
-def inspect_receipt_with_deployment_trust_provider(
+def _inspect_receipt_with_deployment_trust_provider_snapshot(
     original_receipt_bytes: bytes,
     signed_policy_envelope_bytes: bytes,
     *,
     provider: DeploymentTrustProvider,
-    provider_snapshot: DeploymentTrustSnapshot | None = None,
+    provider_snapshot: DeploymentTrustSnapshot,
     timestamp_nonce_challenge_id: str | None = None,
     timestamp_nonce_challenge_sha256: str | None = None,
     external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
 ) -> DeploymentTrustInspection:
-    """Inspect policy and receipt through provider-supplied deployment state.
+    """Internal composition helper bound to one provider snapshot.
 
-    This function removes root pins, sequence floors, and clock values from
-    request-level arguments. It does not authenticate the provider object:
-    deployment must construct it in a reviewed composition root backed by an
-    independently provisioned trust store, monotonic state service, and
-    authenticated clock. No such provider is included in this repository.
-
-    It verifies exact bytes, requires the complete trusted-time uncertainty
-    interval to fit policy and signer validity, calls the independent
-    provenance boundary, and then performs an atomic sequence/digest
-    compare-and-advance. An optional snapshot lets a composed verifier share
-    the exact same immutable provider observation with another verifier; the
-    final provider CAS must still match its authoritative generation,
-    configuration digest, and clock-sample digest. Any provider failure or
-    state conflict raises and yields no inspection result. Success remains
-    BLOCKED_PROVENANCE.
+    The top-level public API obtains its own snapshot before calling this
+    helper. The full-evidence composition module may call it with the exact
+    snapshot that module already obtained and validated, avoiding a second
+    provider read and preserving one-snapshot composition across physical,
+    policy, clock and CAS checks. The helper is private by convention, not an
+    unforgeable Python capability; the provider CAS must bind the supplied
+    snapshot to authoritative state. No institutional provider is included.
+    Every successful inspection remains BLOCKED_PROVENANCE.
     """
     if type(original_receipt_bytes) is not bytes or not original_receipt_bytes:
         raise ValueError("original_receipt_bytes must be non-empty exact bytes")
@@ -994,22 +987,10 @@ def inspect_receipt_with_deployment_trust_provider(
         _require_identifier(timestamp_nonce_challenge_id, "timestamp_nonce_challenge_id")
         _require_sha256(timestamp_nonce_challenge_sha256, "timestamp_nonce_challenge_sha256")
 
-    read_snapshot = getattr(provider, "read_snapshot", None)
     compare_and_advance = getattr(provider, "compare_and_advance", None)
-    if not callable(read_snapshot) or not callable(compare_and_advance):
-        raise TypeError("provider must implement read_snapshot and compare_and_advance")
-
-    if provider_snapshot is None:
-        try:
-            supplied_snapshot = read_snapshot(policy_domain=CLASSIC_POLICY_DOMAIN)
-        except Exception as exc:
-            raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
-    else:
-        # A composed verifier may pass the exact snapshot it already used.
-        # The final CAS below binds this snapshot to authoritative provider
-        # state; a caller-fabricated or stale snapshot cannot commit.
-        supplied_snapshot = provider_snapshot
-    snapshot = _snapshot_copy(supplied_snapshot)
+    if not callable(compare_and_advance):
+        raise TypeError("provider must implement compare_and_advance")
+    snapshot = _snapshot_copy(provider_snapshot)
     external_evidence_advance = (
         None
         if external_evidence_advance is None
@@ -1188,4 +1169,31 @@ def inspect_receipt_with_deployment_trust_provider(
         provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
         timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
         timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
+    )
+
+def inspect_receipt_with_deployment_trust_provider(
+    original_receipt_bytes: bytes,
+    signed_policy_envelope_bytes: bytes,
+    *,
+    provider: DeploymentTrustProvider,
+    timestamp_nonce_challenge_id: str | None = None,
+    timestamp_nonce_challenge_sha256: str | None = None,
+    external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
+) -> DeploymentTrustInspection:
+    """Public provider-owned entry point; caller snapshots are not accepted."""
+    read_snapshot = getattr(provider, "read_snapshot", None)
+    if not callable(read_snapshot):
+        raise TypeError("provider must implement read_snapshot")
+    try:
+        snapshot = read_snapshot(policy_domain=CLASSIC_POLICY_DOMAIN)
+    except Exception as exc:
+        raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
+    return _inspect_receipt_with_deployment_trust_provider_snapshot(
+        original_receipt_bytes,
+        signed_policy_envelope_bytes,
+        provider=provider,
+        provider_snapshot=snapshot,
+        timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
+        timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
+        external_evidence_advance=external_evidence_advance,
     )
