@@ -7,12 +7,15 @@ Status: **research-only reference and conformance fixture**. This is not a produ
 `SQLiteReferenceExternalEvidenceCASV1` provides a local filesystem-backed reference for the external-evidence watermark portion of the provider contract:
 
 - Explicit one-time genesis insertion; a second genesis attempt is rejected.
-- SQLite WAL mode and `synchronous=FULL`.
+- SQLite WAL mode is established only for a new, unversioned database; every later operational connection re-checks that the persistent journal mode is still WAL.
+- Every connection sets and reads back `synchronous=FULL`; a connection that does not report SQLite's FULL setting is rejected.
+- Reopening a versioned database whose journal mode drifted to DELETE (or another non-WAL mode) fails closed rather than silently repairing or continuing.
 - `BEGIN IMMEDIATE` serialization and a conditional generation/digest update.
 - Exact canonical watermark bytes and SHA-256 digest verification on every read.
 - Atomic generation increment with checkpoint and registry watermark update.
 - Fail-closed handling for missing genesis, stale generation, stale digest, corrupt bytes, and SQL transaction failure.
 - Reopen and concurrent-writer tests.
+- A journal-mode drift regression switches an initialized database to DELETE through an external connection and verifies that both an existing CAS instance and a newly constructed instance reject it.
 
 The implementation reuses the exact application-side `ExternalEvidenceWatermarkV1` and `ExternalEvidenceAdvanceV1` validation. It deliberately does **not** implement `DeploymentTrustProvider`; it cannot be passed to the full evidence-composition entry point.
 
