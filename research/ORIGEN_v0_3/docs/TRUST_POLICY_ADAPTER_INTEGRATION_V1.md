@@ -159,3 +159,23 @@ evidence chain. Separately, EDGE_SUPPORTED still requires at least 100
 untouched prospective CLASSIC draws, preregistered positive lift, Holm
 p<0.05, anytime e-value >=20, two independently sealed pre-close outputs,
 clean hashes, and authentic independent custody.
+
+
+## Exact original-artifact byte binding — research-only follow-on
+
+The child research branch adds `trust_artifact_bytes_v1.py`:
+
+- `verify_receipt_artifact_bytes` parses the canonical receipt and requires the exact set of original artifact bytes keyed by the receipt's declared SHA-256 digests.
+- It rejects missing or extra artifacts, mutable buffers, non-exact dictionary/key/value types, digest mismatches, length mismatches, and conflicting lengths declared for one digest.
+- `verify_independent_provenance_with_artifacts` first runs the existing `VerifiedTrustPolicy` + root receipt-attestation composition, then checks every supplied original artifact byte string against the signed receipt's digest and length claims.
+- The combined result explicitly remains `BLOCKED_PROVENANCE` and is labeled `RECEIPT_SIGNATURE_AND_ARTIFACT_BYTES_MATCHED_NOT_AUTHENTICATED`. It retains only digest/length metadata, not artifact payloads.
+
+This closes one concrete interface gap between the root-signed receipt and the actual byte strings presented for review. It does **not** authenticate where those bytes came from, nested institutional signatures, signer identity/role, RFC 3161 tokens, ledger inclusion, custody, or physical truth. A matching digest is not an institutional provenance decision. Tests use generated Ed25519 keys and synthetic payloads only.
+
+## Official physical-procedure scope correction — 2026-11-27
+
+The current Normateca index lists SGVO-PRO-34, but its own scope limits it to wooden balls and ábacos for **Sorteos Tradicionales**. It is not a Chispazo electronic-draw procedure and must not be used to set Chispazo mass/diameter assumptions.
+
+For Chispazo's electronic process, the relevant public procedure is SGVO-PRO-05 Rev. 39. It says weighing occurs for every draw, lists Smartballs and Ping Pong acceptance ranges, sequences the automatic sales-close verification before activity 5 weighing, requires the weighing strip to be signed and attached to the Acta, and then places the spheres in machine feeders. It does not disclose the 28 individual readings, prove which sphere type a specific Chispazo draw used, or prove physical-ball/mapping/machine continuity into the next Classic draw.
+
+See `OFFICIAL_PHYSICAL_PROCEDURE_SCOPE_AUDIT_20261127.md` for the source-by-source scope and exact remaining evidence requirements. De las Tres (15:00) and Clásico (21:00) remain separate.
