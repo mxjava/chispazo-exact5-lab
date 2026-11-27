@@ -943,3 +943,19 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
                 provider=provider,
             )
 
+
+
+    def test_public_full_evidence_facade_fails_closed_on_bootstrap_store_outage(self):
+        data, ledger, batches, _ = _build_case()
+        with patch(
+            "origen.deployment_trust_provider_bootstrap._load_deployment_trust_provider",
+            side_effect=OSError("synthetic bootstrap store outage"),
+        ):
+            with self.assertRaisesRegex(
+                TrustProviderUnavailable,
+                "bootstrap could not be loaded",
+            ):
+                inspect_custody_ledger_witness_with_deployment_provider_v1(
+                    **_arguments(data, ledger, batches)
+                )
+
