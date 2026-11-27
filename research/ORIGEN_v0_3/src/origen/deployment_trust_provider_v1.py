@@ -1171,7 +1171,7 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
     )
 
-def inspect_receipt_with_deployment_trust_provider(
+def _inspect_receipt_with_deployment_trust_provider_using_provider(
     original_receipt_bytes: bytes,
     signed_policy_envelope_bytes: bytes,
     *,
@@ -1180,7 +1180,7 @@ def inspect_receipt_with_deployment_trust_provider(
     timestamp_nonce_challenge_sha256: str | None = None,
     external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
 ) -> DeploymentTrustInspection:
-    """Public provider-owned entry point; caller snapshots are not accepted."""
+    """Private provider-backed implementation used only by deployment composition."""
     read_snapshot = getattr(provider, "read_snapshot", None)
     if not callable(read_snapshot):
         raise TypeError("provider must implement read_snapshot")
@@ -1193,6 +1193,38 @@ def inspect_receipt_with_deployment_trust_provider(
         signed_policy_envelope_bytes,
         provider=provider,
         provider_snapshot=snapshot,
+        timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
+        timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
+        external_evidence_advance=external_evidence_advance,
+    )
+
+
+def inspect_receipt_with_deployment_trust_provider(
+    original_receipt_bytes: bytes,
+    signed_policy_envelope_bytes: bytes,
+    *,
+    timestamp_nonce_challenge_id: str | None = None,
+    timestamp_nonce_challenge_sha256: str | None = None,
+    external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
+) -> DeploymentTrustInspection:
+
+    """Public fail-closed facade; provider configuration is deployment-owned."""
+    from .deployment_trust_provider_bootstrap import _load_deployment_trust_provider
+
+    try:
+        provider = _load_deployment_trust_provider()
+    except Exception as exc:
+        raise TrustProviderUnavailable(
+            "deployment trust provider bootstrap could not be loaded"
+        ) from exc
+    if provider is None:
+        raise TrustProviderUnavailable(
+            "deployment trust provider is not out-of-band provisioned"
+        )
+    return _inspect_receipt_with_deployment_trust_provider_using_provider(
+        original_receipt_bytes,
+        signed_policy_envelope_bytes,
+        provider=provider,
         timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
         timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
         external_evidence_advance=external_evidence_advance,
