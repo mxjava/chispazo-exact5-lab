@@ -508,9 +508,11 @@ trusted-time watermark and nonce consumption:
 
 1. Recompute the accepted watermark digest from authoritative storage and compare
    it with the snapshot digest supplied by the application.
-2. Reject a lower ledger tree size; reject same-size root/checkpoint changes as
-   equivocation; for a larger tree, require the supplied old checkpoint to equal
-   the exact persisted tree size, root and checkpoint digest.
+2. Require the supplied old checkpoint to equal the exact persisted tree
+   size, root and checkpoint digest for every advance. Then require the new tree
+   size to be strictly greater. Reject lower sizes as rollback and same-size
+   root/checkpoint changes as equivocation; a same-size identical checkpoint is
+   not an advance and must be represented by omitting the advance.
 3. Reject a lower witness-registry sequence and reject a different exact registry
    digest at the same sequence. A registry/log/root identity change requires a
    separate authorized transition; it is not an ordinary advance.
