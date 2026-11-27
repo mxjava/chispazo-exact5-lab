@@ -14,7 +14,7 @@ REQUIRED = {
     "signature_not_preclose": "Do not call it pre-close",
     "weighing_after_close": "then weighing starts",
     "cs11_copy_count": "four copies are printed",
-    "cs11_third_copy_recipient": "copy to the Control Data operator",
+    "cs11_third_copy_recipient": "Control Data operator (who enters winning numbers",
     "mjf_after_2100": "After 21:00",
     "mjf_exact_draw_end_unknown": "does not specify exact relation to the physical draw's end",
     "no_original_draw_records": "not an original signed record or proof of a particular contest's execution",

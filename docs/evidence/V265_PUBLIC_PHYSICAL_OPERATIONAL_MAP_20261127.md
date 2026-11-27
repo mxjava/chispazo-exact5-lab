@@ -46,7 +46,7 @@ La invitación 222-2026 es distinta: su objeto es mantenimiento de equipos eléc
 
 ## CS-11: corrección documental
 
-La actividad 13.1 ordena cuatro ejemplares. La actividad 13.6 enumera el original para SVO y tres copias: copy to the Control Data operator, Inspector SEGOB y representante DTT. La distribución normativa sí está completa. No se encontraron constancias de entrega/recepción por concurso; por tanto, no se afirma que los cuatro ejemplares hayan sido efectivamente entregados en cada sorteo.
+La actividad 13.1 ordena cuatro ejemplares. La actividad 13.6 enumera el original para SVO y tres copias: una copia para el operador del área de Control de Datos, una para el Inspector SEGOB y otra para el representante DTT. La distribución normativa sí está completa. No se encontraron constancias de entrega/recepción por concurso; por tanto, no se afirma que los cuatro ejemplares hayan sido efectivamente entregados en cada sorteo.
 
 ## V265: contrato real del evaluador
 
