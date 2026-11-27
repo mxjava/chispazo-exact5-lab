@@ -533,18 +533,30 @@ full provider-backed physical composition remains fail-closed and production sta
 BLOCKED / RESEARCH_ONLY_NO_EDGE.
 
 
-### Exact-byte and key-fingerprint binding
+### Full exact-byte evidence envelope and key-fingerprint binding
 
-The external-evidence advance carries the exact manifest, ledger entry, inclusion proof,
-old/new signed checkpoint bytes, consistency proof, signed registry bytes and the
-bounded tuple of signed witness statements. Its checkpoint/registry digests must
-match those exact byte strings. It also binds SHA-256 fingerprints of the log
+The external-evidence advance now carries one bounded immutable envelope with
+the exact original receipt and signed policy envelope; custody record, portfolio,
+detached custody signature and custodian key ID; both RFC 3161 token DER blobs;
+artifact and signature byte maps keyed by their SHA-256 digests; manifest,
+ledger entry, inclusion proof, old/new signed checkpoints, consistency proof,
+signed witness registry and all bounded witness-statement bytes.
+
+Receipt, policy, checkpoint and registry digests must match their exact byte
+strings. Every artifact/signature map entry must be sorted by unique digest and
+the digest must match the corresponding exact bytes. The envelope has an
+aggregate 8 MiB bound. The receipt and policy bytes inside the envelope must
+also equal the exact byte strings independently passed to the receipt/policy
+inspection function. The advance binds SHA-256 fingerprints of the log
 verification key and witness-registry root key; reusing a key ID with different
 key bytes is not an ordinary state advance.
 
-A production CAS must independently re-verify these exact bytes using the
-provisioned physical context and trusted time inside its transaction (or accept
-the request only through an equivalently isolated, reviewed verification service).
-A digest-only caller assertion is insufficient. The synthetic provider exercises
-monotonic state transitions and exact-byte binding only; it does not implement
-institutional signature verification or durable storage.
+A production CAS must independently re-verify every nested signature,
+custody binding, both RFC 3161 tokens, artifact digest, manifest commitment,
+ledger inclusion/consistency proof, registry signature and witness statement
+using the provisioned physical context and trusted time before the same
+linearizable state transaction (or accept a signed result from an equivalently
+isolated, reviewed verification service). A digest-only caller assertion is
+insufficient. The synthetic provider exercises monotonic state transitions,
+exact-byte binding and interface shape only; it does not implement institutional
+signature verification or durable storage.
