@@ -559,6 +559,19 @@ the real verifier returns and asserts that the CAS envelope still carries the
 original verified mappings. A mutation during snapshot construction fails
 closed; the verifier and CAS must not observe different map contents.
 
+The application boundary also snapshots the caller-owned witness-observation
+tuple/list into private exact `WitnessObservationBatch` values before reading
+provider state or invoking any verifier. The same private batch tuple is passed
+to the cryptographic verifier and later supplies the registry and witness
+statement bytes in the CAS envelope. The composition never re-reads the
+caller-owned batch objects after verification. This matters even though the
+transport dataclass is frozen: Python callers can bypass frozen assignment
+with `object.__setattr__`. A deterministic adversarial regression mutates
+every original batch after the real verifier returns and asserts that the CAS
+envelope still contains the exact registry and statement bytes that were
+verified. Batch count, field types, statement count, per-field limits and the
+aggregate gossip byte limit are enforced before provider access.
+
 A production CAS must independently re-verify every nested signature,
 custody binding, both RFC 3161 tokens, artifact digest, manifest commitment,
 ledger inclusion/consistency proof, registry signature and witness statement
