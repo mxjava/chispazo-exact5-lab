@@ -349,11 +349,13 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(
-            TrustStateRejected,
-            "persisted external evidence watermark is not bound to the exact policy domain and state backend",
+            ValueError,
+            "accepted external evidence watermark is not bound to the deployment snapshot",
         ):
             _inspect(data, ledger, batches, provider)
 
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.physical_context_read_count, 0)
         self.assertEqual(provider.commit_count, 0)
 
     def test_log_key_rotation_without_watermark_transition_is_rejected(self):
