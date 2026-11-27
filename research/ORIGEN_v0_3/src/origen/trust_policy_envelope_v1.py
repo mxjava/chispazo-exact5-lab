@@ -33,16 +33,47 @@ _UTC = re.compile(
 )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class VerifiedTrustPolicy:
-    """Policy authenticated against an externally provisioned root anchor."""
+    """Policy verified against an externally supplied root anchor.
+
+    This result is an application-level provenance marker, not an unforgeable
+    capability against arbitrary code executing in this Python process.
+    """
     policy: TrustPolicy
     policy_sequence: int
     root_key_id: str
     envelope_sha256: str
     issued_at_utc: datetime
+    not_before_utc: datetime
     expires_at_utc: datetime
 
+    def __init__(self, *args, **kwargs) -> None:
+        raise TypeError(
+            "verified policies are created only by verify_signed_trust_policy"
+        )
+
+
+def _build_verified_trust_policy(
+    *,
+    policy: TrustPolicy,
+    policy_sequence: int,
+    root_key_id: str,
+    envelope_sha256: str,
+    issued_at_utc: datetime,
+    not_before_utc: datetime,
+    expires_at_utc: datetime,
+) -> VerifiedTrustPolicy:
+    """Construct the result only after envelope signature and claims validate."""
+    result = object.__new__(VerifiedTrustPolicy)
+    object.__setattr__(result, "policy", policy)
+    object.__setattr__(result, "policy_sequence", policy_sequence)
+    object.__setattr__(result, "root_key_id", root_key_id)
+    object.__setattr__(result, "envelope_sha256", envelope_sha256)
+    object.__setattr__(result, "issued_at_utc", issued_at_utc)
+    object.__setattr__(result, "not_before_utc", not_before_utc)
+    object.__setattr__(result, "expires_at_utc", expires_at_utc)
+    return result
 
 
 def _validate_json_depth(raw: bytes) -> None:
@@ -247,11 +278,12 @@ def verify_signed_trust_policy(
     except (InvalidSignature, ValueError) as exc:
         raise ValueError("trust-policy root signature verification failed") from exc
 
-    return VerifiedTrustPolicy(
+    return _build_verified_trust_policy(
         policy=TrustPolicy(policy_version=policy_version, issuer_keys=tuple(trusted_keys)),
         policy_sequence=sequence,
         root_key_id=root_key_id,
         envelope_sha256=hashlib.sha256(raw).hexdigest(),
         issued_at_utc=issued,
+        not_before_utc=not_before,
         expires_at_utc=expires,
     )
