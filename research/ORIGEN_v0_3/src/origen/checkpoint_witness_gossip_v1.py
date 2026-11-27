@@ -138,6 +138,7 @@ def inspect_witness_gossip(
     batch_hashes: list[str] = []
     seen_batch_hashes: set[str] = set()
     verified_sequences: set[int] = set()
+    registry_digests_by_sequence: dict[int, str] = {}
     statement_hashes: set[str] = set()
     witness_key_fingerprints: set[str] = set()
 
@@ -204,7 +205,17 @@ def inspect_witness_gossip(
             minimum_new_tree_size=minimum_new_tree_size,
             verification_time=verification_time,
         )
-        verified_sequences.add(verified.registry.registry_sequence)
+        registry_sequence = verified.registry.registry_sequence
+        registry_digest = verified.registry.registry_sha256
+        previous_registry_digest = registry_digests_by_sequence.setdefault(
+            registry_sequence,
+            registry_digest,
+        )
+        if previous_registry_digest != registry_digest:
+            raise ValueError(
+                "witness registry sequence has different signed digest"
+            )
+        verified_sequences.add(registry_sequence)
 
         # The quorum verifier has already strictly parsed and authenticated
         # these exact bytes. Decode only to associate each signed statement
