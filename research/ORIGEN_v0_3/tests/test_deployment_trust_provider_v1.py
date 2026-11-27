@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import json
 import hashlib
+import inspect
 import unittest
 from enum import Enum
 from unittest.mock import patch
@@ -1096,6 +1097,13 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertEqual(self.provider.read_count, 1)
         self.assertEqual(self.provider.commit_count, 1)
+
+
+    def test_public_provider_entrypoint_does_not_accept_caller_provider(self):
+        self.assertNotIn(
+            "provider",
+            inspect.signature(inspect_receipt_with_deployment_trust_provider).parameters,
+        )
 
 
 if __name__ == "__main__":
