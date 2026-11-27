@@ -351,5 +351,32 @@ class WitnessGossipComparisonV1Tests(unittest.TestCase):
         )
 
 
+    def test_same_registry_sequence_with_different_signed_digest_is_rejected(self):
+        registry, registry_bytes, keys = signed_registry_four()
+        statements = signed_statements_four(
+            self.first_pair,
+            registry,
+            registry_bytes,
+            ("witness-3", "witness-4"),
+            keys,
+        )
+        conflicting_registry_batch = make_batch_from_statements(
+            self.first_pair,
+            registry_bytes,
+            statements,
+        )
+
+        self.assertEqual(
+            self.registry["registry_sequence"],
+            registry["registry_sequence"],
+        )
+        self.assertNotEqual(sha(self.registry_bytes), sha(registry_bytes))
+        with self.assertRaisesRegex(
+            ValueError,
+            "same registry sequence has different signed digest",
+        ):
+            inspect((self.first_batch, conflicting_registry_batch))
+
+
 if __name__ == "__main__":
     unittest.main()
