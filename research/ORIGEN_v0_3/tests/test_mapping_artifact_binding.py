@@ -39,7 +39,7 @@ class MappingArtifactByteBindingTests(unittest.TestCase):
     def test_wrong_original_bytes_fail_digest_check(self):
         with self.assertRaisesRegex(ValueError, "SHA-256"):
             verify_mapping_artifact_byte_binding(
-                self.rows, self.claim, b"different bytes"
+                self.rows, self.claim, b"X" * len(self.original)
             )
 
     def test_wrong_claim_type_fails(self):
