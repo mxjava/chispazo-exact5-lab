@@ -2,7 +2,7 @@
 import hashlib
 import unittest
 
-from origen.mapping_artifact_binding import verify_mapping_artifact_byte_binding
+from origen.mapping_artifact_binding import _verify_mapping_claim_byte_binding
 from origen.physical_evidence_manifest_v1 import PhysicalArtifactClaim
 
 
