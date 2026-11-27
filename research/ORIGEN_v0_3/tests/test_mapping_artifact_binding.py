@@ -79,6 +79,32 @@ class MappingArtifactByteBindingTests(unittest.TestCase):
         )
         self.assertEqual(result.status, "MAPPING_ARTIFACT_BYTES_MATCHED_NOT_AUTHENTICATED")
 
+
+    def test_non_string_row_identity_values_are_rejected_before_comparison(self):
+        class HostileValue:
+            def __eq__(self, other):
+                raise AssertionError("caller-controlled equality must not run")
+
+        rows = [dict(row) for row in self.rows]
+        rows[0]["mapping_artifact_ref"] = HostileValue()
+        with self.assertRaisesRegex(ValueError, "reference does not match"):
+            verify_mapping_artifact_byte_binding(rows, self.claim, self.original)
+
+    def test_malformed_manifest_source_object_identifier_fails(self):
+        malformed = PhysicalArtifactClaim(
+            artifact_type="SPHERE-NUMBER-MAPPING-REGISTER",
+            sha256=self.claim.sha256,
+            byte_length=self.claim.byte_length,
+            contest_id="12300",
+            source_id="OFFICIAL-SOURCE",
+            source_object_id=" mapping ref ",
+            media_type="application/pdf",
+        )
+        with self.assertRaisesRegex(ValueError, "manifest claim is malformed"):
+            verify_mapping_artifact_byte_binding(
+                self.rows, malformed, self.original
+            )
+
     def test_incomplete_or_duplicate_rows_fail(self):
         with self.assertRaisesRegex(ValueError, "exactly 28"):
             verify_mapping_artifact_byte_binding(
