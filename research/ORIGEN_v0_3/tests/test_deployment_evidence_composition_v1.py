@@ -18,7 +18,6 @@ from origen.deployment_evidence_composition_v1 import (
     _require_used_policy_keys_cover_time_window,
     inspect_custody_ledger_witness_with_deployment_provider_v1,
     _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider,
-    verify_custody_timestamp_ledger_witness_v1,
 )
 from origen.deployment_trust_provider_v1 import (
     CLASSIC_POLICY_DOMAIN,
@@ -351,29 +350,20 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             result.remaining_blockers,
         )
 
-    def test_full_evidence_timestamps_use_earliest_clock_bound_not_midpoint(self):
+    def test_full_evidence_rejects_accuracy_crossing_earliest_clock_bound(self):
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger, uncertainty_ms=100)
-        observed_verification_times = []
-        original = verify_custody_timestamp_ledger_witness_v1
 
-        def capture_verification_time(*args, **kwargs):
-            observed_verification_times.append(kwargs["verification_time"])
-            return original(*args, **kwargs)
-
-        with patch(
-            "origen.deployment_evidence_composition_v1.verify_custody_timestamp_ledger_witness_v1",
-            side_effect=capture_verification_time,
+        # The synthetic custody TSA token has genTime + accuracy == NOW.
+        # The provider's earliest possible trusted time is NOW - 100 ms,
+        # so the full uncertainty interval is not safely before verification.
+        with self.assertRaisesRegex(
+            ValueError,
+            "accuracy upper bound is after caller-supplied verification time",
         ):
-            result = _inspect(data, ledger, batches, provider)
+            _inspect(data, ledger, batches, provider)
 
-        expected_earliest = NOW - timedelta(milliseconds=100)
-        expected_latest = NOW + timedelta(milliseconds=100)
-        self.assertEqual(observed_verification_times, [expected_earliest])
-        self.assertEqual(result.trusted_time_earliest_utc, expected_earliest)
-        self.assertEqual(result.trusted_time_latest_utc, expected_latest)
-        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
-        self.assertEqual(provider.commit_count, 1)
+        self.assertEqual(provider.commit_count, 0)
 
     def test_provider_cas_rejects_self_consistent_substituted_receipt_bytes(self):
         data, ledger, batches, _ = _build_case()
