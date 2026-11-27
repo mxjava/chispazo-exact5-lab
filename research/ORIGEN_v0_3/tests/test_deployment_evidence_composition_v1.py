@@ -17,11 +17,13 @@ from origen.deployment_evidence_composition_v1 import (
     _require_policy_and_receipt_inside_time_window,
     _require_used_policy_keys_cover_time_window,
     inspect_custody_ledger_witness_with_deployment_provider_v1,
+    _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider,
 )
 from origen.deployment_trust_provider_v1 import (
     CLASSIC_POLICY_DOMAIN,
     DeploymentTrustSnapshot,
     ExternalEvidenceWatermarkV1,
+    TrustProviderUnavailable,
     TrustStateRejected,
     _accepted_external_evidence_watermark_sha256,
 )
@@ -231,7 +233,7 @@ def _inspect(data, ledger, batches, provider, **overrides):
     arguments = _arguments(data, ledger, batches)
     arguments.update(overrides)
     arguments["provider"] = provider
-    return inspect_custody_ledger_witness_with_deployment_provider_v1(**arguments)
+    return _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(**arguments)
 
 
 class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
@@ -893,3 +895,67 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.snapshot.accepted_policy_sequence, accepted_sequence_after_first)
         self.assertEqual(len(provider.consumed_timestamp_nonce_values), 2)
         self.assertEqual(len(provider.consumed_timestamp_nonce_challenge_ids), 1)
+
+
+    def test_public_full_evidence_entrypoint_does_not_accept_caller_provider(self):
+        self.assertNotIn(
+            "provider",
+            inspect.signature(
+                inspect_custody_ledger_witness_with_deployment_provider_v1
+            ).parameters,
+        )
+
+
+    def test_public_full_evidence_facade_fails_closed_without_provider(self):
+        data, ledger, batches, _ = _build_case()
+        with patch(
+            "origen.deployment_trust_provider_bootstrap._load_deployment_trust_provider",
+            return_value=None,
+        ):
+            with self.assertRaisesRegex(
+                TrustProviderUnavailable,
+                "not out-of-band provisioned",
+            ):
+                inspect_custody_ledger_witness_with_deployment_provider_v1(
+                    **_arguments(data, ledger, batches)
+                )
+
+    def test_public_full_evidence_facade_uses_only_deployment_bootstrap(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        with patch(
+            "origen.deployment_trust_provider_bootstrap._load_deployment_trust_provider",
+            return_value=provider,
+        ):
+            result = inspect_custody_ledger_witness_with_deployment_provider_v1(
+                **_arguments(data, ledger, batches)
+            )
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+        self.assertEqual(provider.read_count, 1)
+        self.assertEqual(provider.commit_count, 1)
+
+    def test_public_full_evidence_facade_rejects_caller_provider_keyword(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
+            inspect_custody_ledger_witness_with_deployment_provider_v1(
+                **_arguments(data, ledger, batches),
+                provider=provider,
+            )
+
+
+
+    def test_public_full_evidence_facade_fails_closed_on_bootstrap_store_outage(self):
+        data, ledger, batches, _ = _build_case()
+        with patch(
+            "origen.deployment_trust_provider_bootstrap._load_deployment_trust_provider",
+            side_effect=OSError("synthetic bootstrap store outage"),
+        ):
+            with self.assertRaisesRegex(
+                TrustProviderUnavailable,
+                "bootstrap could not be loaded",
+            ):
+                inspect_custody_ledger_witness_with_deployment_provider_v1(
+                    **_arguments(data, ledger, batches)
+                )
+

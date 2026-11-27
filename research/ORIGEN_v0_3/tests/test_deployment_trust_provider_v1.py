@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import json
 import hashlib
+import inspect
 import unittest
 from enum import Enum
 from unittest.mock import patch
@@ -28,6 +29,7 @@ from origen.deployment_trust_provider_v1 import (
     _validated_external_evidence_watermark,
     _verify_clock_sample_attestation,
     inspect_receipt_with_deployment_trust_provider,
+    _inspect_receipt_with_deployment_trust_provider_using_provider,
 )
 from origen.independent_trust_adapter import ProvenanceStatus, _verify_independent_provenance_with_explicit_context
 from origen.timestamp_nonce_challenge_v1 import timestamp_nonce_challenge_sha256 as compute_timestamp_nonce_challenge_sha256
@@ -416,7 +418,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             "provider": self.provider,
         }
         args.update(overrides)
-        return inspect_receipt_with_deployment_trust_provider(**args)
+        return _inspect_receipt_with_deployment_trust_provider_using_provider(**args)
 
     def test_persisted_watermark_backend_mismatch_is_rejected_by_watermark_validator(self):
         watermark = ExternalEvidenceWatermarkV1(
@@ -1096,6 +1098,64 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
         self.assertEqual(self.provider.read_count, 1)
         self.assertEqual(self.provider.commit_count, 1)
+
+
+    def test_public_provider_entrypoint_does_not_accept_caller_provider(self):
+        self.assertNotIn(
+            "provider",
+            inspect.signature(inspect_receipt_with_deployment_trust_provider).parameters,
+        )
+
+
+    def test_public_provider_facade_fails_closed_without_out_of_band_provider(self):
+        with patch(
+            "origen.deployment_trust_provider_bootstrap._load_deployment_trust_provider",
+            return_value=None,
+        ):
+            with self.assertRaisesRegex(
+                TrustProviderUnavailable,
+                "not out-of-band provisioned",
+            ):
+                inspect_receipt_with_deployment_trust_provider(
+                    self.receipt_bytes,
+                    self.policy_bytes,
+                )
+
+    def test_public_provider_facade_uses_only_deployment_bootstrap(self):
+        with patch(
+            "origen.deployment_trust_provider_bootstrap._load_deployment_trust_provider",
+            return_value=self.provider,
+        ):
+            result = inspect_receipt_with_deployment_trust_provider(
+                self.receipt_bytes,
+                self.policy_bytes,
+            )
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+        self.assertEqual(self.provider.read_count, 1)
+        self.assertEqual(self.provider.commit_count, 1)
+
+    def test_public_provider_facade_rejects_caller_provider_keyword(self):
+        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
+            inspect_receipt_with_deployment_trust_provider(
+                self.receipt_bytes,
+                self.policy_bytes,
+                provider=self.provider,
+            )
+
+
+    def test_public_provider_facade_fails_closed_on_bootstrap_store_outage(self):
+        with patch(
+            "origen.deployment_trust_provider_bootstrap._load_deployment_trust_provider",
+            side_effect=OSError("synthetic bootstrap store outage"),
+        ):
+            with self.assertRaisesRegex(
+                TrustProviderUnavailable,
+                "bootstrap could not be loaded",
+            ):
+                inspect_receipt_with_deployment_trust_provider(
+                    self.receipt_bytes,
+                    self.policy_bytes,
+                )
 
 
 if __name__ == "__main__":
