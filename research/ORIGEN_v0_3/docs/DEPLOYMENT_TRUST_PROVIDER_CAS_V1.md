@@ -549,6 +549,16 @@ inspection function. The advance binds SHA-256 fingerprints of the log
 verification key and witness-registry root key; reusing a key ID with different
 key bytes is not an ordinary state advance.
 
+The application boundary snapshots both caller-owned artifact and signature
+dictionaries into private exact-byte maps before reading provider state or
+invoking any verifier. The same private snapshots are passed to the physical
+evidence verifier and later serialized into the CAS envelope. It must never
+re-read the caller's mutable dictionaries after verification. A deterministic
+adversarial regression mutates both original dictionaries immediately after
+the real verifier returns and asserts that the CAS envelope still carries the
+original verified mappings. A mutation during snapshot construction fails
+closed; the verifier and CAS must not observe different map contents.
+
 A production CAS must independently re-verify every nested signature,
 custody binding, both RFC 3161 tokens, artifact digest, manifest commitment,
 ledger inclusion/consistency proof, registry signature and witness statement
