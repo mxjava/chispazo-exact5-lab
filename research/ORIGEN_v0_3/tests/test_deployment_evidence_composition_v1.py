@@ -352,15 +352,15 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
     def test_full_evidence_rejects_accuracy_crossing_earliest_clock_bound(self):
         trusted_time = datetime(
-            2026, 11, 23, 3, 5, 59, 550000, tzinfo=timezone.utc
+            2026, 11, 23, 2, 59, 59, 550000, tzinfo=timezone.utc
         )
         timestamp_gen_time = datetime(
-            2026, 11, 23, 3, 5, 58, 600000, tzinfo=timezone.utc
+            2026, 11, 23, 2, 59, 58, 600000, tzinfo=timezone.utc
         )
         data, ledger, batches, _ = _build_case(
             custody_timestamp_gen_time=timestamp_gen_time,
             custody_timestamp_accuracy={"millis": 900},
-            official_draw_close_at_utc="2026-11-23T03:10:00Z",
+            official_draw_close_at_utc="2026-11-23T03:00:00Z",
         )
         provider = _provider_for(
             data,
@@ -370,7 +370,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         )
 
         # genTime + 900 ms accuracy = 02:59:59.500Z. This is before the
-        # synthetic Classic close at 03:10Z and before the provider midpoint
+        # synthetic Classic close at 03:00Z and before the provider midpoint
         # at 02:59:59.550Z, but 50 ms after the earliest possible provider
         # time (02:59:59.450Z).
         with self.assertRaisesRegex(
