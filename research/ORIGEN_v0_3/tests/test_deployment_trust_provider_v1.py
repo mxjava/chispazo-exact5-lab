@@ -501,7 +501,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
 
         with self.assertRaisesRegex(
             TrustStateRejected,
-            "same-size ledger checkpoint advance does not bind the exact persisted old checkpoint",
+            "new ledger checkpoint does not extend the exact persisted checkpoint",
         ):
             _validated_external_evidence_watermark(
                 snapshot,
