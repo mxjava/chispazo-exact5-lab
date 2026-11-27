@@ -52,7 +52,11 @@ not authenticate the object, recompute its digest, establish institutional
 authority, or prove the source object is the official mapping register.
 Those checks remain the responsibility of the independently provisioned
 verifier. A generic weighing/source-document reference cannot substitute for
-the mapping-register artifact.
+the mapping-register artifact. The independent verifier must retrieve and hash
+the original mapping-register bytes, parse the authoritative 28 sphere-ID to
+printed-number assignments, and compare every V2 row pair against that
+authenticated mapping. The structural parser does not inspect the mapping
+artifact's contents and cannot detect a bijective reassignment by itself.
 
 The V2 gate fails closed when the mapping reference/digest is absent,
 malformed, inconsistent across sphere rows, or not present in the declared
