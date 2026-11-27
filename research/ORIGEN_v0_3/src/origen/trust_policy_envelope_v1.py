@@ -19,7 +19,12 @@ from datetime import datetime, timezone
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from origen.trust_verifier_v1 import TrustPolicy, TrustedIssuerKey
+from origen.trust_verifier_v1 import (
+    CryptographicallyVerifiedReceipt,
+    TrustPolicy,
+    TrustedIssuerKey,
+    verify_receipt_attestation,
+)
 
 SCHEMA_VERSION = "origen.trust-policy-envelope.v1"
 MAX_POLICY_BYTES = 131_072
@@ -33,15 +38,43 @@ _UTC = re.compile(
 )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class VerifiedTrustPolicy:
-    """Policy authenticated against an externally provisioned root anchor."""
+    """Policy produced only after signed-envelope verification.
+
+    This result is an in-process value, not an unforgeable capability: code with
+    arbitrary execution in this interpreter can still bypass Python constructors.
+    Security decisions must remain inside the verification control flow.
+    """
     policy: TrustPolicy
     policy_sequence: int
     root_key_id: str
     envelope_sha256: str
     issued_at_utc: datetime
     expires_at_utc: datetime
+
+    def __init__(self, *args, **kwargs) -> None:
+        raise TypeError(
+            "verified policies are created only by verify_signed_trust_policy"
+        )
+
+
+def _build_verified_trust_policy(
+    policy: TrustPolicy,
+    policy_sequence: int,
+    root_key_id: str,
+    envelope_sha256: str,
+    issued_at_utc: datetime,
+    expires_at_utc: datetime,
+) -> VerifiedTrustPolicy:
+    result = object.__new__(VerifiedTrustPolicy)
+    object.__setattr__(result, "policy", policy)
+    object.__setattr__(result, "policy_sequence", policy_sequence)
+    object.__setattr__(result, "root_key_id", root_key_id)
+    object.__setattr__(result, "envelope_sha256", envelope_sha256)
+    object.__setattr__(result, "issued_at_utc", issued_at_utc)
+    object.__setattr__(result, "expires_at_utc", expires_at_utc)
+    return result
 
 
 
@@ -247,11 +280,46 @@ def verify_signed_trust_policy(
     except (InvalidSignature, ValueError) as exc:
         raise ValueError("trust-policy root signature verification failed") from exc
 
-    return VerifiedTrustPolicy(
+    return _build_verified_trust_policy(
         policy=TrustPolicy(policy_version=policy_version, issuer_keys=tuple(trusted_keys)),
         policy_sequence=sequence,
         root_key_id=root_key_id,
         envelope_sha256=hashlib.sha256(raw).hexdigest(),
         issued_at_utc=issued,
         expires_at_utc=expires,
+    )
+
+
+
+def verify_receipt_attestation_with_signed_policy(
+    raw_receipt_bytes: bytes,
+    raw_policy_envelope_bytes: bytes,
+    *,
+    pinned_root_public_key_bytes: bytes,
+    expected_root_key_id: str,
+    minimum_policy_sequence: int,
+    verification_time: datetime,
+) -> CryptographicallyVerifiedReceipt:
+    """Verify a receipt root attestation using one signed policy envelope.
+
+    The envelope is first authenticated against the supplied root pin and
+    sequence floor; its verified issuer policy is then passed directly to the
+    existing receipt-attestation verifier. The root pin, key ID, sequence floor
+    and clock remain caller-supplied inputs, not independently provisioned
+    trust. This composition therefore verifies two signature layers only; it
+    does not authenticate physical evidence or make provenance eligible.
+    """
+    verified_policy = verify_signed_trust_policy(
+        raw_policy_envelope_bytes,
+        pinned_root_public_key_bytes=pinned_root_public_key_bytes,
+        expected_root_key_id=expected_root_key_id,
+        minimum_policy_sequence=minimum_policy_sequence,
+        verification_time=verification_time,
+    )
+    if type(verified_policy) is not VerifiedTrustPolicy:
+        raise TypeError("signed policy verifier returned an unexpected result type")
+    return verify_receipt_attestation(
+        raw_receipt_bytes,
+        verified_policy.policy,
+        verification_time=verification_time,
     )
