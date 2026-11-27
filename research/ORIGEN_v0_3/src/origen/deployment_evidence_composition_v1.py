@@ -233,6 +233,36 @@ def _read_physical_trust_context(
     return context, context_digest
 
 
+def _snapshot_exact_digest_bytes_mapping(value: object, field: str) -> dict[str, bytes]:
+    """Take one exact immutable snapshot of a caller-owned digest/bytes map.
+
+    The same returned mapping must be used for verification and provider CAS
+    serialization. Re-reading the caller's dictionary after verification would
+    permit a concurrent mutation to substitute a different, self-consistent
+    byte map at the external provider boundary.
+    """
+    if type(value) is not dict:
+        raise TypeError(f"{field} must be an exact dict")
+    try:
+        items = tuple(value.items())
+    except RuntimeError as exc:
+        raise ValueError(f"{field} changed while being snapshotted") from exc
+    if len(items) != len(value):
+        raise ValueError(f"{field} changed while being snapshotted")
+
+    snapshot: dict[str, bytes] = {}
+    for digest, raw in items:
+        if type(digest) is not str:
+            raise TypeError(f"{field} keys must be exact built-in strings")
+        if type(raw) is not bytes:
+            raise TypeError(f"{field} values must be exact immutable bytes")
+        if hashlib.sha256(raw).hexdigest() != digest:
+            kind = "artifact" if field == "artifact_bytes_by_sha256" else "signature"
+            raise ValueError(f"{kind} SHA-256 digest does not bind its exact bytes")
+        snapshot[digest] = raw
+    return snapshot
+
+
 def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
     original_receipt_bytes: bytes,
     signed_policy_envelope_bytes: bytes,
@@ -300,6 +330,18 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
         raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
 
     snapshot = _snapshot_copy(supplied_snapshot)
+
+    # Snapshot caller-owned maps once after the provider snapshot and before
+    # evidence verification. The exact same immutable byte values flow through
+    # verification and CAS serialization; later caller mutations cannot split
+    # the two views of the evidence.
+    artifact_bytes_snapshot = _snapshot_exact_digest_bytes_mapping(
+        artifact_bytes_by_sha256, "artifact_bytes_by_sha256"
+    )
+    signature_bytes_snapshot = _snapshot_exact_digest_bytes_mapping(
+        signature_bytes_by_sha256, "signature_bytes_by_sha256"
+    )
+
     physical_context, physical_context_digest = _read_physical_trust_context(
         provider,
         snapshot,
@@ -438,8 +480,8 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
         physical_context.custody_tsa_root_sha256,
         nonce_challenge.custody_timestamp_nonce,
         raw_manifest_bytes,
-        artifact_bytes_by_sha256,
-        signature_bytes_by_sha256,
+        artifact_bytes_snapshot,
+        signature_bytes_snapshot,
         raw_ledger_entry_bytes,
         raw_inclusion_proof_bytes,
         raw_old_checkpoint_bytes,
@@ -522,8 +564,8 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
         custodian_key_id=custodian_key_id,
         raw_timestamp_token_der=timestamp_token_der,
         raw_policy_timestamp_token_der=policy_timestamp_token_der,
-        raw_artifact_bytes_by_sha256=tuple(sorted(artifact_bytes_by_sha256.items())),
-        raw_signature_bytes_by_sha256=tuple(sorted(signature_bytes_by_sha256.items())),
+        raw_artifact_bytes_by_sha256=tuple(sorted(artifact_bytes_snapshot.items())),
+        raw_signature_bytes_by_sha256=tuple(sorted(signature_bytes_snapshot.items())),
     )
     _validated_external_evidence_watermark(
         snapshot,
