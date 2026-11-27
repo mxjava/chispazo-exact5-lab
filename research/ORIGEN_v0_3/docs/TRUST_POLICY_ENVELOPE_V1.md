@@ -69,3 +69,21 @@ wired into `verify_independent_provenance`; that path must remain fail-closed
 until a real independently provisioned root, anti-rollback state, trusted time,
 and authentic external evidence services are operationally supplied and
 audited. Synthetic keys in tests are never production trust anchors.
+
+
+## Research-only composition with receipt root attestation
+
+`verify_receipt_attestation_with_signed_policy` composes the two cryptographic
+layers: it verifies the signed policy envelope against the supplied root pin,
+then passes the policy produced by that verification directly to
+`verify_receipt_attestation`. The `VerifiedTrustPolicy` result cannot be
+created through its public constructor; this is an accidental-misuse guard, not
+an unforgeable capability against arbitrary Python code in the process.
+
+`verify_independent_provenance_with_signed_policy` exercises that composition
+but always returns `BLOCKED_PROVENANCE`. It does not change the existing
+one-argument `verify_independent_provenance` boundary and does not create an
+authenticated status. The root key, key ID, sequence floor and verification
+clock supplied to this research helper are still caller inputs. No production
+trust provisioning, durable anti-rollback state, trusted clock, nested evidence
+verification, external ledger, or independent custody is installed.
