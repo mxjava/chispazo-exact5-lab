@@ -25,6 +25,7 @@ from origen.deployment_trust_provider_v1 import (
     TrustStateRejected,
     _accepted_external_evidence_watermark_sha256,
     _external_evidence_advance_copy,
+    inspect_receipt_with_deployment_trust_provider,
 )
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.physical_evidence_manifest_v1 import parse_unverified_physical_manifest
@@ -346,6 +347,34 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             "RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED",
             result.remaining_blockers,
         )
+
+    def test_cas_rejects_full_evidence_receipt_bytes_different_from_verifier_input(self):
+        data, ledger, batches, _ = _build_case()
+        source_provider = _provider_for(data, ledger)
+        _inspect(data, ledger, batches, source_provider)
+        valid_advance = source_provider.last_commit_arguments["external_evidence_advance"]
+
+        fresh_provider = _provider_for(data, ledger)
+        substituted_receipt = b"substituted-but-self-consistent-receipt-bytes"
+        mismatched_advance = replace(
+            valid_advance,
+            raw_receipt_bytes=substituted_receipt,
+            receipt_sha256=hashlib.sha256(substituted_receipt).hexdigest(),
+        )
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "external evidence advance does not carry the exact receipt and policy bytes supplied to the verifier",
+        ):
+            inspect_receipt_with_deployment_trust_provider(
+                data["original_receipt_bytes"],
+                data["signed_policy_envelope_bytes"],
+                provider=fresh_provider,
+                provider_snapshot=fresh_provider.snapshot,
+                external_evidence_advance=mismatched_advance,
+            )
+
+        self.assertEqual(fresh_provider.commit_count, 0)
 
     def test_missing_external_evidence_genesis_is_rejected_before_evidence(self):
         data, ledger, batches, _ = _build_case()
