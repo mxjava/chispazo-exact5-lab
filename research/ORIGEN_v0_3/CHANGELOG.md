@@ -242,3 +242,17 @@
 - Home index shows a 23-Nov 15:00 card numbered 12391, but the rendered card does not explicitly name the product; it is not bound to the Chispazo target register. No 23-Nov 21:00 Classic contest ID or result was visible.
 - No new draw-specific primary physical evidence was obtained. The official 22-Nov PDF could be browser-rendered but not downloaded as original bytes; SHA-256 remains NOT_CAPTURED. SGVO-PRO-05 revision 39 remains procedural reference only.
 - No canonical append, V294 change, main write, merge, promotion, prospective score, or eligibility change.
+
+
+## Trust-receipt artifact digest length consistency (2026-11-24)
+- Added an adversarial regression: the same SHA-256 digest was catalogued under two artifact types with conflicting declared byte lengths. The parser accepted the contradictory metadata before the fix.
+- Reproduction commit: 919e16d9fc9b94257340ca27270d457d33505cc9; isolated ORIGEN run 45475816199 failed exactly as expected: 427 tests, 1 failure, with AssertionError: ValueError not raised in test_same_artifact_digest_cannot_declare_conflicting_byte_lengths.
+- Implementation commit: 0200b8510a488cfc63206e23f80a49f0f2599ad7. The parser now requires one byte length per SHA-256 across artifact types. Same digest/same length under multiple types remains accepted.
+- This is structural metadata consistency only. It does not authenticate original bytes, signatures, identities, trusted time, ledger inclusion, or physical custody.
+
+## Official provenance refresh — 2026-11-24 13:55 America/Mexico_City
+- Added status-only overlay and source review for the official 23-Nov mask and current Normateca SGVO-PRO-05 revision 39.
+- The 23-Nov one-page mask explicitly labels 12391 De las Tres (03 07 19 20 24) and 12392 Clásico (06 11 16 23 28). The official 24-Nov home card shows 12393 at 15:00, therefore schedule-inferred De las Tres; no 21:00 contest ID or outcome was inferred.
+- Normateca lists SGVO-PRO-05 last updated 20-Mar-2026; its rev.39 PDF requires per-draw weighing, the pre-draw participation-file signature deposited by SEGOB in OIC safe custody, CS-11, Sumario de Sorteo, and a weighing strip signed by four roles. These are required records, not evidence that contest-specific originals were obtained.
+- The official mask PDF was visually inspected, but original PDF bytes and SHA-256 were not captured. No Acta, participation file, CS-11, weighing strip, measurements, calibration certificate, independent custody receipt, trusted timestamp or pre-close seals were obtained.
+- No canonical append, V294 change, main write, merge, promotion, or eligibility change.
