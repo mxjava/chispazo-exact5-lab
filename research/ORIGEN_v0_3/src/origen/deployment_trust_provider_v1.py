@@ -1195,7 +1195,13 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         raise
     except Exception as exc:
         raise TrustProviderUnavailable("deployment trust sequence transaction failed") from exc
-    commit = _commit_copy(supplied_commit)
+    try:
+        commit = _commit_copy(supplied_commit)
+    except (TypeError, ValueError) as exc:
+        raise TrustProviderUnavailable(
+            "provider commit acknowledgement is malformed; transaction outcome is unknown; "
+            "reconcile durable provider state before retrying"
+        ) from exc
 
     if commit.outcome in {
         TrustStateOutcome.CONFLICT,
@@ -1210,12 +1216,21 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         commit.policy_sequence != verified_policy.policy_sequence
         or commit.policy_envelope_sha256 != policy_digest
     ):
-        raise TrustStateRejected("provider commit does not bind the exact verified policy")
+        raise TrustProviderUnavailable(
+            "provider commit acknowledgement does not bind the exact verified policy; "
+            "transaction outcome is unknown; reconcile durable provider state before retrying"
+        )
     receipt_digest = hashlib.sha256(original_receipt_bytes).hexdigest()
     if commit.receipt_sha256 != receipt_digest:
-        raise TrustStateRejected("provider commit does not bind the exact verified receipt")
+        raise TrustProviderUnavailable(
+            "provider commit acknowledgement does not bind the exact verified receipt; "
+            "transaction outcome is unknown; reconcile durable provider state before retrying"
+        )
     if commit.accepted_external_evidence_watermark_sha256 != next_external_evidence_watermark_sha256:
-        raise TrustStateRejected("provider commit does not bind the resulting external ledger/witness watermark")
+        raise TrustProviderUnavailable(
+            "provider commit acknowledgement does not bind the resulting external ledger/witness watermark; "
+            "transaction outcome is unknown; reconcile durable provider state before retrying"
+        )
 
     policy_advanced = snapshot.accepted_policy_sequence < verified_policy.policy_sequence
     time_advanced = (
@@ -1244,8 +1259,9 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         or commit.state_generation != expected_generation
         or commit.trusted_time_latest_utc != expected_latest
     ):
-        raise TrustStateRejected(
-            "provider CAS did not atomically commit the exact policy/time/evidence state transition"
+        raise TrustProviderUnavailable(
+            "provider commit acknowledgement does not match the expected policy/time/evidence transition; "
+            "transaction outcome is unknown; reconcile durable provider state before retrying"
         )
 
     return DeploymentTrustInspection(
