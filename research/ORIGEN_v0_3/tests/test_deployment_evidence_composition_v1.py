@@ -26,6 +26,8 @@ from origen.deployment_trust_provider_v1 import (
     TrustProviderUnavailable,
     TrustStateRejected,
     _accepted_external_evidence_watermark_sha256,
+    _external_evidence_advance_copy,
+    _inspect_receipt_with_deployment_trust_provider_snapshot,
 )
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.physical_evidence_manifest_v1 import parse_unverified_physical_manifest
@@ -270,6 +272,28 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             result.timestamp_nonce_challenge_sha256,
         )
         self.assertEqual(provider.commit_count, 1)
+        advance = provider.last_commit_arguments["external_evidence_advance"]
+        self.assertEqual(advance.raw_receipt_bytes, data["original_receipt_bytes"])
+        self.assertEqual(advance.raw_policy_envelope_bytes, data["signed_policy_envelope_bytes"])
+        self.assertEqual(advance.raw_custody_record_bytes, data["custody_record_bytes"])
+        self.assertEqual(advance.raw_portfolio_bytes, data["portfolio_bytes"])
+        self.assertEqual(advance.raw_custody_signature_bytes, data["custody_signature_bytes"])
+        self.assertEqual(advance.custodian_key_id, data["custodian_key_id"])
+        self.assertEqual(advance.raw_timestamp_token_der, data["timestamp_token_der"])
+        self.assertEqual(advance.raw_policy_timestamp_token_der, data["policy_timestamp_token_der"])
+        self.assertEqual(advance.raw_manifest_bytes, ledger["manifest_bytes"])
+        self.assertEqual(dict(advance.raw_artifact_bytes_by_sha256), data["artifact_bytes_by_sha256"])
+        self.assertEqual(dict(advance.raw_signature_bytes_by_sha256), data["signature_bytes_by_sha256"])
+        with self.assertRaisesRegex(ValueError, "receipt_sha256 does not bind the exact external evidence bytes"):
+            _external_evidence_advance_copy(replace(advance, raw_receipt_bytes=b"tampered-receipt"))
+        tampered_artifacts = tuple(
+            (digest, b"tampered-artifact" if index == 0 else raw)
+            for index, (digest, raw) in enumerate(advance.raw_artifact_bytes_by_sha256)
+        )
+        with self.assertRaisesRegex(ValueError, "raw_artifact_bytes_by_sha256 digest does not bind the exact bytes"):
+            _external_evidence_advance_copy(
+                replace(advance, raw_artifact_bytes_by_sha256=tampered_artifacts)
+            )
         self.assertEqual(provider.snapshot.accepted_policy_sequence, data["minimum_policy_sequence"])
         self.assertEqual(provider.snapshot.trusted_time_latest_utc, NOW)
         accepted_watermark = provider.snapshot.accepted_external_evidence_watermark
@@ -325,6 +349,34 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             "RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED",
             result.remaining_blockers,
         )
+
+    def test_provider_cas_rejects_self_consistent_substituted_receipt_bytes(self):
+        data, ledger, batches, _ = _build_case()
+        source_provider = _provider_for(data, ledger)
+        _inspect(data, ledger, batches, source_provider)
+        valid_advance = source_provider.last_commit_arguments["external_evidence_advance"]
+
+        fresh_provider = _provider_for(data, ledger)
+        substituted_receipt = b"substituted-but-self-consistent-receipt-bytes"
+        mismatched_advance = replace(
+            valid_advance,
+            raw_receipt_bytes=substituted_receipt,
+            receipt_sha256=hashlib.sha256(substituted_receipt).hexdigest(),
+        )
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "external evidence advance does not carry the exact receipt and policy bytes supplied to the verifier",
+        ):
+            _inspect_receipt_with_deployment_trust_provider_snapshot(
+                data["original_receipt_bytes"],
+                data["signed_policy_envelope_bytes"],
+                provider=fresh_provider,
+                provider_snapshot=fresh_provider.snapshot,
+                external_evidence_advance=mismatched_advance,
+            )
+
+        self.assertEqual(fresh_provider.commit_count, 0)
 
     def test_missing_external_evidence_genesis_is_rejected_before_evidence(self):
         data, ledger, batches, _ = _build_case()
