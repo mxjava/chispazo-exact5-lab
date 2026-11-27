@@ -79,12 +79,12 @@ def make_bound_case():
     receipt_bytes = signed_receipt(receipt_document, issuer)
     required = tuple(sorted(set(REQUIRED_ARTIFACT_TYPES) | {MANIFEST_TYPE}))
     policy = verified_policy(raw_public_key(issuer), required_artifact_types=required)
-    return receipt_bytes, manifest_bytes, policy, payloads, contest_id
+    return receipt_bytes, manifest_bytes, policy, payloads, contest_id, issuer
 
 
 class ReceiptPhysicalManifestBindingTests(unittest.TestCase):
     def verify(self, case):
-        receipt, manifest, policy, payloads, _ = case
+        receipt, manifest, policy, payloads, _, _issuer = case
         return verify_independent_provenance_with_physical_manifest(
             receipt,
             original_manifest_bytes=manifest,
@@ -106,7 +106,7 @@ class ReceiptPhysicalManifestBindingTests(unittest.TestCase):
         )
 
     def test_manifest_byte_tampering_breaks_receipt_manifest_binding(self):
-        receipt, manifest, policy, payloads, _ = make_bound_case()
+        receipt, manifest, policy, payloads, _, _issuer = make_bound_case()
         document = json.loads(manifest)
         document["artifacts"][0]["source_object_id"] += "-ALTERED"
         altered_manifest = encode_manifest(document)
@@ -123,15 +123,22 @@ class ReceiptPhysicalManifestBindingTests(unittest.TestCase):
             )
 
     def test_receipt_artifact_claim_must_match_manifest_artifact_claim(self):
-        receipt, manifest, policy, payloads, _ = make_bound_case()
+        receipt, manifest, policy, payloads, _, issuer = make_bound_case()
         document = json.loads(receipt)
-        document["artifacts"][0]["byte_length"] += 1
-        issuer = Ed25519PrivateKey.generate()
-        # A newly signed receipt with the same trusted policy key is intentionally
-        # not possible; the original policy's issuer key remains the only accepted key.
-        with self.assertRaises(ValueError):
+        changed_contest = "12391"
+        document["target"]["contest_id"] = changed_contest
+        target_list = json.dumps(
+            [changed_contest], separators=(",", ":"), ensure_ascii=True
+        ).encode("ascii")
+        document["target"]["target_list_sha256"] = hashlib.sha256(target_list).hexdigest()
+        for claim in document["artifacts"]:
+            claim["contest_id"] = changed_contest
+        for seal in document["output_seals"]:
+            seal["target_contest_id"] = changed_contest
+        changed_receipt = signed_receipt(document, issuer)
+        with self.assertRaisesRegex(ValueError, "contest IDs do not match"):
             verify_independent_provenance_with_physical_manifest(
-                encode_receipt(document),
+                changed_receipt,
                 original_manifest_bytes=manifest,
                 verified_trust_policy=policy,
                 verification_time=NOW,
