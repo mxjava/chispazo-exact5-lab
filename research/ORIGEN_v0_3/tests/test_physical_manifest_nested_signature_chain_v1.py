@@ -5,7 +5,7 @@ import copy
 import hashlib
 import json
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone, tzinfo
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -17,6 +17,7 @@ from origen.physical_manifest_nested_signature_chain_v1 import (
     SIGNATURE_CHAIN_STATUS,
     canonical_physical_manifest_signature_payload,
     verify_independent_provenance_with_nested_signatures,
+    verify_independent_provenance_with_signed_policy_and_nested_signatures,
 )
 from origen.trust_policy_envelope_v1 import (
     SCHEMA_VERSION,
@@ -109,14 +110,15 @@ def _make_signed_policy(
         root_private.sign(_canonical_json(unsigned))
     ).decode("ascii")
     raw = _canonical_json(document)
+    root_public_key_bytes = _raw_public_key(root_private)
     policy = verify_signed_trust_policy(
         raw,
-        pinned_root_public_key_bytes=_raw_public_key(root_private),
+        pinned_root_public_key_bytes=root_public_key_bytes,
         expected_root_key_id=ROOT_KEY_ID,
         minimum_policy_sequence=POLICY_SEQUENCE,
         verification_time=NOW,
     )
-    return policy
+    return policy, raw, root_public_key_bytes
 
 
 def make_case(
@@ -205,7 +207,7 @@ def make_case(
     receipt_bytes = _signed_receipt(receipt_document, receipt_issuer)
 
     required_types = tuple(sorted(set(REQUIRED_ARTIFACT_TYPES) | {MANIFEST_TYPE}))
-    policy = _make_signed_policy(
+    policy, policy_envelope_bytes, policy_root_public_key_bytes = _make_signed_policy(
         private_by_identity,
         policy_version=receipt_document["policy_version"],
         required_artifact_types=required_types,
@@ -220,6 +222,10 @@ def make_case(
         "receipt_bytes": receipt_bytes,
         "receipt_issuer": receipt_issuer,
         "policy": policy,
+        "policy_envelope_bytes": policy_envelope_bytes,
+        "policy_root_public_key_bytes": policy_root_public_key_bytes,
+        "policy_root_key_id": ROOT_KEY_ID,
+        "minimum_policy_sequence": POLICY_SEQUENCE,
         "artifact_bytes_by_sha256": artifact_bytes_by_sha256,
         "signature_bytes_by_sha256": signature_bytes_by_sha256,
         "private_by_identity": private_by_identity,
@@ -266,6 +272,38 @@ def _rebind_manifest(data, manifest_document, signature_bytes_by_sha256):
         "artifact_bytes_by_sha256": artifact_bytes,
         "signature_bytes_by_sha256": signature_bytes_by_sha256,
     }
+
+
+def inspect_signed_policy(data, **overrides):
+    values = {
+        "original_manifest_bytes": data["manifest_bytes"],
+        "signed_policy_envelope_bytes": data["policy_envelope_bytes"],
+        "pinned_root_public_key_bytes": data["policy_root_public_key_bytes"],
+        "expected_root_key_id": data["policy_root_key_id"],
+        "minimum_policy_sequence": data["minimum_policy_sequence"],
+        "verification_time": NOW,
+        "artifact_bytes_by_sha256": data["artifact_bytes_by_sha256"],
+        "signature_bytes_by_sha256": data["signature_bytes_by_sha256"],
+    }
+    values.update(overrides)
+    return verify_independent_provenance_with_signed_policy_and_nested_signatures(
+        data["receipt_bytes"], **values
+    )
+
+
+class StatefulOffsetTimezone(tzinfo):
+    def __init__(self):
+        self.calls = 0
+
+    def utcoffset(self, dt):
+        self.calls += 1
+        return timedelta(hours=-2 if self.calls == 1 else 2)
+
+    def dst(self, dt):
+        return timedelta(0)
+
+    def tzname(self, dt):
+        return "stateful-signed-policy-test"
 
 
 class PhysicalManifestNestedSignatureChainTests(unittest.TestCase):
@@ -465,6 +503,55 @@ class PhysicalManifestNestedSignatureChainTests(unittest.TestCase):
             "SIGNER_ROLE_AUTHORIZATION_NOT_BOUND_TO_POLICY_V1",
             result.remaining_blockers,
         )
+
+
+    def test_raw_signed_policy_is_verified_inside_nested_signature_chain(self):
+        data = make_case()
+        result = inspect_signed_policy(data)
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+        self.assertEqual(result.policy_envelope_sha256, _sha(data["policy_envelope_bytes"]))
+        self.assertEqual(result.policy_sequence, POLICY_SEQUENCE)
+        self.assertEqual(result.signatures_verified, len(data["manifest_document"]["signatures"]))
+        self.assertEqual(result.status, SIGNATURE_CHAIN_STATUS)
+
+    def test_tampered_raw_policy_envelope_is_rejected_before_nested_verification(self):
+        data = make_case()
+        tampered = data["policy_envelope_bytes"].replace(
+            b'"policy_sequence":7', b'"policy_sequence":8', 1
+        )
+        self.assertNotEqual(tampered, data["policy_envelope_bytes"])
+        with self.assertRaisesRegex(ValueError, "signature verification failed"):
+            inspect_signed_policy(data, signed_policy_envelope_bytes=tampered)
+
+    def test_wrong_root_pin_is_rejected(self):
+        data = make_case()
+        wrong_root = bytes([data["policy_root_public_key_bytes"][0] ^ 1]) + data["policy_root_public_key_bytes"][1:]
+        with self.assertRaisesRegex(ValueError, "signature verification failed"):
+            inspect_signed_policy(data, pinned_root_public_key_bytes=wrong_root)
+
+    def test_wrong_root_key_id_is_rejected(self):
+        data = make_case()
+        with self.assertRaisesRegex(ValueError, "root_key_id does not match"):
+            inspect_signed_policy(data, expected_root_key_id="untrusted-root-id")
+
+    def test_policy_rollback_floor_is_enforced_inside_composition(self):
+        data = make_case()
+        with self.assertRaisesRegex(ValueError, "below the externally pinned minimum"):
+            inspect_signed_policy(data, minimum_policy_sequence=POLICY_SEQUENCE + 1)
+
+    def test_caller_cannot_substitute_a_preverified_policy_object(self):
+        data = make_case()
+        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
+            inspect_signed_policy(data, verified_trust_policy=data["policy"])
+
+    def test_stateful_verification_clock_is_sampled_once_for_entire_chain(self):
+        data = make_case()
+        tz = StatefulOffsetTimezone()
+        caller_time = datetime(2026, 11, 23, 2, 0, tzinfo=tz)
+        result = inspect_signed_policy(data, verification_time=caller_time)
+        self.assertEqual(tz.calls, 1)
+        self.assertEqual(result.verification_time_utc, NOW)
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
 
 
 if __name__ == "__main__":
