@@ -584,6 +584,15 @@ def _require_policy_and_receipt_inside_time_window(
         ).astimezone(timezone.utc)
     except (AttributeError, ValueError) as exc:
         raise ValueError("receipt attestation signing time is not parseable") from exc
+    # A policy that becomes effective after the receipt was signed must not
+    # retroactively authorize that earlier attestation. The independent
+    # provenance boundary repeats this check later, but reject here before the
+    # expensive physical-signature / RFC 3161 / ledger / witness composition.
+    if not (
+        verified_policy.not_before_utc <= signed_at
+        < verified_policy.expires_at_utc
+    ):
+        raise ValueError("receipt signing time is outside the signed policy effective interval")
     if signed_at > earliest:
         raise ValueError("receipt signing time is not provably before the earliest trusted verification time")
 
