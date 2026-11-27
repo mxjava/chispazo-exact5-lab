@@ -133,6 +133,7 @@ def _signed_policy(
 def bundle(
     *, custody_role=CUSTODY_SIGNER_ROLE, root_reused=False,
     custodian_key_id=CUSTODIAN_KEY_ID,
+    official_draw_close_at_utc="2026-11-23T03:00:00Z",
     policy_issued_at_utc="2026-11-22T00:00:00Z",
     policy_not_before_utc="2026-11-22T00:00:00Z",
     policy_expires_at_utc="2026-12-01T00:00:00Z",
@@ -164,12 +165,12 @@ def bundle(
         received_at_utc="2026-11-23T02:45:00Z",
         custodian_clock_source="synthetic-test-clock",
         custodian_recomputed_sha256=portfolio_digest,
-        official_draw_close_at_utc="2026-11-23T03:00:00Z",
+        official_draw_close_at_utc=official_draw_close_at_utc,
         official_draw_close_source="synthetic-test-only",
     )
     record_bytes = canonical_json_bytes(record) + b"\n"
 
-    receipt_document = valid_document()
+    receipt_document = valid_document(close_at=official_draw_close_at_utc)
     receipt_document["custodians"][0]["subject_id"] = CUSTODIAN_ID
     receipt_document["custodians"][0]["role"] = CUSTODY_SIGNER_ROLE
     receipt_document["custodians"][0]["receipt_sha256"] = sha256_bytes(record_bytes)
