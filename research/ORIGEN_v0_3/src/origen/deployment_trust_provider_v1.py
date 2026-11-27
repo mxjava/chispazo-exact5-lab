@@ -265,12 +265,19 @@ class DeploymentTrustProvider(Protocol):
         domain, backend identity, state generation and trust configuration,
         and consume both nonce values in this same linearizable transaction.
         It must reject cross-backend/domain challenge use and challenge or
-        nonce reuse. It must compare expected_external_evidence_watermark_sha256
-        with authoritative state and, when an advance is supplied, atomically
-        require the exact old checkpoint to equal the accepted checkpoint,
-        the new checkpoint to advance monotonically, and the registry sequence /
-        digest to avoid rollback or same-sequence equivocation. The CAS must
-        return the resulting accepted watermark digest in the commit.
+        nonce reuse. When an external-evidence advance is supplied, it carries
+        the exact receipt, policy envelope, custody record, portfolio, detached
+        custody signature, custodian key ID, both RFC 3161 tokens, artifact and
+        signature byte maps, manifest, ledger proofs/checkpoints, signed
+        registry and witness statements. The backend must independently
+        re-verify these exact bytes against its own provisioned physical trust
+        context and trusted time before accepting them. It must compare
+        expected_external_evidence_watermark_sha256 with authoritative state
+        and, in the same linearizable transaction, require the exact old
+        checkpoint to equal the accepted checkpoint, the new checkpoint to
+        advance monotonically, and the registry sequence/digest to avoid
+        rollback or same-sequence equivocation. The CAS must return the
+        resulting accepted watermark digest in the commit.
         """
         ...
 
@@ -1029,12 +1036,16 @@ def inspect_receipt_with_deployment_trust_provider(
     It verifies exact bytes, requires the complete trusted-time uncertainty
     interval to fit policy and signer validity, calls the independent
     provenance boundary, and then performs an atomic sequence/digest
-    compare-and-advance. An optional snapshot lets a composed verifier share
-    the exact same immutable provider observation with another verifier; the
-    final provider CAS must still match its authoritative generation,
-    configuration digest, and clock-sample digest. Any provider failure or
-    state conflict raises and yields no inspection result. Success remains
-    BLOCKED_PROVENANCE.
+    compare-and-advance. When physical evidence is supplied, the CAS request
+    carries the exact receipt, policy, custody record, portfolio, custody
+    signature, TSA tokens, artifact/signature maps, manifest, ledger proofs,
+    registry and witness statements so a real backend can independently
+    re-verify the full chain against its own provisioned context. An optional
+    snapshot lets a composed verifier share the exact same immutable provider
+    observation with another verifier; the final provider CAS must still match
+    its authoritative generation, configuration digest, and clock-sample
+    digest. Any provider failure or state conflict raises and yields no
+    inspection result. Success remains BLOCKED_PROVENANCE.
     """
     if type(original_receipt_bytes) is not bytes or not original_receipt_bytes:
         raise ValueError("original_receipt_bytes must be non-empty exact bytes")
@@ -1113,6 +1124,13 @@ def inspect_receipt_with_deployment_trust_provider(
     policy_digest = hashlib.sha256(signed_policy_envelope_bytes).hexdigest()
     if verified_policy.envelope_sha256 != policy_digest:
         raise ValueError("verified policy does not bind the exact envelope bytes")
+    if external_evidence_advance is not None and (
+        external_evidence_advance.raw_receipt_bytes != original_receipt_bytes
+        or external_evidence_advance.raw_policy_envelope_bytes != signed_policy_envelope_bytes
+    ):
+        raise TrustStateRejected(
+            "external evidence advance does not carry the exact receipt and policy bytes supplied to the verifier"
+        )
     # The trusted clock must remain monotonic across every inspection. The
     # provider persists later same-sequence observations too; checking only
     # against the last policy acceptance would permit rollback after a newer
