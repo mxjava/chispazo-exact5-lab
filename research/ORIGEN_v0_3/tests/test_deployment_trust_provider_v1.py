@@ -125,6 +125,8 @@ class SyntheticTrustProvider:
         accepted_at_utc,
         clock_uncertainty_ms,
         expected_external_evidence_watermark_sha256,
+        raw_policy_envelope_bytes=None,
+        raw_receipt_bytes=None,
         external_evidence_advance=None,
         timestamp_nonce_challenge_id=None,
         timestamp_nonce_challenge_sha256=None,
@@ -142,6 +144,8 @@ class SyntheticTrustProvider:
             "accepted_at_utc": accepted_at_utc,
             "clock_uncertainty_ms": clock_uncertainty_ms,
             "expected_external_evidence_watermark_sha256": expected_external_evidence_watermark_sha256,
+            "raw_policy_envelope_bytes": raw_policy_envelope_bytes,
+            "raw_receipt_bytes": raw_receipt_bytes,
             "external_evidence_advance": external_evidence_advance,
             "timestamp_nonce_challenge_id": timestamp_nonce_challenge_id,
             "timestamp_nonce_challenge_sha256": timestamp_nonce_challenge_sha256,
@@ -1091,6 +1095,57 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
                 self.assertEqual(self.provider.commit_count, 1)
                 self.provider.read_snapshot = original_read
                 self.provider.commit_count = 0
+
+    def _direct_provider_cas(self, policy_bytes, receipt_bytes):
+        provider = SyntheticTrustProvider(self.snapshot)
+        commit = provider.compare_and_advance(
+            expected_state_generation=self.snapshot.state_generation,
+            expected_trust_configuration_sha256=_trust_configuration_sha256(self.snapshot),
+            expected_clock_sample_sha256=_clock_sample_sha256(self.snapshot),
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            root_key_id=self.snapshot.root_key_id,
+            root_generation=self.snapshot.root_generation,
+            policy_sequence=POLICY_SEQUENCE,
+            policy_envelope_sha256=hashlib.sha256(policy_bytes).hexdigest(),
+            accepted_at_utc=NOW,
+            clock_uncertainty_ms=0,
+            expected_external_evidence_watermark_sha256=(
+                _accepted_external_evidence_watermark_sha256(None)
+            ),
+            raw_policy_envelope_bytes=policy_bytes,
+            raw_receipt_bytes=receipt_bytes,
+        )
+        return provider, commit
+
+    def test_provider_cas_receives_exact_original_policy_and_receipt_bytes(self):
+        self.inspect()
+        self.assertEqual(
+            self.provider.last_commit_arguments["raw_policy_envelope_bytes"],
+            self.policy_bytes,
+        )
+        self.assertEqual(
+            self.provider.last_commit_arguments["raw_receipt_bytes"],
+            self.receipt_bytes,
+        )
+
+    def test_provider_cas_rejects_tampered_policy_even_when_digest_is_recomputed(self):
+        tampered_policy = self.policy_bytes + b" "
+        provider, commit = self._direct_provider_cas(tampered_policy, self.receipt_bytes)
+        self.assertIs(commit.outcome, TrustStateOutcome.CONFLICT)
+        self.assertEqual(provider.snapshot.state_generation, self.snapshot.state_generation)
+        self.assertEqual(provider.snapshot.accepted_policy_sequence, self.snapshot.accepted_policy_sequence)
+
+    def test_provider_cas_rejects_tampered_receipt_bytes(self):
+        tampered_receipt = self.receipt_bytes + b" "
+        provider, commit = self._direct_provider_cas(self.policy_bytes, tampered_receipt)
+        self.assertIs(commit.outcome, TrustStateOutcome.CONFLICT)
+        self.assertEqual(provider.snapshot.state_generation, self.snapshot.state_generation)
+        self.assertEqual(provider.snapshot.accepted_policy_sequence, self.snapshot.accepted_policy_sequence)
+
+    def test_provider_cas_does_not_accept_caller_supplied_time_or_uncertainty(self):
+        parameters = inspect.signature(self.provider.compare_and_advance).parameters
+        self.assertNotIn("accepted_at_utc", parameters)
+        self.assertNotIn("clock_uncertainty_ms", parameters)
 
     def test_provider_commit_must_bind_exact_policy_digest(self):
         original = self.provider.compare_and_advance
