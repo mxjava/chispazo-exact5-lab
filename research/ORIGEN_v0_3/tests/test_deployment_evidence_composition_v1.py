@@ -203,7 +203,7 @@ def _provider_for(data, ledger, *, uncertainty_ms=0, trusted_time_utc=NOW):
         root_generation=snapshot.root_generation,
         physical_trust_context_generation=context.context_generation,
         physical_trust_context_sha256=context_digest,
-        issued_at_utc=trusted_time_utc - timedelta(seconds=2),
+        issued_at_utc=trusted_time_utc - timedelta(seconds=1),
         expires_at_utc=trusted_time_utc + timedelta(seconds=30),
     )
     return SyntheticPhysicalTrustProvider(snapshot, context, nonce_challenge)
@@ -355,10 +355,11 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             2026, 11, 23, 2, 59, 59, 550000, tzinfo=timezone.utc
         )
         timestamp_gen_time = datetime(
-            2026, 11, 23, 2, 59, 58, 500000, tzinfo=timezone.utc
+            2026, 11, 23, 2, 59, 58, 600000, tzinfo=timezone.utc
         )
         data, ledger, batches, _ = _build_case(
-            custody_timestamp_gen_time=timestamp_gen_time
+            custody_timestamp_gen_time=timestamp_gen_time,
+            custody_timestamp_accuracy={"millis": 900},
         )
         provider = _provider_for(
             data,
@@ -367,7 +368,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             trusted_time_utc=trusted_time,
         )
 
-        # genTime + 1s accuracy = 02:59:59.500Z. This is before the
+        # genTime + 900 ms accuracy = 02:59:59.500Z. This is before the
         # synthetic Classic close at 03:00Z and before the provider midpoint
         # at 02:59:59.550Z, but 50 ms after the earliest possible provider
         # time (02:59:59.450Z).
