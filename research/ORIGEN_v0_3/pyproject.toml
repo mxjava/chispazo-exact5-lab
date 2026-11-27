@@ -7,7 +7,7 @@ name = "origen-research"
 version = "0.3.0"
 description = "Auditable research-frame generation, prequential evaluation and adversarial controls"
 requires-python = ">=3.10"
-dependencies = ["tzdata>=2025.2"]
+dependencies = ["tzdata>=2025.2", "cryptography>=42.0.0,<47.0.0"]
 
 [project.scripts]
 origen = "origen.cli:main"
