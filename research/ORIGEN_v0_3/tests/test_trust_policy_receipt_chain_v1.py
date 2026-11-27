@@ -51,7 +51,7 @@ def signed_receipt(policy_version=POLICY_VERSION):
     document = valid_document()
     document["policy_version"] = policy_version
     document["receipt_attestation"]["signature_b64"] = base64.b64encode(
-        b"\\x00" * 64
+        bytes(64)
     ).decode("ascii")
     unsigned_raw = encode(document)
     payload = canonical_attestation_payload(unsigned_raw)
