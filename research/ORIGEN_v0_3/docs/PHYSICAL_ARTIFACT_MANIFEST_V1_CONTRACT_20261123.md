@@ -41,6 +41,24 @@ The four Acta attachments are exactly the four rows listed for Chispazo in polic
 
 V1 requires separate source objects and distinct original-byte digests. A single combined bundle containing multiple logical records is not representable by v1; do not split or reserialize a source file and then claim the derived bytes are the original source. A future schema version may add explicit byte-range/page locators for a signed bundle.
 
+## V2 temporal-intake mapping binding
+
+The V2 temporal intake requires a dedicated `mapping_artifact_ref` and
+`mapping_artifact_sha256` on every sphere row. All 28 rows for one target
+must bind the same mapping-register object and original-byte digest. The
+reference must also be present in the caller's `declared_mapping_refs`
+structural membership set. This set is only an untrusted declaration: it does
+not authenticate the object, recompute its digest, establish institutional
+authority, or prove the source object is the official mapping register.
+Those checks remain the responsibility of the independently provisioned
+verifier. A generic weighing/source-document reference cannot substitute for
+the mapping-register artifact.
+
+The V2 gate fails closed when the mapping reference/digest is absent,
+malformed, inconsistent across sphere rows, or not present in the declared
+mapping-reference set. This structural binding does not change the
+`BLOCKED_PROVENANCE` authentication boundary.
+
 ## MIME declarations
 
 The parser requires semantic MIME compatibility for the two recording artifact types:
