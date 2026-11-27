@@ -38,6 +38,8 @@ def rows_for_target(available="2026-11-20T21:15:00-06:00",
             "calibration_certificate_sha256": "a" * 64,
             "mapping_valid_from": "2026-11-20T16:00:00-06:00",
             "mapping_valid_to": "2026-11-22T21:30:00-06:00",
+            "mapping_artifact_ref": "MAPPING-REGISTER-12300",
+            "mapping_artifact_sha256": "e" * 64,
             "source_draw_at": "2026-11-20T21:10:00-06:00",
             "target_draw_at": "2026-11-21T21:10:00-06:00",
             "source_document_sha256": "b" * 64,
@@ -59,6 +61,7 @@ VERIFIED = dict(
     declared_source_refs={"DOC-12300"},
     declared_continuity_targets={"12301"},
     declared_classic_sequence_refs={"CLASSIC-SEQ-2026"},
+    declared_mapping_refs={"MAPPING-REGISTER-12300"},
 )
 
 
@@ -1275,3 +1278,54 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MappingArtifactBindingV2Tests(unittest.TestCase):
+    def test_mapping_artifact_is_a_required_v2_column(self):
+        rows = rows_for_target()
+        del rows[0]["mapping_artifact_ref"]
+        with self.assertRaisesRegex(ValueError, "missing required columns: mapping_artifact_ref"):
+            evaluate_temporal_eligibility(rows, **VERIFIED)
+
+    def test_mapping_artifact_digest_must_be_canonical_sha256(self):
+        rows = rows_for_target()
+        rows[0]["mapping_artifact_sha256"] = "not-a-digest"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        reasons = result["targets"]["12301"]["reasons"]
+        self.assertIn("EVIDENCE_DOCUMENT_SET_CONFLICT", reasons)
+        self.assertNotEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "STRUCTURAL_PRE_CLOSE_ONLY",
+        )
+
+    def test_mapping_artifact_reference_must_be_consistent_across_all_spheres(self):
+        rows = rows_for_target()
+        rows[-1]["mapping_artifact_ref"] = "OTHER-MAPPING-REGISTER"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "EVIDENCE_DOCUMENT_SET_CONFLICT",
+            result["targets"]["12301"]["reasons"],
+        )
+
+    def test_mapping_artifact_must_be_in_independently_declared_reference_set(self):
+        rows = rows_for_target()
+        unverified = dict(VERIFIED, declared_mapping_refs=set())
+        result = evaluate_temporal_eligibility(rows, **unverified)
+        self.assertIn(
+            "MAPPING_ARTIFACT_NOT_INDEPENDENTLY_VERIFIED",
+            result["targets"]["12301"]["reasons"],
+        )
+        self.assertEqual(
+            result["targets"]["12301"]["predictive_eligibility"],
+            "BLOCKED_PROVENANCE",
+        )
+
+    def test_mapping_artifact_binding_is_required_even_when_generic_source_is_verified(self):
+        rows = rows_for_target()
+        for row in rows:
+            row["mapping_artifact_ref"] = "GENERIC-SOURCE-DOC"
+        result = evaluate_temporal_eligibility(rows, **VERIFIED)
+        self.assertIn(
+            "MAPPING_ARTIFACT_NOT_INDEPENDENTLY_VERIFIED",
+            result["targets"]["12301"]["reasons"],
+        )
