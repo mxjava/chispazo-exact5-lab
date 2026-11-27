@@ -312,8 +312,10 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     if (
         accepted_watermark.log_id != physical_context.log_id
         or accepted_watermark.log_key_id != physical_context.log_key_id
+        or accepted_watermark.log_public_key_sha256 != hashlib.sha256(physical_context.log_public_key_bytes).hexdigest()
         or accepted_watermark.registry_id != physical_context.registry_id
         or accepted_watermark.registry_root_key_id != physical_context.registry_root_key_id
+        or accepted_watermark.registry_root_public_key_sha256 != hashlib.sha256(physical_context.registry_root_public_key_bytes).hexdigest()
     ):
         raise TrustStateRejected(
             "persisted ledger/witness watermark identity differs from the provider-owned physical trust context"
@@ -483,6 +485,7 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         state_backend_id=snapshot.state_backend_id,
         log_id=continuity.log_id,
         log_key_id=continuity.key_id,
+        log_public_key_sha256=hashlib.sha256(physical_context.log_public_key_bytes).hexdigest(),
         old_tree_size=continuity.old_tree_size,
         old_root_sha256=continuity.old_root_sha256,
         old_checkpoint_sha256=continuity.old_checkpoint_sha256,
@@ -491,8 +494,21 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         new_checkpoint_sha256=continuity.new_checkpoint_sha256,
         registry_id=physical_context.registry_id,
         registry_root_key_id=physical_context.registry_root_key_id,
+        registry_root_public_key_sha256=hashlib.sha256(physical_context.registry_root_public_key_bytes).hexdigest(),
         registry_sequence=evidence.witness_gossip.registry_sequences[0],
         registry_sha256=next(iter(registry_digests)),
+        raw_manifest_bytes=raw_manifest_bytes,
+        raw_ledger_entry_bytes=raw_ledger_entry_bytes,
+        raw_inclusion_proof_bytes=raw_inclusion_proof_bytes,
+        raw_old_checkpoint_bytes=raw_old_checkpoint_bytes,
+        raw_new_checkpoint_bytes=raw_new_checkpoint_bytes,
+        raw_consistency_proof_bytes=raw_consistency_proof_bytes,
+        raw_registry_bytes=witness_observation_batches[0].raw_registry_bytes,
+        raw_witness_statement_bytes=tuple(
+            statement
+            for batch in witness_observation_batches
+            for statement in batch.raw_witness_statement_bytes
+        ),
     )
     _validated_external_evidence_watermark(
         snapshot,
