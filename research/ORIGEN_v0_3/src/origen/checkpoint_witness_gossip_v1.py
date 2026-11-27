@@ -268,6 +268,15 @@ def inspect_witness_gossip(
                 key_views[(consistency.log_id, tree_size, key_fingerprint)].add(root_sha256)
                 compared_observations += 1
 
+    # A comparison is meaningful only under one exact signed registry snapshot.
+    # Pooling statements authorized by different sequences can re-introduce a
+    # witness key that a later registry has revoked. Registry rotation must be
+    # handled as a separate comparison against externally persisted state.
+    if len(verified_sequences) != 1:
+        raise ValueError(
+            "all witness batches must use one exact registry sequence"
+        )
+
     findings: list[WitnessGossipFinding] = []
     for (log_id, tree_size), roots in sorted(views.items()):
         if len(roots) <= 1:

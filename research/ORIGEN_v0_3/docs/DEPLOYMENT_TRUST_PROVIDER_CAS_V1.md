@@ -454,3 +454,15 @@ production implementation.
 Remaining blocker:
 `RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED`.
 No institutional nonce service or production provider has been provisioned.
+
+## One registry snapshot per gossip comparison
+
+Every observation batch in one cross-batch comparison must use the same
+root-signed registry sequence and exact signed registry digest. The verifier
+rejects mixed sequences rather than pooling witness statements authorized by
+different registry snapshots; a newer registry may revoke a key that remains
+present in an older registry. Registry rotation therefore requires a separate
+comparison. This in-bundle guard does **not** provide persistent anti-rollback:
+the deployment provider must still persist the accepted registry sequence and
+digest under independent monotonic state before any provenance claim can be
+considered.
