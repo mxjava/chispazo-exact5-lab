@@ -21,7 +21,9 @@ from origen.deployment_evidence_composition_v1 import (
 from origen.deployment_trust_provider_v1 import (
     CLASSIC_POLICY_DOMAIN,
     DeploymentTrustSnapshot,
+    ExternalEvidenceWatermarkV1,
     TrustStateRejected,
+    _accepted_external_evidence_watermark_sha256,
 )
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.physical_evidence_manifest_v1 import parse_unverified_physical_manifest
@@ -64,6 +66,7 @@ class SyntheticPhysicalTrustProvider(SyntheticTrustProvider):
         self.physical_context_read_count = 0
         self.timestamp_nonce_challenge_read_count = 0
         self.context_drift_before_commit = False
+        self.watermark_drift_before_commit = False
 
     def read_physical_trust_context(self, *, policy_domain):
         self.physical_context_read_count += 1
@@ -94,6 +97,15 @@ class SyntheticPhysicalTrustProvider(SyntheticTrustProvider):
         return self.nonce_challenge
 
     def compare_and_advance(self, **kwargs):
+        if self.watermark_drift_before_commit:
+            current = self.snapshot.accepted_external_evidence_watermark
+            self.snapshot = replace(
+                self.snapshot,
+                accepted_external_evidence_watermark=replace(
+                    current,
+                    registry_sha256="e" * 64,
+                ),
+            )
         if self.context_drift_before_commit:
             self.snapshot = replace(
                 self.snapshot,
@@ -161,6 +173,19 @@ def _provider_for(data, ledger):
         provisioning_record_sha256="b" * 64,
         physical_trust_context_generation=context.context_generation,
         physical_trust_context_sha256=context_digest,
+        accepted_external_evidence_watermark=ExternalEvidenceWatermarkV1(
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            state_backend_id="synthetic-cas-store",
+            log_id=context.log_id,
+            log_key_id=context.log_key_id,
+            ledger_tree_size=ledger["old_checkpoint"]["tree_size"],
+            ledger_root_sha256=ledger["old_checkpoint"]["root_hash"],
+            ledger_checkpoint_sha256=hashlib.sha256(ledger["old_bytes"]).hexdigest(),
+            registry_id=context.registry_id,
+            registry_root_key_id=context.registry_root_key_id,
+            registry_sequence=6,
+            registry_sha256="d" * 64,
+        ),
     )
     nonce_challenge = TimestampNonceChallengeV1(
         challenge_id="synthetic-timestamp-challenge-0001",
@@ -243,6 +268,27 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.commit_count, 1)
         self.assertEqual(provider.snapshot.accepted_policy_sequence, data["minimum_policy_sequence"])
         self.assertEqual(provider.snapshot.trusted_time_latest_utc, NOW)
+        accepted_watermark = provider.snapshot.accepted_external_evidence_watermark
+        self.assertEqual(accepted_watermark.ledger_tree_size, ledger["new_checkpoint"]["tree_size"])
+        self.assertEqual(accepted_watermark.ledger_root_sha256, ledger["new_checkpoint"]["root_hash"])
+        self.assertEqual(accepted_watermark.ledger_checkpoint_sha256, hashlib.sha256(ledger["new_bytes"]).hexdigest())
+        self.assertEqual(accepted_watermark.registry_sequence, 7)
+        self.assertEqual(
+            provider.last_commit_arguments["expected_external_evidence_watermark_sha256"],
+            _accepted_external_evidence_watermark_sha256(ExternalEvidenceWatermarkV1(
+                policy_domain=CLASSIC_POLICY_DOMAIN,
+                state_backend_id="synthetic-cas-store",
+                log_id=provider.physical_context.log_id,
+                log_key_id=provider.physical_context.log_key_id,
+                ledger_tree_size=ledger["old_checkpoint"]["tree_size"],
+                ledger_root_sha256=ledger["old_checkpoint"]["root_hash"],
+                ledger_checkpoint_sha256=hashlib.sha256(ledger["old_bytes"]).hexdigest(),
+                registry_id=provider.physical_context.registry_id,
+                registry_root_key_id=provider.physical_context.registry_root_key_id,
+                registry_sequence=6,
+                registry_sha256="d" * 64,
+            )),
+        )
         self.assertEqual(result.deployment_trust.state_generation_before, 7)
         self.assertEqual(result.deployment_trust.state_generation_after, 8)
         self.assertNotIn(
@@ -273,6 +319,51 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             "RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED",
             result.remaining_blockers,
         )
+
+    def test_ledger_checkpoint_rollback_is_rejected_before_provider_cas(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.snapshot = replace(
+            provider.snapshot,
+            accepted_external_evidence_watermark=replace(
+                provider.snapshot.accepted_external_evidence_watermark,
+                ledger_tree_size=8,
+                ledger_root_sha256="e" * 64,
+                ledger_checkpoint_sha256="f" * 64,
+            ),
+        )
+
+        with self.assertRaisesRegex(TrustStateRejected, "ledger checkpoint tree-size rollback"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_same_sequence_witness_registry_digest_equivocation_is_rejected(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.snapshot = replace(
+            provider.snapshot,
+            accepted_external_evidence_watermark=replace(
+                provider.snapshot.accepted_external_evidence_watermark,
+                registry_sequence=7,
+                registry_sha256="e" * 64,
+            ),
+        )
+
+        with self.assertRaisesRegex(TrustStateRejected, "same-sequence witness registry digest equivocation"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_provider_cas_rejects_external_watermark_drift_without_generation_change(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.watermark_drift_before_commit = True
+
+        with self.assertRaisesRegex(TrustStateRejected, "external evidence watermark changed since the provider snapshot"):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.commit_count, 1)
 
     def test_nonce_challenge_from_another_backend_is_rejected_before_evidence_or_cas(self):
         data, ledger, batches, _ = _build_case()
