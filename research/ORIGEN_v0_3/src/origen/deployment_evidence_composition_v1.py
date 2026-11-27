@@ -17,6 +17,16 @@ import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 
+from .checkpoint_witness_gossip_v1 import (
+    MAX_GOSSIP_TOTAL_BYTES,
+    MAX_OBSERVATION_BATCHES,
+    WitnessObservationBatch,
+)
+from .checkpoint_witness_quorum_v1 import (
+    MAX_REGISTRY_BYTES,
+    MAX_STATEMENTS,
+    MAX_WITNESS_BYTES,
+)
 from .custody_ledger_witness_integration_v1 import (
     CustodyLedgerWitnessInspectionV1,
     verify_custody_timestamp_ledger_witness_v1,
@@ -255,6 +265,80 @@ def _snapshot_exact_sha256_byte_map(value: object, field: str) -> dict[str, byte
     return snapshot
 
 
+def _snapshot_witness_observation_batches(value: object) -> tuple[WitnessObservationBatch, ...]:
+    """Detach every caller-owned witness batch before verification or callbacks."""
+    if type(value) not in (tuple, list):
+        raise TypeError("witness_observation_batches must be an exact tuple or list")
+    try:
+        supplied_batches = tuple(value)
+    except RuntimeError as exc:
+        raise ValueError("witness_observation_batches changed while being snapshotted") from exc
+    if not 2 <= len(supplied_batches) <= MAX_OBSERVATION_BATCHES:
+        raise ValueError(
+            f"witness_observation_batches must contain 2..{MAX_OBSERVATION_BATCHES} batches"
+        )
+
+    total_bytes = 0
+    snapshots: list[WitnessObservationBatch] = []
+    for batch_index, batch in enumerate(supplied_batches):
+        if type(batch) is not WitnessObservationBatch:
+            raise TypeError(
+                f"witness_observation_batches[{batch_index}] must be an exact WitnessObservationBatch"
+            )
+        raw_registry_bytes = batch.raw_registry_bytes
+        raw_old_checkpoint_bytes = batch.raw_old_checkpoint_bytes
+        raw_new_checkpoint_bytes = batch.raw_new_checkpoint_bytes
+        raw_consistency_proof_bytes = batch.raw_consistency_proof_bytes
+        supplied_statements = batch.raw_witness_statement_bytes
+        byte_fields = (
+            raw_registry_bytes,
+            raw_old_checkpoint_bytes,
+            raw_new_checkpoint_bytes,
+            raw_consistency_proof_bytes,
+        )
+        if any(type(raw) is not bytes for raw in byte_fields):
+            raise TypeError(
+                f"witness_observation_batches[{batch_index}] byte fields must be exact bytes"
+            )
+        if type(supplied_statements) is not tuple:
+            raise TypeError(
+                f"witness_observation_batches[{batch_index}].raw_witness_statement_bytes must be an exact tuple"
+            )
+        statements = tuple(supplied_statements)
+        if not 1 <= len(statements) <= MAX_STATEMENTS:
+            raise ValueError(
+                f"witness_observation_batches[{batch_index}] must contain 1..{MAX_STATEMENTS} statements"
+            )
+        if any(type(statement) is not bytes for statement in statements):
+            raise TypeError(
+                f"witness_observation_batches[{batch_index}] statements must be exact bytes"
+            )
+        if len(raw_registry_bytes) > MAX_REGISTRY_BYTES:
+            raise ValueError(
+                f"witness_observation_batches[{batch_index}] registry exceeds byte limit"
+            )
+        if any(len(statement) > MAX_WITNESS_BYTES for statement in statements):
+            raise ValueError(
+                f"witness_observation_batches[{batch_index}] statement exceeds byte limit"
+            )
+
+        total_bytes += sum(len(raw) for raw in byte_fields)
+        total_bytes += sum(len(statement) for statement in statements)
+        if total_bytes > MAX_GOSSIP_TOTAL_BYTES:
+            raise ValueError("combined witness observation batches exceed total byte limit")
+
+        snapshots.append(
+            WitnessObservationBatch(
+                raw_registry_bytes=raw_registry_bytes,
+                raw_old_checkpoint_bytes=raw_old_checkpoint_bytes,
+                raw_new_checkpoint_bytes=raw_new_checkpoint_bytes,
+                raw_consistency_proof_bytes=raw_consistency_proof_bytes,
+                raw_witness_statement_bytes=statements,
+            )
+        )
+    return tuple(snapshots)
+
+
 def inspect_custody_ledger_witness_with_deployment_provider_v1(
     original_receipt_bytes: bytes,
     signed_policy_envelope_bytes: bytes,
@@ -311,6 +395,14 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         raise TypeError("custody_record_bytes must be exact bytes")
     if type(raw_manifest_bytes) is not bytes:
         raise TypeError("raw_manifest_bytes must be exact bytes")
+
+    # Frozen witness batches can still be changed with object.__setattr__.
+    # Snapshot every original registry/checkpoint/proof/statement byte string
+    # before any provider or verifier callback, then reuse only this private
+    # tuple for both cryptographic verification and the CAS envelope.
+    witness_batches_snapshot = _snapshot_witness_observation_batches(
+        witness_observation_batches
+    )
 
     # Caller-owned dictionaries are mutable. Snapshot them once before any
     # verifier/provider callback and use these private copies for both evidence
@@ -480,7 +572,7 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         raw_old_checkpoint_bytes,
         raw_new_checkpoint_bytes,
         raw_consistency_proof_bytes,
-        witness_observation_batches,
+        witness_batches_snapshot,
         pinned_log_public_key_bytes=physical_context.log_public_key_bytes,
         expected_log_id=physical_context.log_id,
         expected_log_key_id=physical_context.log_key_id,
@@ -508,7 +600,7 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
 
     registry_digests = {
         hashlib.sha256(batch.raw_registry_bytes).hexdigest()
-        for batch in witness_observation_batches
+        for batch in witness_batches_snapshot
     }
     if len(registry_digests) != 1 or len(evidence.witness_gossip.registry_sequences) != 1:
         raise TrustStateRejected(
@@ -538,10 +630,10 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         raw_old_checkpoint_bytes=raw_old_checkpoint_bytes,
         raw_new_checkpoint_bytes=raw_new_checkpoint_bytes,
         raw_consistency_proof_bytes=raw_consistency_proof_bytes,
-        raw_registry_bytes=witness_observation_batches[0].raw_registry_bytes,
+        raw_registry_bytes=witness_batches_snapshot[0].raw_registry_bytes,
         raw_witness_statement_bytes=tuple(
             statement
-            for batch in witness_observation_batches
+            for batch in witness_batches_snapshot
             for statement in batch.raw_witness_statement_bytes
         ),
         receipt_sha256=hashlib.sha256(original_receipt_bytes).hexdigest(),
