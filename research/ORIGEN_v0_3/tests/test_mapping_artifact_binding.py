@@ -30,7 +30,7 @@ class MappingArtifactByteBindingTests(unittest.TestCase):
         ]
 
     def test_exact_28_rows_bind_to_manifest_claim_and_original_bytes(self):
-        result = verify_mapping_artifact_byte_binding(
+        result = _verify_mapping_claim_byte_binding(
             self.rows, self.claim, self.original
         )
         self.assertEqual(result.status, "MAPPING_ARTIFACT_BYTES_MATCHED_NOT_AUTHENTICATED")
@@ -38,7 +38,7 @@ class MappingArtifactByteBindingTests(unittest.TestCase):
 
     def test_wrong_original_bytes_fail_digest_check(self):
         with self.assertRaisesRegex(ValueError, "SHA-256"):
-            verify_mapping_artifact_byte_binding(
+            _verify_mapping_claim_byte_binding(
                 self.rows, self.claim, b"X" * len(self.original)
             )
 
@@ -53,19 +53,19 @@ class MappingArtifactByteBindingTests(unittest.TestCase):
             media_type="application/pdf",
         )
         with self.assertRaisesRegex(ValueError, "SPHERE-NUMBER-MAPPING-REGISTER"):
-            verify_mapping_artifact_byte_binding(self.rows, wrong, self.original)
+            _verify_mapping_claim_byte_binding(self.rows, wrong, self.original)
 
     def test_manifest_reference_mismatch_fails(self):
         rows = [dict(row) for row in self.rows]
         rows[0]["mapping_artifact_ref"] = "GENERIC-SOURCE-DOC"
         with self.assertRaisesRegex(ValueError, "reference does not match"):
-            verify_mapping_artifact_byte_binding(rows, self.claim, self.original)
+            _verify_mapping_claim_byte_binding(rows, self.claim, self.original)
 
     def test_manifest_digest_mismatch_fails(self):
         rows = [dict(row) for row in self.rows]
         rows[-1]["mapping_artifact_sha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "digest does not match"):
-            verify_mapping_artifact_byte_binding(rows, self.claim, self.original)
+            _verify_mapping_claim_byte_binding(rows, self.claim, self.original)
 
     def test_bijective_reassignment_is_not_claimed_to_be_detected_by_opaque_byte_binding(self):
         # The helper binds bytes and references; it deliberately cannot parse
@@ -74,7 +74,7 @@ class MappingArtifactByteBindingTests(unittest.TestCase):
         rows[0]["printed_number"], rows[1]["printed_number"] = (
             rows[1]["printed_number"], rows[0]["printed_number"]
         )
-        result = verify_mapping_artifact_byte_binding(
+        result = _verify_mapping_claim_byte_binding(
             rows, self.claim, self.original
         )
         self.assertEqual(result.status, "MAPPING_ARTIFACT_BYTES_MATCHED_NOT_AUTHENTICATED")
@@ -88,7 +88,7 @@ class MappingArtifactByteBindingTests(unittest.TestCase):
         rows = [dict(row) for row in self.rows]
         rows[0]["mapping_artifact_ref"] = HostileValue()
         with self.assertRaisesRegex(ValueError, "reference does not match"):
-            verify_mapping_artifact_byte_binding(rows, self.claim, self.original)
+            _verify_mapping_claim_byte_binding(rows, self.claim, self.original)
 
     def test_malformed_manifest_source_object_identifier_fails(self):
         malformed = PhysicalArtifactClaim(
@@ -101,19 +101,19 @@ class MappingArtifactByteBindingTests(unittest.TestCase):
             media_type="application/pdf",
         )
         with self.assertRaisesRegex(ValueError, "manifest claim is malformed"):
-            verify_mapping_artifact_byte_binding(
+            _verify_mapping_claim_byte_binding(
                 self.rows, malformed, self.original
             )
 
     def test_incomplete_or_duplicate_rows_fail(self):
         with self.assertRaisesRegex(ValueError, "exactly 28"):
-            verify_mapping_artifact_byte_binding(
+            _verify_mapping_claim_byte_binding(
                 self.rows[:-1], self.claim, self.original
             )
         rows = [dict(row) for row in self.rows]
         rows[-1]["sphere_id"] = rows[0]["sphere_id"]
         with self.assertRaisesRegex(ValueError, "28 unique"):
-            verify_mapping_artifact_byte_binding(rows, self.claim, self.original)
+            _verify_mapping_claim_byte_binding(rows, self.claim, self.original)
 
 
 if __name__ == "__main__":
