@@ -169,7 +169,7 @@ def _validate_v3_context(
         )
 
 
-def _verify_independent_provenance_with_deployment_context(
+def _verify_independent_provenance_with_explicit_context(
     original_receipt_bytes: bytes,
     *,
     signed_policy_envelope_bytes: bytes,
@@ -180,12 +180,13 @@ def _verify_independent_provenance_with_deployment_context(
 ) -> ProvenanceStatus:
     """Re-verify exact V3 bytes using one deployment-provider snapshot.
 
-    This internal diagnostic path is called by the deployment composition
-    module only after it has read and validated one provider snapshot. It
-    independently re-verifies the policy envelope and receipt bytes; it never
-    accepts preconstructed verifier results. The returned status is always
-    BLOCKED_PROVENANCE. The provider itself is not authenticated by this
-    helper, and private naming is not a Python security capability.
+    This internal diagnostic path is used by composition modules with explicit
+    trust context. The deployment-provider path supplies values derived from
+    one validated provider snapshot; the lower-level V3 diagnostic bridge may
+    supply caller values, which remain unauthenticated. The helper independently
+    re-verifies exact policy and receipt bytes, accepts no preconstructed
+    verifier results, and always returns BLOCKED_PROVENANCE. Private naming is
+    not a Python security capability.
     """
     if type(original_receipt_bytes) is not bytes:
         raise TypeError("original_receipt_bytes must be exact bytes")

@@ -2,7 +2,7 @@
 
 This composes cryptographic checks but deliberately cannot authenticate
 institutional provenance: root pins, sequence floor and initial time remain
-caller supplied, and verify_independent_provenance remains fail-closed.
+caller supplied, and _verify_independent_provenance_with_explicit_context remains fail-closed.
 """
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 
-from .independent_trust_adapter import ProvenanceStatus, verify_independent_provenance
+from .independent_trust_adapter import ProvenanceStatus, _verify_independent_provenance_with_explicit_context
 from .physical_evidence_verifier_v2 import (
     CLASSIC_PHYSICAL_POLICY_DOMAIN,
     _utc_instant,
@@ -149,7 +149,7 @@ def verify_receipt_attestation_with_policy_v3(
             "for RECEIPT-ROOT-ATTESTER and TRUST-RECEIPT-ROOT-ATTESTATION"
         )
 
-    provenance = verify_independent_provenance(
+    provenance = _verify_independent_provenance_with_explicit_context(
         original_receipt_bytes,
         signed_policy_envelope_bytes=signed_policy_envelope_bytes,
         pinned_root_public_key_bytes=pinned_root_public_key_bytes,

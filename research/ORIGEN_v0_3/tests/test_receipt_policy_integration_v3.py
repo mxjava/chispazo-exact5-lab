@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from origen.independent_trust_adapter import (
     ProvenanceStatus,
+    _verify_independent_provenance_with_explicit_context,
     verify_independent_provenance,
 )
 from origen.physical_evidence_verifier_v2 import CLASSIC_PHYSICAL_POLICY_DOMAIN
@@ -258,7 +259,7 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
             return ProvenanceStatus.BLOCKED_PROVENANCE
 
         with patch(
-            "origen.receipt_policy_integration_v3.verify_independent_provenance",
+            "origen.receipt_policy_integration_v3._verify_independent_provenance_with_explicit_context",
             side_effect=gate,
         ):
             result = self.inspect()
@@ -285,7 +286,7 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
             "verification_time": NOW,
         }
         args.update(overrides)
-        return verify_independent_provenance(**args)
+        return _verify_independent_provenance_with_explicit_context(**args)
 
     def test_independent_provenance_reverifies_exact_v3_bytes_and_still_blocks(self):
         result = self._verify_at_boundary()
@@ -318,18 +319,11 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "below the externally pinned minimum"):
             self._verify_at_boundary(minimum_policy_sequence=POLICY_SEQUENCE + 1)
 
-    def test_independent_provenance_requires_complete_reverification_context(self):
-        with self.assertRaisesRegex(ValueError, "requires exact policy bytes"):
+    def test_public_independent_provenance_rejects_caller_context(self):
+        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
             verify_independent_provenance(
                 self.receipt_bytes,
                 signed_policy_envelope_bytes=self.policy_bytes,
-            )
-        with self.assertRaisesRegex(ValueError, "requires exact policy bytes"):
-            verify_independent_provenance(
-                self.receipt_bytes,
-                signed_policy_envelope_bytes=self.policy_bytes,
-                pinned_root_public_key_bytes=self.root_public_key,
-                expected_root_key_id=ROOT_KEY_ID,
             )
 
     def test_independent_provenance_rejects_policy_without_receipt_role_authorization(self):
@@ -364,7 +358,7 @@ class TestReceiptPolicyIntegrationV3(unittest.TestCase):
                 FutureProvenanceStatus,
             ),
             patch(
-                "origen.receipt_policy_integration_v3.verify_independent_provenance",
+                "origen.receipt_policy_integration_v3._verify_independent_provenance_with_explicit_context",
                 return_value=FutureProvenanceStatus.AUTHENTICATED,
             ),
         ):

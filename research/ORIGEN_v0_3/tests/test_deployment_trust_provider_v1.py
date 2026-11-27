@@ -29,7 +29,7 @@ from origen.deployment_trust_provider_v1 import (
     _verify_clock_sample_attestation,
     inspect_receipt_with_deployment_trust_provider,
 )
-from origen.independent_trust_adapter import ProvenanceStatus, verify_independent_provenance
+from origen.independent_trust_adapter import ProvenanceStatus, _verify_independent_provenance_with_explicit_context
 from origen.timestamp_nonce_challenge_v1 import timestamp_nonce_challenge_sha256 as compute_timestamp_nonce_challenge_sha256
 from test_receipt_policy_integration_v3 import (
     POLICY_SEQUENCE,
@@ -637,8 +637,8 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
 
     def test_independent_boundary_reverifies_exact_bytes_with_provider_owned_context(self):
         with patch(
-            "origen.deployment_trust_provider_v1.verify_independent_provenance",
-            wraps=verify_independent_provenance,
+            "origen.deployment_trust_provider_v1._verify_independent_provenance_with_explicit_context",
+            wraps=_verify_independent_provenance_with_explicit_context,
         ) as boundary:
             result = self.inspect()
 
@@ -667,7 +667,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             AUTHENTICATED = "AUTHENTICATED"
 
         with patch(
-            "origen.deployment_trust_provider_v1.verify_independent_provenance",
+            "origen.deployment_trust_provider_v1._verify_independent_provenance_with_explicit_context",
             return_value=FutureProvenanceStatus.AUTHENTICATED,
         ):
             with self.assertRaisesRegex(
