@@ -149,25 +149,38 @@ class SQLiteReferenceExternalEvidenceCASV1:
         self.timeout_seconds = float(timeout_seconds)
         self._initialize_schema()
 
-    def _connect(self) -> sqlite3.Connection:
+    def _connect(self, *, allow_non_wal: bool = False) -> sqlite3.Connection:
         connection = sqlite3.connect(
             self.database_path,
             timeout=self.timeout_seconds,
             isolation_level=None,
         )
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys=ON")
-        connection.execute("PRAGMA trusted_schema=OFF")
-        connection.execute(f"PRAGMA busy_timeout={int(self.timeout_seconds * 1000)}")
-        connection.execute("PRAGMA synchronous=FULL")
-        return connection
+        try:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys=ON")
+            connection.execute("PRAGMA trusted_schema=OFF")
+            connection.execute(f"PRAGMA busy_timeout={int(self.timeout_seconds * 1000)}")
+            connection.execute("PRAGMA synchronous=FULL")
+            synchronous = connection.execute("PRAGMA synchronous").fetchone()[0]
+            if type(synchronous) is not int or synchronous != 2:
+                raise ReferenceCASUnavailable(
+                    "SQLite connection did not retain synchronous=FULL"
+                )
+            if not allow_non_wal:
+                journal_mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
+                if type(journal_mode) is not str or journal_mode.lower() != "wal":
+                    raise ReferenceCASUnavailable(
+                        "SQLite journal mode drifted from the required WAL mode"
+                    )
+            return connection
+        except Exception:
+            connection.close()
+            raise
 
     def _initialize_schema(self) -> None:
-        connection = self._connect()
+        connection = self._connect(allow_non_wal=True)
         try:
-            journal_mode = connection.execute("PRAGMA journal_mode=WAL").fetchone()[0]
-            if type(journal_mode) is not str or journal_mode.lower() != "wal":
-                raise ReferenceCASUnavailable("SQLite WAL mode could not be enabled")
+            journal_mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
             application_id = connection.execute("PRAGMA application_id").fetchone()[0]
             user_version = connection.execute("PRAGMA user_version").fetchone()[0]
             if user_version == 0:
@@ -181,6 +194,9 @@ class SQLiteReferenceExternalEvidenceCASV1:
                     )
                 if application_id not in (0, _APPLICATION_ID):
                     raise ReferenceCASCorrupt("SQLite application_id belongs to another application")
+                journal_mode = connection.execute("PRAGMA journal_mode=WAL").fetchone()[0]
+                if type(journal_mode) is not str or journal_mode.lower() != "wal":
+                    raise ReferenceCASUnavailable("SQLite WAL mode could not be enabled")
                 connection.execute("BEGIN IMMEDIATE")
                 connection.execute(
                     """
@@ -202,6 +218,10 @@ class SQLiteReferenceExternalEvidenceCASV1:
             elif user_version != _SCHEMA_VERSION or application_id != _APPLICATION_ID:
                 raise ReferenceCASCorrupt("SQLite application or schema version is unsupported")
             else:
+                if type(journal_mode) is not str or journal_mode.lower() != "wal":
+                    raise ReferenceCASUnavailable(
+                        "versioned SQLite database journal mode drifted from WAL"
+                    )
                 row = connection.execute(
                     "SELECT name FROM sqlite_master "
                     "WHERE type='table' AND name='external_evidence_state'"
