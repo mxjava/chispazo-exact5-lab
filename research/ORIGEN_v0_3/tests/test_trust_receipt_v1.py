@@ -19,10 +19,9 @@ def digest(char: str) -> str:
     return char * 64
 
 
-def valid_document() -> dict:
+def valid_document(*, close_at="2026-11-23T03:00:00Z") -> dict:
     contest_id = "12389"
     target_list = json.dumps([contest_id], separators=(",", ":"), ensure_ascii=True).encode("ascii")
-    close_at = "2026-11-23T03:00:00Z"
     return {
         "schema_version": "origen.trust-receipt.v1",
         "status": "AUTHENTICATED",
