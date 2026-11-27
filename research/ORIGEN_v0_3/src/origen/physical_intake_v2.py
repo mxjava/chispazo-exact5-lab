@@ -24,7 +24,8 @@ V2_REQUIRED_COLUMNS = (
     "sphere_id", "printed_number", "mass_value", "mass_unit", "measurement_at",
     "measurement_resolution", "scale_id", "calibration_valid_from",
     "calibration_valid_to", "calibration_certificate_sha256",
-    "mapping_valid_from", "mapping_valid_to", "source_draw_at",
+    "mapping_valid_from", "mapping_valid_to", "mapping_artifact_ref",
+    "mapping_artifact_sha256", "source_draw_at",
     "source_document_sha256", "source_document_ref", "source_signed_at",
     "source_signer_id", "source_signature_ref", "evidence_available_at",
     "custody_received_at", "custodian_id", "custodian_role",
@@ -150,6 +151,7 @@ def evaluate_temporal_eligibility(
     declared_source_refs: set[str] | frozenset[str] | None = None,
     declared_continuity_targets: set[str] | frozenset[str] | None = None,
     declared_classic_sequence_refs: set[str] | frozenset[str] | None = None,
+    declared_mapping_refs: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """Classify each target independently; missing external attestations fail closed.
 
@@ -166,6 +168,9 @@ def evaluate_temporal_eligibility(
     )
     classic_sequences = _declared_reference_set(
         declared_classic_sequence_refs, "declared_classic_sequence_refs"
+    )
+    mapping_refs = _declared_reference_set(
+        declared_mapping_refs, "declared_mapping_refs"
     )
 
     # Consume the iterable incrementally: list(rows) before validation allowed an
@@ -280,6 +285,8 @@ def evaluate_temporal_eligibility(
         scales: set[str] = set()
         source_refs: set[str] = set()
         source_hashes: set[str] = set()
+        mapping_artifact_refs: set[str] = set()
+        mapping_artifact_hashes: set[str] = set()
         custody_refs: set[str] = set()
         custody_hashes: set[str] = set()
         calibration_hashes: set[str] = set()
@@ -327,6 +334,8 @@ def evaluate_temporal_eligibility(
                 custody_hash = _canonical_sha256(row["custody_receipt_sha256"])
                 calibration_hash = _canonical_sha256(row["calibration_certificate_sha256"])
                 source_hashes.add(source_hash)
+                mapping_artifact_refs.add(_canonical_identifier(row["mapping_artifact_ref"]))
+                mapping_artifact_hashes.add(_canonical_sha256(row["mapping_artifact_sha256"]))
                 custody_refs.add(_canonical_identifier(row["custody_receipt_ref"]))
                 custody_hashes.add(custody_hash)
                 calibration_hashes.add(calibration_hash)
@@ -498,7 +507,8 @@ def evaluate_temporal_eligibility(
                 if max(mass_values) - min(mass_values) > maximum_spread:
                     reasons.add("SPHERE_MASS_SPREAD_EXCEEDED")
         if any(len(values) != 1 or "" in values for values in (
-            source_refs, source_hashes, custody_refs, custody_hashes,
+            source_refs, source_hashes, mapping_artifact_refs, mapping_artifact_hashes,
+            custody_refs, custody_hashes,
             calibration_hashes, signature_refs, signer_ids, timestamp_refs
         )):
             reasons.add("EVIDENCE_DOCUMENT_SET_CONFLICT")
@@ -535,6 +545,8 @@ def evaluate_temporal_eligibility(
             reasons.add("TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED")
         if not all(_canonical_identifier(row.get("source_document_ref")) in sources for row in group):
             reasons.add("SOURCE_NOT_INDEPENDENTLY_VERIFIED")
+        if not all(_canonical_identifier(row.get("mapping_artifact_ref")) in mapping_refs for row in group):
+            reasons.add("MAPPING_ARTIFACT_NOT_INDEPENDENTLY_VERIFIED")
         if target not in continuity:
             reasons.add("PHYSICAL_CONTINUITY_NOT_VERIFIED")
 
@@ -544,6 +556,7 @@ def evaluate_temporal_eligibility(
             "TARGET_CLOSE_CONFLICT",
             "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "INVALID_SOURCE_SHA256",
             "INVALID_CUSTODY_RECEIPT_SHA256", "INVALID_CALIBRATION_SHA256",
+            "MAPPING_ARTIFACT_NOT_INDEPENDENTLY_VERIFIED",
             "CUSTODY_NOT_INDEPENDENTLY_VERIFIED", "TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",
             "SIGNER_CUSTODIAN_ROLE_COLLISION",
             "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
@@ -602,6 +615,7 @@ def evaluate_temporal_csv(
     declared_source_refs: set[str] | frozenset[str] | None = None,
     declared_continuity_targets: set[str] | frozenset[str] | None = None,
     declared_classic_sequence_refs: set[str] | frozenset[str] | None = None,
+    declared_mapping_refs: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """Read bounded, single-physical-line CSV records before structural intake.
 
@@ -693,4 +707,5 @@ def evaluate_temporal_csv(
             declared_source_refs=declared_source_refs,
             declared_continuity_targets=declared_continuity_targets,
             declared_classic_sequence_refs=declared_classic_sequence_refs,
+            declared_mapping_refs=declared_mapping_refs,
         )
