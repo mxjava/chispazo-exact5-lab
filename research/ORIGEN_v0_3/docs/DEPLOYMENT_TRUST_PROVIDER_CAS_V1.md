@@ -466,3 +466,23 @@ comparison. This in-bundle guard does **not** provide persistent anti-rollback:
 the deployment provider must still persist the accepted registry sequence and
 digest under independent monotonic state before any provenance claim can be
 considered.
+
+
+## 15. Timestamp nonce challenge is scoped to one backend and policy domain
+
+The V1 nonce challenge now carries both `policy_domain` and
+`state_backend_id`. Both values are included in its canonical SHA-256 digest.
+The application rejects a challenge unless these values exactly match the
+fixed CLASSIC provenance domain and the `state_backend_id` in the same
+deployment snapshot. The CAS implementation must repeat those checks against
+its authoritative pending-challenge record before consuming either RFC 3161
+nonce.
+
+This closes an accidental cross-domain/cross-backend challenge-reuse gap in
+the transport contract. It does not authenticate the provider, prove that
+nonces are unpredictable, or establish a durable anti-rollback service. The
+provider must still enforce single-use consumption atomically.
+
+Synthetic adversarial regressions cover a challenge copied from another
+backend, a challenge copied from another policy domain, and digest sensitivity
+to both scope fields. Production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.

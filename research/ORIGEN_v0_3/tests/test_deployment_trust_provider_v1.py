@@ -201,6 +201,8 @@ class SyntheticTrustProvider:
                 challenge is None
                 or challenge.challenge_id != timestamp_nonce_challenge_id
                 or compute_timestamp_nonce_challenge_sha256(challenge) != timestamp_nonce_challenge_sha256
+                or challenge.policy_domain != self.snapshot.policy_domain
+                or challenge.state_backend_id != self.snapshot.state_backend_id
                 or challenge.challenge_id in self.consumed_timestamp_nonce_challenge_ids
                 or challenge.policy_timestamp_nonce in self.consumed_timestamp_nonce_values
                 or challenge.custody_timestamp_nonce in self.consumed_timestamp_nonce_values
