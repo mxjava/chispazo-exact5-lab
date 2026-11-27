@@ -7,6 +7,7 @@ from origen.independent_trust_adapter import (
     INDEPENDENT_TRUST_BACKEND_NOT_PROVISIONED,
     ProvenanceStatus,
     verify_independent_provenance,
+    verify_independent_provenance_with_signed_policy,
 )
 from origen.trust_receipt_v1 import (
     MAX_TRUST_RECEIPT_BYTES,
@@ -83,6 +84,13 @@ class TestIndependentTrustAdapter(unittest.TestCase):
         ):
             verify_independent_provenance(b"x" * (MAX_TRUST_RECEIPT_BYTES + 1))
 
+
+    def test_signed_policy_bridge_cannot_be_injected_into_existing_boundary(self):
+        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
+            verify_independent_provenance(
+                b"receipt",
+                signed_policy_envelope=b"attacker-controlled",
+            )
 
 if __name__ == "__main__":
     unittest.main()
