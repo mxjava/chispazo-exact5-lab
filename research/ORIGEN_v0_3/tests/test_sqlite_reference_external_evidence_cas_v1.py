@@ -1,17 +1,19 @@
 import hashlib
+import json
 import os
 import sqlite3
 import tempfile
 import threading
 import unittest
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import replace
+from dataclasses import asdict, replace
 
 from origen.deployment_trust_provider_v1 import (
     CLASSIC_POLICY_DOMAIN,
     ExternalEvidenceAdvanceV1,
     ExternalEvidenceWatermarkV1,
     TrustStateRejected,
+    _accepted_external_evidence_watermark_sha256,
 )
 from origen.sqlite_reference_external_evidence_cas_v1 import (
     ReferenceCASConflict,
@@ -221,6 +223,31 @@ class SQLiteReferenceExternalEvidenceCASTests(unittest.TestCase):
         )
         with self.assertRaises(ReferenceCASUnprovisioned):
             store.read_watermark_snapshot()
+
+    def test_tampered_watermark_identity_fails_even_with_recomputed_digest(self):
+        altered = replace(
+            self.genesis,
+            state_backend_id="different-reference-backend",
+        )
+        raw = json.dumps(
+            asdict(altered),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("ascii")
+        digest = _accepted_external_evidence_watermark_sha256(altered)
+        connection = sqlite3.connect(self.path)
+        try:
+            connection.execute(
+                "UPDATE external_evidence_state "
+                "SET watermark_json=?, watermark_sha256=? WHERE singleton=1",
+                (sqlite3.Binary(raw), digest),
+            )
+            connection.commit()
+        finally:
+            connection.close()
+        with self.assertRaises(ReferenceCASCorrupt):
+            self.store.read_watermark_snapshot()
 
     def test_memory_database_is_rejected(self):
         with self.assertRaises(ValueError):
