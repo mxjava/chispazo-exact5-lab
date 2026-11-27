@@ -143,26 +143,23 @@ class TestReceiptArtifactBytesV1(unittest.TestCase):
         ).decode("ascii")
         raw = signed_receipt(document, issuer)
         policy = verified_policy(raw_public_key(issuer))
-        with self.assertRaisesRegex(ValueError, "conflicting declared byte lengths"):
+        with self.assertRaisesRegex(ValueError, "one artifact digest cannot satisfy multiple distinct artifact types"):
             self.check(raw, policy, {digest: payload})
 
-    def test_same_digest_and_length_can_back_two_distinct_artifact_labels(self):
+    def test_same_digest_cannot_satisfy_two_distinct_artifact_labels(self):
         raw, policy, digest, payload = make_case()
         document = json.loads(raw)
         duplicate = copy.deepcopy(document["artifacts"][0])
         duplicate["artifact_type"] = "second-evidence-type"
         document["artifacts"].append(duplicate)
-        # Re-sign with the issuer already trusted by the current policy.
-        # The helper fixture is rebuilt to keep receipt and policy keys aligned.
         issuer = Ed25519PrivateKey.generate()
         raw = signed_receipt(document, issuer)
         policy = verified_policy(raw_public_key(issuer))
-        result = self.check(raw, policy, {digest: payload})
-        self.assertEqual(len(result.artifact_matches), 2)
-        self.assertEqual(
-            {item.sha256 for item in result.artifact_matches},
-            {digest},
-        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "one artifact digest cannot satisfy multiple distinct artifact types",
+        ):
+            self.check(raw, policy, {digest: payload})
 
     def test_tampered_receipt_is_rejected_before_artifact_binding(self):
         raw, policy, digest, payload = make_case()
