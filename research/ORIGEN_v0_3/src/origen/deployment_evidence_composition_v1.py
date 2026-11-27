@@ -257,7 +257,8 @@ def _snapshot_exact_digest_bytes_mapping(value: object, field: str) -> dict[str,
         if type(raw) is not bytes:
             raise TypeError(f"{field} values must be exact immutable bytes")
         if hashlib.sha256(raw).hexdigest() != digest:
-            raise ValueError(f"{field} contains a digest that does not bind its exact bytes")
+            kind = "artifact" if field == "artifact_bytes_by_sha256" else "signature"
+            raise ValueError(f"{kind} SHA-256 digest does not bind its exact bytes")
         snapshot[digest] = raw
     return snapshot
 
