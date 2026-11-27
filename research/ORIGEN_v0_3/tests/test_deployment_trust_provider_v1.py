@@ -474,6 +474,10 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             self.snapshot,
             accepted_external_evidence_watermark=current,
         )
+        raw_receipt = b"synthetic-stale-checkpoint-receipt"
+        raw_policy = b"synthetic-stale-checkpoint-policy"
+        raw_artifact = b"synthetic-stale-checkpoint-artifact"
+        raw_signature = b"synthetic-stale-checkpoint-signature"
         advance = ExternalEvidenceAdvanceV1(
             policy_domain=CLASSIC_POLICY_DOMAIN,
             state_backend_id=self.snapshot.state_backend_id,
@@ -499,6 +503,18 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             raw_consistency_proof_bytes=b"consistency-proof",
             raw_registry_bytes=raw_registry,
             raw_witness_statement_bytes=(b"witness-statement-1", b"witness-statement-2"),
+            receipt_sha256=hashlib.sha256(raw_receipt).hexdigest(),
+            policy_envelope_sha256=hashlib.sha256(raw_policy).hexdigest(),
+            raw_receipt_bytes=raw_receipt,
+            raw_policy_envelope_bytes=raw_policy,
+            raw_custody_record_bytes=b"synthetic-custody-record",
+            raw_portfolio_bytes=b"synthetic-portfolio",
+            raw_custody_signature_bytes=b"synthetic-custody-signature",
+            custodian_key_id="synthetic-custodian",
+            raw_timestamp_token_der=b"synthetic-custody-timestamp-token",
+            raw_policy_timestamp_token_der=b"synthetic-policy-timestamp-token",
+            raw_artifact_bytes_by_sha256=((hashlib.sha256(raw_artifact).hexdigest(), raw_artifact),),
+            raw_signature_bytes_by_sha256=((hashlib.sha256(raw_signature).hexdigest(), raw_signature),),
         )
 
         with self.assertRaisesRegex(
