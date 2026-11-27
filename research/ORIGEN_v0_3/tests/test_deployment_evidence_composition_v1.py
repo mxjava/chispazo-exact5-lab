@@ -75,6 +75,7 @@ class SyntheticPhysicalTrustProvider(SyntheticTrustProvider):
         self,
         *,
         policy_domain,
+        expected_state_backend_id,
         expected_state_generation,
         expected_root_generation,
         expected_physical_trust_context_generation,
@@ -83,6 +84,7 @@ class SyntheticPhysicalTrustProvider(SyntheticTrustProvider):
         self.timestamp_nonce_challenge_read_count += 1
         if (
             policy_domain != CLASSIC_POLICY_DOMAIN
+            or expected_state_backend_id != self.snapshot.state_backend_id
             or expected_state_generation != self.snapshot.state_generation
             or expected_root_generation != self.snapshot.root_generation
             or expected_physical_trust_context_generation != self.snapshot.physical_trust_context_generation
@@ -162,6 +164,8 @@ def _provider_for(data, ledger):
     )
     nonce_challenge = TimestampNonceChallengeV1(
         challenge_id="synthetic-timestamp-challenge-0001",
+        policy_domain=CLASSIC_POLICY_DOMAIN,
+        state_backend_id=snapshot.state_backend_id,
         policy_timestamp_nonce=data["policy_timestamp_expected_nonce"],
         custody_timestamp_nonce=data["expected_nonce"],
         state_generation=snapshot.state_generation,
@@ -268,6 +272,56 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertIn(
             "RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED",
             result.remaining_blockers,
+        )
+
+    def test_nonce_challenge_from_another_backend_is_rejected_before_evidence_or_cas(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.nonce_challenge = replace(
+            provider.nonce_challenge,
+            state_backend_id="another-synthetic-cas-store",
+        )
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "not bound to the exact provider snapshot",
+        ):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_nonce_challenge_from_another_policy_domain_is_rejected_before_evidence_or_cas(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.nonce_challenge = replace(
+            provider.nonce_challenge,
+            policy_domain="origen.chispazo.delastres.provenance",
+        )
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "not bound to the exact provider snapshot",
+        ):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_nonce_challenge_digest_binds_policy_domain_and_backend_identity(self):
+        data, ledger, batches, _ = _build_case()
+        challenge = _provider_for(data, ledger).nonce_challenge
+        baseline = timestamp_nonce_challenge_sha256(challenge)
+
+        self.assertNotEqual(
+            baseline,
+            timestamp_nonce_challenge_sha256(
+                replace(challenge, state_backend_id="another-synthetic-cas-store")
+            ),
+        )
+        self.assertNotEqual(
+            baseline,
+            timestamp_nonce_challenge_sha256(
+                replace(challenge, policy_domain="origen.chispazo.delastres.provenance")
+            ),
         )
 
     def test_receipt_signed_before_policy_effective_time_is_rejected_early(self):
