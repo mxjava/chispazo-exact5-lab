@@ -305,6 +305,13 @@ class SQLiteReferenceExternalEvidenceCASV1:
             raise ReferenceCASCorrupt("persisted watermark fields failed validation") from exc
         if watermark is None:
             raise ReferenceCASCorrupt("persisted watermark is empty")
+        if (
+            watermark.policy_domain != CLASSIC_POLICY_DOMAIN
+            or watermark.state_backend_id != self.state_backend_id
+        ):
+            raise ReferenceCASCorrupt(
+                "persisted watermark identity does not match its row and fixed domain/backend"
+            )
         calculated = _accepted_external_evidence_watermark_sha256(watermark)
         if calculated != stored_digest:
             raise ReferenceCASCorrupt("persisted watermark digest does not match its exact bytes")
