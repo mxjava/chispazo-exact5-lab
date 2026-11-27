@@ -45,13 +45,13 @@ def verify_mapping_artifact_byte_binding(
     """
     if type(claim) is not PhysicalArtifactClaim:
         raise TypeError("claim must be an exact PhysicalArtifactClaim")
-    if claim.artifact_type != "SPHERE-NUMBER-MAPPING-REGISTER":
+    if type(claim.artifact_type) is not str or claim.artifact_type != "SPHERE-NUMBER-MAPPING-REGISTER":
         raise ValueError("claim must be SPHERE-NUMBER-MAPPING-REGISTER")
     if (
         type(claim.contest_id) is not str
         or not _CONTEST_ID.fullmatch(claim.contest_id)
         or type(claim.source_object_id) is not str
-        or not claim.source_object_id
+        or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.:/@+-]{0,127}", claim.source_object_id)
         or type(claim.sha256) is not str
         or not _SHA256.fullmatch(claim.sha256)
         or type(claim.byte_length) is not int
