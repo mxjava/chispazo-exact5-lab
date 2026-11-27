@@ -119,7 +119,7 @@ class SyntheticPhysicalTrustProvider(SyntheticTrustProvider):
         return super().compare_and_advance(**kwargs)
 
 
-def _provider_for(data, ledger):
+def _provider_for(data, ledger, *, uncertainty_ms=0):
     context = PhysicalTrustContextV1(
         policy_tsa_root_certificate_der=data["pinned_policy_tsa_root_certificate_der"],
         policy_tsa_root_sha256=data["expected_policy_tsa_root_sha256"],
@@ -150,7 +150,7 @@ def _provider_for(data, ledger):
         clock_sample_id="synthetic-clock-sample-0001",
         key_id=clock_key_id,
         trusted_time_utc=NOW,
-        uncertainty_ms=0,
+        uncertainty_ms=uncertainty_ms,
         valid_until_utc=sample_valid_until,
     )
     snapshot = DeploymentTrustSnapshot(
@@ -164,7 +164,7 @@ def _provider_for(data, ledger):
         accepted_policy_envelope_sha256="a" * 64,
         trusted_time_latest_utc=NOW - timedelta(seconds=1),
         trusted_time_utc=NOW,
-        clock_uncertainty_ms=0,
+        clock_uncertainty_ms=uncertainty_ms,
         maximum_clock_uncertainty_ms=100,
         clock_source_id="synthetic-clock",
         clock_sample_key_id=clock_key_id,
@@ -349,6 +349,30 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             "RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED",
             result.remaining_blockers,
         )
+
+    def test_full_evidence_timestamps_use_earliest_clock_bound_not_midpoint(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger, uncertainty_ms=100)
+        observed_verification_times = []
+        original = verify_custody_timestamp_ledger_witness_v1
+
+        def capture_verification_time(*args, **kwargs):
+            observed_verification_times.append(kwargs["verification_time"])
+            return original(*args, **kwargs)
+
+        with patch(
+            "origen.deployment_evidence_composition_v1.verify_custody_timestamp_ledger_witness_v1",
+            side_effect=capture_verification_time,
+        ):
+            result = _inspect(data, ledger, batches, provider)
+
+        expected_earliest = NOW - timedelta(milliseconds=100)
+        expected_latest = NOW + timedelta(milliseconds=100)
+        self.assertEqual(observed_verification_times, [expected_earliest])
+        self.assertEqual(result.trusted_time_earliest_utc, expected_earliest)
+        self.assertEqual(result.trusted_time_latest_utc, expected_latest)
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+        self.assertEqual(provider.commit_count, 1)
 
     def test_provider_cas_rejects_self_consistent_substituted_receipt_bytes(self):
         data, ledger, batches, _ = _build_case()
