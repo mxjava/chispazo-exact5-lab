@@ -152,6 +152,7 @@ class DeploymentTrustProvider(Protocol):
         self,
         *,
         policy_domain: str,
+        expected_state_backend_id: str,
         expected_state_generation: int,
         expected_root_generation: int,
         expected_physical_trust_context_generation: int,
@@ -161,8 +162,11 @@ class DeploymentTrustProvider(Protocol):
 
         The provider must create unpredictable RFC 3161 nonces, persist the
         pending challenge, and reject stale, expired, or already-consumed
-        challenges. The challenge is not trusted merely because this interface
-        returns it; the deployment implementation and its state remain external.
+        challenges. The exact policy domain and state_backend_id are part of the
+        challenge digest and must match the authoritative provider instance.
+        This prevents accidental cross-domain or cross-backend challenge reuse.
+        The challenge is not trusted merely because this interface returns it;
+        the deployment implementation and its state remain external.
         """
         ...
 
@@ -185,9 +189,11 @@ class DeploymentTrustProvider(Protocol):
         """Atomically advance policy/time state and consume any supplied challenge.
 
         When challenge fields are present, the backend must look up its own
-        pending challenge, recompute the exact digest, verify the same state
-        and trust configuration, and consume both nonce values in this same
-        linearizable transaction. It must reject challenge or nonce reuse.
+        pending challenge, recompute the exact digest, verify the same policy
+        domain, backend identity, state generation and trust configuration,
+        and consume both nonce values in this same linearizable transaction.
+        It must reject cross-backend/domain challenge use and challenge or
+        nonce reuse.
         """
         ...
 
