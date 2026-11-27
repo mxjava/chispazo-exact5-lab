@@ -1,0 +1,73 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "classification": "OFFICIAL_PUBLICATION_STATUS_ONLY_NOT_PHYSICAL_PROVENANCE",
+  "observed_at_local": "2026-11-26T13:54:25-06:00",
+  "observed_at_utc": "2026-11-26T19:54:25Z",
+  "target_date": "2026-11-26",
+  "official_schedule": {
+    "chispazo_de_las_tres_local_time": "15:00",
+    "chispazo_clasico_local_time": "21:00",
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  },
+  "official_home_index_observation": {
+    "page_url": "https://comercializadores.loterianacional.gob.mx/home/",
+    "visible_chispazo_contest": "12397",
+    "visible_chispazo_date": "2026-11-26",
+    "visible_chispazo_local_time": "15:00",
+    "visible_slot_modality": "CHISPAZO_DE_LAS_TRES_BY_OFFICIAL_SCHEDULE",
+    "chispazo_classic_21_00_contest_id_visible": false,
+    "interpretation": "The reviewed index exposes the 15:00 De las Tres listing only; no Classic contest ID is inferred."
+  },
+  "latest_published_results_page": {
+    "page_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "latest_contest_id": "12396",
+    "latest_contest_date": "2026-11-25",
+    "latest_winning_numbers": [5, 7, 21, 24, 28],
+    "next_draw_date_label": "26/11/2026",
+    "no_2026_11_26_result_visible_at_observation": true
+  },
+  "latest_official_mask_index": {
+    "page_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "latest_mask_date": "2026-11-25",
+    "mask_pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=26112026094725",
+    "original_pdf_bytes_captured": false,
+    "original_pdf_sha256": "NOT_CAPTURED",
+    "26_nov_mask_listed": false
+  },
+  "mask_confirmed_previous_day_contests": [
+    {
+      "contest_id": "12395",
+      "modality": "CHISPAZO_DE_LAS_TRES",
+      "local_slot": "15:00",
+      "winning_numbers": [1, 13, 19, 23, 28]
+    },
+    {
+      "contest_id": "12396",
+      "modality": "CHISPAZO_CLASICO",
+      "local_slot": "21:00",
+      "winning_numbers": [5, 7, 21, 24, 28]
+    }
+  ],
+  "draw_specific_physical_evidence_for_2026_11_26": "NOT_OBTAINED_FROM_REVIEWED_PUBLIC_SOURCES",
+  "missing_primary_evidence": [
+    "signed_draw_act",
+    "CS-11",
+    "sale_close_summary_and_signed_participation_cancellation_files",
+    "original_per_draw_weighing_strip",
+    "all_28_individual_sphere_measurements",
+    "calibration_certificate_and_scale_identity",
+    "machine_case_and_sphere_set_mapping",
+    "institutional_signature_verification_material",
+    "RFC3161_token_and_validated_TSA_chain",
+    "external_ledger_inclusion_and_independent_custody_receipt",
+    "two_independently_sealed_pre_close_outputs"
+  ],
+  "interpretation": {
+    "15_00_slot_status_at_observation": "UPCOMING_NOT_YET_DUE",
+    "21_00_classic_slot_status_at_observation": "UPCOMING_NOT_YET_DUE",
+    "2026_11_26_result_status": "NOT_PUBLISHED_IN_REVIEWED_RESULTS_PAGE",
+    "2026_11_26_classic_contest_id": "NOT_INFERRED",
+    "publication_or_mask_is_not_draw_specific_physical_provenance": true,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "classification": "OFFICIAL_PUBLICATION_STATUS_ONLY_NOT_PHYSICAL_PROVENANCE",
+  "observed_at_local": "2026-11-26T20:09:33-06:00",
+  "observed_at_utc": "2026-11-27T02:09:33Z",
+  "target_date": "2026-11-26",
+  "official_schedule": {
+    "chispazo_de_las_tres_local_time": "15:00",
+    "chispazo_clasico_local_time": "21:00",
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  },
+  "commercializers_home_live_render": {
+    "page_url": "https://comercializadores.loterianacional.gob.mx/home/",
+    "date": "2026-11-26",
+    "chispazo_time_card": {
+      "local_time": "15:00",
+      "contest_id": "12397"
+    },
+    "generic_21_00_card": {
+      "local_time": "21:00",
+      "contest_id": "3093",
+      "product_attribution": "NOT_IDENTIFIED_IN_REVIEWED_PAGE"
+    },
+    "classic_contest_id_confirmed": false,
+    "interpretation": "The 15:00 card identifies contest 12397. By the official Chispazo schedule, 15:00 is De las Tres. The generic 21:00 Sorteo 3093 card is not attributed to Chispazo."
+  },
+  "dedicated_chispazo_results_live_render": {
+    "page_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "contest_id": "12397",
+    "date": "2026-11-26",
+    "winning_numbers": [
+      5,
+      20,
+      23,
+      26,
+      28
+    ],
+    "explicit_modality_label_present": false,
+    "next_draw_date_displayed": "2026-11-26",
+    "modality_assignment": "CHISPAZO_DE_LAS_TRES",
+    "assignment_basis": "Commercializers home page lists 12397 at 15:00 and official Chispazo schedule assigns 15:00 to De las Tres."
+  },
+  "home_results_page_live_render": {
+    "page_url": "https://www.loterianacional.gob.mx/Home/Resultados/",
+    "rendered_chispazo_contests": [
+      "12395",
+      "12396"
+    ],
+    "rendered_date": "2026-11-25",
+    "status": "STALE_RELATIVE_TO_DEDICATED_CHISPAZO_RESULTS_PAGE_AT_OBSERVATION"
+  },
+  "official_mask_index": {
+    "page_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "latest_listed_mask_date": "2026-11-25",
+    "mask_for_2026_11_26_listed": false
+  },
+  "classic_21_00_status": {
+    "result_visible": false,
+    "contest_id_confirmed": false,
+    "numbers_confirmed": false,
+    "status": "NO_CLASSIC_RESULT_OR_DRAW_SPECIFIC_MASK_VISIBLE_AT_20_09_LOCAL"
+  },
+  "physical_provenance_status_for_2026_11_26": {
+    "signed_acta_original_or_verified_copy": false,
+    "cs11": false,
+    "original_weighing_strip": false,
+    "all_28_sphere_measurements": false,
+    "calibration_certificate": false,
+    "machine_and_sphere_set_mapping": false,
+    "institutional_signature_identity_and_authority": false,
+    "rfc3161_token_and_chain_validation": false,
+    "independent_ledger_inclusion_and_consistency": false,
+    "independent_witness_custody": false,
+    "two_pre_close_sealed_outputs": false,
+    "status": "NO_DRAW_SPECIFIC_PHYSICAL_EVIDENCE_OBTAINED"
+  },
+  "source_capture": {
+    "raw_html_bytes_captured": false,
+    "raw_pdf_bytes_captured": false,
+    "source_byte_sha256": null,
+    "note": "Official page text was reviewed through live page views. Original HTML/PDF bytes were not captured in the research runtime; no source-byte SHA-256 is claimed."
+  },
+  "research_only": true,
+  "canonical_history_modified": false,
+  "v294_modified": false,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
