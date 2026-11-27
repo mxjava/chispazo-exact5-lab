@@ -213,7 +213,7 @@ def inspect_witness_gossip(
         )
         if previous_registry_digest != registry_digest:
             raise ValueError(
-                "witness registry sequence has different signed digest"
+                "same registry sequence has different signed digest"
             )
         verified_sequences.add(registry_sequence)
 
