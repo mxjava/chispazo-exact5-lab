@@ -58,6 +58,19 @@ printed-number assignments, and compare every V2 row pair against that
 authenticated mapping. The structural parser does not inspect the mapping
 artifact's contents and cannot detect a bijective reassignment by itself.
 
+A research helper, `mapping_artifact_binding.py`, now provides a narrower
+byte-binding check: it accepts a V1 mapping-register claim, the supplied
+original bytes, and the 28 V2 rows; it verifies the byte length and SHA-256
+against the claim and checks that all rows repeat the claim's target,
+source-object reference and digest. Its result is explicitly
+`MAPPING_ARTIFACT_BYTES_MATCHED_NOT_AUTHENTICATED`. It does **not** parse
+the opaque mapping document or compare its 28 sphere-number pairs with V2.
+A bijective swap of two V2 numbers can therefore pass this byte-binding
+helper; this is intentional and covered by a negative-scope test so callers
+cannot mistake the helper for content verification. The helper is not an
+independent trust backend and cannot change the adapter's
+`BLOCKED_PROVENANCE` result.
+
 The V2 gate fails closed when the mapping reference/digest is absent,
 malformed, inconsistent across sphere rows, or not present in the declared
 mapping-reference set. This structural binding does not change the
