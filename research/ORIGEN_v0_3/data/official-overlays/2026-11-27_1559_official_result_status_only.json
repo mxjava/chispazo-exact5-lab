@@ -1,18 +1,19 @@
 {
   "schema": "origen.official-result-status-only.v1",
-  "observed_at_local": "2026-11-27 16:22 America/Mexico_City",
+  "observed_at_local": "2026-11-27 16:30:34 America/Mexico_City",
   "sources": {
-    "results_page": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "results_page": "https://lotenal.gob.mx/Chispazo/Resultados",
     "home_index": "https://www.loterianacional.gob.mx/home/index/",
     "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
     "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas"
   },
   "de_las_tres_2026_11_27": {
     "contest_id": 12399,
-    "result_published_at_1559_capture": true,
+    "result_published": true,
     "numbers": [10, 14, 15, 17, 24],
+    "result_page_observed_at": "2026-11-27 16:30:34 America/Mexico_City",
     "modality_assessment": "SCHEDULE_INFERRED_DE_LAS_TRES_NOT_MASK_CONFIRMED",
-    "reason": "The 15:59 results-page capture recorded contest 12399 and its numbers; the official home index lists 12399 at 15:00 and the official product page maps 15:00 to De las Tres. The results page does not label modality."
+    "reason": "The official results page displays contest 12399 dated 27-Nov-2026 with these numbers but does not label modality. The official home index lists 12399 at 15:00 and the product page maps 15:00 to De las Tres."
   },
   "classic_2026_11_27": {
     "scheduled_contest_id": 12400,
@@ -20,7 +21,7 @@
     "modality_assessment": "SCHEDULE_INFERRED_CLASSIC_NOT_MASK_CONFIRMED",
     "result_published": false,
     "numbers": null,
-    "reason": "The 16:22 official home-index capture lists 27-Nov-2026 at 21:00 as Chispazo draw 12400; the official product schedule maps 21:00 to Chispazo Clásico. No result or 27-Nov mask was visible in the sources inspected."
+    "reason": "The official home index lists 27-Nov-2026 at 21:00 as Chispazo draw 12400; the product schedule maps 21:00 to Chispazo Clásico. No Classic result or 27-Nov mask was visible at this observation."
   },
   "official_schedule": {
     "de_las_tres": "15:00",
