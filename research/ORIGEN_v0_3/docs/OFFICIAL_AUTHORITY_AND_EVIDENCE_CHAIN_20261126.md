@@ -19,13 +19,13 @@ The cover identifies the issuing area as Subdirección General de Ventas y Opera
 
 The official **Reglamento del Concurso Chispazo**, whose PDF states its last reform was published 7-Mar-2012, provides:
 
-- Article 8: the official winning results are those recorded in the Acta referred to by Article 15. The article separately labels terminal-emitted results as informational only.
+- Article 8: the official winning results are those recorded in the Acta referred to by Article 15. It explicitly classifies results emitted by the terminal, telephone line, website, and results mask as **informational only**; official Acta results prevail if published results differ.
 - Article 15: after the ceremony and identification of winning combinations, an Acta is prepared recording the draw background, results and incidents; it is prepared with the SEGOB-appointed inspector and the officials identified by the regulation, who intervene and sign it.
 
 Official regulation:
 https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf
 
-Operational consequence: a public results page or mask is a publication/discovery artifact, not a substitute for the signed Acta. A result must not be promoted into canonical draw truth solely from a website row when the signed Acta and its supporting evidence are unavailable.
+Operational consequence: the public results page and results mask are expressly informational only under Article 8, not official draw truth. A result must not be promoted into canonical history solely from a website row or mask when the signed Acta and its supporting evidence are unavailable.
 
 ## 3. Modality and cutoff
 
