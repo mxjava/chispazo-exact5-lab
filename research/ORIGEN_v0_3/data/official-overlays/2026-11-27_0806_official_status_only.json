@@ -1,0 +1,104 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-27T08:06:26-06:00",
+  "scope": "status_only_publication_artifact_no_primary_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "https://www.loterianacional.gob.mx/home/index",
+    "https://lotenal.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf"
+  ],
+  "observations": {
+    "official_mask_index": {
+      "newest_visible_result_date": "2026-11-26",
+      "pdf_link_visible": true,
+      "pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226",
+      "pdf_pages": 1,
+      "pdf_visual_review": "WEB_RENDERED_PAGE_1",
+      "original_pdf_bytes_captured": false,
+      "original_pdf_sha256": "NOT_CAPTURED",
+      "modality_labels_visually_present": true
+    },
+    "mask_results_2026_11_26": {
+      "de_las_tres": {
+        "contest_id": 12397,
+        "numbers": [5, 20, 23, 26, 28],
+        "modality_basis": "DIRECT_VISUAL_LABEL_ON_OFFICIAL_MASK"
+      },
+      "classic": {
+        "contest_id": 12398,
+        "numbers": [1, 3, 17, 26, 28],
+        "modality_basis": "DIRECT_VISUAL_LABEL_ON_OFFICIAL_MASK"
+      }
+    },
+    "dedicated_results_page_primary_host": {
+      "host": "www.loterianacional.gob.mx",
+      "latest_contest": 12398,
+      "latest_date": "2026-11-26",
+      "latest_numbers": [1, 3, 17, 26, 28],
+      "modality_label_present": false,
+      "publication_only": true
+    },
+    "legacy_alias_results_page": {
+      "host": "lotenal.gob.mx",
+      "latest_contest": 12397,
+      "latest_date": "2026-11-26",
+      "latest_numbers": [5, 20, 23, 26, 28],
+      "classification": "STALE_OR_LAGGING_ALIAS_OBSERVATION",
+      "do_not_use_to_override_primary_host_or_official_mask": true
+    },
+    "official_product_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00"
+    },
+    "official_home_index_2026_11_27": {
+      "de_las_tres": {
+        "contest_id": 12399,
+        "date": "2026-11-27",
+        "time_local": "15:00",
+        "status": "SCHEDULED"
+      },
+      "classic_2026_11_27": {
+        "contest_id": null,
+        "time_local": "21:00",
+        "status": "NOT_IDENTIFIED_IN_HOME_INDEX_CAPTURE"
+      }
+    }
+  },
+  "authority": {
+    "regulation_url": "https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf",
+    "article_8": "The signed Acta result is official; website and results-mask publications are informational only.",
+    "article_15": "The Acta is prepared after the ceremony and signed by the SEGOB-designated inspector and the designated officials."
+  },
+  "evidence_status": {
+    "publication_artifact_observed": true,
+    "original_mask_pdf_bytes_captured": false,
+    "primary_physical_evidence_obtained": false,
+    "signed_acta_obtained": false,
+    "cs11_obtained": false,
+    "draw_and_closing_summaries_obtained": false,
+    "weighing_strip_and_28_measurements_obtained": false,
+    "scale_calibration_and_equipment_sphere_mapping_obtained": false,
+    "participation_file_signature_and_oic_deposit_obtained": false,
+    "independent_custody_and_trusted_timestamp_obtained": false
+  },
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "limitations": [
+    "The 26-Nov official mask is a publication artefact, not the signed Acta or the underlying physical evidence package.",
+    "The PDF was visually reviewed through the official web-rendered PDF page, but original PDF bytes could not be captured in this execution; no SHA-256 is claimed.",
+    "The official results page on the primary www host showed 12398 while the legacy lotenal.gob.mx alias still showed 12397. The alias is recorded as lagging and is not treated as a contradictory official result.",
+    "The 27-Nov home index identified only the 15:00 De las Tres contest 12399; no 21:00 Classic contest ID was visible in that capture.",
+    "The mask and website results remain informational under Article 8; no result is eligible for canonical history or prospective scoring without the signed Acta and complete custody/provenance."
+  ]
+}
