@@ -172,6 +172,7 @@ class DeploymentTrustCommit:
     policy_envelope_sha256: str
     trusted_time_latest_utc: datetime
     accepted_external_evidence_watermark_sha256: str | None = None
+    receipt_sha256: str | None = None
 
 
 class DeploymentTrustProvider(Protocol):
@@ -189,7 +190,9 @@ class DeploymentTrustProvider(Protocol):
     against its authoritative provisioned clock key and current source sample
     inside the same transaction. Candidate earliest
     time (accepted_at_utc - clock_uncertainty) must not precede the stored
-    trusted_time_latest_utc. The expected clock-sample digest must be
+    trusted_time_latest_utc. Accepted time and uncertainty are derived only from
+    the provider's authenticated signed clock sample; no caller timestamp is a
+    source of trusted time. The expected clock-sample digest must be
     recomputed against the authoritative current source sample inside the
     transaction; reject a changed sample or an expired sample lease. For a
     higher sequence, persist the candidate sequence, digest, and latest time. For the same sequence and digest, persist
@@ -260,14 +263,29 @@ class DeploymentTrustProvider(Protocol):
         root_generation: int,
         policy_sequence: int,
         policy_envelope_sha256: str,
-        accepted_at_utc: datetime,
-        clock_uncertainty_ms: int,
+        raw_policy_envelope_bytes: bytes,
+        raw_receipt_bytes: bytes,
         expected_external_evidence_watermark_sha256: str,
         external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
         timestamp_nonce_challenge_id: str | None = None,
         timestamp_nonce_challenge_sha256: str | None = None,
     ) -> DeploymentTrustCommit:
-        """Atomically advance policy/time state and consume any supplied challenge.
+        """Atomically re-verify exact policy/receipt bytes and advance trust state.
+
+        The provider must independently parse and verify raw_policy_envelope_bytes
+        against its authoritative root, policy domain, key ID, durable sequence
+        floor and its own authenticated current clock. It must recompute the policy
+        digest and sequence, then verify raw_receipt_bytes against that policy and
+        the complete signed-time uncertainty interval. These exact byte inputs are
+        mandatory even when external_evidence_advance is absent. If a full evidence
+        advance is supplied, its embedded policy and receipt bytes must equal these
+        exact arguments. The caller's digests and sequence are assertions only.
+        A successful commit must return receipt_sha256 computed from raw_receipt_bytes.
+
+        The API intentionally has no accepted_at_utc or clock_uncertainty_ms inputs.
+        The provider derives both from its own currently authenticated signed clock
+        sample and rechecks that sample, its lease and state generation in this
+        same linearizable transaction.
 
         When challenge fields are present, the backend must look up its own
         pending challenge, recompute the exact digest, verify the same policy
@@ -953,6 +971,9 @@ def _commit_copy(value: object) -> DeploymentTrustCommit:
             accepted_watermark_sha256,
             "provider commit accepted_external_evidence_watermark_sha256",
         )
+    receipt_sha256 = value.receipt_sha256
+    if receipt_sha256 is not None:
+        _require_sha256(receipt_sha256, "provider commit receipt_sha256")
     return DeploymentTrustCommit(
         outcome=value.outcome,
         state_generation=value.state_generation,
@@ -960,6 +981,7 @@ def _commit_copy(value: object) -> DeploymentTrustCommit:
         policy_envelope_sha256=value.policy_envelope_sha256,
         trusted_time_latest_utc=value.trusted_time_latest_utc,
         accepted_external_evidence_watermark_sha256=accepted_watermark_sha256,
+        receipt_sha256=receipt_sha256,
     )
 
 
@@ -1163,8 +1185,8 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
             root_generation=snapshot.root_generation,
             policy_sequence=verified_policy.policy_sequence,
             policy_envelope_sha256=policy_digest,
-            accepted_at_utc=snapshot.trusted_time_utc,
-            clock_uncertainty_ms=snapshot.clock_uncertainty_ms,
+            raw_policy_envelope_bytes=signed_policy_envelope_bytes,
+            raw_receipt_bytes=original_receipt_bytes,
             expected_external_evidence_watermark_sha256=expected_external_evidence_watermark_sha256,
             external_evidence_advance=external_evidence_advance,
             timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
@@ -1190,6 +1212,9 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         or commit.policy_envelope_sha256 != policy_digest
     ):
         raise TrustStateRejected("provider commit does not bind the exact verified policy")
+    receipt_digest = hashlib.sha256(original_receipt_bytes).hexdigest()
+    if commit.receipt_sha256 != receipt_digest:
+        raise TrustStateRejected("provider commit does not bind the exact verified receipt")
     if commit.accepted_external_evidence_watermark_sha256 != next_external_evidence_watermark_sha256:
         raise TrustStateRejected("provider commit does not bind the resulting external ledger/witness watermark")
 

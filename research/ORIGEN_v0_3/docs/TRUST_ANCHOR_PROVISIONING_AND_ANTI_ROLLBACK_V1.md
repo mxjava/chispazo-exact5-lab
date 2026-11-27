@@ -70,6 +70,14 @@ The V3 diagnostic API has been separated from the public provenance entry point:
 
 This change prevents accidental use of request-level trust inputs at the public provenance API. It does **not** authenticate the provider, root provisioning, trusted time, anti-rollback storage, institutional identity, physical records or custody. No production trust anchor is added.
 
+## 5.2 Exact-byte provider CAS and provider-owned time
+
+Every provider CAS call now carries the original `raw_policy_envelope_bytes` and `raw_receipt_bytes`, including receipt-only inspections where no full physical evidence advance is supplied. The provider must independently parse and verify those exact bytes against its authoritative root, policy domain, key ID, durable sequence floor and signed current time. It recomputes the policy digest/sequence, verifies the receipt signature and full uncertainty interval, and rejects any mismatch before durable state mutation. If a full `ExternalEvidenceAdvanceV1` is also supplied, its embedded policy and receipt bytes must equal these separate required inputs; the provider must additionally re-verify the complete nested signature, custody, RFC 3161, ledger, inclusion/consistency and witness-registry envelope inside the same transaction.
+
+The CAS API intentionally does not accept caller-supplied accepted time or uncertainty. The provider derives those values from its own authenticated signed clock sample, rechecks the sample digest and lease, and serializes those checks with state advancement. Successful commits must return the exact receipt SHA-256 as well as the policy and external-evidence watermark digests; the application rejects a response that does not bind the receipt bytes it supplied.
+
+The synthetic provider tests exercise the receipt/policy/time contract only. They are not an independent provider implementation. No institutional CAS, clock, root provisioning or custody is installed.
+
 ## 6. Required adversarial deployment tests
 
 Before any deployment can leave the blocked state, tests must cover:
