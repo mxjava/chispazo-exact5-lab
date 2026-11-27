@@ -92,6 +92,20 @@ def verify_independent_provenance(
             "verified trust policy is not valid at receipt verification time"
         )
 
+    # A later verification time must not retroactively authorize a receipt
+    # signed before the policy's effective interval began.
+    signed_at = datetime.fromisoformat(
+        verified_receipt.receipt.attestation.signed_at_utc.replace("Z", "+00:00")
+    )
+    if not (
+        verified_trust_policy.not_before_utc
+        <= signed_at
+        < verified_trust_policy.expires_at_utc
+    ):
+        raise ValueError(
+            "verified trust policy was not effective at receipt signing time"
+        )
+
     # The root signature is only one layer. No status upgrade is permitted until
     # independent provisioning, trusted time, nested signatures, TSA, ledger,
     # artifact-byte verification, and custody checks are implemented and audited.
