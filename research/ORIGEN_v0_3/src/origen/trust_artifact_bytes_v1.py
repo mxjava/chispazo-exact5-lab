@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from typing import Mapping
-
 from datetime import datetime
 
 from .independent_trust_adapter import (
@@ -106,7 +104,6 @@ def verify_receipt_artifact_bytes(
             f"receipt artifact byte set mismatch; missing={missing}, unexpected={extra}"
         )
 
-    actual_digests: dict[str, str] = {}
     for digest, expected_length in expected_lengths.items():
         payload = supplied[digest]
         actual_length = len(payload)
@@ -120,7 +117,6 @@ def verify_receipt_artifact_bytes(
             raise ValueError(
                 f"artifact SHA-256 mismatch: declared={digest}, actual={actual_digest}"
             )
-        actual_digests[digest] = actual_digest
 
     matches = tuple(
         ReceiptArtifactByteMatch(
