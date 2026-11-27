@@ -1,9 +1,9 @@
-"""Bind V2 sphere rows to the mapping-register claim and its original bytes.
+"""Bind V2 sphere rows to mapping bytes declared by an unverified V1 manifest.
 
-This is a byte-integrity/structural binding helper only. A parsed manifest claim is
-unverified input: this module does not authenticate its issuer, signature, custody,
-trusted time, or institutional authority, and it does not parse the mapping format
-or prove that the 28 printed-number assignments match the document.
+The public entry point accepts the original manifest bytes, not a caller-created
+PhysicalArtifactClaim. Parsing still yields unverified declarations: this module
+does not authenticate issuer, signatures, custody, trusted time, or authority,
+and it does not parse the mapping format or prove its 28 assignments.
 """
 from __future__ import annotations
 
@@ -12,11 +12,14 @@ import re
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping
 
-from .physical_evidence_manifest_v1 import PhysicalArtifactClaim
+from .physical_evidence_manifest_v1 import (
+    PhysicalArtifactClaim,
+    parse_unverified_physical_manifest,
+)
 
-_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
-_CONTEST_ID = re.compile(r"[1-9][0-9]{0,11}\Z")
-_SPHERE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9.:/@+-]{0,127}\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
+_CONTEST_ID = re.compile(r"[1-9][0-9]{0,11}\\Z")
+_SPHERE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9.:/@+-]{0,127}\\Z")
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,22 +30,45 @@ class MappingArtifactByteBinding:
     source_object_id: str
     sha256: str
     byte_length: int
+    manifest_sha256: str
     row_count: int
     status: str = "MAPPING_ARTIFACT_BYTES_MATCHED_NOT_AUTHENTICATED"
 
 
 def verify_mapping_artifact_byte_binding(
     rows: Iterable[Mapping[str, Any]],
+    original_manifest_bytes: bytes,
+    original_mapping_bytes: bytes,
+) -> MappingArtifactByteBinding:
+    """Parse original manifest bytes, select its unique mapping claim, and bind rows.
+
+    The manifest parser validates canonical structure only. It does not
+    authenticate the manifest or its declarations. The exact original mapping
+    bytes must match the mapping claim extracted from those parsed bytes.
+    """
+    if type(original_manifest_bytes) is not bytes:
+        raise TypeError("original_manifest_bytes must be exact immutable bytes")
+    manifest = parse_unverified_physical_manifest(original_manifest_bytes)
+    mapping_claims = tuple(
+        item for item in manifest.artifacts
+        if item.artifact_type == "SPHERE-NUMBER-MAPPING-REGISTER"
+    )
+    if len(mapping_claims) != 1:
+        raise ValueError("manifest must contain exactly one mapping-register claim")
+    claim = mapping_claims[0]
+    return _verify_mapping_claim_byte_binding(
+        rows, claim, original_mapping_bytes, manifest_sha256=manifest.raw_sha256
+    )
+
+
+def _verify_mapping_claim_byte_binding(
+    rows: Iterable[Mapping[str, Any]],
     claim: PhysicalArtifactClaim,
     original_bytes: bytes,
+    *,
+    manifest_sha256: str,
 ) -> MappingArtifactByteBinding:
-    """Require all 28 V2 rows to bind to one manifest mapping claim and exact bytes.
-
-    The claim must be the SPHERE-NUMBER-MAPPING-REGISTER claim parsed from the
-    per-contest V1 manifest. The claim itself remains unverified. Mapping bytes
-    are opaque here because the institutionally authoritative file format/parser
-    has not been established.
-    """
+    """Internal structural check for a claim already extracted from parsed bytes."""
     if type(claim) is not PhysicalArtifactClaim:
         raise TypeError("claim must be an exact PhysicalArtifactClaim")
     if type(claim.artifact_type) is not str or claim.artifact_type != "SPHERE-NUMBER-MAPPING-REGISTER":
@@ -51,7 +77,7 @@ def verify_mapping_artifact_byte_binding(
         type(claim.contest_id) is not str
         or not _CONTEST_ID.fullmatch(claim.contest_id)
         or type(claim.source_object_id) is not str
-        or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.:/@+-]{0,127}", claim.source_object_id)
+        or not _SPHERE_ID.fullmatch(claim.source_object_id)
         or type(claim.sha256) is not str
         or not _SHA256.fullmatch(claim.sha256)
         or type(claim.byte_length) is not int
@@ -100,5 +126,6 @@ def verify_mapping_artifact_byte_binding(
         source_object_id=claim.source_object_id,
         sha256=claim.sha256,
         byte_length=claim.byte_length,
+        manifest_sha256=manifest_sha256,
         row_count=28,
     )
