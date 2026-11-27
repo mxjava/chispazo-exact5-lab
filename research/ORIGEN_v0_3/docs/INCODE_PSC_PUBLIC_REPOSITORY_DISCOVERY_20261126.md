@@ -48,3 +48,16 @@ No certificate bytes, fingerprints, OCSP/CRL evidence, live timestamp token, aut
 ## Gate status
 
 This note does not remove any blocker. All trust fixtures remain synthetic; the provider is not deployed or independently authenticated; physical draw evidence and custody remain absent. ORIGEN remains `BLOCKED_PROVENANCE`; production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
+
+## Provider-published trust repository — certificate locator discovery
+
+A second provider page, https://psc.incode.com/repositorio-de-confianza/, states that Incode publishes public keys/certificates for its service hierarchies and describes the chain as rooted in the Secretaría de Economía's **Autoridad Certificadora Raíz Segunda**. The page lists these certificate files:
+
+- `ACR2_SE.cer` — Autoridad Certificadora Raíz Segunda de la Secretaría de Economía.
+- `SDT_Frankfurt.cer` and `SDT_Milan.cer` — Incode digital-time-seal authorities.
+- `NOM151_Frankfurt.cer` and `NOM151_Milan.cer` — conservation-certificate authorities.
+
+The three certificate links checked for this note (ACR2_SE, SDT_Frankfurt, SDT_Milan) returned **HTTP 403 Forbidden** through the available retrieval path. Their filenames and provider-described roles are locators, not cryptographic evidence. No certificate bytes, DER fingerprints, issuer/subject linkage, key usage/EKU, validity check, signature verification, or revocation check was obtained. The provider page's description of its PKI root must not be substituted for independently validating the actual chain.
+
+This improves discovery: there is a documented certificate repository and named TSA certificate candidates to request or retrieve through another independently verifiable channel. It does **not** close the trust-anchor or revocation blocker.
