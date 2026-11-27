@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import json
+import hashlib
 import unittest
 from enum import Enum
 from unittest.mock import patch
@@ -446,6 +447,66 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
                 snapshot,
                 _accepted_external_evidence_watermark_sha256(watermark),
                 None,
+            )
+
+    def test_same_size_ledger_checkpoint_requires_exact_old_checkpoint(self):
+        raw_current_checkpoint = b"current-signed-checkpoint"
+        raw_stale_old_checkpoint = b"stale-old-checkpoint"
+        raw_registry = b"signed-registry"
+        current = ExternalEvidenceWatermarkV1(
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            state_backend_id=self.snapshot.state_backend_id,
+            log_id="synthetic-log",
+            log_key_id="synthetic-log-key",
+            log_public_key_sha256="a" * 64,
+            ledger_tree_size=2,
+            ledger_root_sha256="b" * 64,
+            ledger_checkpoint_sha256=hashlib.sha256(raw_current_checkpoint).hexdigest(),
+            registry_id="synthetic-registry",
+            registry_root_key_id="synthetic-registry-root",
+            registry_root_public_key_sha256="d" * 64,
+            registry_sequence=1,
+            registry_sha256=hashlib.sha256(raw_registry).hexdigest(),
+        )
+        snapshot = replace(
+            self.snapshot,
+            accepted_external_evidence_watermark=current,
+        )
+        advance = ExternalEvidenceAdvanceV1(
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            state_backend_id=self.snapshot.state_backend_id,
+            log_id=current.log_id,
+            log_key_id=current.log_key_id,
+            log_public_key_sha256=current.log_public_key_sha256,
+            old_tree_size=1,
+            old_root_sha256="f" * 64,
+            old_checkpoint_sha256=hashlib.sha256(raw_stale_old_checkpoint).hexdigest(),
+            new_tree_size=2,
+            new_root_sha256=current.ledger_root_sha256,
+            new_checkpoint_sha256=current.ledger_checkpoint_sha256,
+            registry_id=current.registry_id,
+            registry_root_key_id=current.registry_root_key_id,
+            registry_root_public_key_sha256=current.registry_root_public_key_sha256,
+            registry_sequence=current.registry_sequence,
+            registry_sha256=current.registry_sha256,
+            raw_manifest_bytes=b"manifest",
+            raw_ledger_entry_bytes=b"ledger-entry",
+            raw_inclusion_proof_bytes=b"inclusion-proof",
+            raw_old_checkpoint_bytes=raw_stale_old_checkpoint,
+            raw_new_checkpoint_bytes=raw_current_checkpoint,
+            raw_consistency_proof_bytes=b"consistency-proof",
+            raw_registry_bytes=raw_registry,
+            raw_witness_statement_bytes=(b"witness-statement-1", b"witness-statement-2"),
+        )
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "same-size ledger checkpoint advance does not bind the exact persisted old checkpoint",
+        ):
+            _validated_external_evidence_watermark(
+                snapshot,
+                _accepted_external_evidence_watermark_sha256(current),
+                advance,
             )
 
     def test_clock_sample_signature_and_exact_bytes_are_verified_before_commit(self):
