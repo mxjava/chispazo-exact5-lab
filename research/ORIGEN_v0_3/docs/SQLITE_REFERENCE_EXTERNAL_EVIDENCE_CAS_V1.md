@@ -18,7 +18,7 @@ Status: **research-only reference and conformance fixture**. This is not a produ
 - Subprocess crash-recovery tests: a committed watermark advance remains visible after immediate process exit, while an uncommitted WAL update is discarded on recovery.
 - A journal-mode drift regression switches an initialized database to DELETE through an external connection and verifies that both an existing CAS instance and a newly constructed instance reject it.
 
-The implementation reuses the exact application-side `ExternalEvidenceWatermarkV1` and `ExternalEvidenceAdvanceV1` validation. It deliberately does **not** implement `DeploymentTrustProvider`; it cannot be passed to the full evidence-composition entry point.
+The implementation reuses the exact application-side `ExternalEvidenceWatermarkV1` and `ExternalEvidenceAdvanceV1` validation. The latter now requires the complete bounded exact-byte envelope: receipt and policy, custody record/signature, portfolio, custodian ID, both timestamp tokens, artifact/signature byte maps, manifest, ledger/checkpoint/consistency, registry and witness statements. The SQLite test fixture supplies only synthetic placeholder bytes to satisfy this shape; it does not authenticate or independently re-verify them, and the local CAS does not persist or retain the nested evidence bundle. It deliberately does **not** implement `DeploymentTrustProvider`; it cannot be passed to the full evidence-composition entry point.
 
 ## Validation boundary
 
