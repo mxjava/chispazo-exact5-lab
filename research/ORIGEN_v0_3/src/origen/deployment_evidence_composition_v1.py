@@ -509,6 +509,18 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
             for batch in witness_observation_batches
             for statement in batch.raw_witness_statement_bytes
         ),
+        receipt_sha256=hashlib.sha256(original_receipt_bytes).hexdigest(),
+        policy_envelope_sha256=policy_digest,
+        raw_receipt_bytes=original_receipt_bytes,
+        raw_policy_envelope_bytes=signed_policy_envelope_bytes,
+        raw_custody_record_bytes=custody_record_bytes,
+        raw_portfolio_bytes=portfolio_bytes,
+        raw_custody_signature_bytes=custody_signature_bytes,
+        custodian_key_id=custodian_key_id,
+        raw_timestamp_token_der=timestamp_token_der,
+        raw_policy_timestamp_token_der=policy_timestamp_token_der,
+        raw_artifact_bytes_by_sha256=tuple(sorted(artifact_bytes_by_sha256.items())),
+        raw_signature_bytes_by_sha256=tuple(sorted(signature_bytes_by_sha256.items())),
     )
     _validated_external_evidence_watermark(
         snapshot,
