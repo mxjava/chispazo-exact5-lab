@@ -73,11 +73,14 @@ def verify_mapping_artifact_byte_binding(
     for index, row in enumerate(rows):
         if type(row) is not dict:
             raise TypeError(f"row {index} must be an exact dict")
-        if row.get("target_contest_id") != claim.contest_id:
+        target_id = row.get("target_contest_id")
+        artifact_ref = row.get("mapping_artifact_ref")
+        artifact_digest = row.get("mapping_artifact_sha256")
+        if type(target_id) is not str or target_id != claim.contest_id:
             raise ValueError("V2 target contest does not match mapping manifest claim")
-        if row.get("mapping_artifact_ref") != claim.source_object_id:
+        if type(artifact_ref) is not str or artifact_ref != claim.source_object_id:
             raise ValueError("V2 mapping artifact reference does not match manifest claim")
-        if row.get("mapping_artifact_sha256") != claim.sha256:
+        if type(artifact_digest) is not str or artifact_digest != claim.sha256:
             raise ValueError("V2 mapping artifact digest does not match manifest claim")
         sphere_id = row.get("sphere_id")
         printed_number = row.get("printed_number")
