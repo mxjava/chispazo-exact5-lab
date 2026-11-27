@@ -863,7 +863,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.read_count, 1)
         self.assertEqual(provider.commit_count, 0)
 
-    def test_provider_cas_rejects_reused_timestamp_nonce_values_under_a_fresh_challenge_id(self):
+    def test_replayed_ledger_checkpoint_is_rejected_before_provider_cas_even_with_fresh_nonce_challenge(self):
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger)
         _inspect(data, ledger, batches, provider)
@@ -888,7 +888,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         with self.assertRaises(TrustStateRejected):
             _inspect(data, ledger, batches, provider)
 
-        self.assertEqual(provider.commit_count, 2)
+        self.assertEqual(provider.commit_count, 1)
         self.assertEqual(provider.snapshot.state_generation, generation_after_first)
         self.assertEqual(provider.snapshot.accepted_policy_sequence, accepted_sequence_after_first)
         self.assertEqual(len(provider.consumed_timestamp_nonce_values), 2)
