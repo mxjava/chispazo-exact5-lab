@@ -1,4 +1,6 @@
-# Official Chispazo mask follow-up — 27-Nov-2026 03:52 Mexico City
+# Official Chispazo mask follow-up — 27-Nov-2026 04:13 Mexico City
+
+**Observed at:** 2026-11-27 04:13:00 America/Mexico_City (fresh official-page and PDF recheck). The earlier `0352` filename suffix denoted the automation cycle start, not the source-fetch timestamp.
 
 **Classification:** official public result-mask modality confirmation only; not physical-process provenance.
 

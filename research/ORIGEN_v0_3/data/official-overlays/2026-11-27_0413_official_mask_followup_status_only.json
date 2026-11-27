@@ -1,8 +1,8 @@
 {
   "schema_version": "origen.official-mask-followup.v1",
   "classification": "OFFICIAL_RESULT_MASK_MODALITY_CONFIRMATION_ONLY_NOT_PHYSICAL_PROCESS_PROVENANCE",
-  "observed_at_local": "2026-11-27T03:52:00-06:00",
-  "observed_at_utc": "2026-11-27T09:52:00Z",
+  "observed_at_local": "2026-11-27T04:13:00-06:00",
+  "observed_at_utc": "2026-11-27T10:13:00Z",
   "timezone": "America/Mexico_City",
   "sources": {
     "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
@@ -20,14 +20,26 @@
         "contest_id": "12397",
         "modality": "DE_LAS_TRES",
         "scheduled_slot_local": "15:00",
-        "winning_numbers": ["05", "20", "23", "26", "28"],
+        "winning_numbers": [
+          "05",
+          "20",
+          "23",
+          "26",
+          "28"
+        ],
         "confirmation": "OFFICIAL_MASK_LOGO_AND_CONTEST_NUMBER_VISUALLY_CONFIRMED"
       },
       {
         "contest_id": "12398",
         "modality": "CLASSIC",
         "scheduled_slot_local": "21:00",
-        "winning_numbers": ["01", "03", "17", "26", "28"],
+        "winning_numbers": [
+          "01",
+          "03",
+          "17",
+          "26",
+          "28"
+        ],
         "confirmation": "OFFICIAL_MASK_LOGO_AND_CONTEST_NUMBER_VISUALLY_CONFIRMED"
       }
     ],
@@ -46,7 +58,13 @@
     "official_results_page": {
       "latest_published_contest_id": "12398",
       "latest_published_date": "2026-11-26",
-      "latest_published_numbers": ["01", "03", "17", "26", "28"],
+      "latest_published_numbers": [
+        "01",
+        "03",
+        "17",
+        "26",
+        "28"
+      ],
       "next_draw_date_displayed": "2026-11-27",
       "target_date_result_visible": false,
       "target_date_classic_contest_id_visible": false
