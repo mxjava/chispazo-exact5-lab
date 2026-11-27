@@ -31,6 +31,12 @@ def _assignment(function: ast.FunctionDef, name: str) -> ast.AST:
     raise AssertionError(f"{function.name} has no assignment to {name}")
 
 
+def _stable_ast_dump(node: ast.AST) -> str:
+    # Python 3.11 includes empty AST fields such as keywords=[] in ast.dump;
+    # Python 3.13 omits them by default. Normalize this harmless difference.
+    return ast.dump(node, annotate_fields=True, include_attributes=False).replace(", keywords=[]", "")
+
+
 def build_report() -> dict:
     source = V265.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(V265))
@@ -38,13 +44,7 @@ def build_report() -> dict:
     guard = _return_dict(_function(tree, "physical_evidence_guard"))
     validator = _function(tree, "validate_preclose_metadata")
     required_fields = ast.literal_eval(_assignment(main, "req_m"))
-    # ast.dump is stable across supported Python minor versions; ast.unparse
-    # changes harmless parenthesization between Python 3.11 and 3.12.
-    research_edge_ast = ast.dump(
-        _assignment(main, "research_edge"),
-        annotate_fields=True,
-        include_attributes=False,
-    )
+    research_edge_ast = _stable_ast_dump(_assignment(main, "research_edge"))
     validator_text = ast.get_source_segment(source, validator) or ""
     provenance_terms = (
         "source_document", "source_url", "source_sha256",
