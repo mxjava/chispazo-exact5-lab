@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
-"""Static, deterministic audit of V265 claim semantics.
-
-Reads the checked-in evaluator source only. It does not read draw outcomes,
-construct records, run statistical tests, or infer physical bias.
-"""
+"""Static, deterministic audit of V265 claim semantics."""
 from __future__ import annotations
-
 import ast
 import json
 from pathlib import Path
@@ -43,9 +38,14 @@ def build_report() -> dict:
     guard = _return_dict(_function(tree, "physical_evidence_guard"))
     validator = _function(tree, "validate_preclose_metadata")
     required_fields = ast.literal_eval(_assignment(main, "req_m"))
-    research_edge_expr = ast.unparse(_assignment(main, "research_edge"))
+    # ast.dump is stable across supported Python minor versions; ast.unparse
+    # changes harmless parenthesization between Python 3.11 and 3.12.
+    research_edge_ast = ast.dump(
+        _assignment(main, "research_edge"),
+        annotate_fields=True,
+        include_attributes=False,
+    )
     validator_text = ast.get_source_segment(source, validator) or ""
-
     provenance_terms = (
         "source_document", "source_url", "source_sha256",
         "signature_verified", "custody", "rfid", "sphere_weight",
@@ -54,26 +54,20 @@ def build_report() -> dict:
     validator_provenance_checks = {
         term: term in validator_text for term in provenance_terms
     }
-
     result = {
         "audit_id": "V265_RESEARCH_EDGE_SEMANTICS_AUDIT_20261126",
         "classification": "ASSOCIATION_SCREEN_ONLY",
         "required_metadata_fields": required_fields,
-        "research_edge_expression": research_edge_expr,
+        "research_edge_ast": research_edge_ast,
         "research_edge_is_physical_bias_evidence": guard["physical_bias_evidence"],
         "actionable_for_betting": guard["actionable_for_betting"],
         "anytime_evalue_gate_implemented": guard["anytime_evalue_gate_implemented"],
         "guard": {
             key: guard[key] for key in (
-                "evidence_class",
-                "physical_bias_evidence",
-                "actionable_for_betting",
-                "anytime_evalue_gate_implemented",
-                "per_sphere_weights_consumed",
-                "per_sphere_rfid_mapping_consumed",
-                "extraction_order_consumed",
-                "per_extraction_timestamps_consumed",
-                "source_provenance_required",
+                "evidence_class", "physical_bias_evidence", "actionable_for_betting",
+                "anytime_evalue_gate_implemented", "per_sphere_weights_consumed",
+                "per_sphere_rfid_mapping_consumed", "extraction_order_consumed",
+                "per_extraction_timestamps_consumed", "source_provenance_required",
             )
         },
         "preclose_validator_checks_source_provenance": any(validator_provenance_checks.values()),

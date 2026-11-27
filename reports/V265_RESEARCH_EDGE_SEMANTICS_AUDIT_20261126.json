@@ -1,6 +1,35 @@
 {
+  "anytime_evalue_gate_passed": false,
   "audit_id": "V265_RESEARCH_EDGE_SEMANTICS_AUDIT_20261126",
   "classification": "ASSOCIATION_SCREEN_ONLY",
+  "guard": {
+    "actionable_for_betting": false,
+    "anytime_evalue_gate_implemented": false,
+    "evidence_class": "ASSOCIATION_SCREEN_ONLY",
+    "extraction_order_consumed": false,
+    "per_extraction_timestamps_consumed": false,
+    "per_sphere_rfid_mapping_consumed": false,
+    "per_sphere_weights_consumed": false,
+    "physical_bias_evidence": false,
+    "source_provenance_required": false
+  },
+  "multiplicity_gate_passed": false,
+  "oos_gate_passed": false,
+  "physical_records_obtained": [],
+  "preclose_validator_checks_source_provenance": false,
+  "preclose_validator_provenance_terms": {
+    "custody": false,
+    "extraction_order": false,
+    "per_extraction_timestamp": false,
+    "rfid": false,
+    "signature_verified": false,
+    "source_document": false,
+    "source_sha256": false,
+    "source_url": false,
+    "sphere_weight": false
+  },
+  "research_edge_ast": "Call(func=Name(id='bool', ctx=Load()), args=[BoolOp(op=And(), values=[Name(id='sample_ok', ctx=Load()), Compare(left=Name(id='mean', ctx=Load()), ops=[Gt()], comparators=[Constant(value=0)]), Compare(left=Name(id='adjusted_p', ctx=Load()), ops=[IsNot()], comparators=[Constant(value=None)]), Compare(left=Name(id='adjusted_p', ctx=Load()), ops=[Lt()], comparators=[Constant(value=0.05)])])])",
+  "research_edge_is_physical_bias_evidence": false,
   "required_metadata_fields": [
     "CONCURSO",
     "sphere_set_id",
@@ -9,39 +38,10 @@
     "close_time_local",
     "metadata_known_time_local"
   ],
-  "research_edge_expression": "bool(sample_ok and mean > 0 and adjusted_p is not None and adjusted_p < 0.05)",
-  "research_edge_is_physical_bias_evidence": false,
-  "actionable_for_betting": false,
-  "anytime_evalue_gate_implemented": false,
-  "guard": {
-    "evidence_class": "ASSOCIATION_SCREEN_ONLY",
-    "physical_bias_evidence": false,
-    "actionable_for_betting": false,
-    "anytime_evalue_gate_implemented": false,
-    "per_sphere_weights_consumed": false,
-    "per_sphere_rfid_mapping_consumed": false,
-    "extraction_order_consumed": false,
-    "per_extraction_timestamps_consumed": false,
-    "source_provenance_required": false
-  },
-  "preclose_validator_checks_source_provenance": false,
-  "preclose_validator_provenance_terms": {
-    "source_document": false,
-    "source_url": false,
-    "source_sha256": false,
-    "signature_verified": false,
-    "custody": false,
-    "rfid": false,
-    "sphere_weight": false,
-    "extraction_order": false,
-    "per_extraction_timestamp": false
-  },
-  "interpretation": "The research_edge field is an association-screen flag computed from OOS sample size, mean log-lift and an optional Holm-adjusted p-value. It is not a physical-bias or actionable-prediction result. Caller-supplied machine/set labels and timestamps are not authenticated by this evaluator; the pre-close validator checks chronology only.",
+  "statistical_tests_run": [],
   "uses_draw_outcomes": false,
   "uses_synthetic_records": false,
-  "physical_records_obtained": [],
-  "statistical_tests_run": [],
-  "oos_gate_passed": false,
-  "multiplicity_gate_passed": false,
-  "anytime_evalue_gate_passed": false
+  "actionable_for_betting": false,
+  "anytime_evalue_gate_implemented": false,
+  "interpretation": "The research_edge field is an association-screen flag computed from OOS sample size, mean log-lift and an optional Holm-adjusted p-value. It is not a physical-bias or actionable-prediction result. Caller-supplied machine/set labels and timestamps are not authenticated by this evaluator; the pre-close validator checks chronology only."
 }

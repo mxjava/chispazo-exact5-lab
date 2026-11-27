@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import ast
 import importlib.util
 import json
 from pathlib import Path
@@ -35,9 +35,15 @@ def test_v265_preclose_fields_do_not_authenticate_source_provenance():
 
 def test_research_edge_expression_is_only_an_association_screen():
     report = MODULE.build_report()
-    assert report["research_edge_expression"] == (
-        "bool(sample_ok and mean > 0 and adjusted_p is not None and adjusted_p < 0.05)"
+    expected = ast.dump(
+        ast.parse(
+            "bool(sample_ok and mean > 0 and adjusted_p is not None and adjusted_p < 0.05)",
+            mode="eval",
+        ).body,
+        annotate_fields=True,
+        include_attributes=False,
     )
+    assert report["research_edge_ast"] == expected
     assert "not authenticated" in report["interpretation"]
 
 

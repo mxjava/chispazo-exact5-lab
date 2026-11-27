@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic semantic audit of the SGVO-PRO-05 rev.39 document map.
-
-This checks a committed page/activity transcription only. It does not fetch
-or authenticate the official PDF, and it does not inspect draw-level records.
-"""
+"""Deterministic semantic audit of the SGVO-PRO-05 rev.39 document map."""
 from __future__ import annotations
 import json
 from pathlib import Path
@@ -18,9 +14,9 @@ REQUIRED = {
     "signature_not_preclose": "Do not call it pre-close",
     "weighing_after_close": "then weighing starts",
     "cs11_copy_count": "four copies are printed",
-    "cs11_unassigned_copy": "One copy's custodian is not identified",
-    "mijf_after_2100": "After 21:00",
-    "mijf_exact_draw_end_unknown": "does not specify exact relation to the physical draw's end",
+    "cs11_third_copy_recipient": "copy to the Control Data operator",
+    "mjf_after_2100": "After 21:00",
+    "mjf_exact_draw_end_unknown": "does not specify exact relation to the physical draw's end",
     "no_original_draw_records": "not an original signed record or proof of a particular contest's execution",
 }
 
@@ -39,8 +35,10 @@ def build_report() -> dict:
             "participation_signature_stage": "AFTER_SICAL_CLOSE_CHECK_BEFORE_DRAW",
             "participation_signature_is_preclose": False,
             "weighing_stage": "AFTER_VERIFIED_SICAL_CLOSE",
-            "cs11_copy_distribution_complete": False,
-            "mijf_archive_stage": "AFTER_21_00_DAILY_CLOSE; EXACT_RELATION_TO_DRAW_END_UNSPECIFIED",
+            "cs11_copy_distribution_complete": True,
+            "cs11_third_copy_recipient": "CONTROL_DATA_OPERATOR",
+            "cs11_actual_delivery_receipts_obtained": False,
+            "mjf_archive_stage": "AFTER_21_00_DAILY_CLOSE; EXACT_RELATION_TO_DRAW_END_UNSPECIFIED",
             "physical_bias_evidence": False,
             "predictive_edge_evidence": False,
         },

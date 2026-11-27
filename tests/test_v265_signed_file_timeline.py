@@ -22,9 +22,11 @@ def test_participation_signature_is_postclose_pre_draw_not_preclose():
     assert report["key_findings"]["participation_signature_is_preclose"] is False
 
 
-def test_cs11_distribution_ambiguity_is_not_claimed_as_missing_copy():
+def test_cs11_distribution_names_all_three_copy_recipients():
     report = MODULE.build_report()
-    assert report["key_findings"]["cs11_copy_distribution_complete"] is False
+    assert report["key_findings"]["cs11_copy_distribution_complete"] is True
+    assert report["key_findings"]["cs11_third_copy_recipient"] == "CONTROL_DATA_OPERATOR"
+    assert report["key_findings"]["cs11_actual_delivery_receipts_obtained"] is False
     assert report["draw_level_original_records_obtained"] is False
 
 

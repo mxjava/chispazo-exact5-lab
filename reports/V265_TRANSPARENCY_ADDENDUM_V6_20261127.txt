@@ -1,0 +1,42 @@
+SOLICITUD DE ACCESO A DOCUMENTOS — AMPLIACIÓN V6
+CHISPAZO CLÁSICO / IDENTIFICACIÓN RFID, PESAJES, MANTENIMIENTO Y CUSTODIA
+Fecha de preparación: 27 de noviembre de 2026
+Estado: BORRADOR NO PRESENTADO
+Esta versión sustituye únicamente los puntos corregidos de V5. No solicita identificar un supuesto destinatario faltante de CS-11: SGVO-PRO-05 enumera las tres copias para SEGOB, DTT y Control de Datos.
+
+Solicito, para los últimos 100 concursos de Chispazo Clásico cuyos expedientes existan:
+
+1. CS-02 Y EQUIPO
+- Copia pública de CS-02 por concurso, incluyendo fecha/hora de inspección, estado del equipo, identificador/serie de máquina, estuche seleccionado, personal que inspeccionó y firmas.
+- Registro de sustituciones de máquina o estuche, con hora, motivo, identificador anterior/nuevo y aprobación del Inspector SEGOB.
+
+2. RFID Y TRAZABILIDAD
+- Inventario vigente de máquinas, estuches y esferas RFID, con identificadores de etiqueta, número de serie y correspondencia tag → activo → número de esfera.
+- Logs originales de lectura RFID por concurso: timestamp, lector, máquina, estuche, esfera/etiqueta, operación y resultado de validación.
+- Indicar si el RFID se lee antes o después del cierre SICAL, y entregar evidencia del timestamp real, no la hora programada.
+
+3. TIRA DE PESAJE Y BÁSCULAS
+- Tira de Pesaje firmada por concurso, con peso individual, identificador de esfera, orden de pesaje, mínimo, máximo, dispersión, báscula utilizada, hora y firmas.
+- Certificado de calibración vigente de cada báscula, identificador/serie, fecha de calibración, vigencia, incertidumbre y laboratorio emisor.
+- Registros de sustitución de estuche por incumplimiento de tolerancias y segundo pesaje.
+
+4. EXTRACCIÓN, CS-11 Y VIDEO
+- Registro original de orden de carga y extracción, con timestamps individuales si el sistema los genera.
+- CS-11 firmado y evidencia de distribución/recepción del original y las tres copias: SVO, SEGOB, DTT y operador de Control de Datos.
+- Video original continuo desde el pesaje hasta el sorteo, metadatos, timestamp de inicio/fin, identificación de cámara, hash del archivo y constancia de resguardo. Distinguir original de versión editada anexa al Acta.
+
+5. MANTENIMIENTO E INCIDENCIAS
+- Calendario anual de mantenimiento y órdenes de trabajo por máquina, consola, estuche, lector RFID y báscula; incluir fecha/hora, serie, diagnóstico, intervención, refacciones, pruebas de aceptación y firma de recepción.
+- Expediente de contrato 058-2024: anexos técnicos, inventario de los 21 activos, órdenes de servicio, reportes, aceptación y pagos vinculados a las máquinas de Chispazo.
+- Para la invitación IA-06-HJY-006HJY001-N-222-2026: acta de fallo, contrato firmado y reportes de mantenimiento de infraestructura eléctrica, con fechas/horas y activos atendidos.
+- Bitácoras CS-09, Actas de Incidencia, comunicaciones de riesgo y reportes al OIC por concurso.
+
+6. ARCHIVOS Y CADENA DE CUSTODIA
+- Archivos originales de Participaciones/Cancelaciones y sus firmas electrónicas, hashes, timestamps de generación/recepción/copia/validación/depósito y constancias de caja de seguridad.
+- MJF original, firma, hash, timestamp de grabación y depósito, retiro por OIC y registro de custodia.
+- Inventario por concurso de Acta, CS-02, Tira de Pesaje, CS-11, firmas, video y respaldos.
+
+Si algún registro no existe, solicito indicarlo expresamente. No sustituir datos faltantes con horarios programados, etiquetas manuales, inferencias ni registros reconstruidos. Si existe información reservada o confidencial, proporcionar versión pública y fundamento legal.
+
+FINALIDAD
+Reconstruir la trazabilidad temporal y física de Chispazo Clásico, distinguiendo los datos que existen antes del cierre de ventas de los generados después. No se presume irregularidad, sesgo físico ni ventaja predictiva.
