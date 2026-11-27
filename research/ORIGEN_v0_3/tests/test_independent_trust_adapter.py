@@ -235,6 +235,22 @@ class TestIndependentTrustAdapter(unittest.TestCase):
         ):
             verify_independent_provenance(b"x" * (MAX_TRUST_RECEIPT_BYTES + 1))
 
+    def test_policy_not_before_must_cover_receipt_signing_time(self):
+        issuer = Ed25519PrivateKey.generate()
+        raw = signed_receipt(issuer)
+        # The policy is valid at NOW (04:00), but the receipt was signed at
+        # 03:05 and the policy does not become effective until 03:06.
+        policy = verified_policy(
+            raw_public_key(issuer),
+            not_before="2026-11-23T03:06:00Z",
+        )
+        with self.assertRaisesRegex(
+            ValueError, "not effective at receipt signing time"
+        ):
+            verify_independent_provenance(
+                raw, verified_trust_policy=policy, verification_time=NOW
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
