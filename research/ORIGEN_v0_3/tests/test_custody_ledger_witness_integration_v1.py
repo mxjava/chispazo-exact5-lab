@@ -426,14 +426,23 @@ def _witness_batches(ledger, *, split_view=False, omit_ledger_checkpoint=False):
 
 
 def _build_case(
-    *, split_view=False, omit_ledger_checkpoint=False, custody_timestamp_gen_time=None
+    *,
+    split_view=False,
+    omit_ledger_checkpoint=False,
+    custody_timestamp_gen_time=None,
+    custody_timestamp_accuracy=None,
 ):
+    accuracy = (
+        {"seconds": 1}
+        if custody_timestamp_accuracy is None
+        else custody_timestamp_accuracy
+    )
     if custody_timestamp_gen_time is None:
-        data = timestamped_bundle(accuracy={"seconds": 1})
+        data = timestamped_bundle(accuracy=accuracy)
     else:
         data = timestamped_bundle(
             gen_time=custody_timestamp_gen_time,
-            accuracy={"seconds": 1},
+            accuracy=accuracy,
         )
     document = _build_physical_signature_bundle(data)
     ledger = _build_ledger(document)
