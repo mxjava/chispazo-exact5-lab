@@ -431,18 +431,23 @@ def _build_case(
     omit_ledger_checkpoint=False,
     custody_timestamp_gen_time=None,
     custody_timestamp_accuracy=None,
+    official_draw_close_at_utc=None,
 ):
     accuracy = (
         {"seconds": 1}
         if custody_timestamp_accuracy is None
         else custody_timestamp_accuracy
     )
+    bundle_options = {}
+    if official_draw_close_at_utc is not None:
+        bundle_options["official_draw_close_at_utc"] = official_draw_close_at_utc
     if custody_timestamp_gen_time is None:
-        data = timestamped_bundle(accuracy=accuracy)
+        data = timestamped_bundle(accuracy=accuracy, **bundle_options)
     else:
         data = timestamped_bundle(
             gen_time=custody_timestamp_gen_time,
             accuracy=accuracy,
+            **bundle_options,
         )
     document = _build_physical_signature_bundle(data)
     ledger = _build_ledger(document)
