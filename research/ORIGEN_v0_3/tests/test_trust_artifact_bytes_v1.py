@@ -36,7 +36,7 @@ def signed_receipt(document: dict, issuer: Ed25519PrivateKey) -> bytes:
     return encode(document)
 
 
-def make_case():
+def make_case(required_artifact_types=("sphere-measurement-register",)):
     payload = b"synthetic-original-evidence-bytes"
     document = valid_document()
     digest = hashlib.sha256(payload).hexdigest()
@@ -44,7 +44,9 @@ def make_case():
     document["artifacts"][0]["byte_length"] = len(payload)
     issuer = Ed25519PrivateKey.generate()
     raw = signed_receipt(document, issuer)
-    policy = verified_policy(raw_public_key(issuer))
+    policy = verified_policy(
+        raw_public_key(issuer), required_artifact_types=required_artifact_types
+    )
     return raw, policy, digest, payload
 
 
@@ -68,6 +70,19 @@ class TestReceiptArtifactBytesV1(unittest.TestCase):
         self.assertEqual(result.receipt_sha256, hashlib.sha256(raw).hexdigest())
         self.assertEqual(len(result.artifact_matches), 1)
         self.assertEqual(result.artifact_matches[0].sha256, digest)
+
+    def test_receipt_missing_signed_policy_required_artifact_type_fails(self):
+        raw, policy, digest, payload = make_case(
+            required_artifact_types=(
+                "sphere-measurement-register",
+                "draw-acta",
+            )
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "receipt omits trust-policy-required artifact types: \\['draw-acta'\\]",
+        ):
+            self.check(raw, policy, {digest: payload})
 
     def test_same_length_modified_artifact_bytes_fail(self):
         raw, policy, digest, payload = make_case()
