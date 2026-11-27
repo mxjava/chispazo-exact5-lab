@@ -143,8 +143,6 @@ class SyntheticTrustProvider:
             "root_generation": root_generation,
             "policy_sequence": policy_sequence,
             "policy_envelope_sha256": policy_envelope_sha256,
-            "raw_policy_envelope_bytes": raw_policy_envelope_bytes,
-            "raw_receipt_bytes": raw_receipt_bytes,
             "expected_external_evidence_watermark_sha256": expected_external_evidence_watermark_sha256,
             "raw_policy_envelope_bytes": raw_policy_envelope_bytes,
             "raw_receipt_bytes": raw_receipt_bytes,
@@ -204,7 +202,12 @@ class SyntheticTrustProvider:
                 policy_envelope_sha256,
                 self.snapshot.trusted_time_latest_utc,
             )
-        if type(raw_policy_envelope_bytes) is not bytes or not raw_policy_envelope_bytes or type(raw_receipt_bytes) is not bytes or not raw_receipt_bytes:
+        if (
+            type(raw_policy_envelope_bytes) is not bytes
+            or not raw_policy_envelope_bytes
+            or type(raw_receipt_bytes) is not bytes
+            or not raw_receipt_bytes
+        ):
             return DeploymentTrustCommit(
                 TrustStateOutcome.CONFLICT,
                 self.snapshot.state_generation,
