@@ -1158,5 +1158,24 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
                 )
 
 
+    def test_public_receipt_only_facade_cannot_advance_external_ledger_watermark(self):
+        # Ledger/witness state may advance only after the complete physical
+        # custody + RFC3161 + transparency-ledger + witness composition has
+        # verified the exact evidence bytes. A receipt-only API must not accept
+        # a caller-created watermark advance.
+        self.assertNotIn(
+            "external_evidence_advance",
+            inspect.signature(
+                inspect_receipt_with_deployment_trust_provider
+            ).parameters,
+        )
+        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
+            inspect_receipt_with_deployment_trust_provider(
+                self.receipt_bytes,
+                self.policy_bytes,
+                external_evidence_advance=object(),
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
