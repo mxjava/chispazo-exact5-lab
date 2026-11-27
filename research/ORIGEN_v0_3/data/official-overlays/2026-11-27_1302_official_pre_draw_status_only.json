@@ -1,0 +1,83 @@
+{
+  "schema": "origen.official-chispazo-status-overlay.v1",
+  "classification": "STATUS_ONLY_NO_PHYSICAL_PROVENANCE",
+  "observed_at_local": "2026-11-27T13:02:12-06:00",
+  "observed_timezone": "America/Mexico_City",
+  "sources": {
+    "homepage": "https://www.loterianacional.gob.mx/home/index/",
+    "chispazo_product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "dedicated_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "latest_mask_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226"
+  },
+  "schedule": {
+    "de_las_tres_local_time": "15:00",
+    "classic_local_time": "21:00",
+    "source": "official Chispazo product page"
+  },
+  "homepage_observations": {
+    "chispazo_27_nov_15_slot": {
+      "contest_id": 12399,
+      "date": "2026-11-27",
+      "time_local": "15:00",
+      "modality": "DE_LAS_TRES",
+      "classification": "SCHEDULE_INFERRED_NOT_RESULT_OR_MASK_CONFIRMED"
+    },
+    "separate_27_nov_21_slot": {
+      "contest_id": 4297,
+      "time_local": "21:00",
+      "attribution": "NOT_ATTRIBUTED_TO_CHISPAZO",
+      "classic_contest_id": null
+    }
+  },
+  "dedicated_results_page": {
+    "latest_published_contest_id": 12398,
+    "latest_published_date": "2026-11-26",
+    "latest_published_numbers": [1, 3, 17, 26, 28],
+    "next_draw_date": "2026-11-27",
+    "no_27_nov_result_visible": true
+  },
+  "mask_index": {
+    "latest_visible_publication": "RESULTADOS 2026-11-26",
+    "no_27_nov_mask_visible": true
+  },
+  "latest_mask_visual_observations": {
+    "contest_12397": {
+      "date": "2026-11-26",
+      "modality": "DE_LAS_TRES",
+      "time_local": "15:00",
+      "numbers": [5, 20, 23, 26, 28]
+    },
+    "contest_12398": {
+      "date": "2026-11-26",
+      "modality": "CLASSIC",
+      "time_local": "21:00",
+      "numbers": [1, 3, 17, 26, 28]
+    },
+    "basis": "visually inspected official one-page mask; modality logos are visible"
+  },
+  "physical_provenance": {
+    "signed_acta": "NOT_ACQUIRED",
+    "cs11": "NOT_ACQUIRED",
+    "sales_close_summary": "NOT_ACQUIRED",
+    "weighing_strip": "NOT_ACQUIRED",
+    "sphere_measurements": "NOT_ACQUIRED",
+    "calibration_certificate": "NOT_ACQUIRED",
+    "signed_participation_file": "NOT_ACQUIRED",
+    "rfc3161_token": "NOT_ACQUIRED",
+    "external_ledger_proof": "NOT_ACQUIRED",
+    "independent_custody_record": "NOT_ACQUIRED"
+  },
+  "source_byte_capture": {
+    "original_homepage_html": "NOT_CAPTURED",
+    "original_results_html": "NOT_CAPTURED",
+    "original_mask_pdf": "NOT_CAPTURED",
+    "sha256": "NOT_COMPUTED"
+  },
+  "guardrails": {
+    "canonical_history_modified": false,
+    "v294_modified": false,
+    "main_written": false,
+    "production_state": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
