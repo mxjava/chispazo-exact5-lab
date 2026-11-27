@@ -21,6 +21,8 @@ _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 @dataclass(frozen=True, slots=True)
 class TimestampNonceChallengeV1:
     challenge_id: str
+    policy_domain: str
+    state_backend_id: str
     policy_timestamp_nonce: int
     custody_timestamp_nonce: int
     state_generation: int
@@ -33,6 +35,10 @@ class TimestampNonceChallengeV1:
     def __post_init__(self) -> None:
         if type(self.challenge_id) is not str or not _IDENTIFIER.fullmatch(self.challenge_id):
             raise ValueError("challenge_id must be a canonical identifier")
+        if type(self.policy_domain) is not str or not _IDENTIFIER.fullmatch(self.policy_domain):
+            raise ValueError("policy_domain must be a canonical identifier")
+        if type(self.state_backend_id) is not str or not _IDENTIFIER.fullmatch(self.state_backend_id):
+            raise ValueError("state_backend_id must be a canonical identifier")
         for field in ("policy_timestamp_nonce", "custody_timestamp_nonce"):
             value = getattr(self, field)
             if type(value) is not int or not 1 <= value <= _MAX_NONCE:
@@ -64,6 +70,8 @@ def copy_timestamp_nonce_challenge(value: object) -> TimestampNonceChallengeV1:
         raise TypeError("provider must return an exact TimestampNonceChallengeV1")
     return TimestampNonceChallengeV1(
         challenge_id=value.challenge_id,
+        policy_domain=value.policy_domain,
+        state_backend_id=value.state_backend_id,
         policy_timestamp_nonce=value.policy_timestamp_nonce,
         custody_timestamp_nonce=value.custody_timestamp_nonce,
         state_generation=value.state_generation,
@@ -81,6 +89,8 @@ def timestamp_nonce_challenge_sha256(value: TimestampNonceChallengeV1) -> str:
     payload = {
         "schema": "origen.timestamp-nonce-challenge.v1",
         "challenge_id": challenge.challenge_id,
+        "policy_domain": challenge.policy_domain,
+        "state_backend_id": challenge.state_backend_id,
         "policy_timestamp_nonce": challenge.policy_timestamp_nonce,
         "custody_timestamp_nonce": challenge.custody_timestamp_nonce,
         "state_generation": challenge.state_generation,
