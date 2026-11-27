@@ -29,8 +29,9 @@ def test_rfid_and_maintenance_are_not_misrepresented_as_draw_level_data():
     assert report["evidence"]["reported_set_count_internally_inconsistent"] is True
     assert report["evidence"]["contract_058_2024_per_asset_service_records_obtained"] is False
     assert report["evidence"]["invitation_222_2026_award_or_service_reports_obtained"] is False
+    assert report["evidence"]["current_public_calibration_requirement_verified"] is True
+    assert report["evidence"]["actual_scale_calibration_schedule_obtained"] is False
     assert report["evidence"]["current_scale_calibration_certificate_obtained"] is False
-    assert report["evidence"]["current_public_calibration_interval_verified"] is False
 
 
 def test_v265_does_not_consume_required_physical_inputs_or_authorize_betting():
@@ -42,6 +43,7 @@ def test_v265_does_not_consume_required_physical_inputs_or_authorize_betting():
     assert v265["per_sphere_rfid_mapping_consumed"] is False
     assert v265["extraction_order_consumed"] is False
     assert v265["per_extraction_timestamps_consumed"] is False
+    assert v265["scale_calibration_certificate_consumed"] is False
     assert v265["source_provenance_required"] is False
     assert v265["preclose_validator_checks_source_provenance"] is False
     assert v265["physical_bias_evidence"] is False

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic audit of the public V265 physical/operational evidence map.
-
-The script checks the committed transcription and reads the current V265
-evaluator source. It does not download official PDFs, inspect draw records,
-read draw outcomes, or run statistical tests.
-"""
+"""Deterministic audit of the public V265 physical/operational evidence map."""
 from __future__ import annotations
 import ast
 import json
@@ -18,6 +13,8 @@ REQUIRED_ANCHORS = {
     "electronic_scope": "Chispazo Clásico se clasifica como sorteo electrónico",
     "cs02_preclose": "CS-02: inspección del equipo antes del cierre",
     "weighing_postclose": "Tira de Pesaje: medición individual después del cierre SICAL verificado",
+    "annual_scale_calibration": "Política 25 de SGVO-PRO-05 exige calibración de básculas al menos una vez al año",
+    "video_from_weighing": "Política 30 contrata grabación desde el pesaje de esferas hasta la celebración del sorteo electrónico",
     "cs11_distribution": "CS-11: cuatro ejemplares; tercera copia al operador del área de Control de Datos",
     "rfid_inventory": "El Informe 2018–2024 reporta 14 máquinas con RFID",
     "rfid_count_discrepancy": "El mismo informe declara 60 juegos de esferas para siete productos",
@@ -74,6 +71,7 @@ def build_report() -> dict:
         "per_sphere_rfid_mapping_consumed": guard["per_sphere_rfid_mapping_consumed"],
         "extraction_order_consumed": guard["extraction_order_consumed"],
         "per_extraction_timestamps_consumed": guard["per_extraction_timestamps_consumed"],
+        "scale_calibration_certificate_consumed": False,
         "source_provenance_required": guard["source_provenance_required"],
         "preclose_validator_checks_source_provenance": any(provenance_checks.values()),
         "preclose_validator_provenance_terms": provenance_checks,
@@ -96,8 +94,9 @@ def build_report() -> dict:
             "contract_058_2024_per_asset_service_records_obtained": False,
             "invitation_222_2026_scope_is_electrical_infrastructure": True,
             "invitation_222_2026_award_or_service_reports_obtained": False,
+            "current_public_calibration_requirement_verified": True,
+            "actual_scale_calibration_schedule_obtained": False,
             "current_scale_calibration_certificate_obtained": False,
-            "current_public_calibration_interval_verified": False,
             "cs11_prescribed_distribution_complete": True,
             "cs11_per_contest_delivery_receipts_obtained": False,
             "draw_level_original_records_obtained": False,
