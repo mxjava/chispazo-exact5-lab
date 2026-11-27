@@ -313,6 +313,7 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     try:
         supplied_nonce_challenge = read_nonce_challenge(
             policy_domain=CLASSIC_POLICY_DOMAIN,
+            expected_state_backend_id=snapshot.state_backend_id,
             expected_state_generation=snapshot.state_generation,
             expected_root_generation=snapshot.root_generation,
             expected_physical_trust_context_generation=physical_context.context_generation,
@@ -322,7 +323,9 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         raise TrustProviderUnavailable("provider timestamp nonce challenge could not be read") from exc
     nonce_challenge = copy_timestamp_nonce_challenge(supplied_nonce_challenge)
     if (
-        nonce_challenge.state_generation != snapshot.state_generation
+        nonce_challenge.policy_domain != CLASSIC_POLICY_DOMAIN
+        or nonce_challenge.state_backend_id != snapshot.state_backend_id
+        or nonce_challenge.state_generation != snapshot.state_generation
         or nonce_challenge.root_generation != snapshot.root_generation
         or nonce_challenge.physical_trust_context_generation != physical_context.context_generation
         or nonce_challenge.physical_trust_context_sha256 != physical_context_digest
