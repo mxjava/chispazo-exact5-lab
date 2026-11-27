@@ -42,28 +42,22 @@ class TestIndependentTrustAdapter(unittest.TestCase):
             ProvenanceStatus.BLOCKED_PROVENANCE,
         )
 
-    def test_caller_cannot_inject_unrecognized_roots_or_verifier_callbacks(self):
-        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
-            verify_independent_provenance(
-                b"receipt",
-                trust_roots={"self-signed-test-key": b"fake"},
-            )
-        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
-            verify_independent_provenance(
-                b"receipt",
-                verifier=lambda *_: True,
-            )
-        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
-            verify_independent_provenance(
-                b"receipt",
-                verified_policy=object(),
-                verified_receipt=object(),
-            )
-        with self.assertRaisesRegex(ValueError, "requires exact policy bytes"):
-            verify_independent_provenance(
-                b"receipt",
-                pinned_root_public_key_bytes=bytes(32),
-            )
+    def test_public_adapter_rejects_all_caller_controlled_trust_context(self):
+        injected_contexts = (
+            {"signed_policy_envelope_bytes": b"synthetic-policy"},
+            {"pinned_root_public_key_bytes": bytes(32)},
+            {"expected_root_key_id": "caller-root"},
+            {"minimum_policy_sequence": 1},
+            {"verification_time": __import__("datetime").datetime.now(__import__("datetime").timezone.utc)},
+            {"verified_policy": object()},
+            {"verified_receipt": object()},
+            {"verifier": lambda *_: True},
+            {"provider": object()},
+        )
+        for kwargs in injected_contexts:
+            with self.subTest(kwargs=tuple(kwargs)):
+                with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
+                    verify_independent_provenance(b"receipt", **kwargs)
 
     def test_bytes_subclasses_are_not_accepted_at_boundary(self):
         class SpoofedBytes(bytes):

@@ -169,26 +169,24 @@ def _validate_v3_context(
         )
 
 
-def verify_independent_provenance(
+def _verify_independent_provenance_with_explicit_context(
     original_receipt_bytes: bytes,
     *,
-    signed_policy_envelope_bytes: bytes | None = None,
-    pinned_root_public_key_bytes: bytes | None = None,
-    expected_root_key_id: str | None = None,
-    minimum_policy_sequence: int | None = None,
-    verification_time: datetime | None = None,
+    signed_policy_envelope_bytes: bytes,
+    pinned_root_public_key_bytes: bytes,
+    expected_root_key_id: str,
+    minimum_policy_sequence: int,
+    verification_time: datetime,
 ) -> ProvenanceStatus:
-    """Re-verify exact V3 bytes at the fail-closed provenance boundary.
+    """Re-verify exact V3 bytes using one deployment-provider snapshot.
 
-    Legacy calls with only receipt bytes remain accepted and blocked. A V3
-    diagnostic call must supply the exact signed policy envelope plus the
-    caller's root pin, key ID, sequence floor and one already-normalized UTC
-    instant. The adapter independently invokes both cryptographic verifiers
-    from those bytes; it never accepts caller-created verifier-result objects.
-
-    This is still not independent institutional trust: the root pin, key ID,
-    sequence floor and clock are caller supplied. Even successful re-verification
-    returns only BLOCKED_PROVENANCE until a separately provisioned backend exists.
+    This internal diagnostic path is used by composition modules with explicit
+    trust context. The deployment-provider path supplies values derived from
+    one validated provider snapshot; the lower-level V3 diagnostic bridge may
+    supply caller values, which remain unauthenticated. The helper independently
+    re-verifies exact policy and receipt bytes, accepts no preconstructed
+    verifier results, and always returns BLOCKED_PROVENANCE. Private naming is
+    not a Python security capability.
     """
     if type(original_receipt_bytes) is not bytes:
         raise TypeError("original_receipt_bytes must be exact bytes")
@@ -199,48 +197,66 @@ def verify_independent_provenance(
             f"original_receipt_bytes must not exceed {MAX_TRUST_RECEIPT_BYTES} bytes"
         )
 
-    context_values = (
+    if type(signed_policy_envelope_bytes) is not bytes:
+        raise TypeError("signed_policy_envelope_bytes must be exact bytes")
+    if not 1 <= len(signed_policy_envelope_bytes) <= MAX_POLICY_BYTES:
+        raise ValueError(
+            f"signed_policy_envelope_bytes must contain 1..{MAX_POLICY_BYTES} bytes"
+        )
+    if type(pinned_root_public_key_bytes) is not bytes or len(pinned_root_public_key_bytes) != 32:
+        raise ValueError("pinned_root_public_key_bytes must be exactly 32 immutable bytes")
+    if type(expected_root_key_id) is not str:
+        raise TypeError("expected_root_key_id must be an exact string")
+    if type(minimum_policy_sequence) is not int or minimum_policy_sequence < 1:
+        raise ValueError("minimum_policy_sequence must be an exact positive integer")
+    if type(verification_time) is not datetime or verification_time.tzinfo is not timezone.utc:
+        raise ValueError(
+            "verification_time must be one exact normalized UTC datetime at the provenance boundary"
+        )
+
+    verified_policy = verify_signed_trust_policy_v3(
         signed_policy_envelope_bytes,
-        pinned_root_public_key_bytes,
-        expected_root_key_id,
-        minimum_policy_sequence,
-        verification_time,
+        pinned_root_public_key_bytes=pinned_root_public_key_bytes,
+        expected_root_key_id=expected_root_key_id,
+        expected_policy_domain=CLASSIC_POLICY_DOMAIN,
+        minimum_policy_sequence=minimum_policy_sequence,
+        verification_time=verification_time,
     )
-    if any(value is not None for value in context_values):
-        if any(value is None for value in context_values):
-            raise ValueError(
-                "V3 provenance re-verification requires exact policy bytes, root pin, "
-                "root key ID, sequence floor, and verification time together"
-            )
-        if type(verification_time) is not datetime or verification_time.tzinfo is not timezone.utc:
-            raise ValueError(
-                "verification_time must be one exact normalized UTC datetime at the provenance boundary"
-            )
+    if type(verified_policy) is not VerifiedTrustPolicyV3:
+        raise TypeError("policy verifier returned an unexpected result type at provenance boundary")
 
-        verified_policy = verify_signed_trust_policy_v3(
-            signed_policy_envelope_bytes,
-            pinned_root_public_key_bytes=pinned_root_public_key_bytes,
-            expected_root_key_id=expected_root_key_id,
-            expected_policy_domain=CLASSIC_POLICY_DOMAIN,
-            minimum_policy_sequence=minimum_policy_sequence,
-            verification_time=verification_time,
+    verified_receipt = verify_receipt_attestation(
+        original_receipt_bytes,
+        verified_policy.policy,
+        verification_time=verification_time,
+    )
+    if type(verified_receipt) is not CryptographicallyVerifiedReceipt:
+        raise TypeError("receipt verifier returned an unexpected result type at provenance boundary")
+
+    _validate_v3_context(
+        original_receipt_bytes,
+        signed_policy_envelope_bytes,
+        verified_policy,
+        verified_receipt,
+    )
+    return ProvenanceStatus.BLOCKED_PROVENANCE
+
+
+def verify_independent_provenance(original_receipt_bytes: bytes) -> ProvenanceStatus:
+    """Public fail-closed entry point with no caller-controlled trust inputs.
+
+    Root pins, key IDs, policy sequence floors and verification clocks are not
+    accepted here. The deployment-provider composition path performs its
+    diagnostic re-verification through the private helper above using one
+    provider-owned snapshot. This public API remains blocked until a separately
+    provisioned and independently reviewed backend exists.
+    """
+    if type(original_receipt_bytes) is not bytes:
+        raise TypeError("original_receipt_bytes must be exact bytes")
+    if not original_receipt_bytes:
+        raise ValueError("original_receipt_bytes must not be empty")
+    if len(original_receipt_bytes) > MAX_TRUST_RECEIPT_BYTES:
+        raise ValueError(
+            f"original_receipt_bytes must not exceed {MAX_TRUST_RECEIPT_BYTES} bytes"
         )
-        if type(verified_policy) is not VerifiedTrustPolicyV3:
-            raise TypeError("policy verifier returned an unexpected result type at provenance boundary")
-
-        verified_receipt = verify_receipt_attestation(
-            original_receipt_bytes,
-            verified_policy.policy,
-            verification_time=verification_time,
-        )
-        if type(verified_receipt) is not CryptographicallyVerifiedReceipt:
-            raise TypeError("receipt verifier returned an unexpected result type at provenance boundary")
-
-        _validate_v3_context(
-            original_receipt_bytes,
-            signed_policy_envelope_bytes,
-            verified_policy,
-            verified_receipt,
-        )
-
     return ProvenanceStatus.BLOCKED_PROVENANCE
