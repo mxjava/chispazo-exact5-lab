@@ -12,8 +12,16 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from origen.trust_policy_envelope_v1 import (
     SCHEMA_VERSION,
+    VerifiedTrustPolicy,
+    verify_receipt_attestation_with_signed_policy,
     verify_signed_trust_policy,
 )
+from origen.independent_trust_adapter import (
+    ProvenanceStatus,
+    verify_independent_provenance_with_signed_policy,
+)
+from test_trust_receipt_v1 import encode
+from test_trust_verifier_v1 import signed_receipt
 
 NOW = datetime(2026, 11, 24, 12, 0, tzinfo=timezone.utc)
 
@@ -193,6 +201,85 @@ class TestSignedTrustPolicyEnvelopeV1(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "canonical UTC timestamp"):
             self.verify(canonical(document), root_public)
 
+
+
+    def test_verified_policy_public_constructor_is_disabled(self):
+        with self.assertRaisesRegex(TypeError, "created only by verify_signed_trust_policy"):
+            VerifiedTrustPolicy(None, 7, "offline-root-2026", "a" * 64, NOW, NOW)
+
+    def test_signed_policy_bridge_verifies_receipt_root_attestation(self):
+        raw_policy, root_public, _ = fixture()
+        raw_receipt, _, _ = signed_receipt()
+        result = verify_receipt_attestation_with_signed_policy(
+            raw_receipt,
+            raw_policy,
+            pinned_root_public_key_bytes=root_public,
+            expected_root_key_id="offline-root-2026",
+            minimum_policy_sequence=7,
+            verification_time=NOW,
+        )
+        self.assertEqual(result.verified_issuer_id, "independent-verifier")
+        self.assertEqual(result.verified_key_id, "verifier-key-1")
+
+    def test_signed_policy_bridge_rejects_tampered_policy_claims(self):
+        raw_policy, root_public, document = fixture()
+        document["policy_sequence"] = 8
+        raw_receipt, _, _ = signed_receipt()
+        with self.assertRaisesRegex(ValueError, "root signature verification failed"):
+            verify_receipt_attestation_with_signed_policy(
+                raw_receipt,
+                canonical(document),
+                pinned_root_public_key_bytes=root_public,
+                expected_root_key_id="offline-root-2026",
+                minimum_policy_sequence=7,
+                verification_time=NOW,
+            )
+
+    def test_signed_policy_bridge_rejects_tampered_receipt_claims(self):
+        raw_policy, root_public, _ = fixture()
+        raw_receipt, _, _ = signed_receipt()
+        document = json.loads(raw_receipt)
+        document["artifacts"][0]["sha256"] = "a" * 64
+        with self.assertRaisesRegex(ValueError, "signature verification failed"):
+            verify_receipt_attestation_with_signed_policy(
+                encode(document),
+                raw_policy,
+                pinned_root_public_key_bytes=root_public,
+                expected_root_key_id="offline-root-2026",
+                minimum_policy_sequence=7,
+                verification_time=NOW,
+            )
+
+    def test_independent_provenance_composition_still_returns_blocked(self):
+        raw_policy, root_public, _ = fixture()
+        raw_receipt, _, _ = signed_receipt()
+        result = verify_independent_provenance_with_signed_policy(
+            raw_receipt,
+            raw_policy,
+            pinned_root_public_key_bytes=root_public,
+            expected_root_key_id="offline-root-2026",
+            minimum_policy_sequence=7,
+            verification_time=NOW,
+        )
+        self.assertIs(result, ProvenanceStatus.BLOCKED_PROVENANCE)
+        self.assertNotIn("AUTHENTICATED", ProvenanceStatus.__members__)
+
+    def test_independent_provenance_composition_rejects_wrong_root_pin(self):
+        raw_policy, _, _ = fixture()
+        raw_receipt, _, _ = signed_receipt()
+        attacker_root = Ed25519PrivateKey.generate().public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        with self.assertRaisesRegex(ValueError, "root signature verification failed"):
+            verify_independent_provenance_with_signed_policy(
+                raw_receipt,
+                raw_policy,
+                pinned_root_public_key_bytes=attacker_root,
+                expected_root_key_id="offline-root-2026",
+                minimum_policy_sequence=7,
+                verification_time=NOW,
+            )
 
 if __name__ == "__main__":
     unittest.main()
