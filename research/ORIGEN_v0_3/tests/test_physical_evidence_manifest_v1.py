@@ -5,6 +5,7 @@ import json
 import unittest
 
 from origen.independent_trust_adapter import ProvenanceStatus, verify_independent_provenance
+from origen.mapping_artifact_binding import verify_mapping_artifact_byte_binding
 from origen.physical_evidence_manifest_v1 import (
     MAX_PHYSICAL_MANIFEST_JSON_DEPTH,
     REQUIRED_ARTIFACT_TYPES,
@@ -127,6 +128,20 @@ def encode(document: dict) -> bytes:
     return json.dumps(
         document, sort_keys=True, separators=(",", ":"), ensure_ascii=True
     ).encode("utf-8")
+
+
+def replace_artifact_bytes(document: dict, artifact: dict, raw: bytes) -> None:
+    """Keep manifest-internal references consistent when a fixture artifact changes."""
+    old_digest = artifact["sha256"]
+    new_digest = hashlib.sha256(raw).hexdigest()
+    artifact["sha256"] = new_digest
+    artifact["byte_length"] = len(raw)
+    for signature in document["signatures"]:
+        if signature["artifact_sha256"] == old_digest:
+            signature["artifact_sha256"] = new_digest
+    for event in document["custody_events"]:
+        if event["artifact_sha256"] == old_digest:
+            event["artifact_sha256"] = new_digest
 
 
 class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
@@ -480,6 +495,78 @@ class PhysicalEvidenceManifestV1Tests(unittest.TestCase):
         raw = b"[" * (MAX_PHYSICAL_MANIFEST_JSON_DEPTH + 1) + b"0" + b"]" * (MAX_PHYSICAL_MANIFEST_JSON_DEPTH + 1)
         with self.assertRaisesRegex(ValueError, "maximum JSON nesting depth"):
             parse_unverified_physical_manifest(raw)
+
+
+    def test_mapping_binding_extracts_claim_from_exact_original_manifest_bytes(self):
+        mapping_bytes = b"original institutional mapping-register bytes"
+        document = valid_document()
+        mapping_claim = next(
+            item for item in document["artifacts"]
+            if item["artifact_type"] == "SPHERE-NUMBER-MAPPING-REGISTER"
+        )
+        replace_artifact_bytes(document, mapping_claim, mapping_bytes)
+        manifest_bytes = encode(document)
+        rows = [
+            {
+                "target_contest_id": document["target"]["contest_id"],
+                "mapping_artifact_ref": mapping_claim["source_object_id"],
+                "mapping_artifact_sha256": mapping_claim["sha256"],
+                "sphere_id": f"SPHERE-{number:02d}",
+                "printed_number": str(number),
+            }
+            for number in range(1, 29)
+        ]
+
+        result = verify_mapping_artifact_byte_binding(
+            rows, manifest_bytes, mapping_bytes
+        )
+
+        self.assertEqual(result.status, "MAPPING_ARTIFACT_BYTES_MATCHED_NOT_AUTHENTICATED")
+        self.assertEqual(result.manifest_sha256, hashlib.sha256(manifest_bytes).hexdigest())
+        self.assertEqual(result.source_object_id, mapping_claim["source_object_id"])
+        self.assertEqual(result.row_count, 28)
+
+    def test_mapping_binding_rejects_caller_constructed_claim_instead_of_manifest_bytes(self):
+        document = valid_document()
+        mapping_claim = next(
+            item for item in document["artifacts"]
+            if item["artifact_type"] == "SPHERE-NUMBER-MAPPING-REGISTER"
+        )
+        from origen.physical_evidence_manifest_v1 import PhysicalArtifactClaim
+        caller_claim = PhysicalArtifactClaim(
+            artifact_type=mapping_claim["artifact_type"],
+            sha256=mapping_claim["sha256"],
+            byte_length=mapping_claim["byte_length"],
+            contest_id=mapping_claim["contest_id"],
+            source_id=mapping_claim["source_id"],
+            source_object_id=mapping_claim["source_object_id"],
+            media_type=mapping_claim["media_type"],
+        )
+        with self.assertRaisesRegex(TypeError, "original_manifest_bytes"):
+            verify_mapping_artifact_byte_binding([], caller_claim, b"opaque")
+
+    def test_mapping_binding_rejects_rows_not_bound_to_manifest_extracted_claim(self):
+        mapping_bytes = b"original institutional mapping-register bytes"
+        document = valid_document()
+        mapping_claim = next(
+            item for item in document["artifacts"]
+            if item["artifact_type"] == "SPHERE-NUMBER-MAPPING-REGISTER"
+        )
+        replace_artifact_bytes(document, mapping_claim, mapping_bytes)
+        manifest_bytes = encode(document)
+        rows = [
+            {
+                "target_contest_id": document["target"]["contest_id"],
+                "mapping_artifact_ref": mapping_claim["source_object_id"],
+                "mapping_artifact_sha256": mapping_claim["sha256"],
+                "sphere_id": f"SPHERE-{number:02d}",
+                "printed_number": str(number),
+            }
+            for number in range(1, 29)
+        ]
+        rows[0]["mapping_artifact_ref"] = "CALLER-SUBSTITUTED-OBJECT"
+        with self.assertRaisesRegex(ValueError, "reference does not match"):
+            verify_mapping_artifact_byte_binding(rows, manifest_bytes, mapping_bytes)
 
 
 if __name__ == "__main__":
