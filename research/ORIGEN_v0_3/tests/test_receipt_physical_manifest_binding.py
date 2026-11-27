@@ -113,7 +113,7 @@ class ReceiptPhysicalManifestBindingTests(unittest.TestCase):
         altered_payloads = dict(payloads)
         altered_payloads.pop(hashlib.sha256(manifest).hexdigest())
         altered_payloads[hashlib.sha256(altered_manifest).hexdigest()] = altered_manifest
-        with self.assertRaisesRegex(ValueError, "PHYSICAL-EVIDENCE-MANIFEST claim"):
+        with self.assertRaisesRegex(ValueError, "receipt artifact byte set mismatch"):
             verify_independent_provenance_with_physical_manifest(
                 receipt,
                 original_manifest_bytes=altered_manifest,
