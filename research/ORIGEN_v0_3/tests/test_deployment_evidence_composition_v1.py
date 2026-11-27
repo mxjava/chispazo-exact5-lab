@@ -7,7 +7,7 @@ import json
 import unittest
 from dataclasses import replace
 from unittest.mock import patch
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -119,7 +119,7 @@ class SyntheticPhysicalTrustProvider(SyntheticTrustProvider):
         return super().compare_and_advance(**kwargs)
 
 
-def _provider_for(data, ledger, *, uncertainty_ms=0):
+def _provider_for(data, ledger, *, uncertainty_ms=0, trusted_time_utc=NOW):
     context = PhysicalTrustContextV1(
         policy_tsa_root_certificate_der=data["pinned_policy_tsa_root_certificate_der"],
         policy_tsa_root_sha256=data["expected_policy_tsa_root_sha256"],
@@ -143,13 +143,13 @@ def _provider_for(data, ledger, *, uncertainty_ms=0):
     clock_private = data["clock_private"]
     clock_public = data["clock_public_key_bytes"]
     clock_key_id = data["clock_key_id"]
-    sample_valid_until = NOW + timedelta(seconds=60)
+    sample_valid_until = trusted_time_utc + timedelta(seconds=60)
     sample_bytes = signed_clock_sample(
         clock_private,
         clock_source_id="synthetic-clock",
         clock_sample_id="synthetic-clock-sample-0001",
         key_id=clock_key_id,
-        trusted_time_utc=NOW,
+        trusted_time_utc=trusted_time_utc,
         uncertainty_ms=uncertainty_ms,
         valid_until_utc=sample_valid_until,
     )
@@ -162,8 +162,8 @@ def _provider_for(data, ledger, *, uncertainty_ms=0):
         state_generation=7,
         accepted_policy_sequence=data["minimum_policy_sequence"] - 1,
         accepted_policy_envelope_sha256="a" * 64,
-        trusted_time_latest_utc=NOW - timedelta(seconds=1),
-        trusted_time_utc=NOW,
+        trusted_time_latest_utc=trusted_time_utc - timedelta(seconds=1),
+        trusted_time_utc=trusted_time_utc,
         clock_uncertainty_ms=uncertainty_ms,
         maximum_clock_uncertainty_ms=100,
         clock_source_id="synthetic-clock",
@@ -203,8 +203,8 @@ def _provider_for(data, ledger, *, uncertainty_ms=0):
         root_generation=snapshot.root_generation,
         physical_trust_context_generation=context.context_generation,
         physical_trust_context_sha256=context_digest,
-        issued_at_utc=NOW - timedelta(seconds=1),
-        expires_at_utc=NOW + timedelta(seconds=30),
+        issued_at_utc=trusted_time_utc - timedelta(seconds=2),
+        expires_at_utc=trusted_time_utc + timedelta(seconds=30),
     )
     return SyntheticPhysicalTrustProvider(snapshot, context, nonce_challenge)
 
@@ -351,12 +351,26 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         )
 
     def test_full_evidence_rejects_accuracy_crossing_earliest_clock_bound(self):
-        data, ledger, batches, _ = _build_case()
-        provider = _provider_for(data, ledger, uncertainty_ms=100)
+        trusted_time = datetime(
+            2026, 11, 23, 2, 59, 59, 550000, tzinfo=timezone.utc
+        )
+        timestamp_gen_time = datetime(
+            2026, 11, 23, 2, 59, 58, 500000, tzinfo=timezone.utc
+        )
+        data, ledger, batches, _ = _build_case(
+            custody_timestamp_gen_time=timestamp_gen_time
+        )
+        provider = _provider_for(
+            data,
+            ledger,
+            uncertainty_ms=100,
+            trusted_time_utc=trusted_time,
+        )
 
-        # The synthetic custody TSA token has genTime + accuracy == NOW.
-        # The provider's earliest possible trusted time is NOW - 100 ms,
-        # so the full uncertainty interval is not safely before verification.
+        # genTime + 1s accuracy = 02:59:59.500Z. This is before the
+        # synthetic Classic close at 03:00Z and before the provider midpoint
+        # at 02:59:59.550Z, but 50 ms after the earliest possible provider
+        # time (02:59:59.450Z).
         with self.assertRaisesRegex(
             ValueError,
             "accuracy upper bound is after caller-supplied verification time",
