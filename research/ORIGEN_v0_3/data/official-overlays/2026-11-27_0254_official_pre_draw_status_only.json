@@ -1,0 +1,74 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "classification": "OFFICIAL_PRE_DRAW_PUBLICATION_STATUS_ONLY_NOT_PHYSICAL_PROVENANCE",
+  "observed_at_local": "2026-11-27T02:54:32-06:00",
+  "observed_at_utc": "2026-11-27T08:54:32Z",
+  "target_date": "2026-11-27",
+  "official_schedule": {
+    "chispazo_de_las_tres_local_time": "15:00",
+    "chispazo_clasico_local_time": "21:00",
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  },
+  "official_home_index": {
+    "page_url": "https://www.loterianacional.gob.mx/",
+    "chispazo_card_visible": true,
+    "contest_id": "12399",
+    "scheduled_time_local": "15:00",
+    "modality": "DE_LAS_TRES",
+    "modality_basis": "SCHEDULE_INFERRED_NOT_MASK_CONFIRMED",
+    "note": "The homepage displays the Chispazo 'Ilumina tu suerte' card with contest 12399 at 15:00. The product page maps 15:00 to De las Tres. No 27-Nov Chispazo Classic contest ID is established by this card."
+  },
+  "official_dedicated_results_page": {
+    "page_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "latest_published_contest_id": "12398",
+    "latest_published_date": "2026-11-26",
+    "latest_published_modality": "CLASSIC",
+    "latest_published_winning_numbers": [1, 3, 17, 26, 28],
+    "next_draw_date_displayed": "2026-11-27",
+    "target_date_result_visible": false,
+    "target_date_classic_contest_id_visible": false,
+    "page_status": "RESULTS_PAGE_STILL_ENDS_AT_CONTEST_12398"
+  },
+  "official_mask": {
+    "index_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "target_date_chispazo_entry_visible": false,
+    "target_date_pdf_url": null,
+    "page_fetch_status": "TIMEOUT_ON_RECHECK",
+    "raw_pdf_bytes_captured": false,
+    "page_zero_visually_inspected": false
+  },
+  "cross_page_consistency": {
+    "contest_12399_is_next_chispazo_slot_consistent_with_15_00_schedule": true,
+    "15_00_maps_to_de_las_tres": true,
+    "21_00_maps_to_classic": true,
+    "27_nov_classic_contest_id_published": false,
+    "27_nov_winning_numbers_published": false,
+    "classic_homepage_card_not_attributed_to_chispazo": true
+  },
+  "physical_provenance_status": {
+    "signed_acta_original_or_verified_copy": false,
+    "cs11": false,
+    "sale_close_summary": false,
+    "signed_participation_and_cancellation_files": false,
+    "original_weighing_strip": false,
+    "all_28_sphere_measurements": false,
+    "calibration_certificate": false,
+    "machine_and_sphere_set_mapping": false,
+    "institutional_signature_identity_and_authority": false,
+    "rfc3161_token_and_chain_validation": false,
+    "independent_ledger_inclusion_and_consistency": false,
+    "independent_witness_custody": false,
+    "two_pre_close_sealed_outputs": false,
+    "status": "PRE_DRAW_PUBLICATION_STATUS_ONLY_NO_DRAW_SPECIFIC_PHYSICAL_PROCESS_PROVENANCE"
+  },
+  "source_capture": {
+    "raw_html_bytes_captured": false,
+    "raw_pdf_bytes_captured": false,
+    "source_byte_sha256": null,
+    "note": "Official homepage, dedicated results page and Chispazo product schedule were opened. The dedicated results page still ended at contest 12398 and the homepage displayed contest 12399 at 15:00. The Chispazo Mascarillas page timed out on recheck and no 27-Nov PDF was located. No source-byte SHA-256 is claimed."
+  },
+  "research_only": true,
+  "canonical_history_modified": false,
+  "v294_modified": false,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
