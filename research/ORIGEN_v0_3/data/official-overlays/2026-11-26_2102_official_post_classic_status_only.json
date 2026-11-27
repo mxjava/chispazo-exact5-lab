@@ -1,0 +1,94 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "classification": "OFFICIAL_PUBLICATION_STATUS_ONLY_NOT_PHYSICAL_PROVENANCE",
+  "observed_at_local": "2026-11-26T21:02:41-06:00",
+  "observed_at_utc": "2026-11-27T03:02:41Z",
+  "target_date": "2026-11-26",
+  "official_schedule": {
+    "chispazo_de_las_tres_local_time": "15:00",
+    "chispazo_clasico_local_time": "21:00",
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  },
+  "dedicated_chispazo_results_live_render": {
+    "page_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "contest_id": "12397",
+    "date": "26/11/2026",
+    "winning_numbers": [
+      5,
+      20,
+      23,
+      26,
+      28
+    ],
+    "next_draw_date_displayed": "26/11/2026",
+    "classic_contest_id_displayed": false,
+    "classic_result_displayed": false
+  },
+  "general_home_results_live_render": {
+    "page_url": "https://www.loterianacional.gob.mx/Home/Resultados/",
+    "fetched_page_date_visible": "25/11/2026",
+    "fetched_page_chispazo_contests": [
+      "12395",
+      "12396"
+    ],
+    "status": "RENDERED_PAGE_STALE_RELATIVE_TO_DEDICATED_CHISPAZO_RESULTS"
+  },
+  "general_home_results_search_snapshot": {
+    "page_url": "https://www.loterianacional.gob.mx/Home/Resultados/",
+    "target_date": "26/11/2026",
+    "contest_12397_numbers": [
+      5,
+      20,
+      23,
+      26,
+      28
+    ],
+    "contest_12398_numbers": null,
+    "contest_12398_placeholder_present": true,
+    "modality_label_for_12398_present": false,
+    "interpretation": "A search-index snapshot exposed a blank 12398 row for 26-Nov; it is not treated as a confirmed Classic result or modality assignment."
+  },
+  "official_mask_index": {
+    "page_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "latest_listed_mask_date": "2026-11-25",
+    "mask_for_2026_11_26_listed": false,
+    "previous_day_pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=26112026094725",
+    "previous_day_pdf_visually_confirms": [
+      "12395 Chispazo De las tres: 01 13 19 23 28",
+      "12396 Chispazo Clásico: 05 07 21 24 28"
+    ]
+  },
+  "classic_21_00_status": {
+    "scheduled_time_passed_by_minutes": 2,
+    "result_visible": false,
+    "numbers_confirmed": false,
+    "contest_id_confirmed": false,
+    "candidate_placeholder_contest_id": "12398",
+    "candidate_placeholder_is_not_confirmed": true,
+    "status": "NO_CLASSIC_RESULT_VISIBLE_AT_21_02_LOCAL"
+  },
+  "physical_provenance_status_for_2026_11_26": {
+    "signed_acta_original_or_verified_copy": false,
+    "cs11": false,
+    "original_weighing_strip": false,
+    "all_28_sphere_measurements": false,
+    "calibration_certificate": false,
+    "machine_and_sphere_set_mapping": false,
+    "institutional_signature_identity_and_authority": false,
+    "rfc3161_token_and_chain_validation": false,
+    "independent_ledger_inclusion_and_consistency": false,
+    "independent_witness_custody": false,
+    "two_pre_close_sealed_outputs": false,
+    "status": "NO_DRAW_SPECIFIC_PHYSICAL_EVIDENCE_OBTAINED"
+  },
+  "source_capture": {
+    "raw_html_bytes_captured": false,
+    "raw_pdf_bytes_captured": false,
+    "source_byte_sha256": null,
+    "note": "Official rendered pages and one official prior-day PDF page were reviewed; original HTML/PDF bytes for the target 26-Nov draw were not captured. No source-byte SHA-256 is claimed."
+  },
+  "research_only": true,
+  "canonical_history_modified": false,
+  "v294_modified": false,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
