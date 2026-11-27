@@ -654,6 +654,26 @@ class RFC3161TimestampVerifierTests(unittest.TestCase):
         self.assertEqual(result.accuracy_microseconds, 1_250_005)
         self.assertFalse(result.ordering)
 
+    def test_accuracy_upper_bound_must_not_extend_past_verification_time(self):
+        token, root_der = _token(accuracy={"seconds": 10})
+        with self.assertRaisesRegex(
+            ValueError, "accuracy upper bound is after caller-supplied verification time"
+        ):
+            _verify(
+                token,
+                root_der,
+                verification_time=GEN_TIME + timedelta(seconds=9),
+            )
+
+    def test_accuracy_upper_bound_equal_to_verification_time_is_accepted(self):
+        token, root_der = _token(accuracy={"seconds": 10})
+        result = _verify(
+            token,
+            root_der,
+            verification_time=GEN_TIME + timedelta(seconds=10),
+        )
+        self.assertEqual(result.accuracy_microseconds, 10_000_000)
+
 
 if __name__ == "__main__":
     unittest.main()
