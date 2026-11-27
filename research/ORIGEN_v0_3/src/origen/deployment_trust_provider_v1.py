@@ -75,11 +75,13 @@ class ExternalEvidenceWatermarkV1:
     state_backend_id: str
     log_id: str
     log_key_id: str
+    log_public_key_sha256: str
     ledger_tree_size: int
     ledger_root_sha256: str
     ledger_checkpoint_sha256: str
     registry_id: str
     registry_root_key_id: str
+    registry_root_public_key_sha256: str
     registry_sequence: int
     registry_sha256: str
 
@@ -92,6 +94,7 @@ class ExternalEvidenceAdvanceV1:
     state_backend_id: str
     log_id: str
     log_key_id: str
+    log_public_key_sha256: str
     old_tree_size: int
     old_root_sha256: str
     old_checkpoint_sha256: str
@@ -100,8 +103,17 @@ class ExternalEvidenceAdvanceV1:
     new_checkpoint_sha256: str
     registry_id: str
     registry_root_key_id: str
+    registry_root_public_key_sha256: str
     registry_sequence: int
     registry_sha256: str
+    raw_manifest_bytes: bytes
+    raw_ledger_entry_bytes: bytes
+    raw_inclusion_proof_bytes: bytes
+    raw_old_checkpoint_bytes: bytes
+    raw_new_checkpoint_bytes: bytes
+    raw_consistency_proof_bytes: bytes
+    raw_registry_bytes: bytes
+    raw_witness_statement_bytes: tuple[bytes, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -315,11 +327,13 @@ def _accepted_external_evidence_watermark_sha256(
             "state_backend_id": copied.state_backend_id,
             "log_id": copied.log_id,
             "log_key_id": copied.log_key_id,
+            "log_public_key_sha256": copied.log_public_key_sha256,
             "ledger_tree_size": copied.ledger_tree_size,
             "ledger_root_sha256": copied.ledger_root_sha256,
             "ledger_checkpoint_sha256": copied.ledger_checkpoint_sha256,
             "registry_id": copied.registry_id,
             "registry_root_key_id": copied.registry_root_key_id,
+            "registry_root_public_key_sha256": copied.registry_root_public_key_sha256,
             "registry_sequence": copied.registry_sequence,
             "registry_sha256": copied.registry_sha256,
         }
@@ -339,11 +353,13 @@ def _external_evidence_watermark_copy(value: object) -> ExternalEvidenceWatermar
         state_backend_id=value.state_backend_id,
         log_id=value.log_id,
         log_key_id=value.log_key_id,
+        log_public_key_sha256=value.log_public_key_sha256,
         ledger_tree_size=value.ledger_tree_size,
         ledger_root_sha256=value.ledger_root_sha256,
         ledger_checkpoint_sha256=value.ledger_checkpoint_sha256,
         registry_id=value.registry_id,
         registry_root_key_id=value.registry_root_key_id,
+        registry_root_public_key_sha256=value.registry_root_public_key_sha256,
         registry_sequence=value.registry_sequence,
         registry_sha256=value.registry_sha256,
     )
@@ -360,6 +376,8 @@ def _external_evidence_watermark_copy(value: object) -> ExternalEvidenceWatermar
     for field, actual in (
         ("ledger_root_sha256", copied.ledger_root_sha256),
         ("ledger_checkpoint_sha256", copied.ledger_checkpoint_sha256),
+        ("log_public_key_sha256", copied.log_public_key_sha256),
+        ("registry_root_public_key_sha256", copied.registry_root_public_key_sha256),
         ("registry_sha256", copied.registry_sha256),
     ):
         _require_sha256(actual, field)
@@ -378,6 +396,7 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
         state_backend_id=value.state_backend_id,
         log_id=value.log_id,
         log_key_id=value.log_key_id,
+        log_public_key_sha256=value.log_public_key_sha256,
         old_tree_size=value.old_tree_size,
         old_root_sha256=value.old_root_sha256,
         old_checkpoint_sha256=value.old_checkpoint_sha256,
@@ -386,8 +405,17 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
         new_checkpoint_sha256=value.new_checkpoint_sha256,
         registry_id=value.registry_id,
         registry_root_key_id=value.registry_root_key_id,
+        registry_root_public_key_sha256=value.registry_root_public_key_sha256,
         registry_sequence=value.registry_sequence,
         registry_sha256=value.registry_sha256,
+        raw_manifest_bytes=value.raw_manifest_bytes,
+        raw_ledger_entry_bytes=value.raw_ledger_entry_bytes,
+        raw_inclusion_proof_bytes=value.raw_inclusion_proof_bytes,
+        raw_old_checkpoint_bytes=value.raw_old_checkpoint_bytes,
+        raw_new_checkpoint_bytes=value.raw_new_checkpoint_bytes,
+        raw_consistency_proof_bytes=value.raw_consistency_proof_bytes,
+        raw_registry_bytes=value.raw_registry_bytes,
+        raw_witness_statement_bytes=value.raw_witness_statement_bytes,
     )
     if copied.policy_domain != CLASSIC_POLICY_DOMAIN:
         raise ValueError("external evidence advance is not scoped to the fixed CLASSIC domain")
@@ -404,6 +432,8 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
         ("old_checkpoint_sha256", copied.old_checkpoint_sha256),
         ("new_root_sha256", copied.new_root_sha256),
         ("new_checkpoint_sha256", copied.new_checkpoint_sha256),
+        ("log_public_key_sha256", copied.log_public_key_sha256),
+        ("registry_root_public_key_sha256", copied.registry_root_public_key_sha256),
         ("registry_sha256", copied.registry_sha256),
     ):
         _require_sha256(actual, field)
@@ -417,6 +447,36 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
         raise ValueError("new ledger checkpoint tree size must exceed the old tree size")
     if type(copied.registry_sequence) is not int or not 1 <= copied.registry_sequence <= MAX_POLICY_SEQUENCE:
         raise ValueError("registry_sequence must be an exact positive bounded integer")
+    raw_byte_fields = (
+        ("raw_manifest_bytes", copied.raw_manifest_bytes),
+        ("raw_ledger_entry_bytes", copied.raw_ledger_entry_bytes),
+        ("raw_inclusion_proof_bytes", copied.raw_inclusion_proof_bytes),
+        ("raw_old_checkpoint_bytes", copied.raw_old_checkpoint_bytes),
+        ("raw_new_checkpoint_bytes", copied.raw_new_checkpoint_bytes),
+        ("raw_consistency_proof_bytes", copied.raw_consistency_proof_bytes),
+        ("raw_registry_bytes", copied.raw_registry_bytes),
+    )
+    total_bytes = 0
+    for field, actual in raw_byte_fields:
+        if type(actual) is not bytes or not actual:
+            raise ValueError(f"{field} must be non-empty exact bytes")
+        total_bytes += len(actual)
+    if type(copied.raw_witness_statement_bytes) is not tuple or not 2 <= len(copied.raw_witness_statement_bytes) <= 128:
+        raise ValueError("raw_witness_statement_bytes must be an exact bounded tuple of 2..128 statements")
+    for statement in copied.raw_witness_statement_bytes:
+        if type(statement) is not bytes or not statement:
+            raise ValueError("each raw witness statement must be non-empty exact bytes")
+        total_bytes += len(statement)
+    if total_bytes > 8 * 1024 * 1024:
+        raise ValueError("external evidence advance exceeds the aggregate byte limit")
+    exact_digests = (
+        ("old_checkpoint_sha256", copied.old_checkpoint_sha256, copied.raw_old_checkpoint_bytes),
+        ("new_checkpoint_sha256", copied.new_checkpoint_sha256, copied.raw_new_checkpoint_bytes),
+        ("registry_sha256", copied.registry_sha256, copied.raw_registry_bytes),
+    )
+    for field, expected, raw in exact_digests:
+        if hashlib.sha256(raw).hexdigest() != expected:
+            raise ValueError(f"{field} does not bind the exact external evidence bytes")
     return copied
 
 
@@ -445,8 +505,10 @@ def _validated_external_evidence_watermark(
     if (
         candidate.log_id != current.log_id
         or candidate.log_key_id != current.log_key_id
+        or candidate.log_public_key_sha256 != current.log_public_key_sha256
         or candidate.registry_id != current.registry_id
         or candidate.registry_root_key_id != current.registry_root_key_id
+        or candidate.registry_root_public_key_sha256 != current.registry_root_public_key_sha256
     ):
         raise TrustStateRejected("external ledger or witness-registry identity changed without an authorized transition")
 
@@ -478,11 +540,13 @@ def _validated_external_evidence_watermark(
         state_backend_id=snapshot.state_backend_id,
         log_id=candidate.log_id,
         log_key_id=candidate.log_key_id,
+        log_public_key_sha256=candidate.log_public_key_sha256,
         ledger_tree_size=candidate.new_tree_size,
         ledger_root_sha256=candidate.new_root_sha256,
         ledger_checkpoint_sha256=candidate.new_checkpoint_sha256,
         registry_id=candidate.registry_id,
         registry_root_key_id=candidate.registry_root_key_id,
+        registry_root_public_key_sha256=candidate.registry_root_public_key_sha256,
         registry_sequence=candidate.registry_sequence,
         registry_sha256=candidate.registry_sha256,
     )
