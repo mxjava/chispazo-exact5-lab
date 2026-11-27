@@ -54,6 +54,10 @@ def _advance(watermark):
     old_checkpoint = b"synthetic-genesis-checkpoint"
     new_checkpoint = b"synthetic-next-checkpoint"
     registry = b"synthetic-registry-sequence-2"
+    receipt = b"synthetic-receipt"
+    policy = b"synthetic-policy-envelope"
+    artifact = b"synthetic-artifact"
+    signature = b"synthetic-artifact-signature"
     return ExternalEvidenceAdvanceV1(
         policy_domain=CLASSIC_POLICY_DOMAIN,
         state_backend_id=watermark.state_backend_id,
@@ -82,6 +86,18 @@ def _advance(watermark):
             b"synthetic-witness-statement-1",
             b"synthetic-witness-statement-2",
         ),
+        receipt_sha256=_sha(receipt),
+        policy_envelope_sha256=_sha(policy),
+        raw_receipt_bytes=receipt,
+        raw_policy_envelope_bytes=policy,
+        raw_custody_record_bytes=b"synthetic-custody-record",
+        raw_portfolio_bytes=b"synthetic-portfolio",
+        raw_custody_signature_bytes=b"synthetic-custody-signature",
+        custodian_key_id="synthetic-custodian",
+        raw_timestamp_token_der=b"synthetic-custody-timestamp-token",
+        raw_policy_timestamp_token_der=b"synthetic-policy-timestamp-token",
+        raw_artifact_bytes_by_sha256=((_sha(artifact), artifact),),
+        raw_signature_bytes_by_sha256=((_sha(signature), signature),),
     )
 
 
