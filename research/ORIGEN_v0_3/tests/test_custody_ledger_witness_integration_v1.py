@@ -425,8 +425,16 @@ def _witness_batches(ledger, *, split_view=False, omit_ledger_checkpoint=False):
     return (first, second), registry_bytes
 
 
-def _build_case(*, split_view=False, omit_ledger_checkpoint=False):
-    data = timestamped_bundle(accuracy={"seconds": 1})
+def _build_case(
+    *, split_view=False, omit_ledger_checkpoint=False, custody_timestamp_gen_time=None
+):
+    if custody_timestamp_gen_time is None:
+        data = timestamped_bundle(accuracy={"seconds": 1})
+    else:
+        data = timestamped_bundle(
+            gen_time=custody_timestamp_gen_time,
+            accuracy={"seconds": 1},
+        )
     document = _build_physical_signature_bundle(data)
     ledger = _build_ledger(document)
     data["raw_manifest_bytes"] = ledger["manifest_bytes"]
