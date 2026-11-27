@@ -24,6 +24,16 @@ Separar tres conceptos que nunca deben colapsarse:
 
 La elegibilidad predictiva requiere evidencia auténticamente disponible y sellada ANTES del cierre del sorteo objetivo. No requiere que el pesaje de origen haya ocurrido antes del cierre de su propio sorteo. La continuidad del conjunto físico y del mapeo esfera↔número entre el evento de origen y el sorteo objetivo debe probarse por intervalos y registros primarios.
 
+## Slot oficial de cierre vs. hora real de extracción
+
+Para Chispazo Clásico, la página oficial del producto publica el horario de 21:00 y SGVO-PRO-05 revisión 39, política 9, fija el cierre automático de ventas de los sorteos nocturnos a las 21:00. Por tanto, la guarda exacta de horario debe aplicarse a `draw_close_at` y `target_draw_close_at`, convertidos a `America/Mexico_City`.
+
+`source_draw_at` y `target_draw_at` son horas reales de extracción, no alias del horario publicado. Deben respetar `draw_close_at <= source_draw_at` y `target_draw_close_at <= target_draw_at`, además de la secuencia de pesaje/firma correspondiente; no deben forzarse a ser exactamente 21:00. La política 10 de SGVO-PRO-05 describe cita, tolerancia y límite de asistencia del inspector; no certifica que la extracción real ocurra exactamente a las 21:00 ni autoriza inferirla desde el horario de la página.
+
+Fuentes oficiales:
+- https://www.loterianacional.gob.mx/Chispazo/Chispazo
+- https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
+
 ## Contrato V2 propuesto
 
 Cada fila representa una esfera física dentro de un conjunto identificado. Los 28 registros de un conjunto/sorteo de origen deben compartir identidad de sorteo, set, máquina, tipo de esfera, timestamps de contexto y referencias de fuente.

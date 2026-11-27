@@ -58,6 +58,16 @@ class PlackettLuceTests(unittest.TestCase):
         reverse = mass_log_weights(masses, -0.75)
         self.assertAlmostEqual(logs[0], -reverse[0], places=13)
 
+    def test_mass_standardization_is_stable_for_extreme_finite_values(self):
+        masses = [1e308] * 27 + [1.0]
+        logs = mass_log_weights(masses, 0.5)
+        self.assertTrue(all(math.isfinite(value) for value in logs))
+        self.assertLess(logs[-1], logs[0])
+
+    def test_log_weights_reject_booleans(self):
+        with self.assertRaisesRegex(ValueError, "log_weights"):
+            log_plackett_luce_set_probability((0.0,) * 27 + (True,), (1, 2, 3, 4, 5))
+
     def test_zero_beta_is_exactly_uniform(self):
         masses = [4.7 + i / 1000 for i in range(28)]
         self.assertEqual(mass_log_weights(masses, 0.0), (0.0,) * 28)
@@ -72,6 +82,12 @@ class PlackettLuceTests(unittest.TestCase):
             mass_log_weights([4.7] * 27 + [float("nan")], 1.0)
         with self.assertRaisesRegex(ValueError, "beta_per_sd"):
             mass_log_weights([4.7 + i / 100 for i in range(28)], float("inf"))
+        with self.assertRaisesRegex(ValueError, "numeric values"):
+            mass_log_weights([4.7] * 27 + [True], 1.0)
+        with self.assertRaisesRegex(ValueError, "beta_per_sd"):
+            mass_log_weights([4.7 + i / 100 for i in range(28)], True)
+        with self.assertRaisesRegex(ValueError, "numeric values"):
+            mass_log_weights([4.7] * 27 + [None], 1.0)
 
     def test_prequential_e_process_crosses_threshold_at_twenty(self):
         result = prequential_e_process([math.log(4), math.log(5)])

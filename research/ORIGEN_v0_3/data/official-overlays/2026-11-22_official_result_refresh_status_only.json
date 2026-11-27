@@ -1,0 +1,218 @@
+{
+  "schema": "exact5.official_overlay.status_only.v3",
+  "observed_at_local": "2026-11-22T17:57:26-06:00",
+  "purpose": "Status-only official endpoint refresh. The dedicated result page now publishes contest 12389; modality is schedule-consistent but not confirmed by a same-day mask. No pre-close capture, physical evidence authentication, canonical-history append, or scoring.",
+  "classification": "OFFICIAL_RESULT_PUBLISHED_SCHEDULE_CONSISTENT_MASK_NOT_YET_PUBLISHED",
+  "official_schedule": {
+    "product_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "slots": [
+      {
+        "time_local": "15:00",
+        "modality": "DE_LAS_TRES"
+      },
+      {
+        "time_local": "21:00",
+        "modality": "CLASICO"
+      }
+    ],
+    "basis": "The official Chispazo product page explicitly maps 15:00 to De las Tres and 21:00 to Clásico."
+  },
+  "observations": {
+    "dedicated_chispazo_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "status": "OFFICIAL_RESULT_PUBLISHED",
+      "contest_id": 12389,
+      "date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        15,
+        17,
+        22,
+        25
+      ],
+      "observed_text": "Sorteo 12389, Fecha 22/11/2026, combinación 01 15 17 22 25; last-15 table repeats the same contest and result.",
+      "modality_status": "SCHEDULE_INFERRED_DE_LAS_TRES_NOT_MASK_CONFIRMED",
+      "modality_basis": "The official Chispazo product page maps 15:00 to De las Tres and 21:00 to Clásico. The official home index advertises contest 12390 for 2026-11-22 at 21:00. The dedicated result page gives contest 12389 on the same date but does not expose its draw time; assigning it to the 15:00 slot is a sequence/schedule reconciliation, not direct timestamp or mask confirmation."
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_document": "RESULTADOS 2026-11-21",
+      "next_document_2026_11_22_listed": false,
+      "latest_document_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-21.pdf?v=21112026220313",
+      "latest_document_status": "OFFICIAL_PDF_OPENED_FOR_2026-11-21_ONLY",
+      "status": "NO_2026-11-22_MASK_VISIBLE_AT_OBSERVATION",
+      "latest_document_content_status": "The 2026-11-21 one-page official PDF was opened; it contains Chispazo contests 12387 (01 05 11 18 19) and 12388 (01 07 12 21 26). The index has no 2026-11-22 mask at this observation."
+    },
+    "home_schedule": {
+      "url": "https://www.loterianacional.gob.mx/home/index",
+      "next_chispazo_card": {
+        "contest_id": 12390,
+        "date": "2026-11-22",
+        "time_local": "21:00",
+        "modality": "CLASICO",
+        "modality_basis": "Official home index shows Chispazo contest 12390 at 21:00; official Chispazo product page maps 21:00 to Clásico.",
+        "result_published_at_observation": false
+      }
+    },
+    "search_index_only_result_snippet": {
+      "url": "https://www.loterianacional.gob.mx/Home/Resultados/?cluster=1&view=cG5sUmVzdWxHYW5hR2F0bw%3D%3D",
+      "status": "SUPERSEDED_BY_OPENED_DEDICATED_CHISPAZO_RESULTS_PAGE",
+      "reason": "Contest 12389 and its combination are now directly visible on the dedicated official Chispazo results page. The opened page still does not identify the draw time or modality; retain the schedule-inferred status and do not claim same-day mask confirmation."
+    },
+    "prior_day_mask_pdf": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-21.pdf?v=21112026220313",
+      "opened_from_official_mask_index": true,
+      "pages": 1,
+      "printed_draw_date": "2026-11-21",
+      "chispazo_results": [
+        {
+          "contest_id": 12387,
+          "winning_numbers": [
+            1,
+            5,
+            11,
+            18,
+            19
+          ],
+          "modality": "DE_LAS_TRES",
+          "modality_status": "MASK_VISUALLY_CONFIRMED",
+          "expected_slot_local": "15:00",
+          "modality_basis": "The official 2026-11-21 mask visually prints the Chispazo De las tres logo beside contest 12387 and the Chispazo Clásico logo beside contest 12388. The official product page separately maps these modalities to 15:00 and 21:00."
+        },
+        {
+          "contest_id": 12388,
+          "winning_numbers": [
+            1,
+            7,
+            12,
+            21,
+            26
+          ],
+          "modality": "CLASICO",
+          "modality_status": "MASK_VISUALLY_CONFIRMED",
+          "expected_slot_local": "21:00",
+          "modality_basis": "The official 2026-11-21 mask visually prints the Chispazo De las tres logo beside contest 12387 and the Chispazo Clásico logo beside contest 12388. The official product page separately maps these modalities to 15:00 and 21:00."
+        }
+      ],
+      "modality_basis": "The PDF contains contests 12387 and 12388 for 21-Nov-2026. The official Chispazo product page states two daily slots: De las Tres at 15:00 and Clásico at 21:00. Contest ordering and the two-draw daily schedule support the slot mapping; the PDF itself does not print the draw times.",
+      "provenance_limit": "Official public results mask with modality logos visually confirmed. It is not the signed draw act, signed participation file, weighing strip, equipment record, independent custody receipt, or trusted timestamp.",
+      "source_pdf_sha256": "NOT_CAPTURED",
+      "original_pdf_bytes_stored_in_repository": false,
+      "visual_inspection": {
+        "page": 1,
+        "contest_12387_label": "Chispazo De las tres",
+        "contest_12388_label": "Chispazo Clásico",
+        "source_page_image_reviewed": true,
+        "clock_times_printed_in_pdf": false,
+        "clock_times_source": "Official Chispazo product schedule: De las Tres 15:00; Clásico 21:00."
+      }
+    }
+  },
+  "draws": [
+    {
+      "contest_id": 12389,
+      "date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        15,
+        17,
+        22,
+        25
+      ],
+      "result_source": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "result_status": "PUBLISHED_ON_DEDICATED_OFFICIAL_RESULTS_PAGE",
+      "modality": "DE_LAS_TRES",
+      "modality_status": "SCHEDULE_INFERRED_NOT_MASK_CONFIRMED",
+      "expected_slot_local": "15:00",
+      "modality_basis": "Same-day 21:00 Chispazo contest 12390 is listed by the official home index; official product schedule maps 15:00 to De las Tres and 21:00 to Clásico. The 12389 result page itself omits the time."
+    }
+  ],
+  "integrity_limits": {
+    "original_2026_11_22_mask_bytes_captured": false,
+    "source_pdf_sha256": "NOT_CAPTURED",
+    "official_act_obtained": false,
+    "signed_participation_file_obtained": false,
+    "physical_sphere_measurements_obtained": false,
+    "independent_custody": false,
+    "trusted_source_timestamp": false,
+    "signed_preclose_snapshot": false
+  },
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "challenger_changed": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "sources": {
+    "dedicated_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "home_schedule": "https://www.loterianacional.gob.mx/home/index",
+    "home_results_index": "https://www.loterianacional.gob.mx/Home/Resultados/?cluster=1&view=cG5sUmVzdWxHYW5hR2F0bw%3D%3D"
+  },
+  "official_physical_control_procedure": {
+    "document": "SGVO-PRO-05 — Procedimiento Sorteos Electrónicos",
+    "revision": 39,
+    "publication_date": "2026-03-20",
+    "url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+    "requirements": {
+      "sphere_weighing": "Weighing is required for every draw.",
+      "smartballs": {
+        "minimum_g": 4.25,
+        "maximum_g": 5.25,
+        "maximum_spread_g": 0.3
+      },
+      "ping_pong": {
+        "minimum_g": 2.3,
+        "maximum_g": 3,
+        "maximum_spread_g": 0.15
+      },
+      "participation_file": "The electronic signature of the participation file is recorded on storage media before the draw and deposited in a secured box accessible only to the Internal Control body.",
+      "act_and_attachments": "The draw act must identify place/date/time and officials/SEGOB inspector; attachments include CS-11 winning numbers and the weighing strip.",
+      "delayed_signature_exception": "If printing the act is impossible, it may be signed the next business day, no later than five business days, only if results are not compromised."
+    },
+    "source_pages": {
+      "sphere_weight_and_controls": 5,
+      "act_and_required_attachments": 7,
+      "delayed_act_signature": 8
+    },
+    "status": "OFFICIAL_PROCEDURAL_BASELINE_CONFIRMED_BUT_2026-11-22_PRIMARY_RECORDS_NOT_OBTAINED"
+  },
+  "latest_observation": {
+    "observed_at_local": "2026-11-22T17:57:26-06:00",
+    "dedicated_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observation": "The official page displays contest 12389, date 2026-11-22, winning numbers 01 15 17 22 25."
+    },
+    "home_index": {
+      "url": "https://www.loterianacional.gob.mx/home/index",
+      "observation": "The opened page displays a 22-Nov 21:00 card with Sorteo 12390. Its extracted 15:00 card shows Sorteo 36979 and is not unambiguously labelled as Chispazo in the extracted block; do not use that card to claim direct 15:00 confirmation for contest 12389.",
+      "chispazo_classic_21_00": {
+        "contest_id": 12390,
+        "modality": "CLASICO",
+        "basis": "Home index 21:00 card plus official Chispazo product schedule."
+      },
+      "contest_12389_slot_status": "SCHEDULE_INFERRED_DE_LAS_TRES_NOT_SAME_DAY_MASK_CONFIRMED"
+    },
+    "official_product_schedule": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "de_las_tres_local": "15:00",
+      "clasico_local": "21:00"
+    },
+    "mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_document": "RESULTADOS 2026-11-21",
+      "same_day_2026_11_22_mask_visible": false
+    },
+    "interpretation": "Do not promote contest 12389 to MASK_CONFIRMED. The official result is published, but the current homepage extraction does not directly map 12389 to the 15:00 card. Keep schedule/sequence inference explicitly labelled and do not append to canonical history.",
+    "source_bytes": {
+      "official_2026_11_22_mask_sha256": "NOT_CAPTURED",
+      "official_2026_11_22_mask_bytes_stored": false
+    }
+  }
+}

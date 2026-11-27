@@ -1,0 +1,73 @@
+{
+  "schema": "exact5.official_overlay.status_only.v3",
+  "observed_at_local": "2026-11-24T11:55:42-06:00",
+  "timezone": "America/Mexico_City",
+  "purpose": "Fresh pre-draw refresh of official public Chispazo endpoints. This records publication status only; it does not infer unpublished contest IDs, outcomes, physical provenance, pre-close eligibility, or scoring.",
+  "classification": "CURRENT_DAY_DRAWS_NOT_YET_PUBLISHED_AT_OBSERVATION",
+  "official_schedule": {
+    "product_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "slots": [
+      {"time_local": "15:00", "modality": "DE_LAS_TRES"},
+      {"time_local": "21:00", "modality": "CLASSIC"}
+    ],
+    "basis": "The official Chispazo product page explicitly maps 15:00 to De las Tres and 21:00 to Clásico."
+  },
+  "observations": {
+    "dedicated_chispazo_results_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "displayed_latest_contest": 12392,
+      "displayed_latest_date": "2026-11-23",
+      "displayed_latest_numbers": ["06", "11", "16", "23", "28"],
+      "displayed_previous_same_day_contest": 12391,
+      "displayed_previous_same_day_numbers": ["03", "07", "19", "20", "24"],
+      "displayed_next_draw_date": "2026-11-24",
+      "current_day_result_published_at_observation": false,
+      "status": "OFFICIAL_PAGE_REFRESHED_NO_2026_11_24_RESULT_VISIBLE",
+      "modality_note": "The dedicated result block does not label modality. The official 2026-11-23 mask was visually reviewed in the earlier 2026-11-24 06:28 overlay: 12391 is explicitly labeled De las Tres and 12392 explicitly labeled Clásico. Do not infer any 2026-11-24 contest ID or modality before official publication."
+    },
+    "official_mask_index": {
+      "url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "latest_listed_document": "RESULTADOS 2026-11-23",
+      "2026_11_24_document_listed": false,
+      "status": "NO_2026_11_24_MASK_VISIBLE_AT_OBSERVATION",
+      "source_bytes_captured": false,
+      "source_pdf_sha256": "NOT_CAPTURED"
+    },
+    "official_product_schedule": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00",
+      "current_day_draws_completed_at_observation": false
+    }
+  },
+  "draws": [],
+  "integrity_limits": {
+    "official_2026_11_24_mask_bytes_captured": false,
+    "official_act_obtained": false,
+    "signed_participation_file_obtained": false,
+    "cs11_obtained": false,
+    "weighing_strip_obtained": false,
+    "physical_sphere_measurements_obtained": false,
+    "calibration_certificate_obtained": false,
+    "independent_custody": false,
+    "trusted_source_timestamp": false,
+    "signed_preclose_snapshot": false
+  },
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "canonical_append_verified": false,
+    "challenger_changed": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "sources": {
+    "dedicated_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "prior_visual_mask_review": "research/ORIGEN_v0_3/data/official-overlays/2026-11-24_0628_official_mask_visual_status_only.json"
+  }
+}

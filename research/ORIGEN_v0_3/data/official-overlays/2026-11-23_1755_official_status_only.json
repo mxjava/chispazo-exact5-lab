@@ -1,0 +1,77 @@
+{
+  "schema": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-23T17:55:41-06:00",
+  "captured_at_utc": "2026-11-23T23:55:41Z",
+  "timezone": "America/Mexico_City",
+  "classification": "STATUS_ONLY_PUBLIC_OFFICIAL_SNAPSHOT",
+  "authority": "Loteria Nacional",
+  "sources": {
+    "dedicated_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "home_results": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxHb3JkaXRv",
+    "home_index": "https://www.loterianacional.gob.mx/home/index",
+    "chispazo_product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas"
+  },
+  "official_publication": {
+    "draw_date": "2026-11-23",
+    "contest_12391": {
+      "winning_numbers": [3, 7, 19, 20, 24],
+      "dedicated_results_visible": true,
+      "home_results_visible": true,
+      "home_index_slot_local": "15:00",
+      "modality": "DE_LAS_TRES",
+      "modality_basis": "The official home index lists contest 12391 at 15:00; the official Chispazo product schedule defines 15:00 as De las Tres and 21:00 as Clásico.",
+      "mask_confirmed": false,
+      "classification": "SCHEDULE_INFERRED_NOT_MASK_CONFIRMED"
+    },
+    "contest_12392": {
+      "home_results_placeholder_visible": true,
+      "winning_numbers": null,
+      "expected_slot_local": "21:00",
+      "expected_modality": "CLASSIC",
+      "association_status": "PROVISIONAL_PENDING_OFFICIAL_MASK_OR_RESULT",
+      "result_status": "UNPUBLISHED_AT_CAPTURE"
+    }
+  },
+  "publication_consistency": {
+    "dedicated_results_page_last_visible_contest": "12391",
+    "dedicated_page_now_matches_12391_home_result": true,
+    "mask_index_latest_visible_date": "2026-11-22",
+    "mask_for_2026_11_23_available": false
+  },
+  "physical_provenance": {
+    "original_2026_11_23_mask_pdf_bytes_captured": false,
+    "pdf_sha256": null,
+    "signed_draw_act_obtained": false,
+    "signed_participation_file_obtained": false,
+    "cs11_obtained": false,
+    "28_measurement_weighing_strip_obtained": false,
+    "scale_identity_and_calibration_obtained": false,
+    "machine_serial_to_contest_linkage_obtained": false,
+    "rfid_draw_level_logs_obtained": false,
+    "independent_custody_receipt_obtained": false,
+    "trusted_timestamp_obtained": false,
+    "two_independent_preclose_output_seals_obtained": false
+  },
+  "eligibility": {
+    "classic_snapshot_eligible": false,
+    "prospective_eligible": false,
+    "score_eligible": false,
+    "status": "BLOCKED_PROVENANCE"
+  },
+  "protections": {
+    "v294": "FROZEN",
+    "canonical_history": "UNCHANGED",
+    "main_writes": false,
+    "canonical_append": false,
+    "merge_or_promotion": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "notes": [
+    "Contest 12391 is a 15:00 De las Tres schedule-classified result and must not be ingested as a Classic prospective observation.",
+    "Contest 12392 remains an unpublished placeholder at capture; its association with the 21:00 Classic slot is provisional until primary modality evidence is available.",
+    "The dedicated Chispazo results page has advanced to 12391 and now agrees with the home result page; the earlier publication lag has resolved.",
+    "The official mask index still lists 2026-11-22 as its latest date; no 2026-11-23 mask or original PDF bytes were obtained.",
+    "This overlay records public publication status only. It does not establish draw-level physical provenance, trusted time, independent custody, or predictive eligibility."
+  ]
+}

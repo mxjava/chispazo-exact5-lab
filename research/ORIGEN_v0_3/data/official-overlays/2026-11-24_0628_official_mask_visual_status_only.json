@@ -1,0 +1,90 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "observed_at_local": "2026-11-24T06:28:16-06:00",
+  "timezone": "America/Mexico_City",
+  "classification": "OFFICIAL_PUBLIC_MASK_VISUALLY_RETRIEVED_NOT_PHYSICAL_PROVENANCE",
+  "official_sources": {
+    "chispazo_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "home_results_index": "https://www.loterianacional.gob.mx/Home/Resultados",
+    "chispazo_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "mask_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-23.pdf?v=23112026215757"
+  },
+  "mask_observation": {
+    "index_latest_date": "2026-11-23",
+    "pdf_pages": 1,
+    "visual_retrieval": "WEB_RENDERED_PAGE_1_OF_1",
+    "modality_labels_visually_observed": true,
+    "text_extraction_observed": true,
+    "original_pdf_bytes_captured": false,
+    "original_pdf_sha256": null,
+    "original_html_bytes_captured": false,
+    "retrieval_note": "The official mask PDF was opened and visually inspected as a rendered one-page document. The original PDF bytes could not be downloaded in this run; no digest is asserted."
+  },
+  "observations": [
+    {
+      "contest_id": "12391",
+      "date_local": "2026-11-23",
+      "modality": "DE_LAS_TRES",
+      "scheduled_time_local": "15:00",
+      "winning_numbers": [
+        "03",
+        "07",
+        "19",
+        "20",
+        "24"
+      ],
+      "first_prize_winners": 5,
+      "first_prize_individual_mxn": "39252.45",
+      "modality_basis": "The official one-page mask visually labels this result as Chispazo De las tres, Sorteo No. 12391; the official schedule independently lists De las Tres at 15:00."
+    },
+    {
+      "contest_id": "12392",
+      "date_local": "2026-11-23",
+      "modality": "CLASSIC",
+      "scheduled_time_local": "21:00",
+      "winning_numbers": [
+        "06",
+        "11",
+        "16",
+        "23",
+        "28"
+      ],
+      "first_prize_winners": 3,
+      "first_prize_individual_mxn": "102652.15",
+      "modality_basis": "The official one-page mask visually labels this result as Chispazo Clásico, Sorteo No. 12392; the official schedule independently lists Clásico at 21:00."
+    }
+  ],
+  "observation_date_status": {
+    "date_local": "2026-11-24",
+    "results_page_next_draw_date": "2026-11-24",
+    "result_for_observation_date_published": false,
+    "mask_index_latest_date": "2026-11-23",
+    "upcoming_contest_ids_not_inferred": true
+  },
+  "physical_primary_evidence": {
+    "signed_draw_acta": false,
+    "signed_participation_file": false,
+    "cs11_original": false,
+    "weighing_strip_28_measurements": false,
+    "scale_calibration_certificate": false,
+    "machine_to_contest_link": false,
+    "sphere_number_mapping": false,
+    "rfid_trace": false,
+    "independent_custody_receipt": false,
+    "trusted_timestamp": false,
+    "two_independent_preclose_output_seals": false
+  },
+  "provenance_limits": {
+    "official_publication_is_not_independent_physical_custody": true,
+    "web_observation_time_is_self_reported_not_trusted_timestamp": true,
+    "source_bytes_and_pdf_digest_unavailable": true
+  },
+  "eligibility": {
+    "prospective_classic_snapshot": false,
+    "preclose_seal": false,
+    "physical_provenance_authenticated": false,
+    "score_eligible": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}

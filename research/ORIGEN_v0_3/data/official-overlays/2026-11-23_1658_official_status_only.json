@@ -1,0 +1,64 @@
+{
+  "schema": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-23T16:58:54-06:00",
+  "authority": "Loteria Nacional",
+  "sources": {
+    "home_results": "https://www.loterianacional.gob.mx/Home/Resultados?cluster=2&view=cG5sUmVzdWxHb3JkaXRv",
+    "chispazo_product": "https://loterianacional.gob.mx/Chispazo/Chispazo",
+    "dedicated_results": "https://loterianacional.gob.mx/Chispazo/Resultados",
+    "mask_index": "https://loterianacional.gob.mx/Mascarillas/Mascarillas"
+  },
+  "official_index": {
+    "date": "2026-11-23",
+    "contest_12391": {
+      "scheduled_local_time": "15:00",
+      "modality": "DE_LAS_TRES",
+      "winning_numbers": [
+        3,
+        7,
+        19,
+        20,
+        24
+      ],
+      "modality_basis": "home index slot plus official Chispazo schedule",
+      "mask_confirmed": false
+    },
+    "contest_12392": {
+      "scheduled_local_time": "21:00",
+      "modality": "CLASSIC",
+      "winning_numbers": null,
+      "status": "scheduled; result not published at capture"
+    }
+  },
+  "publication_consistency": {
+    "dedicated_results_page_last_visible_contest": "12390",
+    "dedicated_results_page_stale": true,
+    "mask_index_latest_visible_date": "2026-11-22",
+    "mask_for_2026_11_23_available": false
+  },
+  "physical_provenance": {
+    "original_2026_11_23_mask_pdf_bytes_captured": false,
+    "pdf_sha256": null,
+    "signed_draw_act_obtained": false,
+    "signed_participation_file_obtained": false,
+    "cs11_obtained": false,
+    "28_measurement_weighing_strip_obtained": false,
+    "scale_identity_and_calibration_obtained": false,
+    "machine_serial_to_contest_linkage_obtained": false,
+    "rfid_draw_level_logs_obtained": false,
+    "independent_custody_receipt_obtained": false,
+    "trusted_timestamp_obtained": false
+  },
+  "eligibility": {
+    "classic_snapshot_eligible": false,
+    "prospective_eligible": false,
+    "score_eligible": false,
+    "status": "BLOCKED_PROVENANCE"
+  },
+  "notes": [
+    "The 15:00 contest 12391 is schedule-classified as De las Tres, not Classic; its mask was not yet listed.",
+    "The 21:00 contest 12392 is the Classic slot, but no result was visible at capture.",
+    "The dedicated Chispazo results page lagged the official home results index at capture.",
+    "This is a publication-status overlay only; it contains no draw-level physical measurement or authenticated provenance."
+  ]
+}

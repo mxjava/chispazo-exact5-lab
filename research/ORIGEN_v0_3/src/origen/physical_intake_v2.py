@@ -7,15 +7,18 @@ verified against primary records by an independent process.
 from __future__ import annotations
 
 import csv
-import math
+from decimal import Decimal, InvalidOperation
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
+from zoneinfo import ZoneInfo
 
 V2_REQUIRED_COLUMNS = (
-    "source_contest_id", "target_contest_id", "contest_id", "draw_date",
+    "source_contest_id", "target_contest_id", "source_classic_sequence",
+    "target_classic_sequence", "official_classic_sequence_manifest_ref",
+    "official_classic_sequence_manifest_sha256", "contest_id", "draw_date",
     "modality", "draw_close_at", "target_draw_close_at", "target_draw_at", "sphere_set_id",
     "set_assigned_at", "sphere_type", "machine_id", "machine_model",
     "sphere_id", "printed_number", "mass_value", "mass_unit", "measurement_at",
@@ -28,9 +31,101 @@ V2_REQUIRED_COLUMNS = (
     "custody_receipt_ref", "custody_receipt_sha256", "trusted_timestamp_ref",
 )
 
+# One invocation can hold at most 1,000 complete 28-sphere target sets.
+# Larger feeds must be partitioned at complete-target boundaries by the caller.
+MAX_V2_INTAKE_ROWS = 28_000
+# Bound UTF-8 payload bytes, not Unicode code points, at the untrusted intake boundary.
+MAX_V2_ROW_TEXT_BYTES = 32_768
+MAX_V2_INTAKE_TEXT_BYTES = 64_000_000
+# Bound the CSV parser before it materializes an untrusted physical record.
+# A CSV-escaped record can at most double payload bytes for quote escaping, plus
+# delimiters, field wrappers, and the line terminator for the fixed V2 schema.
+MAX_V2_CSV_HEADER_BYTES = 4096
+MAX_V2_CSV_RECORD_BYTES = (
+    2 * MAX_V2_ROW_TEXT_BYTES + 4 * len(V2_REQUIRED_COLUMNS) + 4
+)
+CHISPAZO_LOCAL_TIMEZONE = ZoneInfo("America/Mexico_City")
+CLASSIC_DRAW_SLOT = (21, 0, 0, 0)
+_DECIMAL_TEXT = re.compile(r"(?:0|[1-9][0-9]{0,2})(?:\.[0-9]{1,6})?\Z")
+SPHERE_MASS_SPECS = {
+    "SMARTBALLS": (Decimal("4.25"), Decimal("5.25"), Decimal("0.30")),
+    "PING PONG": (Decimal("2.30"), Decimal("3.00"), Decimal("0.15")),
+}
+
+
+def _bounded_utf8_text_bytes(value: str, limit: int) -> int:
+    """Count UTF-8 bytes in small chunks, stopping as soon as the limit is exceeded."""
+    total = 0
+    for offset in range(0, len(value), 4096):
+        try:
+            total += len(value[offset:offset + 4096].encode("utf-8", errors="strict"))
+        except UnicodeEncodeError as exc:
+            raise ValueError("text fields must contain valid UTF-8 encodable Unicode") from exc
+        if total > limit:
+            return total
+    return total
+
+
+def _declared_reference_set(value: Any, field: str) -> set[str]:
+    """Accept only exact built-in strings in canonical set containers."""
+    if value is None:
+        return set()
+    if type(value) not in (set, frozenset):
+        raise ValueError(f"{field} must be a set or frozenset of canonical strings")
+    if any(
+        type(ref) is not str or not ref or ref != ref.strip()
+        for ref in value
+    ):
+        raise ValueError(
+            f"{field} must contain only exact built-in strings without surrounding whitespace"
+        )
+    return set(value)
+
+
+def _canonical_identifier(value: Any) -> str:
+    """Return only exact, non-empty built-in text identifiers; invalid values become empty."""
+    if type(value) is not str or not value or value != value.strip():
+        return ""
+    return value
+
+
+def _contest_id_precedes(source: str, target: str) -> bool:
+    """Require canonical positive decimal contest IDs in strict chronological order."""
+    if not re.fullmatch(r"[1-9][0-9]*", source):
+        return False
+    if not re.fullmatch(r"[1-9][0-9]*", target):
+        return False
+    # Length/lexicographic comparison avoids converting untrusted IDs to huge ints.
+    return (len(source), source) < (len(target), target)
+
+
+def _canonical_positive_sequence(value: Any) -> int | None:
+    """Parse a bounded canonical positive Classic-sequence ordinal."""
+    if type(value) is not str or not re.fullmatch(r"[1-9][0-9]{0,11}", value):
+        return None
+    return int(value)
+
+
+def _canonical_sha256(value: Any) -> str:
+    """Return lowercase digest only for exact, unpadded 64-hex text."""
+    if type(value) is not str or not re.fullmatch(r"[0-9a-fA-F]{64}", value):
+        return ""
+    return value.lower()
+
+
 def _parse_time(value: Any, field: str) -> datetime:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{field}: missing timestamp")
+    # Require one unambiguous extended ISO-8601 representation. fromisoformat()
+    # accepts looser forms (space separators, compact offsets, omitted seconds).
+    if type(value) is not str or not re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|[+-][0-9]{2}:[0-9]{2})",
+        value,
+    ):
+        raise ValueError(f"{field}: missing or non-canonical timestamp")
+    # RFC 3339 uses -00:00 to mean that the local offset is unknown, not
+    # that UTC is affirmatively known. Treating it as UTC can change date and
+    # pre-close comparisons, so it is not an acceptable trusted-time offset.
+    if value.endswith("-00:00"):
+        raise ValueError(f"{field}: unknown UTC offset is not accepted")
     try:
         result = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
@@ -40,35 +135,120 @@ def _parse_time(value: Any, field: str) -> datetime:
     return result.astimezone(timezone.utc)
 
 
+
+def _is_classic_sales_close_slot(value: datetime) -> bool:
+    """Check the official 21:00 Classic sales-close slot in Mexico City local time."""
+    local = value.astimezone(CHISPAZO_LOCAL_TIMEZONE)
+    return (local.hour, local.minute, local.second, local.microsecond) == CLASSIC_DRAW_SLOT
+
+
 def evaluate_temporal_eligibility(
     rows: Iterable[Mapping[str, Any]],
     *,
-    verified_custody_refs: set[str] | None = None,
-    verified_timestamp_refs: set[str] | None = None,
-    verified_source_refs: set[str] | None = None,
-    verified_continuity_targets: set[str] | None = None,
+    declared_custody_refs: set[str] | frozenset[str] | None = None,
+    declared_timestamp_refs: set[str] | frozenset[str] | None = None,
+    declared_source_refs: set[str] | frozenset[str] | None = None,
+    declared_continuity_targets: set[str] | frozenset[str] | None = None,
+    declared_classic_sequence_refs: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """Classify each target independently; missing external attestations fail closed.
 
-    The verification sets must be populated by an independent verifier, not from
-    caller-supplied booleans in the CSV. An empty/omitted set means unverified.
+    The `declared_*` sets are caller-supplied reference declarations used only for
+    structural membership checks. This function cannot authenticate their origin,
+    signer, timestamp, custodian, or external continuity. Never treat membership in
+    these sets as an authenticated verification receipt. An empty/omitted set fails closed.
     """
-    materialized = list(rows)
+    custody = _declared_reference_set(declared_custody_refs, "declared_custody_refs")
+    timestamps = _declared_reference_set(declared_timestamp_refs, "declared_timestamp_refs")
+    sources = _declared_reference_set(declared_source_refs, "declared_source_refs")
+    continuity = _declared_reference_set(
+        declared_continuity_targets, "declared_continuity_targets"
+    )
+    classic_sequences = _declared_reference_set(
+        declared_classic_sequence_refs, "declared_classic_sequence_refs"
+    )
+
+    # Consume the iterable incrementally: list(rows) before validation allowed an
+    # untrusted CSV/generator to allocate unbounded memory before the fail-closed gate.
+    required_columns = set(V2_REQUIRED_COLUMNS)
+    materialized: list[Mapping[str, Any]] = []
+    intake_text_bytes = 0
+    # Treat the iterable as an untrusted input boundary. A generator or custom
+    # iterator can fail after yielding a prefix; surface that as a controlled
+    # intake rejection rather than leaking arbitrary iterator exceptions.
+    try:
+        row_iterator = iter(rows)
+    except Exception as exc:
+        raise ValueError("intake rows are not a readable iterable") from exc
+    row_number = 0
+    while True:
+        try:
+            row = next(row_iterator)
+        except StopIteration:
+            break
+        except Exception as exc:
+            raise ValueError(
+                f"intake iterable failed after row {row_number}"
+            ) from exc
+        row_number += 1
+        if row_number > MAX_V2_INTAKE_ROWS:
+            raise ValueError(
+                f"intake exceeds maximum {MAX_V2_INTAKE_ROWS} rows; "
+                "partition only at complete target-contest boundaries"
+            )
+        # DictReader yields exact dicts. Reject custom Mapping/dict subclasses because
+        # their get(), __getitem__(), or iteration methods can present inconsistent data.
+        if type(row) is not dict or any(type(key) is not str for key in row):
+            raise ValueError("rows must be exact built-in dict objects with built-in string keys")
+        missing = sorted(required_columns - set(row))
+        if missing:
+            raise ValueError(
+                f"row {row_number} missing required columns: " + ", ".join(missing)
+            )
+        unexpected = sorted(set(row) - required_columns)
+        if unexpected:
+            raise ValueError(
+                f"row {row_number} has unexpected columns: " + ", ".join(unexpected)
+            )
+        # Bound untrusted text before retaining another copy of each row. A row-count
+        # ceiling alone does not bound memory when a field can contain arbitrary text.
+        row_text_bytes = 0
+        snapshot: dict[str, Any] = {}
+        for column, value in row.items():
+            # CSV cells are exact strings or None. Do not retain arbitrary objects
+            # or str subclasses: their hidden payloads bypass the UTF-8 budget and
+            # can accumulate across rows before classification.
+            if value is None:
+                snapshot[column] = None
+                continue
+            if type(value) is not str:
+                raise ValueError(
+                    f"row {row_number} column {column} must be exact text or null"
+                )
+            row_text_bytes += _bounded_utf8_text_bytes(
+                value, MAX_V2_ROW_TEXT_BYTES - row_text_bytes
+            )
+            if row_text_bytes > MAX_V2_ROW_TEXT_BYTES:
+                raise ValueError(
+                    f"row {row_number} exceeds maximum UTF-8 text payload "
+                    f"{MAX_V2_ROW_TEXT_BYTES} bytes"
+                )
+            snapshot[column] = value
+        intake_text_bytes += row_text_bytes
+        if intake_text_bytes > MAX_V2_INTAKE_TEXT_BYTES:
+            raise ValueError(
+                "intake exceeds maximum UTF-8 text payload "
+                f"{MAX_V2_INTAKE_TEXT_BYTES} bytes"
+            )
+        # Retain only an owned snapshot of exact text/None scalar cells.
+        materialized.append(snapshot)
     if not materialized:
         return {"status": "EMPTY", "targets": {}, "row_count": 0}
-    missing = sorted(set(V2_REQUIRED_COLUMNS) - set(materialized[0]))
-    if missing:
-        raise ValueError("missing required columns: " + ", ".join(missing))
-
-    custody = verified_custody_refs or set()
-    timestamps = verified_timestamp_refs or set()
-    sources = verified_source_refs or set()
-    continuity = verified_continuity_targets or set()
     grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for row in materialized:
-        target = str(row.get("target_contest_id", "")).strip()
+        target = _canonical_identifier(row.get("target_contest_id"))
         if not target:
-            raise ValueError("target_contest_id: missing")
+            raise ValueError("target_contest_id: missing or non-canonical")
         grouped[target].append(row)
 
     results: dict[str, dict[str, Any]] = {}
@@ -76,6 +256,10 @@ def evaluate_temporal_eligibility(
         reasons: set[str] = set()
         closes: set[datetime] = set()
         source_contests: set[str] = set()
+        source_classic_sequences: set[int | None] = set()
+        target_classic_sequences: set[int | None] = set()
+        sequence_manifest_refs: set[str] = set()
+        sequence_manifest_hashes: set[str] = set()
         modalities: set[str] = set()
         sphere_ids: set[str] = set()
         printed_numbers: set[int] = set()
@@ -84,6 +268,13 @@ def evaluate_temporal_eligibility(
         target_draws: set[datetime] = set()
         assignments: set[datetime] = set()
         source_closes: set[datetime] = set()
+        # A target group represents one source draw, one signed source document,
+        # one availability event, and one custody receipt. Their timestamps must
+        # not fork across the 28 sphere rows that share those references.
+        source_draws: set[datetime] = set()
+        source_signature_times: set[datetime] = set()
+        evidence_available_times: set[datetime] = set()
+        custody_received_times: set[datetime] = set()
         sphere_types: set[str] = set()
         machine_models: set[str] = set()
         scales: set[str] = set()
@@ -92,52 +283,115 @@ def evaluate_temporal_eligibility(
         custody_refs: set[str] = set()
         custody_hashes: set[str] = set()
         calibration_hashes: set[str] = set()
+        calibration_validity_windows: set[tuple[datetime, datetime]] = set()
         signature_refs: set[str] = set()
         signer_ids: set[str] = set()
+        custodian_ids: set[str] = set()
         timestamp_refs: set[str] = set()
+        mass_values: list[Decimal] = []
         for row in group:
             try:
                 close = _parse_time(row["target_draw_close_at"], "target_draw_close_at")
                 available = _parse_time(row["evidence_available_at"], "evidence_available_at")
                 received = _parse_time(row["custody_received_at"], "custody_received_at")
                 measurement = _parse_time(row["measurement_at"], "measurement_at")
-                source_close = _parse_time(row["draw_close_at"], "draw_close_at")
-                source_draw = _parse_time(row["source_draw_at"], "source_draw_at")
+                source_close_raw = row["draw_close_at"]
+                source_close = _parse_time(source_close_raw, "draw_close_at")
+                source_draw_raw = row["source_draw_at"]
+                source_draw = _parse_time(source_draw_raw, "source_draw_at")
                 target_draw = _parse_time(row["target_draw_at"], "target_draw_at")
+                # The published 21:00 slot is the sales-close boundary. The
+                # actual extraction timestamps may legitimately follow that close.
+                if (
+                    not _is_classic_sales_close_slot(source_close)
+                    or not _is_classic_sales_close_slot(close)
+                ):
+                    reasons.add("CLASSIC_SCHEDULE_TIME_MISMATCH")
                 assignment = _parse_time(row["set_assigned_at"], "set_assigned_at")
                 signed = _parse_time(row["source_signed_at"], "source_signed_at")
                 closes.add(close)
                 target_draws.add(target_draw)
                 assignments.add(assignment)
                 source_closes.add(source_close)
-                sphere_types.add(str(row["sphere_type"]).strip())
-                machine_models.add(str(row["machine_model"]).strip())
-                scales.add(str(row["scale_id"]).strip())
-                source_refs.add(str(row["source_document_ref"]).strip())
-                source_hashes.add(str(row["source_document_sha256"]).strip().lower())
-                custody_refs.add(str(row["custody_receipt_ref"]).strip())
-                custody_hashes.add(str(row["custody_receipt_sha256"]).strip().lower())
-                calibration_hashes.add(str(row["calibration_certificate_sha256"]).strip().lower())
-                signature_refs.add(str(row["source_signature_ref"]).strip())
-                signer_ids.add(str(row["source_signer_id"]).strip())
-                timestamp_refs.add(str(row["trusted_timestamp_ref"]).strip())
-                source_contests.add(str(row["source_contest_id"]).strip())
-                modalities.add(str(row["modality"]).strip().upper())
-                sphere_ids.add(str(row["sphere_id"]).strip())
-                set_ids.add(str(row["sphere_set_id"]).strip())
-                machine_ids.add(str(row["machine_id"]).strip())
+                source_draws.add(source_draw)
+                source_signature_times.add(signed)
+                evidence_available_times.add(available)
+                custody_received_times.add(received)
+                sphere_types.add(_canonical_identifier(row["sphere_type"]).upper())
+                machine_models.add(_canonical_identifier(row["machine_model"]))
+                scales.add(_canonical_identifier(row["scale_id"]))
+                source_refs.add(_canonical_identifier(row["source_document_ref"]))
+                # This API also accepts in-memory mappings, not only CSV rows:
+                # never use __str__ to normalize untrusted scalar objects.
+                source_hash = _canonical_sha256(row["source_document_sha256"])
+                custody_hash = _canonical_sha256(row["custody_receipt_sha256"])
+                calibration_hash = _canonical_sha256(row["calibration_certificate_sha256"])
+                source_hashes.add(source_hash)
+                custody_refs.add(_canonical_identifier(row["custody_receipt_ref"]))
+                custody_hashes.add(custody_hash)
+                calibration_hashes.add(calibration_hash)
+                signature_refs.add(_canonical_identifier(row["source_signature_ref"]))
+                signer_ids.add(_canonical_identifier(row["source_signer_id"]))
+                custodian_ids.add(_canonical_identifier(row["custodian_id"]))
+                timestamp_refs.add(_canonical_identifier(row["trusted_timestamp_ref"]))
+                source_contest = _canonical_identifier(row["source_contest_id"])
+                source_contests.add(source_contest)
+                if not source_contest or _canonical_identifier(row["contest_id"]) != source_contest:
+                    reasons.add("CONTEST_ID_ALIAS_MISMATCH")
+                if not _contest_id_precedes(source_contest, target):
+                    reasons.add("CONTEST_ID_ORDER_INVALID")
+                source_sequence = _canonical_positive_sequence(row["source_classic_sequence"])
+                target_sequence = _canonical_positive_sequence(row["target_classic_sequence"])
+                source_classic_sequences.add(source_sequence)
+                target_classic_sequences.add(target_sequence)
+                sequence_manifest_refs.add(_canonical_identifier(row["official_classic_sequence_manifest_ref"]))
+                sequence_manifest_hashes.add(_canonical_sha256(row["official_classic_sequence_manifest_sha256"]))
+                if source_sequence is None or target_sequence is None or target_sequence != source_sequence + 1:
+                    reasons.add("CLASSIC_SEQUENCE_NOT_CONSECUTIVE")
+                draw_date = row["draw_date"]
+                if type(draw_date) is not str or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", draw_date):
+                    reasons.add("INVALID_DRAW_DATE")
+                else:
+                    try:
+                        date.fromisoformat(draw_date)
+                    except ValueError:
+                        reasons.add("INVALID_DRAW_DATE")
+                    else:
+                        # draw_date is the official Mexico City calendar date, not
+                        # the calendar date implied by whichever offset a source used.
+                        # The 21:00 local Classic sales close is 03:00Z on the next UTC
+                        # day; actual extraction may occur later on the local draw date.
+                        source_close_local_date = source_close.astimezone(
+                            CHISPAZO_LOCAL_TIMEZONE
+                        ).date()
+                        source_draw_local_date = source_draw.astimezone(
+                            CHISPAZO_LOCAL_TIMEZONE
+                        ).date()
+                        if (
+                            draw_date != source_close_local_date.isoformat()
+                            or draw_date != source_draw_local_date.isoformat()
+                        ):
+                            reasons.add("DRAW_DATE_SOURCE_DRAW_MISMATCH")
+                modalities.add(_canonical_identifier(row["modality"]).upper())
+                sphere_ids.add(_canonical_identifier(row["sphere_id"]))
+                set_ids.add(_canonical_identifier(row["sphere_set_id"]))
+                machine_ids.add(_canonical_identifier(row["machine_id"]))
                 try:
-                    printed_numbers.add(int(str(row["printed_number"]).strip()))
+                    printed_raw = row["printed_number"]
+                    if type(printed_raw) is not str or not re.fullmatch(r"(?:[1-9]|1[0-9]|2[0-8])", printed_raw):
+                        raise ValueError("printed_number must be canonical decimal text from 1 through 28")
+                    printed_numbers.add(int(printed_raw))
                 except ValueError:
                     reasons.add("INVALID_PRINTED_NUMBER")
-                if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["source_document_sha256"]).strip()):
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", source_hash):
                     reasons.add("INVALID_SOURCE_SHA256")
-                if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["custody_receipt_sha256"]).strip()):
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", custody_hash):
                     reasons.add("INVALID_CUSTODY_RECEIPT_SHA256")
                 mapping_start = _parse_time(row["mapping_valid_from"], "mapping_valid_from")
                 mapping_end = _parse_time(row["mapping_valid_to"], "mapping_valid_to")
                 calibration_start = _parse_time(row["calibration_valid_from"], "calibration_valid_from")
                 calibration_end = _parse_time(row["calibration_valid_to"], "calibration_valid_to")
+                calibration_validity_windows.add((calibration_start, calibration_end))
                 if mapping_start >= mapping_end or not (mapping_start <= assignment <= target_draw <= mapping_end):
                     reasons.add("MAPPING_NOT_VALID_AT_TARGET_DRAW")
                 if calibration_start >= calibration_end or not (calibration_start <= measurement <= calibration_end):
@@ -163,27 +417,48 @@ def evaluate_temporal_eligibility(
                 if signed > available:
                     reasons.add("SOURCE_SIGNED_AFTER_EVIDENCE_AVAILABLE")
                 try:
-                    mass = float(str(row["mass_value"]).strip())
-                    resolution = float(str(row["measurement_resolution"]).strip())
-                    if not math.isfinite(mass) or mass <= 0 or not math.isfinite(resolution) or resolution <= 0:
+                    mass_raw = row["mass_value"]
+                    resolution_raw = row["measurement_resolution"]
+                    # Parse bounded canonical decimal text exactly; float rounding
+                    # must not move a measurement across a published mass threshold.
+                    if type(mass_raw) is not str or type(resolution_raw) is not str:
+                        raise ValueError("non-canonical mass or resolution")
+                    # Numeric cells are canonical tokens: trimming would silently
+                    # normalize malformed source bytes before the evidence gate.
+                    mass_text = mass_raw
+                    resolution_text = resolution_raw
+                    if (
+                        not _DECIMAL_TEXT.fullmatch(mass_text)
+                        or not _DECIMAL_TEXT.fullmatch(resolution_text)
+                    ):
+                        raise ValueError("mass and resolution must be canonical decimal text")
+                    mass = Decimal(mass_text)
+                    resolution = Decimal(resolution_text)
+                    if (
+                        not mass.is_finite() or mass <= 0
+                        or not resolution.is_finite() or resolution <= 0
+                    ):
                         reasons.add("INVALID_MASS_OR_RESOLUTION")
-                except (ValueError, TypeError):
+                    else:
+                        mass_values.append(mass)
+                except (InvalidOperation, ValueError, TypeError):
                     reasons.add("INVALID_MASS_OR_RESOLUTION")
-                if str(row["mass_unit"]).strip().lower() != "g":
+                mass_unit_raw = row["mass_unit"]
+                if type(mass_unit_raw) is not str or mass_unit_raw != "g":
                     reasons.add("UNSUPPORTED_MASS_UNIT")
-                if not re.fullmatch(r"[0-9a-fA-F]{64}", str(row["calibration_certificate_sha256"]).strip()):
+                if not re.fullmatch(r"[0-9a-fA-F]{64}", calibration_hash):
                     reasons.add("INVALID_CALIBRATION_SHA256")
-                if not str(row["source_signature_ref"]).strip() or not str(row["source_signer_id"]).strip():
+                if not _canonical_identifier(row["source_signature_ref"]) or not _canonical_identifier(row["source_signer_id"]):
                     reasons.add("SOURCE_SIGNATURE_MISSING")
-                if not str(row["custodian_id"]).strip() or not str(row["custodian_role"]).strip():
+                if not _canonical_identifier(row["custodian_id"]) or not _canonical_identifier(row["custodian_role"]):
                     reasons.add("CUSTODIAN_IDENTITY_MISSING")
-                if not str(row["custody_receipt_ref"]).strip():
+                if not _canonical_identifier(row["custody_receipt_ref"]):
                     reasons.add("CUSTODY_RECEIPT_MISSING")
-                if not str(row["trusted_timestamp_ref"]).strip():
+                if not _canonical_identifier(row["trusted_timestamp_ref"]):
                     reasons.add("TRUSTED_TIMESTAMP_MISSING")
-                if not str(row["source_document_ref"]).strip():
+                if not _canonical_identifier(row["source_document_ref"]):
                     reasons.add("PRIMARY_SOURCE_MISSING")
-            except (ValueError, TypeError, KeyError):
+            except (ValueError, TypeError, KeyError, OverflowError):
                 reasons.add("INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE")
         if len(closes) != 1:
             reasons.add("TARGET_CLOSE_CONFLICT")
@@ -191,26 +466,74 @@ def evaluate_temporal_eligibility(
             reasons.add("TARGET_DRAW_TIME_CONFLICT")
         if len(assignments) != 1 or len(source_closes) != 1:
             reasons.add("SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT")
-        if len(sphere_types) != 1 or "" in sphere_types or len(machine_models) != 1 or "" in machine_models or len(scales) != 1 or "" in scales:
+        if len(source_draws) != 1:
+            reasons.add("SOURCE_DRAW_EVENT_TIME_CONFLICT")
+        if len(source_signature_times) != 1:
+            reasons.add("SOURCE_SIGNATURE_TIME_CONFLICT")
+        if len(evidence_available_times) != 1:
+            reasons.add("EVIDENCE_AVAILABILITY_TIME_CONFLICT")
+        if len(custody_received_times) != 1:
+            reasons.add("CUSTODY_RECEIPT_TIME_CONFLICT")
+        if (
+            len(sphere_types) != 1 or "" in sphere_types
+            or len(machine_models) != 1 or "" in machine_models
+            or len(scales) != 1 or "" in scales
+            or len(calibration_validity_windows) != 1
+        ):
             reasons.add("METROLOGY_CONFIGURATION_CONFLICT")
+        if len(sphere_types) == 1 and "" not in sphere_types:
+            sphere_type = next(iter(sphere_types))
+            mass_spec = SPHERE_MASS_SPECS.get(sphere_type)
+            if mass_spec is None:
+                reasons.add("UNSUPPORTED_SPHERE_TYPE")
+            elif len(mass_values) != len(group):
+                reasons.add("MASS_MEASUREMENTS_INCOMPLETE")
+            else:
+                minimum_mass, maximum_mass, maximum_spread = mass_spec
+                if any(
+                    mass < minimum_mass or mass > maximum_mass
+                    for mass in mass_values
+                ):
+                    reasons.add("SPHERE_MASS_OUT_OF_RANGE")
+                if max(mass_values) - min(mass_values) > maximum_spread:
+                    reasons.add("SPHERE_MASS_SPREAD_EXCEEDED")
         if any(len(values) != 1 or "" in values for values in (
             source_refs, source_hashes, custody_refs, custody_hashes,
             calibration_hashes, signature_refs, signer_ids, timestamp_refs
         )):
             reasons.add("EVIDENCE_DOCUMENT_SET_CONFLICT")
-        if len(source_contests) != 1:
+        if len(source_contests) != 1 or "" in source_contests:
             reasons.add("SOURCE_CONTEST_CONFLICT")
-        if len(group) != 28 or len(sphere_ids) != 28 or printed_numbers != set(range(1, 29)):
+        if (
+            len(source_classic_sequences) != 1 or None in source_classic_sequences
+            or len(target_classic_sequences) != 1 or None in target_classic_sequences
+            or len(sequence_manifest_refs) != 1 or "" in sequence_manifest_refs
+            or len(sequence_manifest_hashes) != 1 or "" in sequence_manifest_hashes
+        ):
+            reasons.add("CLASSIC_SEQUENCE_MANIFEST_INVALID")
+        if not all(
+            _canonical_identifier(row.get("official_classic_sequence_manifest_ref"))
+            in classic_sequences for row in group
+        ):
+            reasons.add("CLASSIC_SEQUENCE_MANIFEST_NOT_VERIFIED")
+        if signer_ids.intersection(custodian_ids):
+            reasons.add("SIGNER_CUSTODIAN_ROLE_COLLISION")
+        if (
+            len(group) != 28
+            or len(sphere_ids) != 28
+            or "" in sphere_ids
+            or printed_numbers != set(range(1, 29))
+        ):
             reasons.add("INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET")
         if len(set_ids) != 1 or "" in set_ids or len(machine_ids) != 1 or "" in machine_ids:
             reasons.add("PHYSICAL_SET_OR_MACHINE_CONFLICT")
         if modalities != {"CLASSIC"}:
             reasons.add("MODALITY_NOT_VERIFIED_CLASSIC")
-        if not all(str(row.get("custody_receipt_ref", "")) in custody for row in group):
+        if not all(_canonical_identifier(row.get("custody_receipt_ref")) in custody for row in group):
             reasons.add("CUSTODY_NOT_INDEPENDENTLY_VERIFIED")
-        if not all(str(row.get("trusted_timestamp_ref", "")) in timestamps for row in group):
+        if not all(_canonical_identifier(row.get("trusted_timestamp_ref")) in timestamps for row in group):
             reasons.add("TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED")
-        if not all(str(row.get("source_document_ref", "")) in sources for row in group):
+        if not all(_canonical_identifier(row.get("source_document_ref")) in sources for row in group):
             reasons.add("SOURCE_NOT_INDEPENDENTLY_VERIFIED")
         if target not in continuity:
             reasons.add("PHYSICAL_CONTINUITY_NOT_VERIFIED")
@@ -218,9 +541,11 @@ def evaluate_temporal_eligibility(
         if "EVIDENCE_NOT_AVAILABLE_PRE_CLOSE" in reasons:
             classification = "INELIGIBLE_POST_CLOSE"
         elif any(reason in reasons for reason in (
+            "TARGET_CLOSE_CONFLICT",
             "INVALID_OR_MISSING_TIMESTAMP_OR_PROVENANCE", "INVALID_SOURCE_SHA256",
             "INVALID_CUSTODY_RECEIPT_SHA256", "INVALID_CALIBRATION_SHA256",
             "CUSTODY_NOT_INDEPENDENTLY_VERIFIED", "TIMESTAMP_NOT_INDEPENDENTLY_VERIFIED",
+            "SIGNER_CUSTODIAN_ROLE_COLLISION",
             "SOURCE_NOT_INDEPENDENTLY_VERIFIED", "CUSTODIAN_IDENTITY_MISSING",
             "CUSTODY_RECEIPT_MISSING", "TRUSTED_TIMESTAMP_MISSING",
             "PRIMARY_SOURCE_MISSING", "SOURCE_SIGNATURE_MISSING",
@@ -229,20 +554,26 @@ def evaluate_temporal_eligibility(
             classification = "BLOCKED_PROVENANCE"
         elif any(reason in reasons for reason in (
             "PHYSICAL_CONTINUITY_NOT_VERIFIED", "SOURCE_CONTEST_CONFLICT",
+            "CLASSIC_SEQUENCE_NOT_CONSECUTIVE", "CLASSIC_SEQUENCE_MANIFEST_INVALID",
+            "CLASSIC_SEQUENCE_MANIFEST_NOT_VERIFIED",
             "INCOMPLETE_OR_DUPLICATE_28_SPHERE_SET", "PHYSICAL_SET_OR_MACHINE_CONFLICT",
             "MAPPING_NOT_VALID_AT_TARGET_DRAW", "MODALITY_NOT_VERIFIED_CLASSIC",
             "BROKEN_EVIDENCE_TEMPORAL_ORDER", "MEASUREMENT_PRECEDES_SOURCE_CLOSE",
             "MEASUREMENT_AFTER_SOURCE_DRAW", "SOURCE_SIGNED_PRECEDES_MEASUREMENT",
             "SOURCE_SIGNED_AFTER_SOURCE_DRAW", "BROKEN_SOURCE_SIGNATURE_TEMPORAL_ORDER",
             "BROKEN_EVIDENCE_AVAILABILITY_ORDER", "SOURCE_DRAW_PRECEDES_SOURCE_CLOSE", "TARGET_DRAW_TIME_CONFLICT",
-            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
-            "EVIDENCE_DOCUMENT_SET_CONFLICT"
+            "SOURCE_ASSIGNMENT_OR_CLOSE_CONFLICT", "SOURCE_DRAW_EVENT_TIME_CONFLICT",
+            "SOURCE_SIGNATURE_TIME_CONFLICT", "EVIDENCE_AVAILABILITY_TIME_CONFLICT",
+            "CUSTODY_RECEIPT_TIME_CONFLICT", "METROLOGY_CONFIGURATION_CONFLICT",
+            "EVIDENCE_DOCUMENT_SET_CONFLICT", "CONTEST_ID_ALIAS_MISMATCH",
+            "CONTEST_ID_ORDER_INVALID", "INVALID_DRAW_DATE", "DRAW_DATE_SOURCE_DRAW_MISMATCH",
+            "CLASSIC_SCHEDULE_TIME_MISMATCH"
         )):
             classification = "BLOCKED_CONTINUITY"
         elif reasons:
             classification = "BLOCKED_PROVENANCE"
         else:
-            classification = "ELIGIBLE_PRE_CLOSE"
+            classification = "STRUCTURAL_PRE_CLOSE_ONLY"
         results[target] = {
             "predictive_eligibility": classification,
             "reasons": sorted(reasons),
@@ -250,23 +581,116 @@ def evaluate_temporal_eligibility(
             "row_count": len(group),
         }
     return {
-        "status": "ELIGIBILITY_REVIEWED",
+        "status": "STRUCTURAL_REVIEW_ONLY",
+        "authentication_status": "NOT_AUTHENTICATED_BY_THIS_MODULE",
         "targets": results,
         "row_count": len(materialized),
         "scope_warning": (
-            "Temporal gate only. ELIGIBLE_PRE_CLOSE means external attestations were "
-            "declared verified by the independent verifier; it is not a physical-bias "
-            "finding or a predictive-edge claim."
+            "Structural temporal gate only. STRUCTURAL_PRE_CLOSE_ONLY means declared "
+            "chronology and caller-provided reference membership passed; this module "
+            "does not authenticate those references. It is not authenticated provenance, "
+            "a physical-bias finding, or a predictive-edge claim."
         ),
     }
 
 
-def evaluate_temporal_csv(path: str | Path, **verification: set[str]) -> dict[str, Any]:
-    with Path(path).open("r", encoding="utf-8-sig", newline="") as stream:
-        reader = csv.DictReader(stream)
-        if reader.fieldnames is None:
+def evaluate_temporal_csv(
+    path: str | Path,
+    *,
+    declared_custody_refs: set[str] | frozenset[str] | None = None,
+    declared_timestamp_refs: set[str] | frozenset[str] | None = None,
+    declared_source_refs: set[str] | frozenset[str] | None = None,
+    declared_continuity_targets: set[str] | frozenset[str] | None = None,
+    declared_classic_sequence_refs: set[str] | frozenset[str] | None = None,
+) -> dict[str, Any]:
+    """Read bounded, single-physical-line CSV records before structural intake.
+
+    The V2 schema contains scalar fields only. Multiline CSV cells are rejected;
+    the byte stream is bounded before csv.reader can allocate an oversized header
+    or a row with an attacker-controlled number of columns.
+    """
+    with Path(path).open("rb") as stream:
+        raw_header = stream.readline(MAX_V2_CSV_HEADER_BYTES + 1)
+        if not raw_header:
             raise ValueError("CSV has no header")
-        missing = sorted(set(V2_REQUIRED_COLUMNS) - set(reader.fieldnames))
+        if len(raw_header) > MAX_V2_CSV_HEADER_BYTES:
+            raise ValueError(
+                f"CSV header exceeds maximum {MAX_V2_CSV_HEADER_BYTES} bytes"
+            )
+        if (
+            (raw_header.endswith(b"\r\n") and b"\r" in raw_header[:-2])
+            or (not raw_header.endswith(b"\r\n") and b"\r" in raw_header)
+        ):
+            raise ValueError("CSV header contains an embedded or unsupported carriage return")
+        try:
+            header_line = raw_header.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise ValueError("CSV header is not valid UTF-8") from exc
+        try:
+            headers = next(csv.reader([header_line], strict=True))
+        except (csv.Error, StopIteration) as exc:
+            raise ValueError("CSV header syntax is invalid") from exc
+        if any(
+            type(name) is not str or not name or name != name.strip()
+            for name in headers
+        ):
+            raise ValueError("CSV headers must be non-empty canonical strings")
+        if len(headers) != len(set(headers)):
+            raise ValueError("CSV headers must be unique; duplicate column names are ambiguous")
+        required = set(V2_REQUIRED_COLUMNS)
+        missing = sorted(required - set(headers))
         if missing:
             raise ValueError("missing required columns: " + ", ".join(missing))
-        return evaluate_temporal_eligibility(reader, **verification)
+        unexpected = sorted(set(headers) - required)
+        if unexpected:
+            raise ValueError("unexpected columns: " + ", ".join(unexpected))
+
+        def rows() -> Iterable[dict[str, Any]]:
+            # Multiline cells are rejected and blank physical lines are skipped.
+            # Count every physical record so blank-line-only feeds cannot bypass
+            # the intake row ceiling and force unbounded file scanning.
+            physical_record_count = 0
+            while True:
+                raw_line = stream.readline(MAX_V2_CSV_RECORD_BYTES + 1)
+                if not raw_line:
+                    return
+                physical_record_count += 1
+                if physical_record_count > MAX_V2_INTAKE_ROWS:
+                    raise csv.Error(
+                        f"CSV exceeds maximum {MAX_V2_INTAKE_ROWS} physical records"
+                    )
+                if len(raw_line) > MAX_V2_CSV_RECORD_BYTES:
+                    raise csv.Error(
+                        f"CSV record exceeds maximum {MAX_V2_CSV_RECORD_BYTES} bytes"
+                    )
+                if (
+                    (raw_line.endswith(b"\r\n") and b"\r" in raw_line[:-2])
+                    or (not raw_line.endswith(b"\r\n") and b"\r" in raw_line)
+                ):
+                    raise csv.Error(
+                        "CSV record contains an embedded or unsupported carriage return"
+                    )
+                try:
+                    line = raw_line.decode("utf-8")
+                except UnicodeDecodeError as exc:
+                    raise csv.Error("CSV record is not valid UTF-8") from exc
+                try:
+                    values = next(csv.reader([line], strict=True))
+                except StopIteration:
+                    continue
+                if not values:
+                    continue
+                if len(values) > len(headers):
+                    raise csv.Error("CSV record has more fields than its header")
+                if len(values) < len(headers):
+                    values.extend([None] * (len(headers) - len(values)))
+                yield dict(zip(headers, values))
+
+        return evaluate_temporal_eligibility(
+            rows(),
+            declared_custody_refs=declared_custody_refs,
+            declared_timestamp_refs=declared_timestamp_refs,
+            declared_source_refs=declared_source_refs,
+            declared_continuity_targets=declared_continuity_targets,
+            declared_classic_sequence_refs=declared_classic_sequence_refs,
+        )

@@ -1,0 +1,137 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "observation": {
+    "observed_at_local": "2026-11-23T13:58:30-06:00",
+    "observed_at_utc": "2026-11-23T19:58:30Z",
+    "timezone": "America/Mexico_City",
+    "classification": "STATUS_ONLY_PUBLIC_OFFICIAL_SNAPSHOT"
+  },
+  "sources": {
+    "official_home_index": "https://www.loterianacional.gob.mx/home/index",
+    "official_chispazo_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_chispazo_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "prior_2026_11_22_mask": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221841"
+  },
+  "official_results_snapshot": {
+    "official_chispazo_results_latest": {
+      "contest_id": 12390,
+      "draw_date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        6,
+        9,
+        19,
+        23
+      ],
+      "published": true
+    },
+    "previous_contest": {
+      "contest_id": 12389,
+      "draw_date": "2026-11-22",
+      "winning_numbers": [
+        1,
+        15,
+        17,
+        22,
+        25
+      ],
+      "published": true
+    },
+    "next_draw_date_visible": "2026-11-23",
+    "result_for_2026_11_23_visible": false,
+    "classic_contest_id_for_2026_11_23": "NOT_VISIBLE"
+  },
+  "official_home_index_schedule_card": {
+    "date": "2026-11-23",
+    "local_time": "15:00",
+    "displayed_draw_number": 12391,
+    "displayed_title": "Ilumina tu suerte",
+    "product_identity_explicit_in_rendered_card": false,
+    "chispazo_modality_assignment": "NOT_INFERRED",
+    "note": "Tarjeta futura genérica; el render no identifica explícitamente el producto ni la modalidad. No asignar 12391 al registro Chispazo sin confirmación primaria."
+  },
+  "official_chispazo_schedule": {
+    "de_las_tres_local_time": "15:00",
+    "clasico_local_time": "21:00",
+    "source": "Página oficial del producto Chispazo",
+    "note": "Los horarios distinguen modalidades, pero no asignan por sí solos la tarjeta genérica 12391 ni publican el ID del Clásico del 23-Nov."
+  },
+  "official_mask": {
+    "index_latest_date": "2026-11-22",
+    "new_2026_11_23_mask_visible": false,
+    "prior_2026_11_22_mask": {
+      "source_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-22.pdf?v=22112026221841",
+      "indexed_text_confirms": {
+        "12389": {
+          "modality": "DE_LAS_TRES",
+          "printed_label": "Chispazo de las tres",
+          "winning_numbers": [
+            1,
+            15,
+            17,
+            22,
+            25
+          ]
+        },
+        "12390": {
+          "modality": "CLASICO",
+          "printed_label": "Chispazo Clásico",
+          "winning_numbers": [
+            1,
+            6,
+            9,
+            19,
+            23
+          ]
+        }
+      },
+      "slot_mapping_source": "Página oficial del producto Chispazo: 15:00 De las Tres y 21:00 Clásico",
+      "source_original_bytes_downloaded": false,
+      "source_sha256": "NOT_CAPTURED"
+    }
+  },
+  "physical_evidence": {
+    "observation_is_before_2026_11_23_15_00_slot": true,
+    "observation_is_before_2026_11_23_21_00_classic_slot": true,
+    "draw_specific_primary_records_for_2026_11_23_obtained": false,
+    "signed_draw_act": "NOT_OBTAINED",
+    "signed_participation_file_and_signature": "NOT_OBTAINED",
+    "cs11": "NOT_OBTAINED",
+    "original_weighing_strip_and_28_measurements": "NOT_OBTAINED",
+    "scale_identity_and_calibration": "NOT_OBTAINED",
+    "equipment_and_urn_records": "NOT_OBTAINED",
+    "independent_custody_receipt": "NOT_OBTAINED",
+    "trusted_timestamp_or_external_ledger_proof": "NOT_OBTAINED",
+    "two_independent_preclose_output_seals": "NOT_OBTAINED"
+  },
+  "source_bytes": {
+    "official_mask_original_bytes_downloaded": false,
+    "official_mask_sha256": "NOT_CAPTURED",
+    "procedure_pdf_original_bytes_downloaded": false,
+    "procedure_pdf_sha256": "NOT_CAPTURED",
+    "note": "El texto indexado/renderizado no equivale a los bytes originales ni permite declarar un SHA-256 de origen."
+  },
+  "procedure_baseline": {
+    "document": "SGVO-PRO-05",
+    "revision": 39,
+    "status": "PUBLIC_PROCEDURAL_REFERENCE",
+    "draw_specific_compliance_proven": false,
+    "note": "Referencia pública de procedimiento; no prueba que existan o se hayan preservado registros de un sorteo concreto."
+  },
+  "eligibility": {
+    "status": "BLOCKED_PROVENANCE",
+    "snapshot_eligible": false,
+    "prospective_oos_eligible": false,
+    "score_eligible": false,
+    "reason": "Solo se observó estado público y calendario. No se obtuvieron bytes originales, registros físicos firmados, sellos pre-cierre, tiempo confiable ni custodia independiente."
+  },
+  "protections": {
+    "v294": "FROZEN",
+    "canonical_history": "UNCHANGED",
+    "main_writes": false,
+    "canonical_append": false,
+    "merge_or_promotion": false,
+    "production": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  }
+}
