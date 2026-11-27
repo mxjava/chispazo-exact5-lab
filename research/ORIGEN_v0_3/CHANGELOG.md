@@ -1,3 +1,15 @@
+## Institutional PSC candidate assessment (2026-11-27)
+- Added a source-grounded assessment of Incode PSC, Cincel, ATEB and PSC Codex using Secretaría de Economía accreditation notices and each provider's public technical repository/API documentation.
+- Incode is the strongest public candidate for a first RFC 3161 interoperability request because its current public repository lists timestamp policy/practices and its trusted repository publishes TSA/TSU certificate and CRL metadata. However, the actual DER/CRL bytes were not retrieved, the cross-entity linkage to the Mexican PSC policy OID was not cryptographically verified, and client-supplied nonce echo is undocumented.
+- Cincel publishes RFC 3161/NOM-151 timestamp and Bitcoin-proof API documentation, but its public request is hash-addressed and does not document a client nonce. ATEB's public ASN.1 interface is more promising for a nonce challenge but its public practice document is stale. PSC Codex's documented REST request is hash-only.
+- No provider was provisioned or integrated. No source/certificate bytes or hashes were invented. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
+## Full-evidence provider CAS binds exact policy/receipt and provider-owned time (2026-11-27)
+- The full-evidence CAS now receives the exact original signed policy-envelope and receipt bytes on every call, including receipt-only inspections. If a full evidence bundle is supplied, its embedded policy/receipt bytes must match these inputs.
+- The provider contract requires independent verification of those exact signatures, sequence, issuer authorization and complete trusted-time uncertainty interval inside the same linearizable transaction. Successful commit responses must bind the exact receipt SHA-256.
+- Removed caller-supplied accepted time and uncertainty from the CAS API; provider-owned signed clock state is the sole source for candidate time and uncertainty.
+- Synthetic adversarial tests reject missing byte pass-through, tampered policy even with recomputed digest, substituted receipt, and caller time injection. No real provider is deployed; production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
 ## Full exact-byte provider CAS envelope (2026-11-27)
 - Extended `ExternalEvidenceAdvanceV1` so the independent provider CAS receives exact receipt and signed-policy bytes, custody record, portfolio, detached custody signature, custodian key ID, both RFC 3161 token DER blobs, and canonical artifact/signature byte maps in addition to manifest, ledger, checkpoints, registry and witness bytes.
 - Enforced exact SHA-256-to-byte bindings, sorted unique digest maps, exact immutable byte types, bounded map counts and an aggregate 8 MiB envelope limit. The receipt and policy envelope inside the advance must equal the exact bytes verified in the same application call path.
