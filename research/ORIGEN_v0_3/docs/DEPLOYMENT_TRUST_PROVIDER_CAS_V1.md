@@ -560,3 +560,12 @@ isolated, reviewed verification service). A digest-only caller assertion is
 insufficient. The synthetic provider exercises monotonic state transitions,
 exact-byte binding and interface shape only; it does not implement institutional
 signature verification or durable storage.
+
+
+## Caller-owned witness-batch snapshot binding
+
+The full-evidence application composition snapshots the caller's witness-observation batches into new exact `WitnessObservationBatch` values before invoking the custody/ledger/witness verifier. The public composition requires an exact tuple (not a mutable list), an exact batch type, exact immutable byte fields, an exact tuple of statements, count and byte-size bounds, and the aggregate gossip byte limit.
+
+The same private tuple is used for both cryptographic witness-gossip verification and the provider CAS envelope's registry digest, exact raw registry bytes, and flattened exact witness-statement bytes. The original frozen dataclass instances are never re-read after verification. Python frozen dataclasses can still be altered with `object.__setattr__`; frozen syntax alone is not an input-snapshot guarantee.
+
+This is an application-boundary identity invariant only. It does not authenticate witness operators, their independence, registry-root provisioning, ledger transparency, provider implementation, or durable anti-rollback. A real provider must independently re-verify the exact bytes inside its own linearizable transaction. All fixtures are synthetic; successful inspection remains `BLOCKED_PROVENANCE`.
