@@ -38,7 +38,7 @@ from .deployment_trust_provider_v1 import (
     _time_window,
     _trust_configuration_sha256,
     _validated_external_evidence_watermark,
-    inspect_receipt_with_deployment_trust_provider,
+    _inspect_receipt_with_deployment_trust_provider_snapshot,
 )
 from .independent_trust_adapter import ProvenanceStatus
 from .physical_evidence_manifest_v1 import parse_unverified_physical_manifest
@@ -520,7 +520,7 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     # one atomic CAS for policy, clock, nonce consumption and external evidence
     # watermarks against the same snapshot. The trust-configuration digest
     # includes the physical-context digest and generation checked above.
-    deployment_trust = inspect_receipt_with_deployment_trust_provider(
+    deployment_trust = _inspect_receipt_with_deployment_trust_provider_snapshot(
         original_receipt_bytes,
         signed_policy_envelope_bytes,
         provider=provider,
