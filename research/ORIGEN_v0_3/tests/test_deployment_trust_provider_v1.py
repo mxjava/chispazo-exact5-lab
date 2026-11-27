@@ -1103,6 +1103,32 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         with self.assertRaisesRegex(TrustStateRejected, "does not bind the exact verified policy"):
             self.inspect()
 
+    def test_provider_commit_must_return_exact_external_watermark_digest(self):
+        original = self.provider.compare_and_advance
+
+        for reported_digest in (None, "f" * 64):
+            with self.subTest(reported_digest=reported_digest):
+                self.provider.snapshot = self.snapshot
+                self.provider.commit_count = 0
+
+                def wrong_watermark(**kwargs):
+                    commit = original(**kwargs)
+                    return replace(
+                        commit,
+                        accepted_external_evidence_watermark_sha256=reported_digest,
+                    )
+
+                self.provider.compare_and_advance = wrong_watermark
+                with self.assertRaisesRegex(
+                    TrustStateRejected,
+                    "does not bind the resulting external ledger/witness watermark",
+                ):
+                    self.inspect()
+                self.assertEqual(self.provider.commit_count, 1)
+
+        self.provider.compare_and_advance = original
+
+
     def test_provider_snapshot_override_is_rejected_at_application_boundary(self):
         # The deployment provider, not the request caller, must be the sole
         # source of the snapshot used for policy, clock and CAS verification.
