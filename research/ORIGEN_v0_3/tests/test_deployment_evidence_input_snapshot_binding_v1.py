@@ -1,4 +1,4 @@
-"""Adversarial tests for exact evidence-byte snapshotting across verification and CAS."""
+"""Adversarial tests for exact evidence-byte and witness-batch snapshots across verification and CAS."""
 
 from __future__ import annotations
 
