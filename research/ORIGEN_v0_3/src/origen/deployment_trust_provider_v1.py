@@ -198,13 +198,16 @@ class DeploymentTrustProvider(Protocol):
     generation increment. It must also compare the exact persisted ledger / witness watermark digest and
     atomically enforce checkpoint continuity, registry sequence/digest monotonicity,
     and identity continuity with the current physical trust context. Before advancing,
-    it must independently re-verify the exact raw manifest, ledger entry, inclusion
-    proof, old/new signed checkpoints, consistency proof, signed witness registry and
-    every witness statement against provider-owned log/registry pins, revocation state
-    and quorum policy. It must not trust caller-computed digests or the application's
-    prior verification as a substitute. This verification and the compare-and-advance
-    must be serialized so no trust configuration or accepted checkpoint can change
-    between them. It must never silently reset or restore any value. A missing
+    it must independently re-verify the complete exact-byte evidence envelope:
+    receipt and signed policy bytes, custody record, portfolio, detached custody
+    signature and custodian identity, both RFC 3161 token DER blobs, artifact and
+    signature byte maps, manifest, ledger entry, inclusion proof, old/new signed
+    checkpoints, consistency proof, signed witness registry and every witness
+    statement. Verification must use provider-owned roots/pins, trusted time,
+    revocation state and quorum policy. It must not trust caller-computed digests
+    or the application's prior verification as a substitute. This verification
+    and the compare-and-advance must be serialized so no trust configuration or
+    accepted checkpoint can change between them. It must never silently reset or restore any value. A missing
     external-evidence genesis watermark is a hard failure; it must not be initialized
     from caller-supplied evidence.
     """
