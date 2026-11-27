@@ -143,8 +143,6 @@ class SyntheticTrustProvider:
             "root_generation": root_generation,
             "policy_sequence": policy_sequence,
             "policy_envelope_sha256": policy_envelope_sha256,
-            "accepted_at_utc": accepted_at_utc,
-            "clock_uncertainty_ms": clock_uncertainty_ms,
             "expected_external_evidence_watermark_sha256": expected_external_evidence_watermark_sha256,
             "raw_policy_envelope_bytes": raw_policy_envelope_bytes,
             "raw_receipt_bytes": raw_receipt_bytes,
