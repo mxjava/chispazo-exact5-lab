@@ -1,3 +1,9 @@
+## Institutional PSC candidate assessment (2026-11-27)
+- Added a source-grounded assessment of Incode PSC, Cincel, ATEB and PSC Codex using Secretaría de Economía accreditation notices and each provider's public technical repository/API documentation.
+- Incode is the strongest public candidate for a first RFC 3161 interoperability request because its current public repository lists timestamp policy/practices and its trusted repository publishes TSA/TSU certificate and CRL metadata. However, the actual DER/CRL bytes were not retrieved, the cross-entity linkage to the Mexican PSC policy OID was not cryptographically verified, and client-supplied nonce echo is undocumented.
+- Cincel publishes RFC 3161/NOM-151 timestamp and Bitcoin-proof API documentation, but its public request is hash-addressed and does not document a client nonce. ATEB's public ASN.1 interface is more promising for a nonce challenge but its public practice document is stale. PSC Codex's documented REST request is hash-only.
+- No provider was provisioned or integrated. No source/certificate bytes or hashes were invented. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
 ## Full-evidence provider CAS binds exact policy/receipt and provider-owned time (2026-11-27)
 - The full-evidence CAS now receives the exact original signed policy-envelope and receipt bytes on every call, including receipt-only inspections. If a full evidence bundle is supplied, its embedded policy/receipt bytes must match these inputs.
 - The provider contract requires independent verification of those exact signatures, sequence, issuer authorization and complete trusted-time uncertainty interval inside the same linearizable transaction. Successful commit responses must bind the exact receipt SHA-256.
