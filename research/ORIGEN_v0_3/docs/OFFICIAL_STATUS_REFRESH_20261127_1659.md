@@ -27,3 +27,9 @@ This refresh is public status/schedule evidence only. It does not authenticate t
 ## Safety
 
 Status-only research overlay. No canonical-history append, no V294 change, no write to main, no merge, no promotion. Production remains **BLOCKED / RESEARCH_ONLY_NO_EDGE**.
+
+## Visual confirmation from the prior-day official mask
+
+The one-page official 26-Nov mask PDF was opened and visually inspected. It labels contest 12397 with the **Chispazo De las Tres** logo and contest 12398 with the **Chispazo Clásico** logo, alongside combinations 05 20 23 26 28 and 01 03 17 26 28 respectively. This confirms the modality labeling for the prior day only; it is not a 27-Nov mask. The PDF's original bytes could not be downloaded through the available binary path, so its source-byte SHA-256 remains **NOT_CAPTURED**.
+
+Official PDF: https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226
