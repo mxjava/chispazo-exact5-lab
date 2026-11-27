@@ -88,7 +88,7 @@ class ExternalEvidenceWatermarkV1:
 
 @dataclass(frozen=True, slots=True)
 class ExternalEvidenceAdvanceV1:
-    """One proposed old-to-new checkpoint plus the exact signed registry digest."""
+    """One complete exact-byte evidence bundle proposed for one provider CAS."""
 
     policy_domain: str
     state_backend_id: str
@@ -114,6 +114,18 @@ class ExternalEvidenceAdvanceV1:
     raw_consistency_proof_bytes: bytes
     raw_registry_bytes: bytes
     raw_witness_statement_bytes: tuple[bytes, ...]
+    receipt_sha256: str
+    policy_envelope_sha256: str
+    raw_receipt_bytes: bytes
+    raw_policy_envelope_bytes: bytes
+    raw_custody_record_bytes: bytes
+    raw_portfolio_bytes: bytes
+    raw_custody_signature_bytes: bytes
+    custodian_key_id: str
+    raw_timestamp_token_der: bytes
+    raw_policy_timestamp_token_der: bytes
+    raw_artifact_bytes_by_sha256: tuple[tuple[str, bytes], ...]
+    raw_signature_bytes_by_sha256: tuple[tuple[str, bytes], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -253,12 +265,19 @@ class DeploymentTrustProvider(Protocol):
         domain, backend identity, state generation and trust configuration,
         and consume both nonce values in this same linearizable transaction.
         It must reject cross-backend/domain challenge use and challenge or
-        nonce reuse. It must compare expected_external_evidence_watermark_sha256
-        with authoritative state and, when an advance is supplied, atomically
-        require the exact old checkpoint to equal the accepted checkpoint,
-        the new checkpoint to advance monotonically, and the registry sequence /
-        digest to avoid rollback or same-sequence equivocation. The CAS must
-        return the resulting accepted watermark digest in the commit.
+        nonce reuse. When an external-evidence advance is supplied, it carries
+        the exact receipt, policy envelope, custody record, portfolio, detached
+        custody signature, custodian key ID, both RFC 3161 tokens, artifact and
+        signature byte maps, manifest, ledger proofs/checkpoints, signed
+        registry and witness statements. The backend must independently
+        re-verify these exact bytes against its own provisioned physical trust
+        context and trusted time before accepting them. It must compare
+        expected_external_evidence_watermark_sha256 with authoritative state
+        and, in the same linearizable transaction, require the exact old
+        checkpoint to equal the accepted checkpoint, the new checkpoint to
+        advance monotonically, and the registry sequence/digest to avoid
+        rollback or same-sequence equivocation. The CAS must return the
+        resulting accepted watermark digest in the commit.
         """
         ...
 
@@ -416,6 +435,18 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
         raw_consistency_proof_bytes=value.raw_consistency_proof_bytes,
         raw_registry_bytes=value.raw_registry_bytes,
         raw_witness_statement_bytes=value.raw_witness_statement_bytes,
+        receipt_sha256=value.receipt_sha256,
+        policy_envelope_sha256=value.policy_envelope_sha256,
+        raw_receipt_bytes=value.raw_receipt_bytes,
+        raw_policy_envelope_bytes=value.raw_policy_envelope_bytes,
+        raw_custody_record_bytes=value.raw_custody_record_bytes,
+        raw_portfolio_bytes=value.raw_portfolio_bytes,
+        raw_custody_signature_bytes=value.raw_custody_signature_bytes,
+        custodian_key_id=value.custodian_key_id,
+        raw_timestamp_token_der=value.raw_timestamp_token_der,
+        raw_policy_timestamp_token_der=value.raw_policy_timestamp_token_der,
+        raw_artifact_bytes_by_sha256=value.raw_artifact_bytes_by_sha256,
+        raw_signature_bytes_by_sha256=value.raw_signature_bytes_by_sha256,
     )
     if copied.policy_domain != CLASSIC_POLICY_DOMAIN:
         raise ValueError("external evidence advance is not scoped to the fixed CLASSIC domain")
@@ -425,6 +456,7 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
         ("log_key_id", copied.log_key_id),
         ("registry_id", copied.registry_id),
         ("registry_root_key_id", copied.registry_root_key_id),
+        ("custodian_key_id", copied.custodian_key_id),
     ):
         _require_identifier(actual, field)
     for field, actual in (
@@ -435,6 +467,8 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
         ("log_public_key_sha256", copied.log_public_key_sha256),
         ("registry_root_public_key_sha256", copied.registry_root_public_key_sha256),
         ("registry_sha256", copied.registry_sha256),
+        ("receipt_sha256", copied.receipt_sha256),
+        ("policy_envelope_sha256", copied.policy_envelope_sha256),
     ):
         _require_sha256(actual, field)
     for field, actual in (
@@ -447,6 +481,7 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
         raise ValueError("new ledger checkpoint tree size must exceed the old tree size")
     if type(copied.registry_sequence) is not int or not 1 <= copied.registry_sequence <= MAX_POLICY_SEQUENCE:
         raise ValueError("registry_sequence must be an exact positive bounded integer")
+
     raw_byte_fields = (
         ("raw_manifest_bytes", copied.raw_manifest_bytes),
         ("raw_ledger_entry_bytes", copied.raw_ledger_entry_bytes),
@@ -455,21 +490,53 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
         ("raw_new_checkpoint_bytes", copied.raw_new_checkpoint_bytes),
         ("raw_consistency_proof_bytes", copied.raw_consistency_proof_bytes),
         ("raw_registry_bytes", copied.raw_registry_bytes),
+        ("raw_receipt_bytes", copied.raw_receipt_bytes),
+        ("raw_policy_envelope_bytes", copied.raw_policy_envelope_bytes),
+        ("raw_custody_record_bytes", copied.raw_custody_record_bytes),
+        ("raw_portfolio_bytes", copied.raw_portfolio_bytes),
+        ("raw_custody_signature_bytes", copied.raw_custody_signature_bytes),
+        ("raw_timestamp_token_der", copied.raw_timestamp_token_der),
+        ("raw_policy_timestamp_token_der", copied.raw_policy_timestamp_token_der),
     )
     total_bytes = 0
     for field, actual in raw_byte_fields:
         if type(actual) is not bytes or not actual:
             raise ValueError(f"{field} must be non-empty exact bytes")
         total_bytes += len(actual)
+
     if type(copied.raw_witness_statement_bytes) is not tuple or not 2 <= len(copied.raw_witness_statement_bytes) <= 128:
         raise ValueError("raw_witness_statement_bytes must be an exact bounded tuple of 2..128 statements")
     for statement in copied.raw_witness_statement_bytes:
         if type(statement) is not bytes or not statement:
             raise ValueError("each raw witness statement must be non-empty exact bytes")
         total_bytes += len(statement)
+
+    for field, pairs in (
+        ("raw_artifact_bytes_by_sha256", copied.raw_artifact_bytes_by_sha256),
+        ("raw_signature_bytes_by_sha256", copied.raw_signature_bytes_by_sha256),
+    ):
+        if type(pairs) is not tuple or not 1 <= len(pairs) <= 256:
+            raise ValueError(f"{field} must be an exact bounded tuple of 1..256 digest/byte pairs")
+        previous_digest = None
+        for pair in pairs:
+            if type(pair) is not tuple or len(pair) != 2:
+                raise ValueError(f"{field} entries must be exact two-item tuples")
+            digest, raw = pair
+            _require_sha256(digest, f"{field} digest")
+            if previous_digest is not None and digest <= previous_digest:
+                raise ValueError(f"{field} must be sorted by unique digest")
+            if type(raw) is not bytes or not raw:
+                raise ValueError(f"{field} values must be non-empty exact bytes")
+            if hashlib.sha256(raw).hexdigest() != digest:
+                raise ValueError(f"{field} digest does not bind the exact bytes")
+            previous_digest = digest
+            total_bytes += len(raw)
+
     if total_bytes > 8 * 1024 * 1024:
         raise ValueError("external evidence advance exceeds the aggregate byte limit")
     exact_digests = (
+        ("receipt_sha256", copied.receipt_sha256, copied.raw_receipt_bytes),
+        ("policy_envelope_sha256", copied.policy_envelope_sha256, copied.raw_policy_envelope_bytes),
         ("old_checkpoint_sha256", copied.old_checkpoint_sha256, copied.raw_old_checkpoint_bytes),
         ("new_checkpoint_sha256", copied.new_checkpoint_sha256, copied.raw_new_checkpoint_bytes),
         ("registry_sha256", copied.registry_sha256, copied.raw_registry_bytes),
@@ -969,12 +1036,16 @@ def inspect_receipt_with_deployment_trust_provider(
     It verifies exact bytes, requires the complete trusted-time uncertainty
     interval to fit policy and signer validity, calls the independent
     provenance boundary, and then performs an atomic sequence/digest
-    compare-and-advance. An optional snapshot lets a composed verifier share
-    the exact same immutable provider observation with another verifier; the
-    final provider CAS must still match its authoritative generation,
-    configuration digest, and clock-sample digest. Any provider failure or
-    state conflict raises and yields no inspection result. Success remains
-    BLOCKED_PROVENANCE.
+    compare-and-advance. When physical evidence is supplied, the CAS request
+    carries the exact receipt, policy, custody record, portfolio, custody
+    signature, TSA tokens, artifact/signature maps, manifest, ledger proofs,
+    registry and witness statements so a real backend can independently
+    re-verify the full chain against its own provisioned context. An optional
+    snapshot lets a composed verifier share the exact same immutable provider
+    observation with another verifier; the final provider CAS must still match
+    its authoritative generation, configuration digest, and clock-sample
+    digest. Any provider failure or state conflict raises and yields no
+    inspection result. Success remains BLOCKED_PROVENANCE.
     """
     if type(original_receipt_bytes) is not bytes or not original_receipt_bytes:
         raise ValueError("original_receipt_bytes must be non-empty exact bytes")
@@ -1053,6 +1124,13 @@ def inspect_receipt_with_deployment_trust_provider(
     policy_digest = hashlib.sha256(signed_policy_envelope_bytes).hexdigest()
     if verified_policy.envelope_sha256 != policy_digest:
         raise ValueError("verified policy does not bind the exact envelope bytes")
+    if external_evidence_advance is not None and (
+        external_evidence_advance.raw_receipt_bytes != original_receipt_bytes
+        or external_evidence_advance.raw_policy_envelope_bytes != signed_policy_envelope_bytes
+    ):
+        raise TrustStateRejected(
+            "external evidence advance does not carry the exact receipt and policy bytes supplied to the verifier"
+        )
     # The trusted clock must remain monotonic across every inspection. The
     # provider persists later same-sequence observations too; checking only
     # against the last policy acceptance would permit rollback after a newer
