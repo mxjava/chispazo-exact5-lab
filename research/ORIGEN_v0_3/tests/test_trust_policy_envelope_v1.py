@@ -38,6 +38,7 @@ def fixture():
         "issued_at_utc": "2026-11-24T10:00:00Z",
         "not_before_utc": "2026-11-24T11:00:00Z",
         "expires_at_utc": "2026-12-01T00:00:00Z",
+        "required_artifact_types": ["sphere-measurement-register"],
         "issuer_keys": [{
             "issuer_id": "independent-verifier",
             "key_id": "verifier-key-1",
@@ -76,10 +77,23 @@ class TestSignedTrustPolicyEnvelopeV1(unittest.TestCase):
         result = self.verify(raw, root_public)
         self.assertEqual(result.policy.policy_version, "policy-2026-11")
         self.assertEqual(result.policy_sequence, 7)
+        self.assertEqual(result.required_artifact_types, ("sphere-measurement-register",))
         self.assertEqual(result.root_key_id, "offline-root-2026")
         self.assertEqual(result.policy.issuer_keys[0].issuer_id, "independent-verifier")
         self.assertFalse(result.policy.issuer_keys[0].revoked)
         self.assertEqual(len(result.envelope_sha256), 64)
+
+    def test_tampered_required_artifact_type_fails_signature(self):
+        raw, root_public, document = fixture()
+        document["required_artifact_types"] = ["forged-evidence-type"]
+        with self.assertRaisesRegex(ValueError, "root signature verification failed"):
+            self.verify(canonical(document), root_public)
+
+    def test_duplicate_required_artifact_types_are_rejected(self):
+        raw, root_public, document = fixture()
+        document["required_artifact_types"].append("sphere-measurement-register")
+        with self.assertRaisesRegex(ValueError, "required_artifact_types must be unique"):
+            self.verify(canonical(document), root_public)
 
     def test_tampered_policy_claim_fails_signature(self):
         raw, root_public, document = fixture()
