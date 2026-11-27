@@ -19,6 +19,7 @@ from origen.sqlite_reference_external_evidence_cas_v1 import (
     ReferenceCASConflict,
     ReferenceCASCorrupt,
     ReferenceCASUnprovisioned,
+    ReferenceCASUnavailable,
     SQLiteReferenceExternalEvidenceCASV1,
 )
 
@@ -248,6 +249,23 @@ class SQLiteReferenceExternalEvidenceCASTests(unittest.TestCase):
             connection.close()
         with self.assertRaises(ReferenceCASCorrupt):
             self.store.read_watermark_snapshot()
+
+
+    def test_journal_mode_drift_fails_closed_after_initialization(self):
+        connection = sqlite3.connect(self.path)
+        try:
+            mode = connection.execute("PRAGMA journal_mode=DELETE").fetchone()[0]
+            self.assertEqual(mode.lower(), "delete")
+        finally:
+            connection.close()
+
+        with self.assertRaises(ReferenceCASUnavailable):
+            self.store.read_watermark_snapshot()
+
+        with self.assertRaises(ReferenceCASUnavailable):
+            SQLiteReferenceExternalEvidenceCASV1(
+                self.path, state_backend_id=self.backend
+            )
 
     def test_memory_database_is_rejected(self):
         with self.assertRaises(ValueError):
