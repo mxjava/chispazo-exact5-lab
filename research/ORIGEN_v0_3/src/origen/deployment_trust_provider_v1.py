@@ -62,7 +62,58 @@ class TrustStateOutcome(str, Enum):
     ROLLBACK = "ROLLBACK"
     TIME_ROLLBACK = "TIME_ROLLBACK"
     TIME_ADVANCED = "TIME_ADVANCED"
+    EVIDENCE_ADVANCED = "EVIDENCE_ADVANCED"
+    TIME_AND_EVIDENCE_ADVANCED = "TIME_AND_EVIDENCE_ADVANCED"
     EQUIVOCATION = "EQUIVOCATION"
+
+
+@dataclass(frozen=True, slots=True)
+class ExternalEvidenceWatermarkV1:
+    """Last externally verified ledger checkpoint and witness registry version."""
+
+    policy_domain: str
+    state_backend_id: str
+    log_id: str
+    log_key_id: str
+    log_public_key_sha256: str
+    ledger_tree_size: int
+    ledger_root_sha256: str
+    ledger_checkpoint_sha256: str
+    registry_id: str
+    registry_root_key_id: str
+    registry_root_public_key_sha256: str
+    registry_sequence: int
+    registry_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class ExternalEvidenceAdvanceV1:
+    """One proposed old-to-new checkpoint plus the exact signed registry digest."""
+
+    policy_domain: str
+    state_backend_id: str
+    log_id: str
+    log_key_id: str
+    log_public_key_sha256: str
+    old_tree_size: int
+    old_root_sha256: str
+    old_checkpoint_sha256: str
+    new_tree_size: int
+    new_root_sha256: str
+    new_checkpoint_sha256: str
+    registry_id: str
+    registry_root_key_id: str
+    registry_root_public_key_sha256: str
+    registry_sequence: int
+    registry_sha256: str
+    raw_manifest_bytes: bytes
+    raw_ledger_entry_bytes: bytes
+    raw_inclusion_proof_bytes: bytes
+    raw_old_checkpoint_bytes: bytes
+    raw_new_checkpoint_bytes: bytes
+    raw_consistency_proof_bytes: bytes
+    raw_registry_bytes: bytes
+    raw_witness_statement_bytes: tuple[bytes, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,6 +147,7 @@ class DeploymentTrustSnapshot:
     provisioning_record_sha256: str
     physical_trust_context_generation: int | None = None
     physical_trust_context_sha256: str | None = None
+    accepted_external_evidence_watermark: ExternalEvidenceWatermarkV1 | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +159,7 @@ class DeploymentTrustCommit:
     policy_sequence: int
     policy_envelope_sha256: str
     trusted_time_latest_utc: datetime
+    accepted_external_evidence_watermark_sha256: str | None = None
 
 
 class DeploymentTrustProvider(Protocol):
@@ -130,7 +183,12 @@ class DeploymentTrustProvider(Protocol):
     higher sequence, persist the candidate sequence, digest, and latest time. For the same sequence and digest, persist
     a later disjoint time watermark with one generation increment and return
     TIME_ADVANCED; if the watermark is unchanged, return IDEMPOTENT without a
-    generation increment. It must never silently reset or restore any value.
+    generation increment. It must also compare the exact persisted ledger /
+    witness watermark digest and atomically enforce checkpoint continuity,
+    registry sequence/digest monotonicity, and identity continuity with the
+    current physical trust context. It must never silently reset or restore
+    any value. A missing external-evidence genesis watermark is a hard failure;
+    it must not be initialized from caller-supplied evidence.
     """
 
     def read_snapshot(self, *, policy_domain: str) -> DeploymentTrustSnapshot:
@@ -183,6 +241,8 @@ class DeploymentTrustProvider(Protocol):
         policy_envelope_sha256: str,
         accepted_at_utc: datetime,
         clock_uncertainty_ms: int,
+        expected_external_evidence_watermark_sha256: str,
+        external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
         timestamp_nonce_challenge_id: str | None = None,
         timestamp_nonce_challenge_sha256: str | None = None,
     ) -> DeploymentTrustCommit:
@@ -193,7 +253,12 @@ class DeploymentTrustProvider(Protocol):
         domain, backend identity, state generation and trust configuration,
         and consume both nonce values in this same linearizable transaction.
         It must reject cross-backend/domain challenge use and challenge or
-        nonce reuse.
+        nonce reuse. It must compare expected_external_evidence_watermark_sha256
+        with authoritative state and, when an advance is supplied, atomically
+        require the exact old checkpoint to equal the accepted checkpoint,
+        the new checkpoint to advance monotonically, and the registry sequence /
+        digest to avoid rollback or same-sequence equivocation. The CAS must
+        return the resulting accepted watermark digest in the commit.
         """
         ...
 
@@ -242,6 +307,259 @@ def _require_sha256(value: object, field: str) -> str:
     if type(value) is not str or not _SHA256.fullmatch(value):
         raise ValueError(f"{field} must be a lowercase SHA-256 digest")
     return value
+
+
+def _accepted_external_evidence_watermark_sha256(
+    value: ExternalEvidenceWatermarkV1 | None,
+) -> str:
+    """Hash the exact accepted ledger/witness state, including the empty state."""
+    if value is None:
+        payload = {
+            "schema": "origen.deployment-external-evidence-watermark.v1",
+            "state": "EMPTY",
+        }
+    else:
+        copied = _external_evidence_watermark_copy(value)
+        payload = {
+            "schema": "origen.deployment-external-evidence-watermark.v1",
+            "state": "ACCEPTED",
+            "policy_domain": copied.policy_domain,
+            "state_backend_id": copied.state_backend_id,
+            "log_id": copied.log_id,
+            "log_key_id": copied.log_key_id,
+            "log_public_key_sha256": copied.log_public_key_sha256,
+            "ledger_tree_size": copied.ledger_tree_size,
+            "ledger_root_sha256": copied.ledger_root_sha256,
+            "ledger_checkpoint_sha256": copied.ledger_checkpoint_sha256,
+            "registry_id": copied.registry_id,
+            "registry_root_key_id": copied.registry_root_key_id,
+            "registry_root_public_key_sha256": copied.registry_root_public_key_sha256,
+            "registry_sequence": copied.registry_sequence,
+            "registry_sha256": copied.registry_sha256,
+        }
+    canonical = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("ascii")
+    return hashlib.sha256(b"ORIGEN_EXTERNAL_EVIDENCE_WATERMARK_V1\x00" + canonical).hexdigest()
+
+
+def _external_evidence_watermark_copy(value: object) -> ExternalEvidenceWatermarkV1 | None:
+    if value is None:
+        return None
+    if type(value) is not ExternalEvidenceWatermarkV1:
+        raise TypeError("provider accepted external evidence watermark has an unexpected type")
+    copied = ExternalEvidenceWatermarkV1(
+        policy_domain=value.policy_domain,
+        state_backend_id=value.state_backend_id,
+        log_id=value.log_id,
+        log_key_id=value.log_key_id,
+        log_public_key_sha256=value.log_public_key_sha256,
+        ledger_tree_size=value.ledger_tree_size,
+        ledger_root_sha256=value.ledger_root_sha256,
+        ledger_checkpoint_sha256=value.ledger_checkpoint_sha256,
+        registry_id=value.registry_id,
+        registry_root_key_id=value.registry_root_key_id,
+        registry_root_public_key_sha256=value.registry_root_public_key_sha256,
+        registry_sequence=value.registry_sequence,
+        registry_sha256=value.registry_sha256,
+    )
+    if copied.policy_domain != CLASSIC_POLICY_DOMAIN:
+        raise ValueError("external evidence watermark is not scoped to the fixed CLASSIC domain")
+    for field, actual in (
+        ("state_backend_id", copied.state_backend_id),
+        ("log_id", copied.log_id),
+        ("log_key_id", copied.log_key_id),
+        ("registry_id", copied.registry_id),
+        ("registry_root_key_id", copied.registry_root_key_id),
+    ):
+        _require_identifier(actual, field)
+    for field, actual in (
+        ("ledger_root_sha256", copied.ledger_root_sha256),
+        ("ledger_checkpoint_sha256", copied.ledger_checkpoint_sha256),
+        ("log_public_key_sha256", copied.log_public_key_sha256),
+        ("registry_root_public_key_sha256", copied.registry_root_public_key_sha256),
+        ("registry_sha256", copied.registry_sha256),
+    ):
+        _require_sha256(actual, field)
+    if type(copied.ledger_tree_size) is not int or not 1 <= copied.ledger_tree_size <= 2**63 - 1:
+        raise ValueError("ledger_tree_size must be an exact positive signed-64-bit integer")
+    if type(copied.registry_sequence) is not int or not 1 <= copied.registry_sequence <= MAX_POLICY_SEQUENCE:
+        raise ValueError("registry_sequence must be an exact positive bounded integer")
+    return copied
+
+
+def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
+    if type(value) is not ExternalEvidenceAdvanceV1:
+        raise TypeError("external evidence advance must be an exact ExternalEvidenceAdvanceV1")
+    copied = ExternalEvidenceAdvanceV1(
+        policy_domain=value.policy_domain,
+        state_backend_id=value.state_backend_id,
+        log_id=value.log_id,
+        log_key_id=value.log_key_id,
+        log_public_key_sha256=value.log_public_key_sha256,
+        old_tree_size=value.old_tree_size,
+        old_root_sha256=value.old_root_sha256,
+        old_checkpoint_sha256=value.old_checkpoint_sha256,
+        new_tree_size=value.new_tree_size,
+        new_root_sha256=value.new_root_sha256,
+        new_checkpoint_sha256=value.new_checkpoint_sha256,
+        registry_id=value.registry_id,
+        registry_root_key_id=value.registry_root_key_id,
+        registry_root_public_key_sha256=value.registry_root_public_key_sha256,
+        registry_sequence=value.registry_sequence,
+        registry_sha256=value.registry_sha256,
+        raw_manifest_bytes=value.raw_manifest_bytes,
+        raw_ledger_entry_bytes=value.raw_ledger_entry_bytes,
+        raw_inclusion_proof_bytes=value.raw_inclusion_proof_bytes,
+        raw_old_checkpoint_bytes=value.raw_old_checkpoint_bytes,
+        raw_new_checkpoint_bytes=value.raw_new_checkpoint_bytes,
+        raw_consistency_proof_bytes=value.raw_consistency_proof_bytes,
+        raw_registry_bytes=value.raw_registry_bytes,
+        raw_witness_statement_bytes=value.raw_witness_statement_bytes,
+    )
+    if copied.policy_domain != CLASSIC_POLICY_DOMAIN:
+        raise ValueError("external evidence advance is not scoped to the fixed CLASSIC domain")
+    for field, actual in (
+        ("state_backend_id", copied.state_backend_id),
+        ("log_id", copied.log_id),
+        ("log_key_id", copied.log_key_id),
+        ("registry_id", copied.registry_id),
+        ("registry_root_key_id", copied.registry_root_key_id),
+    ):
+        _require_identifier(actual, field)
+    for field, actual in (
+        ("old_root_sha256", copied.old_root_sha256),
+        ("old_checkpoint_sha256", copied.old_checkpoint_sha256),
+        ("new_root_sha256", copied.new_root_sha256),
+        ("new_checkpoint_sha256", copied.new_checkpoint_sha256),
+        ("log_public_key_sha256", copied.log_public_key_sha256),
+        ("registry_root_public_key_sha256", copied.registry_root_public_key_sha256),
+        ("registry_sha256", copied.registry_sha256),
+    ):
+        _require_sha256(actual, field)
+    for field, actual in (
+        ("old_tree_size", copied.old_tree_size),
+        ("new_tree_size", copied.new_tree_size),
+    ):
+        if type(actual) is not int or not 1 <= actual <= 2**63 - 1:
+            raise ValueError(f"{field} must be an exact positive signed-64-bit integer")
+    if copied.new_tree_size <= copied.old_tree_size:
+        raise ValueError("new ledger checkpoint tree size must exceed the old tree size")
+    if type(copied.registry_sequence) is not int or not 1 <= copied.registry_sequence <= MAX_POLICY_SEQUENCE:
+        raise ValueError("registry_sequence must be an exact positive bounded integer")
+    raw_byte_fields = (
+        ("raw_manifest_bytes", copied.raw_manifest_bytes),
+        ("raw_ledger_entry_bytes", copied.raw_ledger_entry_bytes),
+        ("raw_inclusion_proof_bytes", copied.raw_inclusion_proof_bytes),
+        ("raw_old_checkpoint_bytes", copied.raw_old_checkpoint_bytes),
+        ("raw_new_checkpoint_bytes", copied.raw_new_checkpoint_bytes),
+        ("raw_consistency_proof_bytes", copied.raw_consistency_proof_bytes),
+        ("raw_registry_bytes", copied.raw_registry_bytes),
+    )
+    total_bytes = 0
+    for field, actual in raw_byte_fields:
+        if type(actual) is not bytes or not actual:
+            raise ValueError(f"{field} must be non-empty exact bytes")
+        total_bytes += len(actual)
+    if type(copied.raw_witness_statement_bytes) is not tuple or not 2 <= len(copied.raw_witness_statement_bytes) <= 128:
+        raise ValueError("raw_witness_statement_bytes must be an exact bounded tuple of 2..128 statements")
+    for statement in copied.raw_witness_statement_bytes:
+        if type(statement) is not bytes or not statement:
+            raise ValueError("each raw witness statement must be non-empty exact bytes")
+        total_bytes += len(statement)
+    if total_bytes > 8 * 1024 * 1024:
+        raise ValueError("external evidence advance exceeds the aggregate byte limit")
+    exact_digests = (
+        ("old_checkpoint_sha256", copied.old_checkpoint_sha256, copied.raw_old_checkpoint_bytes),
+        ("new_checkpoint_sha256", copied.new_checkpoint_sha256, copied.raw_new_checkpoint_bytes),
+        ("registry_sha256", copied.registry_sha256, copied.raw_registry_bytes),
+    )
+    for field, expected, raw in exact_digests:
+        if hashlib.sha256(raw).hexdigest() != expected:
+            raise ValueError(f"{field} does not bind the exact external evidence bytes")
+    return copied
+
+
+def _validated_external_evidence_watermark(
+    snapshot: DeploymentTrustSnapshot,
+    expected_sha256: str,
+    advance: ExternalEvidenceAdvanceV1 | None,
+) -> ExternalEvidenceWatermarkV1 | None:
+    """Validate one candidate against the exact accepted watermark in a snapshot.
+
+    A real provider must repeat this logic against authoritative state inside
+    its linearizable CAS transaction; this application-side check is not a
+    substitute for durable independent storage.
+    """
+    _require_sha256(expected_sha256, "expected_external_evidence_watermark_sha256")
+    current = _external_evidence_watermark_copy(snapshot.accepted_external_evidence_watermark)
+    if current is not None and (
+        current.policy_domain != snapshot.policy_domain
+        or current.state_backend_id != snapshot.state_backend_id
+    ):
+        raise TrustStateRejected(
+            "persisted external evidence watermark is not bound to the exact policy domain and state backend"
+        )
+    if expected_sha256 != _accepted_external_evidence_watermark_sha256(current):
+        raise TrustStateRejected("external evidence watermark changed since the provider snapshot")
+    if advance is None:
+        return current
+    candidate = _external_evidence_advance_copy(advance)
+    if current is None:
+        raise TrustStateRejected("external ledger/witness genesis watermark is not independently provisioned")
+    if candidate.policy_domain != snapshot.policy_domain or candidate.state_backend_id != snapshot.state_backend_id:
+        raise TrustStateRejected("external evidence advance is not bound to the exact policy domain and state backend")
+    if (
+        candidate.log_id != current.log_id
+        or candidate.log_key_id != current.log_key_id
+        or candidate.log_public_key_sha256 != current.log_public_key_sha256
+        or candidate.registry_id != current.registry_id
+        or candidate.registry_root_key_id != current.registry_root_key_id
+        or candidate.registry_root_public_key_sha256 != current.registry_root_public_key_sha256
+    ):
+        raise TrustStateRejected("external ledger or witness-registry identity changed without an authorized transition")
+
+    if candidate.new_tree_size < current.ledger_tree_size:
+        raise TrustStateRejected("ledger checkpoint tree-size rollback detected")
+    if candidate.new_tree_size == current.ledger_tree_size and (
+        candidate.new_root_sha256 != current.ledger_root_sha256
+        or candidate.new_checkpoint_sha256 != current.ledger_checkpoint_sha256
+    ):
+        raise TrustStateRejected("same-size ledger checkpoint equivocation detected")
+    if (
+        candidate.old_tree_size != current.ledger_tree_size
+        or candidate.old_root_sha256 != current.ledger_root_sha256
+        or candidate.old_checkpoint_sha256 != current.ledger_checkpoint_sha256
+    ):
+        raise TrustStateRejected("new ledger checkpoint does not extend the exact persisted checkpoint")
+    if candidate.new_tree_size == current.ledger_tree_size:
+        raise TrustStateRejected(
+            "external evidence advance must strictly increase the persisted ledger checkpoint tree size"
+        )
+
+    if candidate.registry_sequence < current.registry_sequence:
+        raise TrustStateRejected("witness registry sequence rollback detected")
+    if (
+        candidate.registry_sequence == current.registry_sequence
+        and candidate.registry_sha256 != current.registry_sha256
+    ):
+        raise TrustStateRejected("same-sequence witness registry digest equivocation detected")
+
+    return ExternalEvidenceWatermarkV1(
+        policy_domain=CLASSIC_POLICY_DOMAIN,
+        state_backend_id=snapshot.state_backend_id,
+        log_id=candidate.log_id,
+        log_key_id=candidate.log_key_id,
+        log_public_key_sha256=candidate.log_public_key_sha256,
+        ledger_tree_size=candidate.new_tree_size,
+        ledger_root_sha256=candidate.new_root_sha256,
+        ledger_checkpoint_sha256=candidate.new_checkpoint_sha256,
+        registry_id=candidate.registry_id,
+        registry_root_key_id=candidate.registry_root_key_id,
+        registry_root_public_key_sha256=candidate.registry_root_public_key_sha256,
+        registry_sequence=candidate.registry_sequence,
+        registry_sha256=candidate.registry_sha256,
+    )
 
 
 def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
@@ -460,7 +778,19 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         provisioning_record_sha256=value.provisioning_record_sha256,
         physical_trust_context_generation=value.physical_trust_context_generation,
         physical_trust_context_sha256=value.physical_trust_context_sha256,
+        accepted_external_evidence_watermark=_external_evidence_watermark_copy(
+            value.accepted_external_evidence_watermark
+        ),
     )
+
+    if (
+        snapshot.accepted_external_evidence_watermark is not None
+        and (
+            snapshot.accepted_external_evidence_watermark.policy_domain != snapshot.policy_domain
+            or snapshot.accepted_external_evidence_watermark.state_backend_id != snapshot.state_backend_id
+        )
+    ):
+        raise ValueError("accepted external evidence watermark is not bound to the deployment snapshot")
 
     if type(snapshot.policy_domain) is not str or snapshot.policy_domain != CLASSIC_POLICY_DOMAIN:
         raise ValueError("deployment trust snapshot is not scoped to the fixed CLASSIC domain")
@@ -548,12 +878,19 @@ def _commit_copy(value: object) -> DeploymentTrustCommit:
         or value.trusted_time_latest_utc.tzinfo is not timezone.utc
     ):
         raise ValueError("provider commit trusted_time_latest_utc must be exact normalized UTC")
+    accepted_watermark_sha256 = value.accepted_external_evidence_watermark_sha256
+    if accepted_watermark_sha256 is not None:
+        _require_sha256(
+            accepted_watermark_sha256,
+            "provider commit accepted_external_evidence_watermark_sha256",
+        )
     return DeploymentTrustCommit(
         outcome=value.outcome,
         state_generation=value.state_generation,
         policy_sequence=value.policy_sequence,
         policy_envelope_sha256=value.policy_envelope_sha256,
         trusted_time_latest_utc=value.trusted_time_latest_utc,
+        accepted_external_evidence_watermark_sha256=accepted_watermark_sha256,
     )
 
 
@@ -622,6 +959,7 @@ def inspect_receipt_with_deployment_trust_provider(
     provider_snapshot: DeploymentTrustSnapshot | None = None,
     timestamp_nonce_challenge_id: str | None = None,
     timestamp_nonce_challenge_sha256: str | None = None,
+    external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
 ) -> DeploymentTrustInspection:
     """Inspect policy and receipt through provider-supplied deployment state.
 
@@ -672,6 +1010,22 @@ def inspect_receipt_with_deployment_trust_provider(
         # state; a caller-fabricated or stale snapshot cannot commit.
         supplied_snapshot = provider_snapshot
     snapshot = _snapshot_copy(supplied_snapshot)
+    external_evidence_advance = (
+        None
+        if external_evidence_advance is None
+        else _external_evidence_advance_copy(external_evidence_advance)
+    )
+    expected_external_evidence_watermark_sha256 = (
+        _accepted_external_evidence_watermark_sha256(snapshot.accepted_external_evidence_watermark)
+    )
+    next_external_evidence_watermark = _validated_external_evidence_watermark(
+        snapshot,
+        expected_external_evidence_watermark_sha256,
+        external_evidence_advance,
+    )
+    next_external_evidence_watermark_sha256 = (
+        _accepted_external_evidence_watermark_sha256(next_external_evidence_watermark)
+    )
     trust_configuration_digest = _trust_configuration_sha256(snapshot)
     clock_sample_digest = _clock_sample_sha256(snapshot)
     earliest, latest = _time_window(snapshot)
@@ -754,45 +1108,64 @@ def inspect_receipt_with_deployment_trust_provider(
             policy_envelope_sha256=policy_digest,
             accepted_at_utc=snapshot.trusted_time_utc,
             clock_uncertainty_ms=snapshot.clock_uncertainty_ms,
+            expected_external_evidence_watermark_sha256=expected_external_evidence_watermark_sha256,
+            external_evidence_advance=external_evidence_advance,
             timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
             timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
         )
+    except TrustStateRejected:
+        raise
     except Exception as exc:
         raise TrustProviderUnavailable("deployment trust sequence transaction failed") from exc
     commit = _commit_copy(supplied_commit)
 
+    if commit.outcome in {
+        TrustStateOutcome.CONFLICT,
+        TrustStateOutcome.ROLLBACK,
+        TrustStateOutcome.TIME_ROLLBACK,
+        TrustStateOutcome.EQUIVOCATION,
+    }:
+        raise TrustStateRejected(
+            "provider compare-and-advance rejected a stale, regressed, or equivocal state"
+        )
     if (
         commit.policy_sequence != verified_policy.policy_sequence
         or commit.policy_envelope_sha256 != policy_digest
     ):
         raise TrustStateRejected("provider commit does not bind the exact verified policy")
-    if snapshot.accepted_policy_sequence == verified_policy.policy_sequence:
-        if commit.outcome is TrustStateOutcome.IDEMPOTENT:
-            if (
-                commit.state_generation != snapshot.state_generation
-                or commit.trusted_time_latest_utc != snapshot.trusted_time_latest_utc
-                or latest != snapshot.trusted_time_latest_utc
-            ):
-                raise TrustStateRejected("same-sequence idempotency did not preserve the exact time watermark")
-        elif commit.outcome is TrustStateOutcome.TIME_ADVANCED:
-            if (
-                commit.state_generation != snapshot.state_generation + 1
-                or commit.trusted_time_latest_utc != latest
-                or snapshot.trusted_time_latest_utc is None
-                or latest <= snapshot.trusted_time_latest_utc
-            ):
-                raise TrustStateRejected("same-sequence time advancement did not commit one generation and the new watermark")
-        else:
-            raise TrustStateRejected("same-sequence policy returned an unsupported provider outcome")
+    if commit.accepted_external_evidence_watermark_sha256 != next_external_evidence_watermark_sha256:
+        raise TrustStateRejected("provider commit does not bind the resulting external ledger/witness watermark")
+
+    policy_advanced = snapshot.accepted_policy_sequence < verified_policy.policy_sequence
+    time_advanced = (
+        snapshot.trusted_time_latest_utc is None
+        or latest > snapshot.trusted_time_latest_utc
+    )
+    evidence_advanced = (
+        next_external_evidence_watermark_sha256 != expected_external_evidence_watermark_sha256
+    )
+    expected_latest = latest if time_advanced else snapshot.trusted_time_latest_utc
+
+    if policy_advanced:
+        expected_outcome = TrustStateOutcome.ADVANCED
+    elif evidence_advanced and time_advanced:
+        expected_outcome = TrustStateOutcome.TIME_AND_EVIDENCE_ADVANCED
+    elif evidence_advanced:
+        expected_outcome = TrustStateOutcome.EVIDENCE_ADVANCED
+    elif time_advanced:
+        expected_outcome = TrustStateOutcome.TIME_ADVANCED
     else:
-        if (
-            commit.outcome is not TrustStateOutcome.ADVANCED
-            or commit.state_generation != snapshot.state_generation + 1
-            or commit.trusted_time_latest_utc != latest
-        ):
-            raise TrustStateRejected(
-                "policy sequence compare-and-advance did not commit exactly one generation and the candidate clock upper bound"
-            )
+        expected_outcome = TrustStateOutcome.IDEMPOTENT
+
+    expected_generation = snapshot.state_generation + (1 if expected_outcome is not TrustStateOutcome.IDEMPOTENT else 0)
+    if (
+        commit.outcome is not expected_outcome
+        or commit.state_generation != expected_generation
+        or commit.trusted_time_latest_utc != expected_latest
+    ):
+        raise TrustStateRejected(
+            "provider CAS did not atomically commit the exact policy/time/evidence state transition"
+        )
 
     return DeploymentTrustInspection(
         receipt_sha256=hashlib.sha256(original_receipt_bytes).hexdigest(),

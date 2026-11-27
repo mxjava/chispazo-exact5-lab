@@ -486,3 +486,65 @@ provider must still enforce single-use consumption atomically.
 Synthetic adversarial regressions cover a challenge copied from another
 backend, a challenge copied from another policy domain, and digest sensitivity
 to both scope fields. Production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
+
+## 16. Atomic ledger-checkpoint and witness-registry anti-rollback watermark
+
+The provider snapshot now carries an optional accepted external-evidence watermark
+with the exact CLASSIC domain/backend, transparency-log and log-key identity,
+accepted tree size/root/checkpoint digest, witness-registry/root-key identity,
+accepted registry sequence and exact signed registry-byte digest. A full physical
+evidence composition is rejected unless this watermark was provisioned before the
+inspection; the caller cannot create genesis from the submitted bundle.
+
+After the nested signatures, RFC 3161 tokens, ledger inclusion/consistency proof
+and witness quorum have been re-verified, the application derives one bounded
+advance candidate. All witness batches must expose one exact registry sequence
+and one exact registry-byte digest. The candidate binds the old and new checkpoint
+sizes, roots and byte digests plus the registry identity/version/digest.
+
+The linearizable provider CAS must, in the same transaction as policy sequence,
+trusted-time watermark and nonce consumption:
+
+1. Recompute the accepted watermark digest from authoritative storage and compare
+   it with the snapshot digest supplied by the application.
+2. Require the supplied old checkpoint to equal the exact persisted tree
+   size, root and checkpoint digest for every advance. Then require the new tree
+   size to be strictly greater. Reject lower sizes as rollback and same-size
+   root/checkpoint changes as equivocation; a same-size identical checkpoint is
+   not an advance and must be represented by omitting the advance.
+3. Reject a lower witness-registry sequence and reject a different exact registry
+   digest at the same sequence. A registry/log/root identity change requires a
+   separate authorized transition; it is not an ordinary advance.
+4. Atomically persist the new checkpoint and registry watermark with the policy,
+   time and nonce state, incrementing the shared generation exactly once. Return
+   the resulting watermark digest in the commit receipt.
+5. Preserve the watermark unchanged for policy-only inspections. Never initialize,
+   lower, restore or silently replace it during failover or backup recovery.
+
+ExternalEvidenceWatermarkV1 and ExternalEvidenceAdvanceV1 are immutable
+application contracts, not authentication capabilities. The repository contains
+no production CAS implementation. The provider must repeat all comparisons under
+its own transaction/lock against independently anchored durable state; the
+application-side validation and synthetic provider only exercise the contract.
+The initial ledger checkpoint and registry digest must be established by a
+separate out-of-band, independently witnessed genesis ceremony. Until that exists,
+full provider-backed physical composition remains fail-closed and production stays
+BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
+
+### Exact-byte and key-fingerprint binding
+
+The external-evidence advance carries the exact manifest, ledger entry, inclusion proof,
+old/new signed checkpoint bytes, consistency proof, signed registry bytes and the
+bounded tuple of signed witness statements. Its checkpoint/registry digests must
+match those exact byte strings. It also binds SHA-256 fingerprints of the log
+verification key and witness-registry root key; reusing a key ID with different
+key bytes is not an ordinary state advance.
+
+A production CAS must independently re-verify these exact bytes using the
+provisioned physical context and trusted time inside its transaction (or accept
+the request only through an equivalently isolated, reviewed verification service).
+A digest-only caller assertion is insufficient. The synthetic provider exercises
+monotonic state transitions and exact-byte binding only; it does not implement
+institutional signature verification or durable storage.

@@ -27,14 +27,17 @@ from .deployment_trust_provider_v1 import (
     DeploymentTrustInspection,
     DeploymentTrustProvider,
     DeploymentTrustSnapshot,
+    ExternalEvidenceAdvanceV1,
     TrustProviderUnavailable,
     TrustStateRejected,
+    _accepted_external_evidence_watermark_sha256,
     _clock_sample_sha256,
     _require_clock_sample_key_authorized,
     _require_policy_and_receipt_inside_time_window,
     _snapshot_copy,
     _time_window,
     _trust_configuration_sha256,
+    _validated_external_evidence_watermark,
     inspect_receipt_with_deployment_trust_provider,
 )
 from .independent_trust_adapter import ProvenanceStatus
@@ -301,6 +304,22 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         provider,
         snapshot,
     )
+    accepted_watermark = snapshot.accepted_external_evidence_watermark
+    if accepted_watermark is None:
+        raise TrustStateRejected(
+            "deployment provider has no independently provisioned ledger/witness genesis watermark"
+        )
+    if (
+        accepted_watermark.log_id != physical_context.log_id
+        or accepted_watermark.log_key_id != physical_context.log_key_id
+        or accepted_watermark.log_public_key_sha256 != hashlib.sha256(physical_context.log_public_key_bytes).hexdigest()
+        or accepted_watermark.registry_id != physical_context.registry_id
+        or accepted_watermark.registry_root_key_id != physical_context.registry_root_key_id
+        or accepted_watermark.registry_root_public_key_sha256 != hashlib.sha256(physical_context.registry_root_public_key_bytes).hexdigest()
+    ):
+        raise TrustStateRejected(
+            "persisted ledger/witness watermark identity differs from the provider-owned physical trust context"
+        )
     trust_configuration_digest = _trust_configuration_sha256(snapshot)
     clock_sample_digest = _clock_sample_sha256(snapshot)
     earliest, latest = _time_window(snapshot)
@@ -452,9 +471,55 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
     ):
         raise RuntimeError("complete evidence composition did not consume the provider-verified policy and time")
 
+    registry_digests = {
+        hashlib.sha256(batch.raw_registry_bytes).hexdigest()
+        for batch in witness_observation_batches
+    }
+    if len(registry_digests) != 1 or len(evidence.witness_gossip.registry_sequences) != 1:
+        raise TrustStateRejected(
+            "verified witness batches do not expose one exact signed registry sequence and byte digest"
+        )
+    continuity = evidence.ledger.checkpoint_consistency
+    external_evidence_advance = ExternalEvidenceAdvanceV1(
+        policy_domain=CLASSIC_POLICY_DOMAIN,
+        state_backend_id=snapshot.state_backend_id,
+        log_id=continuity.log_id,
+        log_key_id=continuity.key_id,
+        log_public_key_sha256=hashlib.sha256(physical_context.log_public_key_bytes).hexdigest(),
+        old_tree_size=continuity.old_tree_size,
+        old_root_sha256=continuity.old_root_sha256,
+        old_checkpoint_sha256=continuity.old_checkpoint_sha256,
+        new_tree_size=continuity.new_tree_size,
+        new_root_sha256=continuity.new_root_sha256,
+        new_checkpoint_sha256=continuity.new_checkpoint_sha256,
+        registry_id=physical_context.registry_id,
+        registry_root_key_id=physical_context.registry_root_key_id,
+        registry_root_public_key_sha256=hashlib.sha256(physical_context.registry_root_public_key_bytes).hexdigest(),
+        registry_sequence=evidence.witness_gossip.registry_sequences[0],
+        registry_sha256=next(iter(registry_digests)),
+        raw_manifest_bytes=raw_manifest_bytes,
+        raw_ledger_entry_bytes=raw_ledger_entry_bytes,
+        raw_inclusion_proof_bytes=raw_inclusion_proof_bytes,
+        raw_old_checkpoint_bytes=raw_old_checkpoint_bytes,
+        raw_new_checkpoint_bytes=raw_new_checkpoint_bytes,
+        raw_consistency_proof_bytes=raw_consistency_proof_bytes,
+        raw_registry_bytes=witness_observation_batches[0].raw_registry_bytes,
+        raw_witness_statement_bytes=tuple(
+            statement
+            for batch in witness_observation_batches
+            for statement in batch.raw_witness_statement_bytes
+        ),
+    )
+    _validated_external_evidence_watermark(
+        snapshot,
+        _accepted_external_evidence_watermark_sha256(accepted_watermark),
+        external_evidence_advance,
+    )
+
     # The provider boundary re-verifies exact policy/receipt bytes and performs
-    # CAS against the same snapshot. The trust-configuration digest includes
-    # the physical-context digest and generation checked above.
+    # one atomic CAS for policy, clock, nonce consumption and external evidence
+    # watermarks against the same snapshot. The trust-configuration digest
+    # includes the physical-context digest and generation checked above.
     deployment_trust = inspect_receipt_with_deployment_trust_provider(
         original_receipt_bytes,
         signed_policy_envelope_bytes,
@@ -462,6 +527,7 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         provider_snapshot=snapshot,
         timestamp_nonce_challenge_id=nonce_challenge.challenge_id,
         timestamp_nonce_challenge_sha256=nonce_challenge_digest,
+        external_evidence_advance=external_evidence_advance,
     )
     if type(deployment_trust) is not DeploymentTrustInspection:
         raise TypeError("deployment trust boundary returned an unexpected result type")

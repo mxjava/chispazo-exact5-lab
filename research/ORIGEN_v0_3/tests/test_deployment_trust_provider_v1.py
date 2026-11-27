@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import json
+import hashlib
 import unittest
 from enum import Enum
 from unittest.mock import patch
@@ -16,11 +17,15 @@ from origen.deployment_trust_provider_v1 import (
     CLASSIC_POLICY_DOMAIN,
     DeploymentTrustCommit,
     DeploymentTrustSnapshot,
+    ExternalEvidenceAdvanceV1,
+    ExternalEvidenceWatermarkV1,
     TrustProviderUnavailable,
     TrustStateOutcome,
     TrustStateRejected,
+    _accepted_external_evidence_watermark_sha256,
     _clock_sample_sha256,
     _trust_configuration_sha256,
+    _validated_external_evidence_watermark,
     _verify_clock_sample_attestation,
     inspect_receipt_with_deployment_trust_provider,
 )
@@ -117,6 +122,8 @@ class SyntheticTrustProvider:
         policy_envelope_sha256,
         accepted_at_utc,
         clock_uncertainty_ms,
+        expected_external_evidence_watermark_sha256,
+        external_evidence_advance=None,
         timestamp_nonce_challenge_id=None,
         timestamp_nonce_challenge_sha256=None,
     ):
@@ -132,6 +139,8 @@ class SyntheticTrustProvider:
             "policy_envelope_sha256": policy_envelope_sha256,
             "accepted_at_utc": accepted_at_utc,
             "clock_uncertainty_ms": clock_uncertainty_ms,
+            "expected_external_evidence_watermark_sha256": expected_external_evidence_watermark_sha256,
+            "external_evidence_advance": external_evidence_advance,
             "timestamp_nonce_challenge_id": timestamp_nonce_challenge_id,
             "timestamp_nonce_challenge_sha256": timestamp_nonce_challenge_sha256,
         }
@@ -271,49 +280,56 @@ class SyntheticTrustProvider:
                 self.snapshot.trusted_time_latest_utc,
             )
 
-        if policy_sequence == self.snapshot.accepted_policy_sequence:
-            if candidate_latest > self.snapshot.trusted_time_latest_utc:
-                if timestamp_nonce_challenge_id is not None:
-                    self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
-                next_generation = self.snapshot.state_generation + 1
-                self.snapshot = replace(
-                    self.snapshot,
-                    state_generation=next_generation,
-                    trusted_time_latest_utc=candidate_latest,
-                )
-                return DeploymentTrustCommit(
-                    TrustStateOutcome.TIME_ADVANCED,
-                    next_generation,
-                    policy_sequence,
-                    policy_envelope_sha256,
-                    candidate_latest,
-                )
-            if timestamp_nonce_challenge_id is not None:
-                self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
+        next_watermark = _validated_external_evidence_watermark(
+            self.snapshot,
+            expected_external_evidence_watermark_sha256,
+            external_evidence_advance,
+        )
+        policy_advanced = policy_sequence > self.snapshot.accepted_policy_sequence
+        time_advanced = (
+            self.snapshot.trusted_time_latest_utc is None
+            or candidate_latest > self.snapshot.trusted_time_latest_utc
+        )
+        evidence_advanced = next_watermark != self.snapshot.accepted_external_evidence_watermark
+
+        if timestamp_nonce_challenge_id is not None:
+            self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
+
+        if not (policy_advanced or time_advanced or evidence_advanced):
             return DeploymentTrustCommit(
                 TrustStateOutcome.IDEMPOTENT,
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
                 self.snapshot.trusted_time_latest_utc,
+                _accepted_external_evidence_watermark_sha256(next_watermark),
             )
 
-        if timestamp_nonce_challenge_id is not None:
-            self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
+        if policy_advanced:
+            outcome = TrustStateOutcome.ADVANCED
+        elif evidence_advanced and time_advanced:
+            outcome = TrustStateOutcome.TIME_AND_EVIDENCE_ADVANCED
+        elif evidence_advanced:
+            outcome = TrustStateOutcome.EVIDENCE_ADVANCED
+        else:
+            outcome = TrustStateOutcome.TIME_ADVANCED
+
         next_generation = self.snapshot.state_generation + 1
         self.snapshot = replace(
             self.snapshot,
             state_generation=next_generation,
-            accepted_policy_sequence=policy_sequence,
-            accepted_policy_envelope_sha256=policy_envelope_sha256,
-            trusted_time_latest_utc=accepted_at_utc + timedelta(milliseconds=clock_uncertainty_ms),
+            accepted_policy_sequence=policy_sequence if policy_advanced else self.snapshot.accepted_policy_sequence,
+            accepted_policy_envelope_sha256=policy_envelope_sha256 if policy_advanced else self.snapshot.accepted_policy_envelope_sha256,
+            trusted_time_latest_utc=candidate_latest if time_advanced else self.snapshot.trusted_time_latest_utc,
+            accepted_external_evidence_watermark=next_watermark,
         )
         return DeploymentTrustCommit(
-            TrustStateOutcome.ADVANCED,
+            outcome,
             next_generation,
             policy_sequence,
             policy_envelope_sha256,
             self.snapshot.trusted_time_latest_utc,
+            _accepted_external_evidence_watermark_sha256(next_watermark),
         )
 
 
@@ -401,6 +417,97 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         }
         args.update(overrides)
         return inspect_receipt_with_deployment_trust_provider(**args)
+
+    def test_persisted_watermark_backend_mismatch_is_rejected_by_watermark_validator(self):
+        watermark = ExternalEvidenceWatermarkV1(
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            state_backend_id="another-synthetic-cas-store",
+            log_id="synthetic-log",
+            log_key_id="synthetic-log-key",
+            log_public_key_sha256="a" * 64,
+            ledger_tree_size=1,
+            ledger_root_sha256="b" * 64,
+            ledger_checkpoint_sha256="c" * 64,
+            registry_id="synthetic-registry",
+            registry_root_key_id="synthetic-registry-root",
+            registry_root_public_key_sha256="d" * 64,
+            registry_sequence=1,
+            registry_sha256="e" * 64,
+        )
+        snapshot = replace(
+            self.snapshot,
+            accepted_external_evidence_watermark=watermark,
+        )
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "persisted external evidence watermark is not bound to the exact policy domain and state backend",
+        ):
+            _validated_external_evidence_watermark(
+                snapshot,
+                _accepted_external_evidence_watermark_sha256(watermark),
+                None,
+            )
+
+    def test_same_size_ledger_checkpoint_requires_exact_old_checkpoint(self):
+        raw_current_checkpoint = b"current-signed-checkpoint"
+        raw_stale_old_checkpoint = b"stale-old-checkpoint"
+        raw_registry = b"signed-registry"
+        current = ExternalEvidenceWatermarkV1(
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            state_backend_id=self.snapshot.state_backend_id,
+            log_id="synthetic-log",
+            log_key_id="synthetic-log-key",
+            log_public_key_sha256="a" * 64,
+            ledger_tree_size=2,
+            ledger_root_sha256="b" * 64,
+            ledger_checkpoint_sha256=hashlib.sha256(raw_current_checkpoint).hexdigest(),
+            registry_id="synthetic-registry",
+            registry_root_key_id="synthetic-registry-root",
+            registry_root_public_key_sha256="d" * 64,
+            registry_sequence=1,
+            registry_sha256=hashlib.sha256(raw_registry).hexdigest(),
+        )
+        snapshot = replace(
+            self.snapshot,
+            accepted_external_evidence_watermark=current,
+        )
+        advance = ExternalEvidenceAdvanceV1(
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            state_backend_id=self.snapshot.state_backend_id,
+            log_id=current.log_id,
+            log_key_id=current.log_key_id,
+            log_public_key_sha256=current.log_public_key_sha256,
+            old_tree_size=1,
+            old_root_sha256="f" * 64,
+            old_checkpoint_sha256=hashlib.sha256(raw_stale_old_checkpoint).hexdigest(),
+            new_tree_size=2,
+            new_root_sha256=current.ledger_root_sha256,
+            new_checkpoint_sha256=current.ledger_checkpoint_sha256,
+            registry_id=current.registry_id,
+            registry_root_key_id=current.registry_root_key_id,
+            registry_root_public_key_sha256=current.registry_root_public_key_sha256,
+            registry_sequence=current.registry_sequence,
+            registry_sha256=current.registry_sha256,
+            raw_manifest_bytes=b"manifest",
+            raw_ledger_entry_bytes=b"ledger-entry",
+            raw_inclusion_proof_bytes=b"inclusion-proof",
+            raw_old_checkpoint_bytes=raw_stale_old_checkpoint,
+            raw_new_checkpoint_bytes=raw_current_checkpoint,
+            raw_consistency_proof_bytes=b"consistency-proof",
+            raw_registry_bytes=raw_registry,
+            raw_witness_statement_bytes=(b"witness-statement-1", b"witness-statement-2"),
+        )
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "new ledger checkpoint does not extend the exact persisted checkpoint",
+        ):
+            _validated_external_evidence_watermark(
+                snapshot,
+                _accepted_external_evidence_watermark_sha256(current),
+                advance,
+            )
 
     def test_clock_sample_signature_and_exact_bytes_are_verified_before_commit(self):
         document = json.loads(self.snapshot.clock_sample_envelope_bytes)
@@ -692,7 +799,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
 
     def test_cas_generation_race_fails_closed(self):
         self.provider.race_before_commit = True
-        with self.assertRaisesRegex(TrustStateRejected, "did not commit exactly one generation"):
+        with self.assertRaisesRegex(TrustStateRejected, "compare-and-advance rejected"):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 1)
 
@@ -852,7 +959,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             )
 
         self.provider.compare_and_advance = wrong_time
-        with self.assertRaisesRegex(TrustStateRejected, "candidate clock upper bound"):
+        with self.assertRaisesRegex(TrustStateRejected, "atomically commit the exact policy/time/evidence state transition"):
             self.inspect()
 
 
@@ -893,7 +1000,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.provider.commit_time_utc = NOW + timedelta(seconds=61)
         with self.assertRaisesRegex(
             TrustStateRejected,
-            "did not commit exactly one generation",
+            "rejected a stale, regressed, or equivocal state",
         ):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 1)
@@ -923,7 +1030,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
                 self.provider.read_snapshot = read_then_mutate
                 with self.assertRaisesRegex(
                     TrustStateRejected,
-                    "did not commit exactly one generation",
+                    "rejected a stale, regressed, or equivocal state",
                 ):
                     self.inspect()
                 self.assertEqual(
@@ -956,7 +1063,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
                 self.provider.read_snapshot = read_then_mutate
                 with self.assertRaisesRegex(
                     TrustStateRejected,
-                    "compare-and-advance did not commit exactly one generation",
+                    "compare-and-advance rejected a stale, regressed, or equivocal state",
                 ):
                     self.inspect()
                 self.assertEqual(
