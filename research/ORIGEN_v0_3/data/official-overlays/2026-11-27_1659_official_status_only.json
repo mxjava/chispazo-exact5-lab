@@ -3,18 +3,54 @@
   "captured_at_local": "2026-11-27T16:59:05-06:00",
   "status_only": true,
   "observations": [
-    {"source":"https://www.loterianacional.gob.mx/Chispazo/Resultados","observation":"The dedicated Chispazo results page displays contest 12399, dated 27/11/2026, with winning combination 10 14 15 17 24.","modality_label_present":false,"classification":"RESULT_PUBLISHED_MODALITY_NOT_PRINTED_ON_DEDICATED_PAGE"},
-    {"source":"https://www.loterianacional.gob.mx/","observation":"The official home index lists Chispazo contest 12399 at 15:00 and contest 12400 at 21:00 on 27-Nov-2026. A separate card for contest 4297 is not attributed to Chispazo.","classification":"SCHEDULE_INDEX"},
-    {"source":"https://www.loterianacional.gob.mx/Chispazo/Chispazo","observation":"The official Chispazo product page maps De las Tres to 15:00 and Clásico to 21:00.","classification":"OFFICIAL_PRODUCT_MODALITY_SCHEDULE"},
-    {"source":"https://www.loterianacional.gob.mx/Mascarillas/Mascarillas","observation":"The latest visible daily mask remains 2026-11-26; no 2026-11-27 mask is listed at capture.","classification":"MASK_INDEX_LATEST_VISIBLE_2026_11_26"}
+    {
+      "source": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observation": "The dedicated Chispazo results page displays contest 12399, dated 27/11/2026, with winning combination 10 14 15 17 24.",
+      "modality_label_present": false,
+      "classification": "RESULT_PUBLISHED_MODALITY_NOT_PRINTED_ON_DEDICATED_PAGE"
+    },
+    {
+      "source": "https://www.loterianacional.gob.mx/",
+      "observation": "The official home index lists Chispazo contest 12399 at 15:00 and contest 12400 at 21:00 on 27-Nov-2026. A separate card for contest 4297 is not attributed to Chispazo.",
+      "classification": "SCHEDULE_INDEX"
+    },
+    {
+      "source": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "observation": "The official Chispazo product page maps De las Tres to 15:00 and Clásico to 21:00.",
+      "classification": "OFFICIAL_PRODUCT_MODALITY_SCHEDULE"
+    },
+    {
+      "source": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "observation": "The latest visible daily mask remains 2026-11-26; no 2026-11-27 mask is listed at capture.",
+      "classification": "MASK_INDEX_LATEST_VISIBLE_2026_11_26"
+    },
+    {
+      "source": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226",
+      "observation": "The one-page official 26-Nov mask PDF was visually inspected. It labels contest 12397 with the Chispazo De las Tres logo and contest 12398 with the Chispazo Clásico logo, with combinations 05 20 23 26 28 and 01 03 17 26 28 respectively.",
+      "classification": "PRIOR_DAY_MASK_VISUALLY_CONFIRMS_MODALITY_LOGOS"
+    }
   ],
   "draw_classification": {
+    "4297": "SEPARATE_HOME_CARD_NOT_ATTRIBUTED_TO_CHISPAZO",
     "12399": "DE_LAS_TRES_15_00_SCHEDULE_INFERRED_NOT_MASK_CONFIRMED",
-    "12400": "CLASSIC_21_00_SCHEDULE_INDEXED_NO_RESULT_OR_MASK",
-    "4297": "SEPARATE_HOME_CARD_NOT_ATTRIBUTED_TO_CHISPAZO"
+    "12400": "CLASSIC_21_00_SCHEDULE_INDEXED_NO_RESULT_OR_MASK"
   },
-  "source_bytes": {"official_html_original_bytes":"NOT_CAPTURED","official_mask_pdf_original_bytes":"NOT_CAPTURED","sha256":"NOT_COMPUTED"},
-  "physical_primary_evidence": {"signed_acta":"NOT_ACQUIRED","CS_11":"NOT_ACQUIRED","weighing_strip":"NOT_ACQUIRED","CS_02":"NOT_ACQUIRED","calibration_certificate":"NOT_ACQUIRED","signed_participation_file":"NOT_ACQUIRED","original_video":"NOT_ACQUIRED","independent_custody":"NOT_ACQUIRED"},
+  "source_bytes": {
+    "official_html_original_bytes": "NOT_CAPTURED",
+    "official_mask_pdf_original_bytes": "NOT_CAPTURED",
+    "sha256": "NOT_COMPUTED",
+    "official_mask_pdf_visual_rendering": "INSPECTED"
+  },
+  "physical_primary_evidence": {
+    "signed_acta": "NOT_ACQUIRED",
+    "CS_11": "NOT_ACQUIRED",
+    "weighing_strip": "NOT_ACQUIRED",
+    "CS_02": "NOT_ACQUIRED",
+    "calibration_certificate": "NOT_ACQUIRED",
+    "signed_participation_file": "NOT_ACQUIRED",
+    "original_video": "NOT_ACQUIRED",
+    "independent_custody": "NOT_ACQUIRED"
+  },
   "canonical_history_append": false,
   "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
 }
