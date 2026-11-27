@@ -1,3 +1,9 @@
+## Provider CAS re-verifies original policy and receipt bytes (2026-11-27)
+- Closed a concrete provider-boundary contract gap: `compare_and_advance` previously received only the policy sequence and envelope digest, not the original signed policy or receipt bytes. An external CAS therefore could not independently re-verify either cryptographic object inside its transaction.
+- The CAS interface now requires exact original policy-envelope and receipt bytes. The provider contract requires independent signature/schema/sequence/issuer/time verification against its authoritative root, floor and clock before any durable state advance.
+- The CAS no longer accepts caller-supplied accepted time or uncertainty; the provider derives these from its own signed current clock sample. Successful commit responses must bind the exact receipt SHA-256 as well as policy and external-evidence watermarks.
+- Synthetic adversarial tests reject a tampered policy even when its digest is recomputed, a substituted receipt, and a forged commit receipt digest. This is a provider interface contract only: no institutional provider is installed, and production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
 ## Deployment provider is no longer a request-level input (2026-11-27)
 - Regression-first CI reproduced that both the receipt-only deployment inspection and the complete physical-evidence composition exposed a public `provider` parameter. The caller could therefore choose the provider object at the API boundary, contrary to the out-of-band provisioning contract.
 - Added `deployment_trust_provider_bootstrap.py`; its repository implementation returns `None`. Public facades resolve a provider only through this deployment-owned loader and fail closed when it is absent or unavailable.

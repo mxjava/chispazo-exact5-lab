@@ -28,6 +28,8 @@ from origen.deployment_trust_provider_v1 import (
     _trust_configuration_sha256,
     _validated_external_evidence_watermark,
     _verify_clock_sample_attestation,
+    _require_policy_and_receipt_inside_time_window,
+    _time_window,
     inspect_receipt_with_deployment_trust_provider,
     _inspect_receipt_with_deployment_trust_provider_using_provider,
 )
@@ -39,6 +41,8 @@ from test_receipt_policy_integration_v3 import (
     signed_v3_policy,
 )
 from test_trust_verifier_v1 import NOW, signed_receipt
+from origen.trust_policy_envelope_v3 import verify_signed_trust_policy_v3
+from origen.trust_verifier_v1 import verify_receipt_attestation
 
 
 def _canonical(value):
@@ -122,9 +126,9 @@ class SyntheticTrustProvider:
         root_generation,
         policy_sequence,
         policy_envelope_sha256,
-        accepted_at_utc,
-        clock_uncertainty_ms,
         expected_external_evidence_watermark_sha256,
+        raw_policy_envelope_bytes,
+        raw_receipt_bytes,
         external_evidence_advance=None,
         timestamp_nonce_challenge_id=None,
         timestamp_nonce_challenge_sha256=None,
@@ -139,9 +143,9 @@ class SyntheticTrustProvider:
             "root_generation": root_generation,
             "policy_sequence": policy_sequence,
             "policy_envelope_sha256": policy_envelope_sha256,
-            "accepted_at_utc": accepted_at_utc,
-            "clock_uncertainty_ms": clock_uncertainty_ms,
             "expected_external_evidence_watermark_sha256": expected_external_evidence_watermark_sha256,
+            "raw_policy_envelope_bytes": raw_policy_envelope_bytes,
+            "raw_receipt_bytes": raw_receipt_bytes,
             "external_evidence_advance": external_evidence_advance,
             "timestamp_nonce_challenge_id": timestamp_nonce_challenge_id,
             "timestamp_nonce_challenge_sha256": timestamp_nonce_challenge_sha256,
@@ -198,6 +202,57 @@ class SyntheticTrustProvider:
                 policy_envelope_sha256,
                 self.snapshot.trusted_time_latest_utc,
             )
+        if type(raw_policy_envelope_bytes) is not bytes or not raw_policy_envelope_bytes or type(raw_receipt_bytes) is not bytes or not raw_receipt_bytes:
+            return DeploymentTrustCommit(
+                TrustStateOutcome.CONFLICT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
+        try:
+            provider_policy = verify_signed_trust_policy_v3(
+                raw_policy_envelope_bytes,
+                pinned_root_public_key_bytes=self.snapshot.root_public_key_bytes,
+                expected_root_key_id=self.snapshot.root_key_id,
+                expected_policy_domain=CLASSIC_POLICY_DOMAIN,
+                minimum_policy_sequence=max(
+                    self.snapshot.minimum_policy_sequence,
+                    self.snapshot.accepted_policy_sequence,
+                ),
+                verification_time=self.snapshot.trusted_time_utc,
+            )
+            provider_receipt = verify_receipt_attestation(
+                raw_receipt_bytes,
+                provider_policy.policy,
+                verification_time=self.snapshot.trusted_time_utc,
+            )
+            earliest, latest = _time_window(self.snapshot)
+            _require_policy_and_receipt_inside_time_window(
+                provider_policy,
+                provider_receipt,
+                earliest=earliest,
+                latest=latest,
+            )
+        except Exception:
+            return DeploymentTrustCommit(
+                TrustStateOutcome.CONFLICT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
+        if (
+            provider_policy.policy_sequence != policy_sequence
+            or hashlib.sha256(raw_policy_envelope_bytes).hexdigest() != policy_envelope_sha256
+        ):
+            return DeploymentTrustCommit(
+                TrustStateOutcome.CONFLICT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
         if (timestamp_nonce_challenge_id is None) != (timestamp_nonce_challenge_sha256 is None):
             return DeploymentTrustCommit(
                 TrustStateOutcome.CONFLICT,
@@ -222,8 +277,8 @@ class SyntheticTrustProvider:
                 or challenge.root_generation != self.snapshot.root_generation
                 or challenge.physical_trust_context_generation != self.snapshot.physical_trust_context_generation
                 or challenge.physical_trust_context_sha256 != self.snapshot.physical_trust_context_sha256
-                or challenge.issued_at_utc > accepted_at_utc
-                or (self.commit_time_utc or accepted_at_utc) >= challenge.expires_at_utc
+                or challenge.issued_at_utc > self.snapshot.trusted_time_utc
+                or (self.commit_time_utc or self.snapshot.trusted_time_utc) >= challenge.expires_at_utc
             ):
                 return DeploymentTrustCommit(
                     TrustStateOutcome.CONFLICT,
@@ -268,8 +323,14 @@ class SyntheticTrustProvider:
                 self.snapshot.trusted_time_latest_utc,
             )
 
-        candidate_earliest = accepted_at_utc - timedelta(milliseconds=clock_uncertainty_ms)
-        candidate_latest = accepted_at_utc + timedelta(milliseconds=clock_uncertainty_ms)
+        # The provider derives time and uncertainty from its own signed current
+        # sample. No caller timestamp or uncertainty enters the CAS API.
+        candidate_earliest = self.snapshot.trusted_time_utc - timedelta(
+            milliseconds=self.snapshot.clock_uncertainty_ms
+        )
+        candidate_latest = self.snapshot.trusted_time_utc + timedelta(
+            milliseconds=self.snapshot.clock_uncertainty_ms
+        )
         if (
             self.snapshot.trusted_time_latest_utc is not None
             and candidate_earliest < self.snapshot.trusted_time_latest_utc
@@ -305,6 +366,7 @@ class SyntheticTrustProvider:
                 policy_envelope_sha256,
                 self.snapshot.trusted_time_latest_utc,
                 _accepted_external_evidence_watermark_sha256(next_watermark),
+                hashlib.sha256(raw_receipt_bytes).hexdigest(),
             )
 
         if policy_advanced:
@@ -332,6 +394,7 @@ class SyntheticTrustProvider:
             policy_envelope_sha256,
             self.snapshot.trusted_time_latest_utc,
             _accepted_external_evidence_watermark_sha256(next_watermark),
+            hashlib.sha256(raw_receipt_bytes).hexdigest(),
         )
 
 
@@ -1087,6 +1150,25 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         with self.assertRaisesRegex(TrustStateRejected, "does not bind the exact verified policy"):
             self.inspect()
 
+    def test_provider_cas_does_not_accept_caller_supplied_time_or_uncertainty(self):
+        parameters = inspect.signature(self.provider.compare_and_advance).parameters
+        self.assertNotIn("accepted_at_utc", parameters)
+        self.assertNotIn("clock_uncertainty_ms", parameters)
+
+    def test_provider_commit_must_bind_exact_receipt_digest(self):
+        original = self.provider.compare_and_advance
+
+        def wrong_receipt_digest(**kwargs):
+            commit = original(**kwargs)
+            return replace(commit, receipt_sha256="f" * 64)
+
+        self.provider.compare_and_advance = wrong_receipt_digest
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "does not bind the exact verified receipt",
+        ):
+            self.inspect()
+
     def test_provider_snapshot_override_is_rejected_at_application_boundary(self):
         # The deployment provider, not the request caller, must be the sole
         # source of the snapshot used for policy, clock and CAS verification.
@@ -1099,6 +1181,62 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.assertEqual(self.provider.read_count, 1)
         self.assertEqual(self.provider.commit_count, 1)
 
+
+    def _direct_provider_cas(self, policy_bytes, receipt_bytes):
+        provider = SyntheticTrustProvider(self.snapshot)
+        commit = provider.compare_and_advance(
+            expected_state_generation=self.snapshot.state_generation,
+            expected_trust_configuration_sha256=_trust_configuration_sha256(self.snapshot),
+            expected_clock_sample_sha256=_clock_sample_sha256(self.snapshot),
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            root_key_id=self.snapshot.root_key_id,
+            root_generation=self.snapshot.root_generation,
+            policy_sequence=POLICY_SEQUENCE,
+            policy_envelope_sha256=hashlib.sha256(policy_bytes).hexdigest(),
+            expected_external_evidence_watermark_sha256=(
+                _accepted_external_evidence_watermark_sha256(None)
+            ),
+            raw_policy_envelope_bytes=policy_bytes,
+            raw_receipt_bytes=receipt_bytes,
+        )
+        return provider, commit
+
+    def test_provider_cas_receives_exact_original_policy_and_receipt_bytes(self):
+        self.inspect()
+        self.assertEqual(
+            self.provider.last_commit_arguments["raw_policy_envelope_bytes"],
+            self.policy_bytes,
+        )
+        self.assertEqual(
+            self.provider.last_commit_arguments["raw_receipt_bytes"],
+            self.receipt_bytes,
+        )
+
+    def test_provider_cas_rejects_tampered_policy_even_when_digest_is_recomputed(self):
+        tampered_policy = self.policy_bytes + b" "
+        provider, commit = self._direct_provider_cas(
+            tampered_policy,
+            self.receipt_bytes,
+        )
+        self.assertIs(commit.outcome, TrustStateOutcome.CONFLICT)
+        self.assertEqual(provider.snapshot.state_generation, self.snapshot.state_generation)
+        self.assertEqual(
+            provider.snapshot.accepted_policy_sequence,
+            self.snapshot.accepted_policy_sequence,
+        )
+
+    def test_provider_cas_rejects_tampered_receipt_bytes(self):
+        tampered_receipt = self.receipt_bytes + b" "
+        provider, commit = self._direct_provider_cas(
+            self.policy_bytes,
+            tampered_receipt,
+        )
+        self.assertIs(commit.outcome, TrustStateOutcome.CONFLICT)
+        self.assertEqual(provider.snapshot.state_generation, self.snapshot.state_generation)
+        self.assertEqual(
+            provider.snapshot.accepted_policy_sequence,
+            self.snapshot.accepted_policy_sequence,
+        )
 
     def test_public_provider_entrypoint_does_not_accept_caller_provider(self):
         self.assertNotIn(

@@ -70,6 +70,18 @@ The V3 diagnostic API has been separated from the public provenance entry point:
 
 This change prevents accidental use of request-level trust inputs at the public provenance API. It does **not** authenticate the provider, root provisioning, trusted time, anti-rollback storage, institutional identity, physical records or custody. No production trust anchor is added.
 
+## 5.2 Exact-byte verification inside the provider CAS
+
+The provider CAS contract now requires the original `raw_policy_envelope_bytes` and `raw_receipt_bytes`, not only their caller-computed digest/sequence claims. The independently operated provider must, inside the same linearizable transaction that advances monotonic state:
+
+1. Parse the exact canonical policy-envelope bytes and verify their signature against the provider's authoritative root pin, fixed policy domain, expected key ID and current durable sequence floor.
+2. Recompute the envelope SHA-256 and policy sequence from those bytes and compare both with the caller's claims; never treat a digest or sequence alone as evidence of a valid signature.
+3. Verify the exact receipt bytes against the verified policy, including issuer/key authorization and the full trusted-time uncertainty interval. Recompute and return the receipt SHA-256 in the CAS commit so the application can confirm which receipt the provider accepted.
+4. Derive accepted time and uncertainty from the provider's own currently authenticated signed clock sample. The CAS API intentionally has no caller-supplied timestamp or uncertainty parameters. Recheck the sample digest, key, lease and state generation inside the transaction.
+5. Perform no durable state mutation if any byte, signature, sequence, clock, nonce, ledger or witness check fails.
+
+The repository's synthetic provider tests exercise this contract, including a tampered policy with a recomputed digest, a substituted receipt, and commit-response receipt-digest substitution. They do not constitute an independently operated provider. The real provider implementation, clock source, root provisioning and transactional durability remain external and unverified.
+
 ## 6. Required adversarial deployment tests
 
 Before any deployment can leave the blocked state, tests must cover:
