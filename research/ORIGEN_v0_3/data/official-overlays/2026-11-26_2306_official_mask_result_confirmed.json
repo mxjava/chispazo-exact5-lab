@@ -1,0 +1,79 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "classification": "OFFICIAL_RESULT_PUBLICATION_STATUS_ONLY_NOT_PHYSICAL_PROVENANCE",
+  "observed_at_local": "2026-11-26T23:06:44-06:00",
+  "observed_at_utc": "2026-11-27T05:06:44Z",
+  "target_date": "2026-11-26",
+  "official_schedule": {
+    "chispazo_de_las_tres_local_time": "15:00",
+    "chispazo_clasico_local_time": "21:00",
+    "source_url": "https://comercializadores.loterianacional.gob.mx/Chispazo/Chispazo"
+  },
+  "official_dedicated_results_page": {
+    "page_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "contest_12397": {
+      "modality": "DE_LAS_TRES",
+      "time_local": "15:00",
+      "winning_numbers": [5, 20, 23, 26, 28],
+      "total_winners": 31104,
+      "total_distributed_mxn": 880530.89
+    },
+    "contest_12398": {
+      "modality": "CLASSIC",
+      "time_local": "21:00",
+      "winning_numbers": [1, 3, 17, 26, 28],
+      "five_hit_winners": 6,
+      "five_hit_individual_prize_mxn": 51179.99,
+      "total_winners": 50347,
+      "total_distributed_mxn": 1357738.03
+    },
+    "page_status": "BOTH_26_NOVEMBER_CONTESTS_AND_WINNING_NUMBERS_VISIBLE"
+  },
+  "official_mask": {
+    "index_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "target_date_entry_visible": true,
+    "linked_pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226",
+    "page_count": 1,
+    "heading": "Sorteos celebrados el jueves 26 de noviembre de 2026",
+    "page_zero_visually_inspected": true,
+    "de_las_tres_15_00": {
+      "modality_label_visible": true,
+      "contest_id": "12397",
+      "winning_numbers": [5, 20, 23, 26, 28]
+    },
+    "classic_21_00": {
+      "modality_label_visible": true,
+      "contest_id": "12398",
+      "winning_numbers": [1, 3, 17, 26, 28]
+    }
+  },
+  "cross_page_consistency": {
+    "dedicated_results_page_displays_both_contests": true,
+    "official_mask_explicitly_labels_both_modalities": true,
+    "schedule_confirms_15_00_and_21_00_slots": true
+  },
+  "physical_provenance_status": {
+    "signed_acta_original_or_verified_copy": false,
+    "cs11": false,
+    "original_weighing_strip": false,
+    "all_28_sphere_measurements": false,
+    "calibration_certificate": false,
+    "machine_and_sphere_set_mapping": false,
+    "institutional_signature_identity_and_authority": false,
+    "rfc3161_token_and_chain_validation": false,
+    "independent_ledger_inclusion_and_consistency": false,
+    "independent_witness_custody": false,
+    "two_pre_close_sealed_outputs": false,
+    "status": "OFFICIAL_RESULT_AND_MODALITY_CONFIRMED_BUT_NO_DRAW_SPECIFIC_PHYSICAL_PROCESS_PROVENANCE"
+  },
+  "source_capture": {
+    "raw_html_bytes_captured": false,
+    "raw_pdf_bytes_captured": false,
+    "source_byte_sha256": null,
+    "note": "The official results page, Mascarillas index, product schedule and linked one-page PDF were opened. The PDF was visually inspected. Downloading original PDF bytes into the research runtime failed, so no source-byte SHA-256 is claimed."
+  },
+  "research_only": true,
+  "canonical_history_modified": false,
+  "v294_modified": false,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
