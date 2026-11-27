@@ -233,7 +233,7 @@ def _read_physical_trust_context(
     return context, context_digest
 
 
-def inspect_custody_ledger_witness_with_deployment_provider_v1(
+def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
     original_receipt_bytes: bytes,
     signed_policy_envelope_bytes: bytes,
     custody_record_bytes: bytes,
@@ -570,4 +570,60 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         trusted_time_latest_utc=latest,
         provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
         remaining_blockers=blockers,
+    )
+
+
+def inspect_custody_ledger_witness_with_deployment_provider_v1(
+    original_receipt_bytes: bytes,
+    signed_policy_envelope_bytes: bytes,
+    custody_record_bytes: bytes,
+    portfolio_bytes: bytes,
+    custody_signature_bytes: bytes,
+    custodian_key_id: str,
+    timestamp_token_der: bytes,
+    policy_timestamp_token_der: bytes,
+    raw_manifest_bytes: bytes,
+    artifact_bytes_by_sha256: dict[str, bytes],
+    signature_bytes_by_sha256: dict[str, bytes],
+    raw_ledger_entry_bytes: bytes,
+    raw_inclusion_proof_bytes: bytes,
+    raw_old_checkpoint_bytes: bytes,
+    raw_new_checkpoint_bytes: bytes,
+    raw_consistency_proof_bytes: bytes,
+    witness_observation_batches: tuple,
+    *,
+) -> DeploymentEvidenceInspectionV1:
+
+    """Public fail-closed facade; provider resolution is deployment-owned."""
+    from .deployment_trust_provider_bootstrap import _load_deployment_trust_provider
+
+    try:
+        provider = _load_deployment_trust_provider()
+    except Exception as exc:
+        raise TrustProviderUnavailable(
+            "deployment trust provider bootstrap could not be loaded"
+        ) from exc
+    if provider is None:
+        raise TrustProviderUnavailable(
+            "deployment trust provider is not out-of-band provisioned"
+        )
+    return _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
+        original_receipt_bytes=original_receipt_bytes,
+        signed_policy_envelope_bytes=signed_policy_envelope_bytes,
+        custody_record_bytes=custody_record_bytes,
+        portfolio_bytes=portfolio_bytes,
+        custody_signature_bytes=custody_signature_bytes,
+        custodian_key_id=custodian_key_id,
+        timestamp_token_der=timestamp_token_der,
+        policy_timestamp_token_der=policy_timestamp_token_der,
+        raw_manifest_bytes=raw_manifest_bytes,
+        artifact_bytes_by_sha256=artifact_bytes_by_sha256,
+        signature_bytes_by_sha256=signature_bytes_by_sha256,
+        raw_ledger_entry_bytes=raw_ledger_entry_bytes,
+        raw_inclusion_proof_bytes=raw_inclusion_proof_bytes,
+        raw_old_checkpoint_bytes=raw_old_checkpoint_bytes,
+        raw_new_checkpoint_bytes=raw_new_checkpoint_bytes,
+        raw_consistency_proof_bytes=raw_consistency_proof_bytes,
+        witness_observation_batches=witness_observation_batches,
+        provider=provider,
     )
