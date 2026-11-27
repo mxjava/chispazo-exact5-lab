@@ -1091,6 +1091,12 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
             self.inspect(provider_snapshot=self.snapshot)
 
+    def test_each_inspection_reads_exactly_one_snapshot_from_provider(self):
+        result = self.inspect()
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+        self.assertEqual(self.provider.read_count, 1)
+        self.assertEqual(self.provider.commit_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
