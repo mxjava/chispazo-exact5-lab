@@ -13,7 +13,6 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from origen.deployment_evidence_composition_v1 import (
-    CLASSIC_PHYSICAL_POLICY_DOMAIN,
     _read_physical_trust_context,
     _require_policy_and_receipt_inside_time_window,
     _require_used_policy_keys_cover_time_window,
@@ -280,7 +279,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             data["signed_policy_envelope_bytes"],
             pinned_root_public_key_bytes=data["pinned_root_public_key_bytes"],
             expected_root_key_id=ROOT_KEY_ID,
-            expected_policy_domain=CLASSIC_PHYSICAL_POLICY_DOMAIN,
+            expected_policy_domain=CLASSIC_POLICY_DOMAIN,
             minimum_policy_sequence=data["minimum_policy_sequence"],
             verification_time=NOW,
         )
