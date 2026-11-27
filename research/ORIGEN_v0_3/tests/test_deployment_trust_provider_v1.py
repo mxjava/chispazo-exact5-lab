@@ -16,11 +16,15 @@ from origen.deployment_trust_provider_v1 import (
     CLASSIC_POLICY_DOMAIN,
     DeploymentTrustCommit,
     DeploymentTrustSnapshot,
+    ExternalEvidenceAdvanceV1,
+    ExternalEvidenceWatermarkV1,
     TrustProviderUnavailable,
     TrustStateOutcome,
     TrustStateRejected,
+    _accepted_external_evidence_watermark_sha256,
     _clock_sample_sha256,
     _trust_configuration_sha256,
+    _validated_external_evidence_watermark,
     _verify_clock_sample_attestation,
     inspect_receipt_with_deployment_trust_provider,
 )
@@ -117,6 +121,8 @@ class SyntheticTrustProvider:
         policy_envelope_sha256,
         accepted_at_utc,
         clock_uncertainty_ms,
+        expected_external_evidence_watermark_sha256,
+        external_evidence_advance=None,
         timestamp_nonce_challenge_id=None,
         timestamp_nonce_challenge_sha256=None,
     ):
@@ -132,6 +138,8 @@ class SyntheticTrustProvider:
             "policy_envelope_sha256": policy_envelope_sha256,
             "accepted_at_utc": accepted_at_utc,
             "clock_uncertainty_ms": clock_uncertainty_ms,
+            "expected_external_evidence_watermark_sha256": expected_external_evidence_watermark_sha256,
+            "external_evidence_advance": external_evidence_advance,
             "timestamp_nonce_challenge_id": timestamp_nonce_challenge_id,
             "timestamp_nonce_challenge_sha256": timestamp_nonce_challenge_sha256,
         }
@@ -271,49 +279,56 @@ class SyntheticTrustProvider:
                 self.snapshot.trusted_time_latest_utc,
             )
 
-        if policy_sequence == self.snapshot.accepted_policy_sequence:
-            if candidate_latest > self.snapshot.trusted_time_latest_utc:
-                if timestamp_nonce_challenge_id is not None:
-                    self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
-                next_generation = self.snapshot.state_generation + 1
-                self.snapshot = replace(
-                    self.snapshot,
-                    state_generation=next_generation,
-                    trusted_time_latest_utc=candidate_latest,
-                )
-                return DeploymentTrustCommit(
-                    TrustStateOutcome.TIME_ADVANCED,
-                    next_generation,
-                    policy_sequence,
-                    policy_envelope_sha256,
-                    candidate_latest,
-                )
-            if timestamp_nonce_challenge_id is not None:
-                self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
+        next_watermark = _validated_external_evidence_watermark(
+            self.snapshot,
+            expected_external_evidence_watermark_sha256,
+            external_evidence_advance,
+        )
+        policy_advanced = policy_sequence > self.snapshot.accepted_policy_sequence
+        time_advanced = (
+            self.snapshot.trusted_time_latest_utc is None
+            or candidate_latest > self.snapshot.trusted_time_latest_utc
+        )
+        evidence_advanced = next_watermark != self.snapshot.accepted_external_evidence_watermark
+
+        if timestamp_nonce_challenge_id is not None:
+            self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
+
+        if not (policy_advanced or time_advanced or evidence_advanced):
             return DeploymentTrustCommit(
                 TrustStateOutcome.IDEMPOTENT,
                 self.snapshot.state_generation,
                 policy_sequence,
                 policy_envelope_sha256,
                 self.snapshot.trusted_time_latest_utc,
+                _accepted_external_evidence_watermark_sha256(next_watermark),
             )
 
-        if timestamp_nonce_challenge_id is not None:
-            self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
+        if policy_advanced:
+            outcome = TrustStateOutcome.ADVANCED
+        elif evidence_advanced and time_advanced:
+            outcome = TrustStateOutcome.TIME_AND_EVIDENCE_ADVANCED
+        elif evidence_advanced:
+            outcome = TrustStateOutcome.EVIDENCE_ADVANCED
+        else:
+            outcome = TrustStateOutcome.TIME_ADVANCED
+
         next_generation = self.snapshot.state_generation + 1
         self.snapshot = replace(
             self.snapshot,
             state_generation=next_generation,
-            accepted_policy_sequence=policy_sequence,
-            accepted_policy_envelope_sha256=policy_envelope_sha256,
-            trusted_time_latest_utc=accepted_at_utc + timedelta(milliseconds=clock_uncertainty_ms),
+            accepted_policy_sequence=policy_sequence if policy_advanced else self.snapshot.accepted_policy_sequence,
+            accepted_policy_envelope_sha256=policy_envelope_sha256 if policy_advanced else self.snapshot.accepted_policy_envelope_sha256,
+            trusted_time_latest_utc=candidate_latest if time_advanced else self.snapshot.trusted_time_latest_utc,
+            accepted_external_evidence_watermark=next_watermark,
         )
         return DeploymentTrustCommit(
-            TrustStateOutcome.ADVANCED,
+            outcome,
             next_generation,
             policy_sequence,
             policy_envelope_sha256,
             self.snapshot.trusted_time_latest_utc,
+            _accepted_external_evidence_watermark_sha256(next_watermark),
         )
 
 
