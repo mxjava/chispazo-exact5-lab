@@ -1,0 +1,69 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-26T18:09:57-06:00",
+  "scope": "status_only_no_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/home/index",
+    "https://www.loterianacional.gob.mx/Home/Resultados?cluster=1&view=cG5sUmVzdWxQcm9nb2w%3D",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas"
+  ],
+  "observations": {
+    "dedicated_results_page": {
+      "latest_contest": 12397,
+      "latest_date": "2026-11-26",
+      "latest_numbers": [5, 20, 23, 26, 28],
+      "result_page_labels_modality": false,
+      "next_draw_date_displayed": "2026-11-26",
+      "classic_12398_result_visible": false,
+      "source_interpretation": "The dedicated page still exposes 12397 as its latest result and does not show a 12398 result."
+    },
+    "official_home_index": {
+      "live_home_render": {
+        "contest_12397": {
+          "date": "2026-11-26",
+          "time_local": "15:00",
+          "status": "LISTED_AS_CURRENT_DAY_EVENT"
+        },
+        "classic_12398_card_visible": false
+      },
+      "secondary_results_index": {
+        "contest_12398": {
+          "displayed_value": "- - - - -",
+          "status": "NO_WINNING_NUMBERS_DISPLAYED"
+        }
+      },
+      "cross_page_consistency": "PARTIAL_INCONSISTENCY_OR_STALE_INDEX",
+      "interpretation": "Do not treat the 12398 dash on the secondary results index as a confirmed live draw result or as proof of the exact current draw state; the live home render does not show a 21:00 Chispazo card at this capture."
+    },
+    "modality_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00",
+      "source": "Official Chispazo product page"
+    },
+    "mask_index": {
+      "newest_visible_result_date": "2026-11-25",
+      "no_2026_11_26_mask_visible": true,
+      "original_pdf_bytes_captured": false,
+      "original_pdf_sha256": "NOT_CAPTURED"
+    }
+  },
+  "physical_evidence_obtained": false,
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "limitations": [
+    "The public 12397 result block does not label modality. Its 15:00 classification is schedule-based, not confirmed by the result block or a 26-Nov physical mask.",
+    "The live home page and secondary results index are not fully consistent: the former lists 12397 at 15:00 and no visible 12398 Chispazo card; the latter shows 12398 with blank numbers. Preserve this as a source discrepancy rather than resolving it by assumption.",
+    "The official mask index still lists 25-Nov-2026 as newest; no 26-Nov mask was visible at capture.",
+    "No original Acta, CS-11, signed participation file, weighing strip, sphere measurements, calibration certificate, equipment/sphere-set linkage, custody receipt, trusted timestamp, external ledger proof or two pre-close output seals was obtained.",
+    "Website results and mask publication metadata are discovery/publication sources, not substitutes for signed official acts or physical provenance."
+  ]
+}
