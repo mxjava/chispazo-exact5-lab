@@ -1,0 +1,68 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "classification": "OFFICIAL_PUBLICATION_STATUS_ONLY_NOT_PHYSICAL_PROVENANCE",
+  "observed_at_local": "2026-11-26T19:54:26-06:00",
+  "observed_at_utc": "2026-11-27T01:54:26Z",
+  "target_date": "2026-11-26",
+  "official_schedule": {
+    "chispazo_de_las_tres_local_time": "15:00",
+    "chispazo_clasico_local_time": "21:00",
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo"
+  },
+  "official_home_index_observation": {
+    "page_url": "https://comercializadores.loterianacional.gob.mx/home/",
+    "visible_chispazo_15_00_contest_id": "12397",
+    "visible_chispazo_15_00_date": "2026-11-26",
+    "visible_21_00_generic_card": "Sorteo | 3093",
+    "visible_21_00_generic_card_product_attribution": "NOT_IDENTIFIED_IN_REVIEWED_PAGE_TEXT",
+    "chispazo_classic_21_00_contest_id_confirmed": false,
+    "interpretation": "The 15:00 contest 12397 listing maps to De las Tres by the official Chispazo schedule. The separate generic 21:00 card is not attributed to Chispazo; no Classic contest ID is inferred."
+  },
+  "latest_published_chispazo_result": {
+    "page_url": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "contest_id": "12397",
+    "date": "2026-11-26",
+    "winning_numbers": [5, 20, 23, 26, 28],
+    "modality_assignment": "CHISPAZO_DE_LAS_TRES",
+    "modality_assignment_basis": [
+      "Official home index lists contest 12397 at 15:00 on 2026-11-26",
+      "Official Chispazo product page assigns 15:00 to De las Tres and 21:00 to Clásico"
+    ],
+    "result_page_explicitly_labels_modality": false,
+    "classic_21_00_result_visible_at_observation": false
+  },
+  "latest_official_mask_index": {
+    "page_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "latest_listed_mask_date": "2026-11-25",
+    "2026_11_26_mask_listed": false,
+    "latest_pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-25.pdf?v=26112026094725",
+    "latest_pdf_visual_confirmation": {
+      "contest_12395": "Chispazo De las Tres — 01 13 19 23 28",
+      "contest_12396": "Chispazo Clásico — 05 07 21 24 28"
+    }
+  },
+  "physical_provenance_status_for_2026_11_26": {
+    "acta_signed_original_or_verified_copy": false,
+    "cs11": false,
+    "original_weighing_strip": false,
+    "all_28_sphere_measurements": false,
+    "calibration_certificate": false,
+    "machine_and_sphere_set_mapping": false,
+    "institutional_signature_identity_and_authority": false,
+    "rfc3161_token_and_chain_validation": false,
+    "independent_ledger_inclusion_and_consistency": false,
+    "independent_witness_custody": false,
+    "two_pre_close_sealed_outputs": false,
+    "status": "NO_DRAW_SPECIFIC_PHYSICAL_EVIDENCE_OBTAINED"
+  },
+  "source_capture": {
+    "raw_html_bytes_captured": false,
+    "raw_pdf_bytes_captured": false,
+    "source_byte_sha256": null,
+    "note": "Page content was reviewed through official public endpoints and the 2026-11-25 PDF was visually inspected. Original source bytes were not captured in the research runtime; no source-byte SHA-256 is claimed."
+  },
+  "research_only": true,
+  "canonical_history_modified": false,
+  "v294_modified": false,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
