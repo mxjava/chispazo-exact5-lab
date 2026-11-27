@@ -519,6 +519,12 @@ def _validated_external_evidence_watermark(
     ):
         raise TrustStateRejected("external ledger or witness-registry identity changed without an authorized transition")
 
+    if (
+        candidate.old_tree_size != current.ledger_tree_size
+        or candidate.old_root_sha256 != current.ledger_root_sha256
+        or candidate.old_checkpoint_sha256 != current.ledger_checkpoint_sha256
+    ):
+        raise TrustStateRejected("new ledger checkpoint does not extend the exact persisted checkpoint")
     if candidate.new_tree_size < current.ledger_tree_size:
         raise TrustStateRejected("ledger checkpoint tree-size rollback detected")
     if candidate.new_tree_size == current.ledger_tree_size:
@@ -527,12 +533,9 @@ def _validated_external_evidence_watermark(
             or candidate.new_checkpoint_sha256 != current.ledger_checkpoint_sha256
         ):
             raise TrustStateRejected("same-size ledger checkpoint equivocation detected")
-    elif (
-        candidate.old_tree_size != current.ledger_tree_size
-        or candidate.old_root_sha256 != current.ledger_root_sha256
-        or candidate.old_checkpoint_sha256 != current.ledger_checkpoint_sha256
-    ):
-        raise TrustStateRejected("new ledger checkpoint does not extend the exact persisted checkpoint")
+        raise TrustStateRejected(
+            "external evidence advance must strictly increase the persisted ledger checkpoint tree size"
+        )
 
     if candidate.registry_sequence < current.registry_sequence:
         raise TrustStateRejected("witness registry sequence rollback detected")
