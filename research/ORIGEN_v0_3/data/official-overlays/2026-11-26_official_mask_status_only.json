@@ -1,0 +1,61 @@
+{
+  "schema_version": "origen.official-result-status-overlay.v1",
+  "recorded_on": "2026-11-27",
+  "status": "OFFICIAL_PUBLICATION_REVIEWED_ORIGINAL_BYTES_NOT_CAPTURED",
+  "source": {
+    "publisher": "Lotería Nacional",
+    "document_title": "resultados 2026-11-26",
+    "document_type": "official daily result mask PDF",
+    "url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226",
+    "page_count": 1,
+    "page_visually_reviewed": 0,
+    "original_bytes_captured": false,
+    "sha256": "NOT_CAPTURED",
+    "reason": "The PDF was readable through the official web publication and visually reviewed, but the available download path did not yield the original PDF bytes. No digest is asserted."
+  },
+  "modality_authority": {
+    "publisher": "Lotería Nacional",
+    "url": "https://loterianacional.gob.mx/Chispazo/Chispazo",
+    "schedule": {
+      "DE_LAS_TRES": "15:00 America/Mexico_City",
+      "CLASSIC": "21:00 America/Mexico_City"
+    },
+    "basis": "Official Chispazo product page explicitly maps De las Tres to 15:00 and Clásico to 21:00; the daily result mask itself prints the modality logos."
+  },
+  "draws": [
+    {
+      "contest_id": "12397",
+      "date": "2026-11-26",
+      "modality": "DE_LAS_TRES",
+      "winning_numbers": ["05", "20", "23", "26", "28"],
+      "modality_basis": "Explicit Chispazo De las Tres logo adjacent to draw 12397 on the official daily mask.",
+      "time_basis": "15:00 from the official Chispazo product page."
+    },
+    {
+      "contest_id": "12398",
+      "date": "2026-11-26",
+      "modality": "CLASSIC",
+      "winning_numbers": ["01", "03", "17", "26", "28"],
+      "first_prize_winners": 6,
+      "modality_basis": "Explicit Chispazo Clásico logo adjacent to draw 12398 on the official daily mask.",
+      "time_basis": "21:00 from the official Chispazo product page."
+    }
+  ],
+  "physical_evidence_status": {
+    "official_result_mask": "PUBLICATION_ONLY_NOT_PRIMARY_PHYSICAL_EVIDENCE",
+    "signed_draw_act": "NOT_ACQUIRED",
+    "sphere_weighing_strip": "NOT_ACQUIRED",
+    "CS11_winning_number_record": "NOT_ACQUIRED",
+    "CS02_equipment_inspection_record": "NOT_ACQUIRED",
+    "scale_calibration_certificate": "NOT_ACQUIRED",
+    "signed_participation_file_and_signature_record": "NOT_ACQUIRED",
+    "original_video_or_recording_bytes": "NOT_ACQUIRED",
+    "independent_external_custody": "NOT_ESTABLISHED"
+  },
+  "canonical_history": {
+    "path": "data/history/Chispazo_through_12249.csv",
+    "modified": false,
+    "append_authorized": false
+  },
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
