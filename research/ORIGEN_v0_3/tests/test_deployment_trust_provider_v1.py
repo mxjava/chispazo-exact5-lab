@@ -1143,5 +1143,20 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             )
 
 
+    def test_public_provider_facade_fails_closed_on_bootstrap_store_outage(self):
+        with patch(
+            "origen.deployment_trust_provider_bootstrap._load_deployment_trust_provider",
+            side_effect=OSError("synthetic bootstrap store outage"),
+        ):
+            with self.assertRaisesRegex(
+                TrustProviderUnavailable,
+                "bootstrap could not be loaded",
+            ):
+                inspect_receipt_with_deployment_trust_provider(
+                    self.receipt_bytes,
+                    self.policy_bytes,
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
