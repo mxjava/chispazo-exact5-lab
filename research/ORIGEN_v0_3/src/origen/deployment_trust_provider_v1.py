@@ -188,11 +188,10 @@ class DeploymentTrustProvider(Protocol):
     provider state; it must not trust the caller's digest as a replacement for
     that comparison. It must also re-verify the exact signed clock-sample bytes
     against its authoritative provisioned clock key and current source sample
-    inside the same transaction. Candidate earliest
-    time (accepted_at_utc - clock_uncertainty) must not precede the stored
-    trusted_time_latest_utc. Accepted time and uncertainty are derived only from
-    the provider's authenticated signed clock sample; no caller timestamp is a
-    source of trusted time. The expected clock-sample digest must be
+    inside the same transaction. Candidate earliest time is derived from the
+    provider's authenticated signed clock sample (sampled_at_utc minus its
+    uncertainty) and must not precede the stored trusted_time_latest_utc. No
+    caller timestamp or uncertainty is a source of trusted time. The expected clock-sample digest must be
     recomputed against the authoritative current source sample inside the
     transaction; reject a changed sample or an expired sample lease. For a
     higher sequence, persist the candidate sequence, digest, and latest time. For the same sequence and digest, persist
