@@ -6,8 +6,6 @@ anchor in this module is an institutional credential or deployment trust root.
 from __future__ import annotations
 
 import base64
-import copy
-import hashlib
 import json
 import unittest
 from datetime import datetime, timezone
@@ -21,7 +19,7 @@ from origen.independent_trust_adapter import (
 )
 from origen.trust_policy_envelope_v1 import (
     SCHEMA_VERSION as POLICY_SCHEMA,
-    VerifiedTrustPolicy,
+    verify_signed_trust_policy,
 )
 from origen.trust_policy_receipt_chain_v1 import (
     verify_policy_bound_receipt_attestation,
@@ -149,16 +147,15 @@ class TestTrustPolicyReceiptChainV1(unittest.TestCase):
             self.verify(receipt=mismatched)
 
     def test_preconstructed_verified_policy_is_not_an_accepted_input(self):
-        verified = self.verify()
+        verified = verify_signed_trust_policy(
+            self.policy,
+            pinned_root_public_key_bytes=self.root_public,
+            expected_root_key_id=ROOT_KEY_ID,
+            minimum_policy_sequence=7,
+            verification_time=NOW,
+        )
         with self.assertRaisesRegex(ValueError, "exact bytes"):
-            self.verify(policy=VerifiedTrustPolicy(
-                policy=self.verify().receipt.receipt,  # intentionally wrong type
-                policy_sequence=7,
-                root_key_id=ROOT_KEY_ID,
-                envelope_sha256=verified.policy_envelope_sha256,
-                issued_at_utc=NOW,
-                expires_at_utc=NOW,
-            ))
+            self.verify(policy=verified)
 
     def test_parsed_unverified_receipt_is_not_accepted_as_original_bytes(self):
         parsed = parse_unverified_receipt(self.receipt)
