@@ -1,0 +1,61 @@
+{
+  "schema_version": "origen.official-status-overlay.v1",
+  "captured_at_local": "2026-11-27T09:56:45-06:00",
+  "scope": "status_only_no_physical_evidence",
+  "sources": [
+    "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "https://www.loterianacional.gob.mx/home/index",
+    "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "https://lotenal.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"
+  ],
+  "observations": {
+    "dedicated_results_page": {
+      "latest_contest": 12398,
+      "latest_date": "2026-11-26",
+      "latest_numbers": ["01", "03", "17", "26", "28"],
+      "result_page_labels_modality": false,
+      "next_draw_date_displayed": "2026-11-27",
+      "source_interpretation": "At capture, the dedicated results page still reports contest 12398 dated 26-Nov-2026; no 27-Nov result is displayed."
+    },
+    "official_home_index": {
+      "contest_12399": {
+        "date": "2026-11-27",
+        "time_local": "15:00",
+        "status": "LISTED_AS_UPCOMING_CHISPAZO_EVENT"
+      },
+      "classic_21_00": {
+        "time_local": "21:00",
+        "status": "DAILY_SLOT_CONFIRMED_BY_OFFICIAL_PRODUCT_PAGE",
+        "contest_id": "NOT_CONFIRMED"
+      }
+    },
+    "modality_schedule": {
+      "de_las_tres_local": "15:00",
+      "classic_local": "21:00",
+      "source": "Official Chispazo product page"
+    },
+    "mask_index": {
+      "newest_visible_result_date": "2026-11-26",
+      "no_2026_11_27_mask_visible": true,
+      "original_pdf_bytes_captured": false,
+      "original_pdf_sha256": "NOT_CAPTURED"
+    }
+  },
+  "physical_evidence_obtained": false,
+  "eligibility": {
+    "snapshot_preclose": false,
+    "oos_eligible": false,
+    "score_computed": false,
+    "canonical_history_appended": false,
+    "v294_changed": false,
+    "main_modified": false,
+    "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+  },
+  "limitations": [
+    "The 27-Nov 15:00 event is listed as contest 12399; the 21:00 Classic slot is confirmed by the official product page, but its contest ID is not asserted from this capture.",
+    "The official mask index still lists 26-Nov-2026 as the newest result mask at capture; no 27-Nov mask or result was visible at 09:56:45 America/Mexico_City.",
+    "No original 27-Nov mask bytes, SHA-256, signed Acta, CS-11, weighing strip, CS-02, calibration certificate, signed participation file, original video, RFC 3161 token, external ledger proof, or independent custody record was acquired.",
+    "Public results, homepage event cards, and mask-index metadata are publication/status evidence only; they do not establish physical provenance."
+  ]
+}
