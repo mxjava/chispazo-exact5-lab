@@ -329,6 +329,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             declared_source_refs=frozenset({"DOC-12300"}),
             declared_continuity_targets=frozenset({"12301"}),
             declared_classic_sequence_refs=frozenset({"CLASSIC-SEQ-2026"}),
+            declared_mapping_refs=frozenset({"MAPPING-REGISTER-12300"}),
         )
         self.assertEqual(result["status"], "STRUCTURAL_REVIEW_ONLY")
         self.assertEqual(
@@ -409,6 +410,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             declared_source_refs={"DOC-12300"},
             declared_continuity_targets={"12301"},
             declared_classic_sequence_refs={"CLASSIC-SEQ-2026"},
+            declared_mapping_refs={"MAPPING-REGISTER-12300"},
         )
         self.assertEqual(result["status"], "STRUCTURAL_REVIEW_ONLY")
         self.assertEqual(
@@ -467,6 +469,7 @@ class PhysicalIntakeV2Tests(unittest.TestCase):
             declared_custody_refs={"RECEIPT-1"},
             declared_timestamp_refs={"TSA-1"},
             declared_source_refs={"DOC-12300"},
+            declared_mapping_refs={"MAPPING-REGISTER-12300"},
         )
         self.assertEqual(
             result["targets"]["12301"]["predictive_eligibility"],
