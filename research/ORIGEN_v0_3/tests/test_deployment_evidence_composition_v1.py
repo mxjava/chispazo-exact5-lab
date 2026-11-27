@@ -348,6 +348,48 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             result.remaining_blockers,
         )
 
+    def test_cas_envelope_uses_same_artifact_maps_verified_before_caller_mutation(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        artifact_map = dict(data["artifact_bytes_by_sha256"])
+        signature_map = dict(data["signature_bytes_by_sha256"])
+        expected_artifacts = tuple(sorted(artifact_map.items()))
+        expected_signatures = tuple(sorted(signature_map.items()))
+
+        from origen.custody_ledger_witness_integration_v1 import (
+            verify_custody_timestamp_ledger_witness_v1 as verify_original,
+        )
+
+        replacement_artifact = b"caller-mutated-after-verification"
+        replacement_signature = b"caller-mutated-signature-after-verification"
+
+        def verify_then_mutate_caller_maps(*args, **kwargs):
+            result = verify_original(*args, **kwargs)
+            artifact_map.clear()
+            artifact_map[hashlib.sha256(replacement_artifact).hexdigest()] = replacement_artifact
+            signature_map.clear()
+            signature_map[hashlib.sha256(replacement_signature).hexdigest()] = replacement_signature
+            return result
+
+        with patch(
+            "origen.deployment_evidence_composition_v1.verify_custody_timestamp_ledger_witness_v1",
+            side_effect=verify_then_mutate_caller_maps,
+        ):
+            _inspect(
+                data,
+                ledger,
+                batches,
+                provider,
+                artifact_bytes_by_sha256=artifact_map,
+                signature_bytes_by_sha256=signature_map,
+            )
+
+        advance = provider.last_commit_arguments["external_evidence_advance"]
+        self.assertNotEqual(tuple(sorted(artifact_map.items())), expected_artifacts)
+        self.assertNotEqual(tuple(sorted(signature_map.items())), expected_signatures)
+        self.assertEqual(advance.raw_artifact_bytes_by_sha256, expected_artifacts)
+        self.assertEqual(advance.raw_signature_bytes_by_sha256, expected_signatures)
+
     def test_cas_rejects_full_evidence_receipt_bytes_different_from_verifier_input(self):
         data, ledger, batches, _ = _build_case()
         source_provider = _provider_for(data, ledger)

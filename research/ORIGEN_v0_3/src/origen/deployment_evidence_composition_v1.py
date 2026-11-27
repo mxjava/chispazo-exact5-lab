@@ -233,6 +233,28 @@ def _read_physical_trust_context(
     return context, context_digest
 
 
+def _snapshot_exact_sha256_byte_map(value: object, field: str) -> dict[str, bytes]:
+    """Detach a caller-owned mutable digest map before any verification begins."""
+    if type(value) is not dict:
+        raise TypeError(f"{field} must be an exact dict")
+    try:
+        items = tuple(value.items())
+    except RuntimeError as exc:
+        raise ValueError(f"{field} changed while it was being snapshotted") from exc
+    if not 1 <= len(items) <= 256:
+        raise ValueError(f"{field} must contain 1..256 entries")
+    snapshot: dict[str, bytes] = {}
+    for digest, raw in items:
+        if type(digest) is not str or len(digest) != 64 or any(
+            character not in "0123456789abcdef" for character in digest
+        ):
+            raise ValueError(f"{field} keys must be lowercase SHA-256 digests")
+        if type(raw) is not bytes or not raw:
+            raise ValueError(f"{field} values must be non-empty exact bytes")
+        snapshot[digest] = raw
+    return snapshot
+
+
 def inspect_custody_ledger_witness_with_deployment_provider_v1(
     original_receipt_bytes: bytes,
     signed_policy_envelope_bytes: bytes,
@@ -289,6 +311,19 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         raise TypeError("custody_record_bytes must be exact bytes")
     if type(raw_manifest_bytes) is not bytes:
         raise TypeError("raw_manifest_bytes must be exact bytes")
+
+    # Caller-owned dictionaries are mutable. Snapshot them once before any
+    # verifier/provider callback and use these private copies for both evidence
+    # verification and the later CAS envelope, preventing post-verification
+    # mutation from changing the bytes transported to the provider.
+    artifact_bytes_snapshot = _snapshot_exact_sha256_byte_map(
+        artifact_bytes_by_sha256,
+        "artifact_bytes_by_sha256",
+    )
+    signature_bytes_snapshot = _snapshot_exact_sha256_byte_map(
+        signature_bytes_by_sha256,
+        "signature_bytes_by_sha256",
+    )
 
     read_snapshot = getattr(provider, "read_snapshot", None)
     compare_and_advance = getattr(provider, "compare_and_advance", None)
@@ -438,8 +473,8 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         physical_context.custody_tsa_root_sha256,
         nonce_challenge.custody_timestamp_nonce,
         raw_manifest_bytes,
-        artifact_bytes_by_sha256,
-        signature_bytes_by_sha256,
+        artifact_bytes_snapshot,
+        signature_bytes_snapshot,
         raw_ledger_entry_bytes,
         raw_inclusion_proof_bytes,
         raw_old_checkpoint_bytes,
@@ -519,8 +554,8 @@ def inspect_custody_ledger_witness_with_deployment_provider_v1(
         custodian_key_id=custodian_key_id,
         raw_timestamp_token_der=timestamp_token_der,
         raw_policy_timestamp_token_der=policy_timestamp_token_der,
-        raw_artifact_bytes_by_sha256=tuple(sorted(artifact_bytes_by_sha256.items())),
-        raw_signature_bytes_by_sha256=tuple(sorted(signature_bytes_by_sha256.items())),
+        raw_artifact_bytes_by_sha256=tuple(sorted(artifact_bytes_snapshot.items())),
+        raw_signature_bytes_by_sha256=tuple(sorted(signature_bytes_snapshot.items())),
     )
     _validated_external_evidence_watermark(
         snapshot,
