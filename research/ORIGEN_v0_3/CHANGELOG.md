@@ -1,3 +1,10 @@
+## Receipt-only inspection cannot advance external ledger/witness state (2026-11-27)
+- Added a regression-first API-boundary check after auditing the provider contract: the public receipt-only deployment facade exposed `external_evidence_advance`, although it does not verify the full custody, RFC 3161, transparency-ledger and independent-witness evidence chain before forwarding that state transition.
+- The red test reproduced the exposed keyword at exact branch HEAD `0eb562842c80fd2f18ce7b8fc05c49b231165ceb`; ORIGEN isolated CI ran 857 tests with exactly one failure at `test_public_receipt_only_facade_cannot_advance_external_ledger_watermark`.
+- Removed `external_evidence_advance` from the public receipt-only facade. The private snapshot-bound helper remains available to the full evidence composition after its exact evidence bytes have been verified. The complete evidence facade retains the single-snapshot and CAS flow.
+- Tightened the provider contract: the independent CAS implementation must re-verify exact manifest, ledger entry, inclusion proof, signed checkpoints, consistency proof, registry and witness statements against provider-owned pins, revocation state and quorum policy inside the serialized transition; it must not rely solely on caller/application verification.
+- This is an API-boundary and provider-contract correction, not proof that a real provider performs those checks. No institutional provider is installed; production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
 ## Deployment provider is no longer a request-level input (2026-11-27)
 - Regression-first CI reproduced that both the receipt-only deployment inspection and the complete physical-evidence composition exposed a public `provider` parameter. The caller could therefore choose the provider object at the API boundary, contrary to the out-of-band provisioning contract.
 - Added `deployment_trust_provider_bootstrap.py`; its repository implementation returns `None`. Public facades resolve a provider only through this deployment-owned loader and fail closed when it is absent or unavailable.
