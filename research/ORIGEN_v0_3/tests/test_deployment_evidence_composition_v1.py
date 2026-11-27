@@ -337,6 +337,25 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
         self.assertEqual(provider.commit_count, 0)
 
+    def test_persisted_watermark_backend_mismatch_is_rejected_before_provider_cas(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        provider.snapshot = replace(
+            provider.snapshot,
+            accepted_external_evidence_watermark=replace(
+                provider.snapshot.accepted_external_evidence_watermark,
+                state_backend_id="another-synthetic-cas-store",
+            ),
+        )
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "persisted external evidence watermark is not bound to the exact policy domain and state backend",
+        ):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.commit_count, 0)
+
     def test_log_key_rotation_without_watermark_transition_is_rejected(self):
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger)
