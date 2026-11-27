@@ -707,7 +707,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
 
     def test_cas_generation_race_fails_closed(self):
         self.provider.race_before_commit = True
-        with self.assertRaisesRegex(TrustStateRejected, "did not commit exactly one generation"):
+        with self.assertRaisesRegex(TrustStateRejected, "compare-and-advance rejected"):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 1)
 
@@ -867,7 +867,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             )
 
         self.provider.compare_and_advance = wrong_time
-        with self.assertRaisesRegex(TrustStateRejected, "candidate clock upper bound"):
+        with self.assertRaisesRegex(TrustStateRejected, "atomically commit the exact policy/time/evidence state transition"):
             self.inspect()
 
 
