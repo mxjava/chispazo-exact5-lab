@@ -52,7 +52,8 @@ def signed_receipt(issuer_private_key):
 
 
 def signed_policy_envelope(issuer_public_bytes, *, not_before="2026-11-23T03:00:00Z",
-                           expires="2026-12-01T00:00:00Z"):
+                           expires="2026-12-01T00:00:00Z",
+                           required_artifact_types=("sphere-measurement-register",)):
     root_private_key = Ed25519PrivateKey.generate()
     document = {
         "schema_version": SCHEMA_VERSION,
@@ -63,6 +64,7 @@ def signed_policy_envelope(issuer_public_bytes, *, not_before="2026-11-23T03:00:
         "issued_at_utc": "2026-11-22T00:00:00Z",
         "not_before_utc": not_before,
         "expires_at_utc": expires,
+        "required_artifact_types": list(required_artifact_types),
         "issuer_keys": [{
             "issuer_id": "independent-verifier",
             "key_id": "verifier-key-1",
@@ -85,9 +87,11 @@ def signed_policy_envelope(issuer_public_bytes, *, not_before="2026-11-23T03:00:
 
 
 def verified_policy(issuer_public_bytes, *, not_before="2026-11-23T03:00:00Z",
-                    expires="2026-12-01T00:00:00Z", verification_time=NOW):
+                    expires="2026-12-01T00:00:00Z", verification_time=NOW,
+                    required_artifact_types=("sphere-measurement-register",)):
     raw, root_public = signed_policy_envelope(
-        issuer_public_bytes, not_before=not_before, expires=expires
+        issuer_public_bytes, not_before=not_before, expires=expires,
+        required_artifact_types=required_artifact_types,
     )
     return verify_signed_trust_policy(
         raw,

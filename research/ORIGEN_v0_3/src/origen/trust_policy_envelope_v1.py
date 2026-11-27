@@ -47,6 +47,7 @@ class VerifiedTrustPolicy:
     issued_at_utc: datetime
     not_before_utc: datetime
     expires_at_utc: datetime
+    required_artifact_types: tuple[str, ...]
 
     def __init__(self, *args, **kwargs) -> None:
         raise TypeError(
@@ -63,6 +64,7 @@ def _build_verified_trust_policy(
     issued_at_utc: datetime,
     not_before_utc: datetime,
     expires_at_utc: datetime,
+    required_artifact_types: tuple[str, ...],
 ) -> VerifiedTrustPolicy:
     """Construct the result only after envelope signature and claims validate."""
     result = object.__new__(VerifiedTrustPolicy)
@@ -73,6 +75,7 @@ def _build_verified_trust_policy(
     object.__setattr__(result, "issued_at_utc", issued_at_utc)
     object.__setattr__(result, "not_before_utc", not_before_utc)
     object.__setattr__(result, "expires_at_utc", expires_at_utc)
+    object.__setattr__(result, "required_artifact_types", required_artifact_types)
     return result
 
 
@@ -200,7 +203,7 @@ def verify_signed_trust_policy(
     fields = {
         "schema_version", "policy_version", "policy_sequence", "issuer_id",
         "root_key_id", "issued_at_utc", "not_before_utc", "expires_at_utc",
-        "issuer_keys", "signature",
+        "issuer_keys", "required_artifact_types", "signature",
     }
     if set(document) != fields:
         raise ValueError("policy envelope fields mismatch")
@@ -215,6 +218,16 @@ def verify_signed_trust_policy(
         raise ValueError("policy_sequence must be a positive signed 64-bit integer")
     if sequence < minimum_policy_sequence:
         raise ValueError("policy sequence is below the externally pinned minimum")
+
+    required_values = document["required_artifact_types"]
+    if type(required_values) is not list or not 1 <= len(required_values) <= 128:
+        raise ValueError("required_artifact_types must contain 1..128 entries")
+    required_artifact_types = tuple(
+        _identifier(value, f"required_artifact_types[{index}]")
+        for index, value in enumerate(required_values)
+    )
+    if len(set(required_artifact_types)) != len(required_artifact_types):
+        raise ValueError("required_artifact_types must be unique")
 
     issued = _timestamp(document["issued_at_utc"], "issued_at_utc")
     not_before = _timestamp(document["not_before_utc"], "not_before_utc")
@@ -286,4 +299,5 @@ def verify_signed_trust_policy(
         issued_at_utc=issued,
         not_before_utc=not_before,
         expires_at_utc=expires,
+        required_artifact_types=required_artifact_types,
     )
