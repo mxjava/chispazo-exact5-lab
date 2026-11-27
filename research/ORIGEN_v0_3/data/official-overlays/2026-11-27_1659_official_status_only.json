@@ -1,22 +1,22 @@
 {
   "schema": "origen.official-status-only.v1",
-  "captured_at_local": "2026-11-27T16:59:05-06:00",
+  "captured_at_local": "2026-11-27T17:53:49-06:00",
   "status_only": true,
   "observations": [
     {
       "source": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
-      "observation": "The dedicated Chispazo results page displays contest 12399, dated 27/11/2026, with winning combination 10 14 15 17 24.",
+      "observation": "The dedicated Chispazo results page displays contest 12399, dated 27/11/2026, with winning combination 10 14 15 17 24. The page does not print the modality beside the result.",
       "modality_label_present": false,
       "classification": "RESULT_PUBLISHED_MODALITY_NOT_PRINTED_ON_DEDICATED_PAGE"
     },
     {
       "source": "https://www.loterianacional.gob.mx/",
-      "observation": "The official home index lists Chispazo contest 12399 at 15:00 and contest 12400 at 21:00 on 27-Nov-2026. A separate card for contest 4297 is not attributed to Chispazo.",
-      "classification": "SCHEDULE_INDEX"
+      "observation": "The official home index lists Chispazo contest 12399 at 15:00. A separate home-page card shows contest 4297 at 21:00, but the available page does not establish that card as Chispazo. No 27-Nov Classic contest ID is attributed from this card.",
+      "classification": "12399_15_00_LISTED; SEPARATE_4297_CARD_NOT_ATTRIBUTED_TO_CHISPAZO"
     },
     {
       "source": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
-      "observation": "The official Chispazo product page maps De las Tres to 15:00 and Clásico to 21:00.",
+      "observation": "The official Chispazo product page maps De las Tres to 15:00 and Clásico to 21:00. This confirms the daily modality schedule, but does not establish the 27-Nov Classic contest ID.",
       "classification": "OFFICIAL_PRODUCT_MODALITY_SCHEDULE"
     },
     {
@@ -33,7 +33,11 @@
   "draw_classification": {
     "4297": "SEPARATE_HOME_CARD_NOT_ATTRIBUTED_TO_CHISPAZO",
     "12399": "DE_LAS_TRES_15_00_SCHEDULE_INFERRED_NOT_MASK_CONFIRMED",
-    "12400": "CLASSIC_21_00_SCHEDULE_INDEXED_NO_RESULT_OR_MASK"
+    "CLASSIC_2026_11_27": "21_00_PRODUCT_SCHEDULE_CONFIRMED_CONTEST_ID_NOT_ESTABLISHED"
+  },
+  "correction": {
+    "previous_12400_attribution": "WITHDRAWN",
+    "reason": "The official home-index evidence available in this capture does not show Chispazo contest 12400. The 21:00 card is numbered 4297 and cannot be attributed to Chispazo from the available source. Do not infer a Classic contest ID."
   },
   "source_bytes": {
     "official_html_original_bytes": "NOT_CAPTURED",
