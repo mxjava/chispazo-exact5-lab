@@ -101,7 +101,7 @@ class PortfolioBenchmarkTests(unittest.TestCase):
         header[-1] = "SOURCE_SHA256"
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "draws.csv"
-            path.write_text(",".join(header) + "\\n" + ",".join(row[k] for k in row) + "\\n",
+            path.write_text(",".join(header) + "\n" + ",".join(row[k] for k in row) + "\n",
                             encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "draw_csv_duplicate_columns"):
                 load_draws(path, {})
@@ -121,7 +121,7 @@ class PortfolioBenchmarkTests(unittest.TestCase):
         row = draw_row()
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "draws.csv"
-            path.write_text(",".join(row) + "\\n" + ",".join(list(row.values())[:-1]) + "\\n",
+            path.write_text(",".join(row) + "\n" + ",".join(list(row.values())[:-1]) + "\n",
                             encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "draw_csv_malformed_row_width_or_empty_value"):
                 load_draws(path, {})
@@ -130,7 +130,7 @@ class PortfolioBenchmarkTests(unittest.TestCase):
         row = draw_row()
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "draws.csv"
-            path.write_text(",".join(row) + "\\n" + ",".join(row.values()) + ",surplus\\n",
+            path.write_text(",".join(row) + "\n" + ",".join(row.values()) + ",surplus\n",
                             encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "draw_csv_malformed_row_width_or_empty_value"):
                 load_draws(path, {})
