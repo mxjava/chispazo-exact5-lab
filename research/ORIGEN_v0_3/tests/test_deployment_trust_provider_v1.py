@@ -1254,6 +1254,23 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.assertGreater(self.provider.snapshot.state_generation, generation_before)
         self.assertEqual(self.provider.commit_count, 1)
 
+    def test_provider_raised_rejection_after_commit_is_unknown_outcome(self):
+        original = self.provider.compare_and_advance
+        generation_before = self.provider.snapshot.state_generation
+
+        def raise_rejection_after_commit(**kwargs):
+            original(**kwargs)
+            raise TrustStateRejected("synthetic adapter rejection after durable commit")
+
+        self.provider.compare_and_advance = raise_rejection_after_commit
+        with self.assertRaisesRegex(TrustProviderUnavailable, "transaction outcome is unknown"):
+            self.inspect()
+
+        # A provider exception is not an authenticated transaction result.
+        # The synthetic backend already advanced before raising this local type.
+        self.assertGreater(self.provider.snapshot.state_generation, generation_before)
+        self.assertEqual(self.provider.commit_count, 1)
+
     def test_provider_commit_must_bind_exact_policy_digest(self):
         original = self.provider.compare_and_advance
 
