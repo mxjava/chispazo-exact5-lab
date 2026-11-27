@@ -320,15 +320,6 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
     if type(raw_manifest_bytes) is not bytes:
         raise TypeError("raw_manifest_bytes must be exact bytes")
 
-    # Snapshot caller-owned maps once, before any provider or verifier calls.
-    # The exact same immutable byte values flow through verification and CAS.
-    artifact_bytes_snapshot = _snapshot_exact_digest_bytes_mapping(
-        artifact_bytes_by_sha256, "artifact_bytes_by_sha256"
-    )
-    signature_bytes_snapshot = _snapshot_exact_digest_bytes_mapping(
-        signature_bytes_by_sha256, "signature_bytes_by_sha256"
-    )
-
     read_snapshot = getattr(provider, "read_snapshot", None)
     compare_and_advance = getattr(provider, "compare_and_advance", None)
     if not callable(read_snapshot) or not callable(compare_and_advance):
@@ -339,6 +330,18 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
         raise TrustProviderUnavailable("deployment trust snapshot could not be read") from exc
 
     snapshot = _snapshot_copy(supplied_snapshot)
+
+    # Snapshot caller-owned maps once after the provider snapshot and before
+    # evidence verification. The exact same immutable byte values flow through
+    # verification and CAS serialization; later caller mutations cannot split
+    # the two views of the evidence.
+    artifact_bytes_snapshot = _snapshot_exact_digest_bytes_mapping(
+        artifact_bytes_by_sha256, "artifact_bytes_by_sha256"
+    )
+    signature_bytes_snapshot = _snapshot_exact_digest_bytes_mapping(
+        signature_bytes_by_sha256, "signature_bytes_by_sha256"
+    )
+
     physical_context, physical_context_digest = _read_physical_trust_context(
         provider,
         snapshot,
