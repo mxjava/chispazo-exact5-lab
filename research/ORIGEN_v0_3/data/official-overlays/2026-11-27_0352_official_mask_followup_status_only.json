@@ -1,0 +1,95 @@
+{
+  "schema_version": "origen.official-mask-followup.v1",
+  "classification": "OFFICIAL_RESULT_MASK_MODALITY_CONFIRMATION_ONLY_NOT_PHYSICAL_PROCESS_PROVENANCE",
+  "observed_at_local": "2026-11-27T03:52:00-06:00",
+  "observed_at_utc": "2026-11-27T09:52:00Z",
+  "timezone": "America/Mexico_City",
+  "sources": {
+    "official_mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "official_mask_pdf_2026_11_26": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226",
+    "official_chispazo_results": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "official_chispazo_product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "official_home_index": "https://www.loterianacional.gob.mx/"
+  },
+  "previous_day_mask_confirmation": {
+    "draw_date": "2026-11-26",
+    "pdf_page_count": 1,
+    "visual_inspection": "PAGE_0_VISUALLY_INSPECTED",
+    "contests": [
+      {
+        "contest_id": "12397",
+        "modality": "DE_LAS_TRES",
+        "scheduled_slot_local": "15:00",
+        "winning_numbers": ["05", "20", "23", "26", "28"],
+        "confirmation": "OFFICIAL_MASK_LOGO_AND_CONTEST_NUMBER_VISUALLY_CONFIRMED"
+      },
+      {
+        "contest_id": "12398",
+        "modality": "CLASSIC",
+        "scheduled_slot_local": "21:00",
+        "winning_numbers": ["01", "03", "17", "26", "28"],
+        "confirmation": "OFFICIAL_MASK_LOGO_AND_CONTEST_NUMBER_VISUALLY_CONFIRMED"
+      }
+    ],
+    "evidence_scope": "PUBLIC_RESULT_MASK_MODALITY_AND_RESULT_ONLY_NOT_SIGNED_ACTA_OR_PHYSICAL_PROCESS_EVIDENCE"
+  },
+  "target_date_2026_11_27": {
+    "official_home_index": {
+      "chispazo_de_las_tres_contest_id": "12399",
+      "scheduled_slot_local": "15:00",
+      "classification": "SCHEDULE_INFERRED_DE_LAS_TRES_NOT_MASK_CONFIRMED"
+    },
+    "official_product_schedule": {
+      "de_las_tres_local_time": "15:00",
+      "classic_local_time": "21:00"
+    },
+    "official_results_page": {
+      "latest_published_contest_id": "12398",
+      "latest_published_date": "2026-11-26",
+      "latest_published_numbers": ["01", "03", "17", "26", "28"],
+      "next_draw_date_displayed": "2026-11-27",
+      "target_date_result_visible": false,
+      "target_date_classic_contest_id_visible": false
+    },
+    "official_mask_index": {
+      "latest_entry_visible": "2026-11-26",
+      "target_date_2026_11_27_entry_visible": false
+    },
+    "homepage_21_00_card": {
+      "displayed_number": "4297",
+      "classification": "NOT_ATTRIBUTED_TO_CHISPAZO",
+      "note": "Do not infer a 27-Nov Chispazo Classic contest ID from this separate 21:00 homepage card."
+    }
+  },
+  "physical_provenance": {
+    "signed_article_15_acta": false,
+    "CS11_original_or_verified_copy": false,
+    "signed_weighing_strip": false,
+    "all_28_sphere_measurements": false,
+    "scale_calibration_certificate": false,
+    "machine_and_sphere_set_mapping": false,
+    "institutional_signer_identity_and_authority": false,
+    "original_participation_and_cancellation_files": false,
+    "RFC3161_token_and_chain_validation": false,
+    "independent_ledger_inclusion_and_consistency": false,
+    "independent_witness_custody": false,
+    "two_pre_close_sealed_outputs": false,
+    "status": "BLOCKED_PROVENANCE"
+  },
+  "source_capture": {
+    "mask_index_page_opened": true,
+    "pdf_opened_and_page_zero_visually_inspected": true,
+    "original_pdf_bytes_captured": false,
+    "sha256": null,
+    "container_download_attempt": "FAILED",
+    "note": "The PDF was visually inspected through the official browser-rendered document. Original PDF bytes were not captured, so no source-byte SHA-256 is claimed."
+  },
+  "canonical_history": {
+    "path": "data/history/Chispazo_through_12249.csv",
+    "expected_git_blob_sha1": "2f5ff5bfbd779fe505736398e417b7211955958e",
+    "modified": false
+  },
+  "v294_modified": false,
+  "research_edge_supported": false,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
