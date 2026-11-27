@@ -361,6 +361,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             custody_timestamp_gen_time=timestamp_gen_time,
             custody_timestamp_accuracy={"millis": 900},
             official_draw_close_at_utc="2026-11-23T03:00:00Z",
+            receipt_signed_at_utc="2026-11-23T02:55:00Z",
         )
         provider = _provider_for(
             data,
@@ -372,7 +373,9 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         # genTime + 900 ms accuracy = 02:59:59.500Z. This is before the
         # synthetic Classic close at 03:00Z and before the provider midpoint
         # at 02:59:59.550Z, but 50 ms after the earliest possible provider
-        # time (02:59:59.450Z).
+        # time (02:59:59.450Z). The synthetic receipt was signed at 02:55Z,
+        # and the provider-issued nonce challenge at 02:59:58.550Z, both before
+        # the TSA genTime and the 03:00Z Classic close.
         with self.assertRaisesRegex(
             ValueError,
             "accuracy upper bound is after caller-supplied verification time",
