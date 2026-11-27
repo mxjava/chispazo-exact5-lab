@@ -174,7 +174,13 @@ def exact_uniform_portfolio_null(lines: int = 30) -> dict:
     for threshold in range(1, 6):
         favorable = sum(math.comb(5, j) * math.comb(23, 5-j)
                         for j in range(threshold, 6))
-        no_favorable = math.comb(universe - favorable, lines) / math.comb(universe, lines)
+        non_favorable = universe - favorable
+        # If the portfolio is larger than the entire non-favorable subset,
+        # every possible portfolio necessarily contains a favorable line.
+        no_favorable = (
+            0.0 if lines > non_favorable
+            else math.comb(non_favorable, lines) / math.comb(universe, lines)
+        )
         tail[str(threshold)] = 1.0 - no_favorable
     return {
         "universe": universe,
