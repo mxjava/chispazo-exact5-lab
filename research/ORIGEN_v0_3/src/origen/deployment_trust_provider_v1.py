@@ -493,6 +493,13 @@ def _validated_external_evidence_watermark(
     """
     _require_sha256(expected_sha256, "expected_external_evidence_watermark_sha256")
     current = _external_evidence_watermark_copy(snapshot.accepted_external_evidence_watermark)
+    if current is not None and (
+        current.policy_domain != snapshot.policy_domain
+        or current.state_backend_id != snapshot.state_backend_id
+    ):
+        raise TrustStateRejected(
+            "persisted external evidence watermark is not bound to the exact policy domain and state backend"
+        )
     if expected_sha256 != _accepted_external_evidence_watermark_sha256(current):
         raise TrustStateRejected("external evidence watermark changed since the provider snapshot")
     if advance is None:
