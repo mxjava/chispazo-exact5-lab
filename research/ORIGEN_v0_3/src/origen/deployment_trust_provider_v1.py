@@ -86,7 +86,7 @@ class ExternalEvidenceWatermarkV1:
 
 @dataclass(frozen=True, slots=True)
 class ExternalEvidenceAdvanceV1:
-    """One proposed old-to-new ledger checkpoint plus exact signed registry bytes."""
+    """One proposed old-to-new checkpoint plus the exact signed registry digest."""
 
     policy_domain: str
     state_backend_id: str
@@ -1045,6 +1045,15 @@ def inspect_receipt_with_deployment_trust_provider(
         raise TrustProviderUnavailable("deployment trust sequence transaction failed") from exc
     commit = _commit_copy(supplied_commit)
 
+    if commit.outcome in {
+        TrustStateOutcome.CONFLICT,
+        TrustStateOutcome.ROLLBACK,
+        TrustStateOutcome.TIME_ROLLBACK,
+        TrustStateOutcome.EQUIVOCATION,
+    }:
+        raise TrustStateRejected(
+            "provider compare-and-advance rejected a stale, regressed, or equivocal state"
+        )
     if (
         commit.policy_sequence != verified_policy.policy_sequence
         or commit.policy_envelope_sha256 != policy_digest
