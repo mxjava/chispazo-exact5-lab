@@ -908,7 +908,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.provider.commit_time_utc = NOW + timedelta(seconds=61)
         with self.assertRaisesRegex(
             TrustStateRejected,
-            "did not commit exactly one generation",
+            "rejected a stale, regressed, or equivocal state",
         ):
             self.inspect()
         self.assertEqual(self.provider.commit_count, 1)
@@ -938,7 +938,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
                 self.provider.read_snapshot = read_then_mutate
                 with self.assertRaisesRegex(
                     TrustStateRejected,
-                    "did not commit exactly one generation",
+                    "rejected a stale, regressed, or equivocal state",
                 ):
                     self.inspect()
                 self.assertEqual(
@@ -971,7 +971,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
                 self.provider.read_snapshot = read_then_mutate
                 with self.assertRaisesRegex(
                     TrustStateRejected,
-                    "compare-and-advance did not commit exactly one generation",
+                    "compare-and-advance rejected a stale, regressed, or equivocal state",
                 ):
                     self.inspect()
                 self.assertEqual(
