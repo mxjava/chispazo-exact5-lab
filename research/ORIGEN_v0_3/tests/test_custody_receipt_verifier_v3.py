@@ -134,6 +134,7 @@ def bundle(
     *, custody_role=CUSTODY_SIGNER_ROLE, root_reused=False,
     custodian_key_id=CUSTODIAN_KEY_ID,
     official_draw_close_at_utc="2026-11-23T03:00:00Z",
+    receipt_signed_at_utc="2026-11-23T03:05:00Z",
     policy_issued_at_utc="2026-11-22T00:00:00Z",
     policy_not_before_utc="2026-11-22T00:00:00Z",
     policy_expires_at_utc="2026-12-01T00:00:00Z",
@@ -171,6 +172,8 @@ def bundle(
     record_bytes = canonical_json_bytes(record) + b"\n"
 
     receipt_document = valid_document(close_at=official_draw_close_at_utc)
+    receipt_document["receipt_attestation"]["signed_at_utc"] = receipt_signed_at_utc
+    receipt_document["trusted_time_proofs"][0]["event_at_utc"] = receipt_signed_at_utc
     receipt_document["custodians"][0]["subject_id"] = CUSTODIAN_ID
     receipt_document["custodians"][0]["role"] = CUSTODY_SIGNER_ROLE
     receipt_document["custodians"][0]["receipt_sha256"] = sha256_bytes(record_bytes)
