@@ -183,12 +183,18 @@ class DeploymentTrustProvider(Protocol):
     higher sequence, persist the candidate sequence, digest, and latest time. For the same sequence and digest, persist
     a later disjoint time watermark with one generation increment and return
     TIME_ADVANCED; if the watermark is unchanged, return IDEMPOTENT without a
-    generation increment. It must also compare the exact persisted ledger /
-    witness watermark digest and atomically enforce checkpoint continuity,
-    registry sequence/digest monotonicity, and identity continuity with the
-    current physical trust context. It must never silently reset or restore
-    any value. A missing external-evidence genesis watermark is a hard failure;
-    it must not be initialized from caller-supplied evidence.
+    generation increment. It must also compare the exact persisted ledger / witness watermark digest and
+    atomically enforce checkpoint continuity, registry sequence/digest monotonicity,
+    and identity continuity with the current physical trust context. Before advancing,
+    it must independently re-verify the exact raw manifest, ledger entry, inclusion
+    proof, old/new signed checkpoints, consistency proof, signed witness registry and
+    every witness statement against provider-owned log/registry pins, revocation state
+    and quorum policy. It must not trust caller-computed digests or the application's
+    prior verification as a substitute. This verification and the compare-and-advance
+    must be serialized so no trust configuration or accepted checkpoint can change
+    between them. It must never silently reset or restore any value. A missing
+    external-evidence genesis watermark is a hard failure; it must not be initialized
+    from caller-supplied evidence.
     """
 
     def read_snapshot(self, *, policy_domain: str) -> DeploymentTrustSnapshot:
@@ -1205,7 +1211,6 @@ def inspect_receipt_with_deployment_trust_provider(
     *,
     timestamp_nonce_challenge_id: str | None = None,
     timestamp_nonce_challenge_sha256: str | None = None,
-    external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
 ) -> DeploymentTrustInspection:
 
     """Public fail-closed facade; provider configuration is deployment-owned."""
@@ -1227,5 +1232,4 @@ def inspect_receipt_with_deployment_trust_provider(
         provider=provider,
         timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
         timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
-        external_evidence_advance=external_evidence_advance,
     )
