@@ -58,6 +58,16 @@ The verifier should consume this context only through a trusted internal control
 
 Until that provider exists, keep the current caller-parameter APIs explicitly research-only and keep `verify_independent_provenance` returning only `BLOCKED_PROVENANCE`.
 
+## 5.1 Implemented fail-closed API separation (research only)
+
+The V3 diagnostic API has been separated from the public provenance entry point:
+
+- Public `verify_independent_provenance(original_receipt_bytes)` accepts only exact receipt bytes. It rejects caller-supplied policy bytes, root pins, key IDs, sequence floors, clocks, verifier callbacks, and provider objects as unexpected keyword arguments, and it always returns `BLOCKED_PROVENANCE`.
+- The deployment-provider composition path invokes a private re-verification helper only after obtaining and validating one `DeploymentTrustSnapshot`. The helper receives the exact signed policy-envelope bytes and receipt bytes plus the snapshot-derived root pin, key ID, sequence floor and normalized UTC instant; it re-verifies both cryptographic layers and still returns only `BLOCKED_PROVENANCE`.
+- The private helper is an API-discipline boundary, not an unforgeable Python capability. The provider object and its implementation remain untrusted until a real independently administered provider is provisioned and reviewed.
+
+This change prevents accidental use of request-level trust inputs at the public provenance API. It does **not** authenticate the provider, root provisioning, trusted time, anti-rollback storage, institutional identity, physical records or custody. No production trust anchor is added.
+
 ## 6. Required adversarial deployment tests
 
 Before any deployment can leave the blocked state, tests must cover:

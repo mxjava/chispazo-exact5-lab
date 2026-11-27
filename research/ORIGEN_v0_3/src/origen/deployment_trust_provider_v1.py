@@ -25,7 +25,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from .independent_trust_adapter import (
     ProvenanceStatus,
-    verify_independent_provenance,
+    _verify_independent_provenance_with_deployment_context,
 )
 from .physical_trust_context_v1 import PhysicalTrustContextV1
 from .timestamp_nonce_challenge_v1 import TimestampNonceChallengeV1
@@ -1085,7 +1085,7 @@ def inspect_receipt_with_deployment_trust_provider(
         latest=latest,
     )
 
-    provenance = verify_independent_provenance(
+    provenance = _verify_independent_provenance_with_deployment_context(
         original_receipt_bytes,
         signed_policy_envelope_bytes=signed_policy_envelope_bytes,
         pinned_root_public_key_bytes=snapshot.root_public_key_bytes,

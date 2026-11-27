@@ -1,3 +1,11 @@
+## Fail-closed provenance API separates public input from provider-owned trust context (2026-11-27)
+
+- Reproduced an API-boundary ambiguity: the public `verify_independent_provenance` accepted caller-supplied V3 root pin, key ID, policy floor and clock for diagnostic re-verification. It always returned `BLOCKED_PROVENANCE`, so this was not an authentication bypass, but the public signature contradicted the deployment-provisioning contract and made caller-controlled trust inputs easy to mistake for provisioned state.
+- Moved exact-byte policy/receipt re-verification into a private deployment-context helper. The provider composition path supplies only values derived from one validated `DeploymentTrustSnapshot`; the public entry point now accepts receipt bytes only and rejects all trust-context keyword injection.
+- Added adversarial tests for injection of policy bytes, root key, key ID, sequence floor, clock, verifier results, callbacks and provider objects. Existing provider-composition tests exercise the internal helper through the snapshot path.
+- This is an API-boundary correction, not proof of independent provisioning. The provider remains a caller-injected composition-root dependency; no institutional root, external monotonic anchor or trusted clock is provisioned. All outcomes remain `BLOCKED_PROVENANCE`.
+- Branch starts from PR #109 HEAD `c0819b31a4b2d13db0b7da7736e6d575c53cf2eb`; PR remains draft and isolated.
+
 ## Acta role separation and official 13:10 status refresh (2026-11-24)
 - Physical manifest regression: all four required DRAW-ACTA roles could reuse one subject_id; parser now requires distinct declared subjects for the General Directorate, Sales Operations, IT and SEGOB roles.
 - Test commit: `3e1384b76db02319c44f9de88baf28ed04197726`; implementation commit: `d8c7b0e8e5ed433f25549aecddb374424d64d41a`.
