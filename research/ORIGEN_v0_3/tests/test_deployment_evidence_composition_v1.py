@@ -13,7 +13,9 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from origen.deployment_evidence_composition_v1 import (
+    CLASSIC_PHYSICAL_POLICY_DOMAIN,
     _read_physical_trust_context,
+    _require_policy_and_receipt_inside_time_window,
     _require_used_policy_keys_cover_time_window,
     inspect_custody_ledger_witness_with_deployment_provider_v1,
 )
@@ -29,8 +31,13 @@ from origen.physical_trust_context_v1 import (
     physical_trust_context_sha256,
 )
 from origen.trust_policy_envelope_v3 import verify_signed_trust_policy_v3
+from origen.trust_verifier_v1 import verify_receipt_attestation
 from test_custody_ledger_witness_integration_v1 import _build_case
-from test_custody_receipt_verifier_v3 import POLICY_SEQUENCE, ROOT_KEY_ID
+from test_custody_receipt_verifier_v3 import (
+    POLICY_SEQUENCE,
+    ROOT_KEY_ID,
+    bundle as custody_bundle,
+)
 from test_deployment_trust_provider_v1 import SyntheticTrustProvider, signed_clock_sample
 from test_transparency_checkpoint_consistency_v1 import NOW
 from test_transparency_ledger_verifier_v1 import (
@@ -263,6 +270,36 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             "RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED",
             result.remaining_blockers,
         )
+
+    def test_receipt_signed_before_policy_effective_time_is_rejected_early(self):
+        # The policy is valid at verification time (24-Nov), but its signed
+        # not_before is one minute after the receipt's signed_at (23-Nov 03:05).
+        # A later policy must not retroactively authorize the earlier receipt.
+        data = custody_bundle(policy_not_before_utc="2026-11-23T03:06:00Z")
+        policy = verify_signed_trust_policy_v3(
+            data["signed_policy_envelope_bytes"],
+            pinned_root_public_key_bytes=data["pinned_root_public_key_bytes"],
+            expected_root_key_id=ROOT_KEY_ID,
+            expected_policy_domain=CLASSIC_PHYSICAL_POLICY_DOMAIN,
+            minimum_policy_sequence=data["minimum_policy_sequence"],
+            verification_time=NOW,
+        )
+        receipt = verify_receipt_attestation(
+            data["original_receipt_bytes"],
+            policy.policy,
+            verification_time=NOW,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "receipt signing time is outside the signed policy effective interval",
+        ):
+            _require_policy_and_receipt_inside_time_window(
+                policy,
+                receipt,
+                earliest=NOW,
+                latest=NOW,
+            )
 
     def test_nested_signature_failure_does_not_advance_provider_state(self):
         data, ledger, batches, _ = _build_case()
