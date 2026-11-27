@@ -1055,8 +1055,10 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             )
 
         self.provider.compare_and_advance = wrong_time
-        with self.assertRaisesRegex(TrustStateRejected, "atomically commit the exact policy/time/evidence state transition"):
+        generation_before = self.provider.snapshot.state_generation
+        with self.assertRaisesRegex(TrustProviderUnavailable, "commit acknowledgement"):
             self.inspect()
+        self.assertGreater(self.provider.snapshot.state_generation, generation_before)
 
 
     def test_clock_sample_expiry_and_maximum_age_are_enforced_before_commit(self):
