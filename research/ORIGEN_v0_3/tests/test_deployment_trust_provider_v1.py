@@ -417,6 +417,37 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         args.update(overrides)
         return inspect_receipt_with_deployment_trust_provider(**args)
 
+    def test_persisted_watermark_backend_mismatch_is_rejected_by_watermark_validator(self):
+        watermark = ExternalEvidenceWatermarkV1(
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            state_backend_id="another-synthetic-cas-store",
+            log_id="synthetic-log",
+            log_key_id="synthetic-log-key",
+            log_public_key_sha256="a" * 64,
+            ledger_tree_size=1,
+            ledger_root_sha256="b" * 64,
+            ledger_checkpoint_sha256="c" * 64,
+            registry_id="synthetic-registry",
+            registry_root_key_id="synthetic-registry-root",
+            registry_root_public_key_sha256="d" * 64,
+            registry_sequence=1,
+            registry_sha256="e" * 64,
+        )
+        snapshot = replace(
+            self.snapshot,
+            accepted_external_evidence_watermark=watermark,
+        )
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "persisted external evidence watermark is not bound to the exact policy domain and state backend",
+        ):
+            _validated_external_evidence_watermark(
+                snapshot,
+                _accepted_external_evidence_watermark_sha256(watermark),
+                None,
+            )
+
     def test_clock_sample_signature_and_exact_bytes_are_verified_before_commit(self):
         document = json.loads(self.snapshot.clock_sample_envelope_bytes)
         document["signature"]["signature_b64"] = base64.b64encode(
