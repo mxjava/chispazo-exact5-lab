@@ -1085,6 +1085,12 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         with self.assertRaisesRegex(TrustStateRejected, "does not bind the exact verified policy"):
             self.inspect()
 
+    def test_provider_snapshot_override_is_rejected_at_application_boundary(self):
+        # The deployment provider, not the request caller, must be the sole
+        # source of the snapshot used for policy, clock and CAS verification.
+        with self.assertRaisesRegex(TypeError, "unexpected keyword argument"):
+            self.inspect(provider_snapshot=self.snapshot)
+
 
 if __name__ == "__main__":
     unittest.main()
