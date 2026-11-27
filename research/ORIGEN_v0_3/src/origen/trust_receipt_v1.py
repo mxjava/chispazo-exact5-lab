@@ -482,6 +482,18 @@ def parse_unverified_receipt(raw: bytes) -> UnverifiedTrustReceipt:
     artifact_keys = [(item.artifact_type, item.sha256) for item in artifacts]
     if len(set(artifact_keys)) != len(artifact_keys):
         raise ValueError("artifacts contain duplicate type/digest pairs")
+    # Distinct evidence roles must not be satisfied by re-labeling one byte
+    # string. A shared digest across different artifact types is ambiguous
+    # aliasing, even when the declared lengths agree.
+    artifact_types_by_digest: dict[str, set[str]] = {}
+    for artifact in artifacts:
+        artifact_types_by_digest.setdefault(artifact.sha256, set()).add(
+            artifact.artifact_type
+        )
+    if any(len(types) > 1 for types in artifact_types_by_digest.values()):
+        raise ValueError(
+            "one artifact digest cannot satisfy multiple distinct artifact types"
+        )
     signers = tuple(
         _parse_signer(item, index)
         for index, item in enumerate(_array(root["signers"], "signers", minimum=1, maximum=64))
