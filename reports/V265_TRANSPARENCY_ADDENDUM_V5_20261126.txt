@@ -1,0 +1,37 @@
+SOLICITUD DE ACLARACIÓN DOCUMENTAL — AMPLIACIÓN V5
+CHISPAZO CLÁSICO / SECUENCIA DE FIRMAS, MJF Y CUSTODIA CS-11
+Fecha de preparación: 26 de noviembre de 2026
+Estado: BORRADOR NO PRESENTADO
+
+Con relación a SGVO-PRO-05 revisión 39, solicito aclarar y entregar, para los últimos 100 concursos de Chispazo Clásico con expedientes disponibles:
+
+1. FIRMA DE PARTICIPACIONES Y CANCELACIONES
+- Timestamp de cierre SICAL y Sumario de Sorteo.
+- Timestamp de generación, recepción, copia, validación, grabación y depósito de la firma electrónica del archivo de participaciones/cancelaciones.
+- Identificador/hash del archivo exacto al que corresponde cada firma.
+- Identificación del Inspector SEGOB que recibió el medio y constancia de depósito en caja de seguridad.
+- Eventos de sustitución/reenvío/cambio de firma y notas al OIC, especialmente para los sorteos nocturnos.
+- Confirmar si la firma electrónica queda generada sólo después de verificar el estado SICAL Cerrado, conforme a la secuencia del Anexo 1 (actividades 1.1–1.5), y cómo se acredita el tiempo real.
+
+2. ARCHIVO MAESTRO DE TRANSACCIONES (MJF)
+- Timestamp de generación, grabación, firma, depósito, retiro por OIC y resguardo.
+- Bytes originales, algoritmo/hash, formato de firma y documentación que permita verificar integridad.
+- Precisar si el MJF se deposita antes o después de finalizar físicamente el sorteo de las 21:00; no basta la frase “después de las 21:00”.
+
+3. CS-11 — CUATRO EJEMPLARES
+La actividad 13.1 indica cuatro ejemplares y la 13.6 indica tres copias, pero la distribución publicada sólo enumera el original para SVO, una copia para SEGOB y una para DTT. Solicito:
+- Identificar el destinatario/custodio de la tercera copia.
+- Entregar el registro de distribución y recepción de los cuatro ejemplares.
+- Aclarar si la copia adicional queda en archivo de la Gerencia, Subgerencia, OIC u otra unidad.
+- Confirmar si la distribución cambió en versiones posteriores del procedimiento.
+
+4. CORRELACIÓN ENTRE EXPEDIENTE FÍSICO Y DIGITAL
+- Inventario por concurso de Acta, CS-11, Tira de Pesaje, Sumarios, archivos firmados y medios CD/DVD.
+- Indicar qué documento se conserva como original, qué documentos son copias y qué unidad conserva cada uno.
+- Entregar hashes SHA-256 calculados sobre los bytes originales entregados, cuando existan, y metadatos de digitalización/transferencia.
+
+5. FORMATO DE RESPUESTA
+Si un timestamp, archivo o copia no existe, solicito indicarlo expresamente. No sustituir tiempos faltantes con horas programadas, inferencias ni metadatos de una digitalización posterior. Si existe reserva, proporcionar versión pública y fundamento legal.
+
+FINALIDAD
+Reconstruir la cronología y cadena de custodia del sorteo electrónico Chispazo Clásico, separando el cierre de ventas, la firma del archivo de participaciones, el pesaje, la extracción, CS-11, la firma de ganadores y el respaldo MJF. No se presume irregularidad, sesgo físico ni ventaja predictiva.

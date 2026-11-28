@@ -1,0 +1,79 @@
+{
+  "audit_id": "V265_SICAL_ACCESS_MONITORING_20261128",
+  "classification": "DOCUMENTED_MECHANISM_ONLY",
+  "all_anchors_pass": true,
+  "anchors": {
+    "restricted_area_scope": true,
+    "visitor_log_fields": true,
+    "access_card_nontransferable": true,
+    "sgaf_int48_revision": true,
+    "clásico_next_day_md5": true,
+    "md5_not_e_signature": true,
+    "sto18_not_cs18": true,
+    "ca01_hourly": true,
+    "ca02_half_hour": true,
+    "ca04_after_resolution": true,
+    "ca06_interfaces": true,
+    "mjf_interface": true,
+    "no_draw_machine_scope": true,
+    "no_raw_logs": true
+  },
+  "official_records": {
+    "sgaf_pro_95_access_fields": [
+      "entry_time",
+      "full_name",
+      "visited_person",
+      "purpose",
+      "entity_company",
+      "exit_time",
+      "visitor_signature",
+      "visited_person_signoff"
+    ],
+    "sgaf_int_48_classic_md5_copy": "next_day_after_21_00_close",
+    "md5_is_electronic_signature": false,
+    "sgaf_pro_47_logs": [
+      "CA-01",
+      "CA-02",
+      "CA-04",
+      "CA-05",
+      "CA-06",
+      "MJF/interface/system logs"
+    ],
+    "ca04_recorded_after_resolution": true,
+    "these_are_draw_machine_telemetry": false
+  },
+  "v265": {
+    "required_metadata_fields": [
+      "CONCURSO",
+      "sphere_set_id",
+      "machine_id",
+      "available_before_close",
+      "close_time_local",
+      "metadata_known_time_local"
+    ],
+    "source_provenance_required": false,
+    "physical_bias_evidence": false,
+    "actionable_for_betting": false,
+    "per_sphere_weights_consumed": false,
+    "per_sphere_rfid_mapping_consumed": false,
+    "extraction_order_consumed": false,
+    "per_extraction_timestamps_consumed": false,
+    "anytime_evalue_gate_implemented": false
+  },
+  "analysis": {
+    "type": "PUBLIC_PROCEDURE_STATIC_CROSSWALK_AND_V265_AST_AUDIT",
+    "uses_draw_outcomes": false,
+    "uses_synthetic_records": false,
+    "uses_authentic_draw_level_logs": false,
+    "statistical_tests_run": [],
+    "oos_gate_passed": false,
+    "multiplicity_gate_passed": false,
+    "anytime_evalue_gate_passed": false
+  },
+  "preservation": {
+    "canonical_history_touched": false,
+    "v294_touched": false,
+    "main_written": false,
+    "merge_or_promotion": false
+  }
+}

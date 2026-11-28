@@ -1,0 +1,29 @@
+ASUNTO: Solicitud de acceso a información pública — evidencia operativa y física de CHISPAZO CLÁSICO
+
+Periodo solicitado: concursos de CHISPAZO CLÁSICO celebrados del 10 de marzo de 2022 a la fecha de respuesta. Solicito identificar cada registro por número de concurso y fecha. Excluyo expresamente Chispazo de las Tres y otros productos.
+
+Solicito, preferentemente en CSV/XLSX y con copia digital de los documentos fuente, la siguiente información que obre en los archivos de Lotería Nacional:
+
+1. FORMATO CS-02. Copia de cada “Inspección diaria del funcionamiento de los equipos de sorteo CS-02” correspondiente a Chispazo Clásico; fecha/hora de inspección, máquina/equipo, modelo, número de serie, resultado de cada verificación, sustituciones y observaciones.
+
+2. IDENTIFICACIÓN DE EQUIPO Y ESTUCHE. Registro por concurso del número/ID del estuche confirmado antes del cierre, máquina utilizada (ID, modelo y serie), método de asignación y timestamp en que quedó determinada cada asignación. Si se usa RFID, solicito el log de lectura por concurso: ID del lector, ID/tag RFID de máquina, estuche y cada una de las 28 esferas, correspondencia tag→número 1–28, resultado de lectura, fecha/hora y zona horaria. Solicito distinguir inventario RFID de lecturas efectivamente realizadas por evento.
+
+3. TIRAS DE PESAJE. Copia de cada tira correspondiente a Chispazo Clásico, con peso individual de las 28 esferas, unidad, tipo de esfera, peso mínimo/máximo/rango, báscula utilizada (ID/serie), fecha/hora de cada pesaje, operador, firmas/rúbricas y cualquier sustitución de estuche por incumplimiento. Indicar si el pesaje se hizo antes o después del cierre de ventas de ese concurso.
+
+4. CIERRE DE VENTAS Y FIRMAS ELECTRÓNICAS. Sumario de cierre de venta con fecha, hora exacta, número de concurso y estado; archivo de participaciones/cancelaciones o versión pública; firma electrónica asociada, algoritmo/formato de firma, hash, fecha/hora de generación, resguardo y verificación. Distinguir expresamente esta firma del archivo de apuestas de cualquier firma de evidencia física.
+
+5. CS-11 Y ACTA. Copia de cada formato “Números Ganadores de los Sorteos CS-11”, acta de sorteo y todos sus anexos. Solicito el formulario CS-11 en blanco o su diccionario de campos, para conocer si registra ID de estuche, ID de máquina, número de esfera, orden de extracción y timestamps. Para cada extracción, si existe, solicito número, posición/orden, hora/minuto/segundo, fuente de captura y correcciones o repeticiones.
+
+6. INCIDENCIAS Y ACCESOS. Copia de registros CS-09, Bitácora de Concursos y Sorteos, comunicaciones CS-18 relacionadas con riesgos, formato CS-12 de asistencia a la sala y bitácoras de control de acceso/mantenimiento durante los eventos solicitados. Se pueden testar nombres, firmas y datos personales no necesarios; conservar fecha/hora, rol funcional y relación con el concurso.
+
+7. MANTENIMIENTO Y CALIBRACIÓN. Calendarios anuales, órdenes y bitácoras de mantenimiento preventivo/correctivo por máquina, estuche, báscula y equipo de pesaje; cambios de piezas o ajustes; certificados de calibración de cada báscula, número de serie, fecha de calibración, vigencia, tolerancia e incertidumbre.
+
+8. VIDEOGRABACIONES. Copia o enlace a la grabación original continua y a la versión editada incorporada al acta para cada concurso, desde el inicio del pesaje hasta el testigo de números ganadores. Solicito archivos con metadatos originales, fecha/hora, zona horaria, duración, identificador de cámara, cortes/ediciones y checksum disponible. Si sólo se conserva el video editado, indicar qué segmentos se eliminaron y el plazo de conservación del original.
+
+9. DISPONIBILIDAD PRE-CIERRE. Para cada variable anterior, indicar cuándo se genera, quién la conoce, cuándo se incorpora al expediente, cuándo se hace pública y si existió un medio para que terceros la conocieran antes del cierre automático de ventas. Solicito los timestamps que permitan comprobarlo; no basta marcar un campo como “disponible antes del cierre”.
+
+10. MANUALES Y CONTROL DE CAMBIOS. Copia de la versión vigente y versiones históricas aplicables del SGVO-MAN-02 “Manual de Apoyo para la Operación de Sorteos y Equipos Electrónicos”, anexos/instructivos de pesaje, identificación RFID, asignación de estuches, operación de máquinas y formatos CS-02/CS-11/CS-09/CS-12; indicar fecha de vigencia de cada versión.
+
+Si algún campo/documento no se genera, no existe, no se conserva o está bajo resguardo de otra unidad, solicito que se indique expresamente, junto con la unidad responsable, fundamento de clasificación en su caso y plazo de conservación. Si la información está en poder de otra unidad administrativa, solicito la orientación o turno correspondiente.
+
+Finalidad: reconstruir de forma reproducible la trazabilidad física y operativa de Chispazo Clásico y distinguir variables disponibles antes del cierre de las que sólo existen después. No solicito datos personales de participantes, combinaciones apostadas individuales ni información que permita identificarlos.

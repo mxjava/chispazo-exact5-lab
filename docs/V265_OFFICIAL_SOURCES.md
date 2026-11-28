@@ -1,25 +1,83 @@
 # V265 — Fuentes oficiales y trazabilidad
 
 ## Procedimiento vigente de Sorteos Electrónicos
-- Normateca Lotería Nacional, `PROCEDIMIENTO SORTEOS ELECTRÓNICOS`, SGVO-PRO-05, revisión 39, actualización marzo de 2026.
-- URL: https://comercializadores.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
+- Normateca Lotería Nacional, `PROCEDIMIENTO SORTEOS ELECTRÓNICOS`, SGVO-PRO-05, revisión 39, DN-07 versión 09, cuya ficha de Normateca muestra actualización al 20-03-2026; el PDF conserva fecha de emisión original octubre de 2003.
+- URL canónica: https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
 - Hechos relevantes:
-  - pesaje para cada sorteo;
-  - parámetros de peso para Smartballs/Ping Pong;
-  - cambio de estuche si no cumple;
-  - CS-11 registra número de sorteo y estuche seleccionado;
-  - tira de pesaje registra peso de cada esfera;
-  - CS-11 y tira de pesaje se integran al acta;
-  - el flujo documentado ubica cierre de venta antes de pesaje, por lo que un análisis de explotabilidad debe comprobar disponibilidad pre-cierre.
+  - inspección de equipo CS-02 antes del cierre;
+  - confirmación del número de sorteo y estuche antes del cierre;
+  - cierre de venta en SICAL y después pesaje/colocación de esferas;
+  - parámetros de peso para Smartballs/Ping Pong y sustitución del estuche si no cumple;
+  - la Tira de Pesaje registra el pesaje individual y se anexa al acta;
+  - CS-11 captura datos del sorteo y números ganadores después de la extracción; el procedimiento público no expone el formulario completo ni confirma sus campos adicionales;
+  - CS-11 y Tira de Pesaje se integran al acta;
+  - mantenimiento anual de equipos, calibración de básculas al menos anual, registro de incidencias, acceso CS-12 y grabación desde pesaje hasta sorteo.
 
 ## Reglamento Chispazo
-- URL: https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/Reglamento-Chispazo.pdf
-- El sorteo usa 28 esferas y extrae 5 al azar.
+- URL: https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/ChizpasoDOF18062003.pdf
+- Publicado el 18-06-2003; última reforma indicada 07-03-2012.
+- Artículos 5 y 9: números 1–28, 28 esferas y extracción de cinco al azar; artículo 15: acta con resultados e incidencias. El artículo 8 establece que el resultado oficial es el asentado en el Acta; la web, terminal, teléfono y mascarilla son informativos. El PDF conserva una discrepancia: artículo 2 menciona 25 números, pero los artículos 5 y 9 dicen 1–28/28 esferas; registrar la inconsistencia y usar los artículos 5 y 9 para la mecánica.
 
 ## Informe de Gestión Gubernamental 2018–2024
 - URL: https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf
-- Registra adquisición/entrega en marzo de 2022 de máquinas de sorteos, juegos de esferas para Chispazo y RFID.
-- Nota de auditoría: el propio informe contiene una inconsistencia aritmética en el total declarado de juegos; V265 no usa ese total como dato analítico.
+- Registra entrega/instalación en marzo de 2022 de máquinas y juegos de esferas para sorteos electrónicos con reconocimiento RFID.
+- Nota de auditoría: el informe declara 10 juegos para cada uno de siete productos, pero totaliza 60; la aritmética no coincide. No usar ese total para inferir inventario.
 
 ## Solicitudes de acceso a la información
 - URL: https://www.loterianacional.gob.mx/Transparencia/SolicitudesAccesoInformacion
+
+## Actualización de evidencia física y cronología — 2026-11-21
+
+La ficha de Normateca separa Sorteos Electrónicos y Sorteos Tradicionales: https://loterianacional.gob.mx/Normateca/Sustantivas?id=2
+
+Corrección de secuencia: en SGVO-PRO-05 revisión 39, la inspección CS-02 y la confirmación del número de sorteo/estuche aparecen antes del cierre; después se verifica el estado cerrado de SICAL y se realiza el pesaje y colocación de esferas. Por tanto, las mediciones de la Tira de Pesaje no se consideran disponibles para una predicción pre-cierre bajo esta secuencia. No usar como norma vigente el documento de proyecto **SGM-PRO-06 “Preparación de Sorteos”, DN-07 v05, revisión 21** (https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/PROYECTO/SUSTANTIVAS/sgm_p0_6_21.pdf): éste decía que Chispazo se pesara preferentemente antes del cierre de 21:15 y listaba colores amarillo/azul y otros rangos. Sus anexos históricos describen impresión de fecha/hora al inicio y fin del pesaje, pesos individuales y campos de inspección CS-02; son pistas para solicitar los originales, no especificaciones actuales. Está en carpeta PROYECTO y “preferentemente” no prueba el timestamp real de cada evento.
+
+La norma vigente confirma:
+- CS-02 antes del cierre.
+- Pesaje individual en cada sorteo; Smartballs: 4.25–5.25 g y rango máximo 0.30 g; Ping Pong: 2.30–3.00 g y rango máximo 0.15 g.
+- Tira firmada y anexada al acta.
+- CS-11 posterior a la extracción; la revisión 39 publica como campos mínimos fecha, nombre/número de sorteo, hora del sorteo, estuche seleccionado, resultados y firmas de elaboración/verificación/certificación/representante DG. La hora es del evento, no por esfera; no se publica campo de RFID individual, orden ni timestamp de cada extracción. El procedimiento no define que el orden escrito de los resultados sea el orden físico de extracción.
+- Calibración de básculas al menos anual; mantenimiento preventivo/correctivo según calendario anual.
+- Incidencias en acta y Bitácora de Concursos y Sorteos (CS-09) cuando afectan resultados.
+- Grabación desde el pesaje hasta la celebración como testigo documental; la versión editada anexada al acta es sólo el sorteo, por lo que para reconstruir el pesaje se necesita el máster continuo original y sus timecodes.
+- CS-12 registra accesos a la sala durante el evento.
+
+RFID: el Informe de Gestión 2018–2024 declara que las máquinas y esferas adquiridas para sorteos electrónicos tenían reconocimiento RFID y que la instalación quedó concluida el 10-03-2022. No afirma que los estuches como unidades independientes tengan tag RFID. No publica identificadores RFID por máquina/esfera, el mapeo etiqueta→número ni registros de lectura por concurso. El número de estuche de CS-11 no debe confundirse con un tag RFID. El total de juegos del informe es aritméticamente inconsistente (10 juegos para cada uno de 7 productos, pero total declarado 60); no usar ese total para inferir inventario.
+
+V265: el evaluador exige IDs de máquina/estuche y timestamps de disponibilidad pre-cierre, pero no exige ni consume los 28 pesos individuales, RFID por esfera, orden/timestamp de extracción ni procedencia por fila. Por ello sólo puede evaluar asociaciones condicionadas a etiquetas de máquina/estuche; no puede acreditar sesgo físico de esferas. Ver `reports/V265_PHYSICAL_EVIDENCE_AUDIT_20261121.md`.
+
+Regla de uso: ningún dato post-cierre (Tira de Pesaje, extracción, CS-11, acta, incidencias, video del evento o firma del archivo de participaciones) alimenta una predicción que deba congelarse antes del cierre. Los IDs de máquina/estuche o la inspección CS-02 sólo serían candidatos prospectivos si su valor exacto, procedencia y timestamp fueran verificables y accesibles antes del cierre.
+
+
+## Corrección de inventario normativo — 2026-11-23
+
+Se localizó una copia pública adicional de SGM-PRO-06 Preparación de Sorteos, revisión 22, DN-07 v05, en la ruta SUSTANTIVAS/VIGENTES/sgm_p0_6.pdf. La revisión registra último cambio en junio de 2017, pero el archivo no aparece en la lista actual de Normas Sustantivas Vigentes. Por ello su aplicabilidad actual queda sin confirmar. No es el mismo documento que SGVO-MAN-02, que sí aparece como proyecto normativo en la ventana 23-02-2026 a 04-03-2026.
+
+La copia SGM-PRO-06 describe pesaje individual de 28 esferas Chispazo en orden numérico, valores y estadísticos impresos, fecha/hora al inicio y al final, y colores amarillo/azul según máquina. Su anexo dice preferentemente antes del cierre de 21:15. Esto entra en conflicto con SGVO-PRO-05 revisión 39, listado vigente y actualizado 20-03-2026, que describe pesaje después de verificar SICAL cerrado a las 21:00 y tiene otros rangos de peso en Política 6. No usar SGM-PRO-06 como norma operativa hasta recibir confirmación escrita.
+
+SGVO-PRO-05 actividad 5.2 y Plan de Calidad remiten erróneamente a Política 8 para los pesos; Política 8 trata de la firma electrónica del archivo de participaciones. Los rangos están en Política 6. La rama de sustitución de estuche regresa a actividad 4.1; el texto no dice que se reabran ventas. Ver el informe y matriz V265_DOCUMENT_RECONCILIATION_20261123.
+
+
+## Reconciliación documental actual — 2026-11-24
+
+Se añade el informe determinista `reports/V265_PHYSICAL_EVIDENCE_DELTA_20261124.md`, la matriz `reports/V265_PHYSICAL_EVIDENCE_MATRIX_20261124.csv`, el JSON de hechos normalizados, el validador y sus pruebas.
+
+Correcciones y precisiones:
+- La Normateca actual lista SGVO-PRO-05 revisión 39 (20-03-2026) como vigente.
+- SGVO-MAN-02 aparece en Proyectos Normativos y el PDF visible se identifica como tipo RESERVADO, revisión 09. No usar sus detalles técnicos como manual vigente.
+- SGM-PRO-06 revisión 22 es una copia pública accesible en un directorio llamado VIGENTES, pero no figura en la lista actual. Su última modificación registrada es junio de 2017. Sus campos de Tira (hora inicial/final, estadísticos) y la preferencia de pesaje Chispazo antes de 21:15 son históricos/no vigentes confirmados.
+- En SGVO-PRO-05, el CS-11 se denomina “Números Ganadores de los Sorteos”; es un formato anexo al Acta, no el Acta misma.
+- La Tira vigente se define como registro del peso individual de cada esfera y cuatro firmas. El esquema público actual no especifica timestamps de inicio/fin, IDs individuales, RFID, orden ni hora de extracción por esfera.
+- La actividad 5.2 y el punto 2 del Plan de Calidad remiten a Política 8 para peso; los límites están en Política 6. Política 8 trata de la firma electrónica del archivo de participaciones.
+- El artículo 9 del Reglamento dice que las 28 esferas se introducen en una urna antes del cierre; SGVO-PRO-05 verifica cierre SICAL y después pesa/coloca en alimentadores. No se equiparan “urna” y “alimentadores”; la secuencia física debe aclararse por escrito.
+- El Informe de Gestión 2018–2024 reporta 14 máquinas RFID y RFID en esferas, pero también una ampliación de 8 máquinas y 2 sistemas RFID no autorizada al cierre de junio de 2024. No se infiere el inventario actual ni asignaciones por concurso.
+- El validador V265 confirma que el evaluador no consume pesos individuales, RFID→número, orden/timestamps de extracción ni procedencia; permanece `ASSOCIATION_SCREEN_ONLY`.
+
+Fuentes adicionales:
+- [Normateca vigente](https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2)
+- [Proyectos Normativos](https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0)
+- [SGVO-MAN-02 reservado en Proyectos](https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/PROYECTO/sgvo_man_02p.pdf)
+- [SGM-PRO-06 rev22, copia histórica no listada](https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgm_p0_6.pdf)
+- [Informe de Gestión 2018–2024, p. 43](https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf)
+
+No se obtuvieron CS-02, Tiras, CS-11, Actas, logs RFID, calibraciones, órdenes de mantenimiento, CS-09/12/18 ni video máster de concursos concretos. No se generaron registros sintéticos ni se estimó un efecto físico. OOS, multiplicidad y anytime e-value siguen sin superar.

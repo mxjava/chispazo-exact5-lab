@@ -1,0 +1,78 @@
+{
+  "all_anchors_pass": true,
+  "all_checks_pass": true,
+  "analysis": {
+    "anytime_evalue_gate_passed": false,
+    "multiplicity_gate_passed": false,
+    "oos_gate_passed": false,
+    "statistical_tests_run": [],
+    "type": "PUBLIC_PROCEDURE_STATIC_CROSSWALK_AND_V265_AST_AUDIT",
+    "uses_draw_outcomes": false,
+    "uses_synthetic_records": false
+  },
+  "anchors": {
+    "actual_set_is_distinct": true,
+    "cs02_preclose": true,
+    "cs11_retrospective": true,
+    "manual_project_not_current": true,
+    "no_draw_level_records": true,
+    "no_synthetic_data": true,
+    "planned_and_actual_are_distinct": true,
+    "planned_set_preclose": true,
+    "postclose_set_substitution": true,
+    "sical_close_before_weighing": true,
+    "traditional_motor_procedure_excluded": true
+  },
+  "audit_id": "V265_SPHERE_SET_SUBSTITUTION_TIMING_20261128",
+  "classification": "DOCUMENTED_MECHANISM_ONLY_EXPOSURE_SCHEMA_AMBIGUITY",
+  "interpretation": {
+    "if_id_source_is_activity_3_1": "PRE_CLOSE_PLAN_ONLY_NOT_FINAL_AFTER_SUBSTITUTION",
+    "if_id_source_is_cs11": "POST_DRAW_NOT_PRE_CLOSE",
+    "risk": "PLANNED_VS_ACTUAL_SPHERE_SET_NOT_DISTINGUISHED",
+    "same_contest_betting_uses_postclose_actual_set": false
+  },
+  "manual_status": {
+    "listed_as_current_vigente": false,
+    "listed_as_project": true,
+    "project_start": "23/02/2026",
+    "project_end": "04/03/2026",
+    "pdf_content_retrieved": false,
+    "used_as_binding_instruction": false
+  },
+  "official_sequence": {
+    "actual_set_may_differ_from_preclose_plan": true,
+    "cs02_before_close": true,
+    "cs11_records_selected_set_and_results_after_draw": true,
+    "failed_weight_can_replace_set_after_close": true,
+    "initial_set_confirmed_before_close": true,
+    "sical_close_precedes_weighing": true,
+    "weighs_each_sphere_in_numeric_order": true
+  },
+  "preservation": {
+    "canonical_history_touched": false,
+    "main_written": false,
+    "merge_or_promotion": false,
+    "v294_touched": false
+  },
+  "v265_contract": {
+    "actionable_for_betting": false,
+    "anytime_evalue_gate_implemented": false,
+    "extraction_order_consumed": false,
+    "per_extraction_timestamps_consumed": false,
+    "per_sphere_rfid_mapping_consumed": false,
+    "per_sphere_weights_consumed": false,
+    "physical_bias_evidence": false,
+    "planned_vs_actual_fields_present": false,
+    "preclose_timestamp_comparison_present": true,
+    "required_metadata_fields": [
+      "CONCURSO",
+      "sphere_set_id",
+      "machine_id",
+      "available_before_close",
+      "close_time_local",
+      "metadata_known_time_local"
+    ],
+    "single_sphere_set_id_field": true,
+    "source_provenance_required": false
+  }
+}

@@ -184,6 +184,27 @@ def validate_preclose_metadata(metadata):
         )
     return parsed
 
+
+def physical_evidence_guard():
+    """Conservative claim boundary for the current V265 implementation.
+
+    V265 consumes machine/set labels, not authenticated per-sphere physical
+    measurements or extraction telemetry. Its optional Holm screen is not an
+    anytime-valid e-value. Therefore it can never certify physical bias or
+    authorize a prospective betting action.
+    """
+    return {
+        'evidence_class': 'ASSOCIATION_SCREEN_ONLY',
+        'physical_bias_evidence': False,
+        'actionable_for_betting': False,
+        'anytime_evalue_gate_implemented': False,
+        'per_sphere_weights_consumed': False,
+        'per_sphere_rfid_mapping_consumed': False,
+        'extraction_order_consumed': False,
+        'per_extraction_timestamps_consumed': False,
+        'source_provenance_required': False,
+    }
+
 def main():
     ap=argparse.ArgumentParser(description='V265 evaluator: physical metadata, chronological prequential only')
     ap.add_argument('--history',required=True)
@@ -285,19 +306,21 @@ def main():
     # A single unadjusted p-value is never enough to promote after model search.
     sample_ok = len(d) >= 100
     research_edge=bool(sample_ok and mean>0 and adjusted_p is not None and adjusted_p < 0.05)
-    actionable=bool(research_edge and all_preclose and len(x) == len(h) and len(x) == len(m))
+    # V265 has no physical-measurement contract or anytime e-value gate.
+    # Keep the association screen useful, but never mark it actionable.
+    actionable=False
     if not sample_ok:
         decision='RESEARCH_ONLY_INSUFFICIENT_OOS_N'
     elif mean <= 0:
-        decision='NO_PHYSICAL_EDGE'
+        decision='NO_ASSOCIATION_SCREEN_EDGE'
     elif adjusted_p is None:
         decision='RESEARCH_ONLY_MULTIPLICITY_CONTROL_REQUIRED'
     elif adjusted_p >= 0.05:
-        decision='NO_PHYSICAL_EDGE_AFTER_HOLM'
+        decision='NO_ASSOCIATION_SCREEN_EDGE_AFTER_HOLM'
     elif not all_preclose:
         decision='RESEARCH_EDGE_NOT_ACTIONABLE_METADATA_NOT_PRE_CLOSE'
     else:
-        decision='PROSPECTIVE_GATE_CANDIDATE_REVIEW_REQUIRED'
+        decision='ASSOCIATION_SCREEN_ONLY_PHYSICAL_AND_ANYTIME_GATES_NOT_IMPLEMENTED'
     def sha256_file(path):
         digest=hashlib.sha256()
         with open(path,'rb') as fh:
@@ -314,12 +337,14 @@ def main():
          'multiplicity_controlled': adjusted_p is not None,
          'holm_adjusted_p': adjusted_p, 'p_family_size': family_size,
          'minimum_oos_n':100, 'all_metadata_available_before_close':all_preclose,
-         'research_edge':research_edge,'actionable_for_betting':actionable,
+         'research_edge':research_edge,
+         'research_edge_semantics':'machine/sphere-set association screen only; not evidence of physical bias or actionable prediction',
+         **physical_evidence_guard(),
          'decision': decision,
          'history_rows':len(h),'metadata_rows':len(m),'joined_rows':len(x),
          'metadata_coverage_fraction_of_history':float(len(x)/len(h)) if len(h) else 0.0,
          'preclose_fraction_of_scored_rows':float(d.available_before_close.mean()),
-         'production_rule':'Do not score or promote unless every physical metadata row is available before close by both flag and timestamp, with >=100 prequential OOS rows, positive mean log-lift, and Holm-adjusted p < 0.05 across the predeclared candidate family.'}
+         'production_rule':'This evaluator is association-screen-only. It does not consume per-sphere weights, per-sphere RFID mapping, extraction order/timestamps, or source provenance, and it does not implement an anytime e-value. Never interpret research_edge as physical bias. Any prospective claim requires authenticated pre-close data, project OOS validation, multiplicity control, and the project anytime e-value gate.'}
     # Stage both artifacts only after all input and multiplicity checks pass.
     # The report is published last and serves as the completion marker.
     try:

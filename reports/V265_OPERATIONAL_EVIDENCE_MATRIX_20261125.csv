@@ -1,0 +1,28 @@
+variable_or_record,primary_document,when_known,same_draw_preclose_usable,classification,limitations
+CS-02 inspection,CS-02 / SGVO-PRO-05,Before each draw,Conditional,Preclose candidate,Need authentic form timestamp and machine/scale identity
+Machine identity,Inventory / CS-02 / maintenance logs,Not specified per contest in public procedure,Conditional,Preclose candidate,Need serial model draw assignment and preclose availability
+Initial case selection,Activity 3.1 / operator record,Initially confirmed before close but may be replaced after failed weighing,Conditional,Conditional,Initial case is not necessarily final case
+Final case assignment,Tira / CS-11 / operator log,May change after close if weight fails,No unless preclose proof,Postclose or conditional,Need final assignment and timestamp
+Sales-close time and status,SICAL Sumario de cierre,After automatic close before winner numbers entered,No,Postclose,Contains close time status gross sales cancellations and net sales
+Per-sphere weights,Tira de Pesaje,After closed-state verification under SGVO-PRO-05 activity 5,No,Postclose,Public definition lacks per-sphere ID and explicit start/end timestamps
+Scale calibration,Annual calibration certificate,Potentially before draw,Conditional,Preclose candidate,Need scale serial validity and certificate availability time
+Equipment maintenance,Annual maintenance calendar / work orders,Potentially before draw,Conditional,Preclose candidate,Need machine serial work performed dates and preclose availability
+RFID machine tag,RFID inventory and reader logs,Not publicly specified by contest,No,Blocked,Need tag reader timestamp and machine-to-draw mapping
+RFID sphere tag,RFID tag map and reader logs,Not publicly specified by sphere number,No,Blocked,Need tag-to-number mapping and event log
+Extraction order,Continuous video / event log,During extraction,No,Retrospective,Do not infer from CS-11 display order
+Individual extraction timestamp,Continuous video with timecode,During extraction,No,Retrospective,No per-sphere timestamp field identified in public CS-11 schema
+CS-11 winning numbers,CS-11,After extraction and display verification,No,Postresult,Four printed copies but one copy custodian is unnamed
+Acta and incidents,Acta / annexes,After draw; may be signed up to 5 business days later in exception,No,Postresult,Keep event time separate from signature and scan time
+CS-09 incidents,Bitácora CS-09,After draw for incidents affecting result,No,Retrospective,Preserve occurrence time and entry time separately
+CS-12 access,CS-12,During event,No,Retrospective,Supports access-chain audit
+CS-18 risk notice,CS-18,No universal timestamp specified,Conditional,Conditional,Use only if signed or received before close
+Participation file signature,SICAL file signature,Immediately after sales close,No,Postclose,Authenticates sales snapshot but is post-close
+Winner relation signature,Signed winner report,After winner numbers captured,No,Postresult,Post-result integrity artifact
+Continuous video master,Master recording,From weighing to draw,No,Retrospective,Request original metadata timecodes and custody
+Edited video,Edited draw-only recording,After draw; attached to Acta,No,Postresult,Not a substitute for continuous master
+Weekly DVD archive,Weekly DVD / Acta package,Weekly after event,No,Archive,Enumerated DVD manifest does not list Tira CS-11 or Sumarios
+Archive series and retention,Archive inventories / CADIDO,Archival metadata not draw-time variable,Not a draw feature,Unverified,Official archive PDFs not retrieved; series and custodian unknown
+Traditional wooden-ball procedures,SGVO-PRO-08/34/15,Different draw modality,Not applicable,Not applicable,Do not use as Chispazo mechanical specification
+Electronic evidence custodian,SAF-MAN-12 Manual de Organización General,Role defined in February 2026; records created throughout operation,Not a draw feature,Custody route,Subgerencia holds or administers physical/digital Actas videos and operational records; verify actual inventory
+Maintenance contract 058-2024,Official 2018-2024 management report,Historical contract concluded within Jan-Jun 2024,No,Mechanism and maintenance context,21 machines across eight electronic products including Chispazo; no serials or contest-level work orders published
+Fleet asset reconciliation,2022 acquisition report plus 058-2024 scope,Asset inventory not published,No,Unverified,14 machines acquired versus 21 machines in maintenance contract; do not infer product assignment or contradiction

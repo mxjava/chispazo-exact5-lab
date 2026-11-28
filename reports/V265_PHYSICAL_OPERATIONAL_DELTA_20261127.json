@@ -1,0 +1,84 @@
+{
+  "all_checks_pass": true,
+  "all_source_map_checks_pass": true,
+  "analysis": {
+    "anytime_evalue_gate_passed": false,
+    "multiplicity_gate_passed": false,
+    "oos_gate_passed": false,
+    "statistical_tests_run": [],
+    "type": "PUBLIC_DOCUMENT_STATIC_CROSSWALK",
+    "uses_draw_outcomes": false,
+    "uses_synthetic_records": false
+  },
+  "audit_id": "V265_PHYSICAL_OPERATIONAL_DELTA_20261127",
+  "classification": "DOCUMENTED_MECHANISM_ONLY",
+  "evidence": {
+    "contract_058_2024_includes_chispazo": true,
+    "contract_058_2024_per_asset_service_records_obtained": false,
+    "cs11_per_contest_delivery_receipts_obtained": false,
+    "cs11_prescribed_distribution_complete": true,
+    "current_public_calibration_requirement_verified": true,
+    "actual_scale_calibration_schedule_obtained": false,
+    "current_scale_calibration_certificate_obtained": false,
+    "draw_level_original_records_obtained": false,
+    "invitation_222_2026_award_or_service_reports_obtained": false,
+    "invitation_222_2026_scope_is_electrical_infrastructure": true,
+    "official_pdf_binary_sha256_captured": false,
+    "reported_set_count_internally_inconsistent": true,
+    "rfid_per_sphere_mapping_obtained": false,
+    "rfid_reported_historically": true
+  },
+  "preservation": {
+    "canonical_history_touched": false,
+    "main_written": false,
+    "merge_or_promotion": false,
+    "v294_touched": false
+  },
+  "prospective_status": "BLOCKED_PENDING_AUTHENTICATED_PRE_CLOSE_PHYSICAL_RECORDS",
+  "source_map_checks": {
+    "annual_scale_calibration": true,
+    "cs02_preclose": true,
+    "cs11_distribution": true,
+    "electrical_invitation_222": true,
+    "electronic_scope": true,
+    "maintenance_058": true,
+    "no_draw_records": true,
+    "rfid_count_discrepancy": true,
+    "rfid_inventory": true,
+    "video_from_weighing": true,
+    "weighing_postclose": true
+  },
+  "v265_evaluator": {
+    "actionable_for_betting": false,
+    "anytime_evalue_gate_implemented": false,
+    "extraction_order_consumed": false,
+    "machine_id_label_consumed": true,
+    "per_extraction_timestamps_consumed": false,
+    "per_sphere_rfid_mapping_consumed": false,
+    "per_sphere_weights_consumed": false,
+    "physical_bias_evidence": false,
+    "preclose_validator_checks_source_provenance": false,
+    "preclose_validator_provenance_terms": {
+      "custody": false,
+      "extraction_order": false,
+      "per_extraction_timestamp": false,
+      "rfid": false,
+      "signature_verified": false,
+      "source_document": false,
+      "source_sha256": false,
+      "source_url": false,
+      "sphere_weight": false
+    },
+    "required_metadata_fields": [
+      "CONCURSO",
+      "sphere_set_id",
+      "machine_id",
+      "available_before_close",
+      "close_time_local",
+      "metadata_known_time_local"
+    ],
+    "scale_calibration_certificate_consumed": false,
+    "source_provenance_required": false,
+    "sphere_set_id_label_consumed": true
+  }
+}

@@ -1,0 +1,55 @@
+name: V323 adaptive replay
+
+on:
+  push:
+    branches:
+      - research/v249-snapshot-integrity-20261119
+    paths:
+      - "src/v264/**"
+      - "src/v323/**"
+      - "data/history/Chispazo_through_12249.csv"
+      - ".github/workflows/v323-replay.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v323-adaptive-replay
+  cancel-in-progress: false
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install numerical dependencies
+        run: python -m pip install --upgrade pip numpy pandas scipy
+      - name: Run frozen V264 prequential replay
+        run: |
+          python -m src.v264.CHISPAZO_V264_EXACTSET_ANYTIME \
+            --history data/history/Chispazo_through_12249.csv \
+            --out-dir outputs/v264_replay
+      - name: Run predeclared V323 adaptive mixture grid
+        run: |
+          python -m src.v323.adaptive_expert_mixture \
+            --scores outputs/v264_replay/v264_expert_log_likelihoods.csv \
+            --out outputs/v323_adaptive_grid.json
+      - name: Upload immutable replay outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: v323-adaptive-replay-${{ github.sha }}
+          path: |
+            outputs/v264_replay/v264_prequential.csv
+            outputs/v264_replay/v264_expert_log_likelihoods.csv
+            outputs/v264_replay/v264_summary.json
+            outputs/v264_replay/v264_top30_target_*.csv
+            outputs/v323_adaptive_grid.json
+          if-no-files-found: error
+          retention-days: 90

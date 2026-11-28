@@ -1,0 +1,68 @@
+V265 — AMPLIACIÓN DE SOLICITUD DE INFORMACIÓN V7
+Corte documental: 28 de noviembre de 2026
+Objeto: Chispazo Clásico (sorteo electrónico, normalmente 21:00)
+Estado: BORRADOR INTERNO; NO PRESENTADO
+
+BASE Y ALCANCE
+La solicitud se refiere exclusivamente a Chispazo Clásico electrónico y a los últimos 100 concursos Clásico inmediatamente anteriores a la fecha de respuesta, identificados por número y fecha. No se solicitan expedientes de sorteos tradicionales ni se pretende trasladar a Chispazo procedimientos de bolas de madera, ábacos o sorteos tradicionales.
+
+La base documental es SGVO-PRO-05, revisión 39; Reglamento del Sorteo Chispazo, artículos 8, 9 y 15; y la reforma del artículo 8 publicada en SIDOF el 7 de marzo de 2012. Se solicita el Acta completa y sus anexos, no únicamente la mascarilla pública ni el formato CS-11.
+
+I. ACTAS, CS-11 Y ANEXOS
+Por cada concurso solicitado:
+1. Acta original o copia certificada íntegra, con todas sus hojas, firmas, nombres, cargos, oficio de comisión del Inspector SEGOB, hora real del evento, antecedentes, resultados e incidencias.
+2. Todos los anexos que SGVO-PRO-05 identifica para Chispazo: Sumario de cierre de venta, CS-11, Sumario de Sorteo, Tira de Pesaje, Relación de Ganadores y demás documentos integrados.
+3. Los cuatro ejemplares del CS-11 o, si no se conservan individualmente, constancia de su impresión, firmas, distribución, entrega y recepción por SVO, SEGOB, DTT y Control de Datos.
+4. Cuando el Acta se haya firmado después del día del sorteo, constancia de la causa, fecha de impresión, fecha de cada firma, fecha de escaneo/envío al OIC y asiento correspondiente en CS-09.
+
+II. CIERRE SICAL Y DISCREPANCIAS
+1. Sumario de cierre con fecha, hora, número de concurso, ventas y estado de apuestas cerrado.
+2. Pantallas o reportes de SICAL y de Selección de Ganadores utilizados para integrar el Acta.
+3. Para cualquier discrepancia: correo de notificación del mismo día, solicitud escrita de aclaración al prestador SICAL, respuesta del prestador y constancia de incorporación al Acta.
+4. Fecha y hora de generación, exportación, impresión y firma de cada documento; zona horaria y sistema que generó cada marca temporal.
+
+III. ARCHIVOS Y FIRMAS ELECTRÓNICAS
+1. Archivo de participaciones y cancelaciones por concurso, firma electrónica correspondiente, identificador de archivo, algoritmo/hash, fecha y hora de generación y verificación.
+2. Constancias de grabación del dispositivo, entrega al Inspector SEGOB, depósito en caja de seguridad, accesos del OIC, retiro y resguardo.
+3. Diferenciar expresamente la firma de participaciones/cancelaciones posterior al cierre y anterior al sorteo, la firma de la Relación de Ganadores posterior al sorteo y el MJF diario.
+4. MJF y firma impresa del MJF; archivos, fechas, hashes y constancias de depósito después del cierre nocturno.
+5. DVD semanal previsto en la política 12: inventario de archivos, hashes, periodo lunes-domingo, oficio de entrega DTT, acuse de recepción, anexado al Acta y responsable de custodia. Identificar expresamente los cuatro reportes Chispazo de la tabla: CLSBR140 (Relación de Ganadores y firma electrónica), CLIER195 (Información Básica), CLSKR170 (Resultados Obtenidos) y CLSAR110 (Máscara Ganadora). Entregar los archivos originales, no sólo la mascarilla pública.
+
+IV. CS-02, MÁQUINAS, ESTUCHES Y RFID
+1. Versión aprobada vigente del Manual de Apoyo SGVO-MAN-02 y del instructivo técnico que desarrolla la inspección CS-02; fecha de aprobación, vigencia, historial de versiones y autoridad que lo aprobó.
+2. CS-02 cumplimentado por concurso, firmas, fecha/hora de inspección, máquina, consola, alimentadores, báscula, estuche seleccionado, sustituciones y motivo.
+3. Inventario de máquinas y consolas: fabricante, modelo, número de serie, identificador interno, alta/baja, ubicación y fecha de puesta en servicio.
+4. Inventario de estuches y esferas; identificación RFID de cada máquina, estuche y esfera; catálogo que vincule tag RFID, número de serie y número impreso de la esfera.
+5. Logs originales de lectores RFID por concurso: lector, tag, activo, evento, fecha/hora, zona horaria, carga, descarga, lectura fallida, duplicada o ausente; orden de carga y extracción.
+6. Especificar si el sistema RFID registra individualmente cada extracción o sólo identifica equipos/estuches. Si no registra orden o timestamp por esfera, declararlo expresamente.
+
+V. PESAJE Y CALIBRACIÓN
+1. Tira de Pesaje original por concurso, con los 28 pesos individualizados, número de esfera, estuche, tipo de esfera, orden de pesaje, fecha/hora de cada lectura, báscula y operador.
+2. Identificación de báscula: fabricante, modelo, número de serie, resolución, capacidad, ubicación y activo institucional.
+3. Calendario anual de calibración, certificados vigentes, laboratorio, patrón, trazabilidad metrológica, incertidumbre, resultados, fecha de calibración, fecha de vencimiento y evidencia de aceptación.
+4. Registros de sustitución de estuche o esfera por no conformidad, nuevo pesaje, valores anteriores y posteriores y firmas.
+5. No sustituir pesos individuales por promedios, rangos ni una declaración general de conformidad.
+
+VI. MANTENIMIENTO E INCIDENCIAS
+1. Calendario anual de mantenimiento preventivo/correctivo del Set de Sorteos y máquinas.
+2. Órdenes de trabajo, reportes técnicos, fechas y horas de inicio/fin, máquina/serie, consola, componentes, refacciones, mediciones, incidencias, pruebas posteriores y aceptación.
+3. CS-09, bitácoras de concursos, bitácoras de acceso/limpieza/mantenimiento y registros CS-12 por concurso o intervención.
+4. Comunicaciones CS-18 recibidas, fecha/hora de emisión y recepción, riesgo reportado, área responsable y acción correctiva/preventiva. Si no se generó CS-18, aclarar que el formato es potestativo y no inferir ausencia de riesgos.
+5. Identificar los contratos/proveedores que efectivamente atendieron máquinas, estuches, básculas o consolas y separar dichos servicios del mantenimiento general de inmuebles y de infraestructura eléctrica.
+
+VII. VIDEOGRABACIONES
+1. Grabación original continua contratada desde el pesaje hasta el sorteo electrónico, no sólo el segmento editado que se anexa al Acta.
+2. Grabación original de las cámaras ubicadas en la sala que registran los números expresados por el presentador al aparecer las esferas en los exhibidores.
+3. Identificar por separado cada sistema de cámara, dispositivo, archivo, formato, resolución, reloj, zona horaria, fecha/hora de inicio y fin, cortes, ediciones y exportaciones.
+4. Hash criptográfico de cada archivo original y copia, metadatos, registros de transferencia, almacenamiento, accesos, cadena de custodia y política de conservación.
+5. En caso de no conservarse el máster original, indicar fecha y fundamento de eliminación, responsable, autorización, acta de baja y existencia de copias.
+
+VIII. FORMATO Y RESPUESTA
+Se solicita información estructurada en CSV, XLSX o JSON para tablas y logs, y PDF legible para documentos firmados. Puede testarse información personal no necesaria, pero deben conservarse fechas/horas, roles, identificadores de activos, números de concurso, campos técnicos, hashes y firmas verificables.
+
+Para cada punto, indicar una de estas situaciones: existe y se entrega; existe pero se reserva o clasifica (citar fundamento, plazo y versión pública); no existe; no se genera por diseño; no está bajo resguardo de esa unidad (identificar unidad transferente/receptora); fue transferido o destruido (fecha, acta y fundamento); o no puede localizarse tras búsqueda (áreas, sistemas y archivos consultados).
+
+No se solicita que la autoridad calcule probabilidades ni emita opinión sobre capacidad predictiva. La finalidad es reconstruir de manera verificable la cadena documental y temporal de cada sorteo.
+
+NOTA DE INTEGRIDAD DEL PROYECTO
+Este borrador no afirma que hayan ocurrido irregularidades, discrepancias, fallas de custodia o sesgos. La existencia normativa de un control no demuestra su ejecución en un concurso. Los datos posteriores al cierre no se tratarán como predictores pre-cierre. No se solicita modificar V294 ni el histórico canónico.

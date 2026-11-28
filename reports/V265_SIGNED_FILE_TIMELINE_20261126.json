@@ -1,0 +1,35 @@
+{
+  "anytime_evalue_gate_passed": false,
+  "audit_id": "V265_SIGNED_FILE_TIMELINE_20261126",
+  "classification": "DOCUMENTED_MECHANISM_ONLY",
+  "checks": {
+    "cs11_copy_count": true,
+    "cs11_third_copy_recipient": true,
+    "mjf_after_2100": true,
+    "mjf_exact_draw_end_unknown": true,
+    "no_original_draw_records": true,
+    "official_revision": true,
+    "signature_deposited_pre_draw": true,
+    "signature_not_preclose": true,
+    "sical_closed_before_annex_signature": true,
+    "weighing_after_close": true
+  },
+  "all_checks_pass": true,
+  "draw_level_original_records_obtained": false,
+  "key_findings": {
+    "cs11_actual_delivery_receipts_obtained": false,
+    "cs11_copy_distribution_complete": true,
+    "cs11_third_copy_recipient": "CONTROL_DATA_OPERATOR",
+    "mjf_archive_stage": "AFTER_21_00_DAILY_CLOSE; EXACT_RELATION_TO_DRAW_END_UNSPECIFIED",
+    "participation_signature_is_preclose": false,
+    "participation_signature_stage": "AFTER_SICAL_CLOSE_CHECK_BEFORE_DRAW",
+    "physical_bias_evidence": false,
+    "predictive_edge_evidence": false,
+    "weighing_stage": "AFTER_VERIFIED_SICAL_CLOSE"
+  },
+  "multiplicity_gate_passed": false,
+  "official_pdf_bytes_and_sha256_captured": false,
+  "oos_gate_passed": false,
+  "source_document": "SGVO-PRO-05 revision 39, DN-07 v09",
+  "source_url": "https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf"
+}

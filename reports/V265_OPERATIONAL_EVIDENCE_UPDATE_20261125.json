@@ -1,0 +1,304 @@
+{
+  "audit_id": "V265_OPERATIONAL_EVIDENCE_UPDATE_20261125",
+  "retrieved_on": "2026-11-25",
+  "audit_type": "deterministic_official_document_and_archive_manifest_reconciliation",
+  "classification": "MECHANISM_DOCUMENTATION_ONLY",
+  "uses_draw_outcomes": false,
+  "uses_synthetic_records": false,
+  "physical_records_obtained": [],
+  "new_findings": [
+    {
+      "id": "CURRENT_NORMATECA_SCOPE",
+      "finding": "The current Normateca substantive list includes SGVO-PRO-05 revision 39 (last update 2026-03-20) and separately lists SGVO-PRO-08, SGVO-PRO-34 and SGVO-PRO-15 for traditional draws. SGM-PRO-06 and SGVO-MAN-02 are not listed as current substantive procedures.",
+      "implication": "Use SGVO-PRO-05 for current electronic-draw workflow. Do not import wooden-ball, abacus or traditional-equipment procedures into Chispazo."
+    },
+    {
+      "id": "LEGACY_PRE_CLOSE_EXPLAINS_CONFLICT",
+      "finding": "A public SGM-PRO-06 revision 21 PDF in the PROYECTO/SUSTANTIVAS path says Chispazo cases are preferably weighed before a 21:15 sales close. It is a project/legacy copy, not a current listed norm.",
+      "implication": "This explains why older material can say pre-close weighing, but it cannot override SGVO-PRO-05 revision 39, which defines 21:00 close for night draws and places weighing after SICAL closed-state verification."
+    },
+    {
+      "id": "ACTA_ATTACHMENTS_VS_DVD_MANIFEST",
+      "finding": "SGVO-PRO-05 marks the sales-close Sumario, CS-11, post-result Sumario and Tira de Pesaje as Chispazo Acta attachments. Its separate enumerated weekly DVD manifest lists signed winner relation, basic information, results, winning mask and consolidated bets for Tris; it does not enumerate Tira, CS-11 or either Sumario.",
+      "implication": "Request physical Acta annexes and digital DVD contents separately. Do not assume the weekly DVD contains the original Tira or CS-11."
+    },
+    {
+      "id": "CS11_COPY_DISTRIBUTION_GAP",
+      "finding": "Activity 13.1 says CS-11 is printed in four copies. Activity 13.6 says three copies are made and four exemplars distributed, but names only the original for the SGVO representative and copies for SEGOB and the IT representative. One copy has no named recipient in the public procedure text.",
+      "implication": "Ask Lotería to identify the fourth copy's custodian. This is a document-control clarification, not evidence of an operational failure."
+    },
+    {
+      "id": "ACTA_SIGNATURE_LATENCY",
+      "finding": "SGVO-PRO-05 allows an Acta that cannot be printed at the event to be signed the next business day, with a maximum of five business days, only if the result is not compromised; the event is to be noted in the bitácora.",
+      "implication": "Acta signature and scan availability can lag the draw. Preserve event_time, created_at, signed_at and scanned_at separately."
+    },
+    {
+      "id": "TWO_DISTINCT_E_SIGNATURES",
+      "finding": "The participations/cancellations file receives its electronic signature immediately after sales close. The winner-relation report receives its own electronic signature after results are captured.",
+      "implication": "The first authenticates the frozen sales file but is post-close; the second is post-result. Neither is a pre-close physical predictor."
+    },
+    {
+      "id": "ARCHIVE_RETRIEVAL_ROUTE",
+      "finding": "Lotería's official archival-instruments page exposes the classification chart, simple archive guide, CADIDO 2017 and inventories for archive-in-process and concentration. The PDFs could not be inspected in this run because public downloads timed out or exceeded retrieval limits.",
+      "implication": "These inventories are a new route to identify custodial unit, documentary series and retention location. Their actual series and retention entries remain unverified."
+    },
+    {
+      "id": "2026_CUSTODY_OFFICE",
+      "finding": "SAF-MAN-12, the public February 2026 General Organization Manual, assigns the Subgerencia de Operación de Concursos, Juegos y Sorteos Electrónicos e Instantáneos responsibility for the annual preventive/corrective machinery-maintenance calendar, physical/digital custody and archiving of Actas, videorecordings and operational records, and facilitation of original files for certification.",
+      "implication": "Direct the physical-evidence records request to this specific Subgerencia and request certified originals or certified copies plus inventory/custody metadata."
+    },
+    {
+      "id": "MAINTENANCE_CONTRACT_058_2024",
+      "finding": "Lotería's official 2018-2024 management report identifies contract 058-2024 for preventive/corrective maintenance of 21 draw machines, controls and consoles covering Melate, Revancha, Revanchita, Melate Retro, Tris, Tris Multiplicador, Chispazo and Gana Gato; it is listed among contracts concluded during the January-June 2024 period.",
+      "implication": "Request contract scope, annexes, asset IDs, machine serials, service reports, work orders and acceptance records. This is fleet-level historical evidence, not a per-contest maintenance log."
+    },
+    {
+      "id": "FLEET_RECONCILIATION",
+      "finding": "The same official report describes 14 machines acquired in 2022, while contract 058-2024 covers 21 machines. No public asset-level reconciliation or Chispazo assignment was found.",
+      "implication": "Request the complete asset register and mapping of machine model/serial, controls, console, product allocation, active dates and reserve status. Do not infer a contradiction or assign any of the 21 machines to Chispazo without that register."
+    }
+  ],
+  "normateca": {
+    "current_substantive_list_url": "https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2",
+    "retrieved_on": "2026-11-25",
+    "SGVO_PRO_05": {
+      "listed_current": true,
+      "revision": 39,
+      "last_update": "2026-03-20"
+    },
+    "traditional_procedures_listed_separately": [
+      {
+        "code": "SGVO-PRO-08",
+        "title": "Mantenimiento mayor y menor del equipo e instrumentos de sorteos tradicionales"
+      },
+      {
+        "code": "SGVO-PRO-34",
+        "title": "Verificación de peso y diámetro de bolas de madera; distribución del boleo, armado y revisión de ábacos"
+      },
+      {
+        "code": "SGVO-PRO-15",
+        "title": "Preparación y celebración del sorteo tradicional"
+      }
+    ],
+    "SGM_PRO_06_listed_current": false,
+    "SGVO_MAN_02_listed_current": false,
+    "SGVO_MAN_02_project_listing": true
+  },
+  "sources": {
+    "SGVO-PRO-05": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf",
+      "revision": 39,
+      "dn07_version": 9,
+      "publication_date": "2026-03-20",
+      "pages": 38,
+      "Chispazo_attachment_matrix": [
+        "SUMARIO DE SORTEO (CIERRE DE VENTA)",
+        "NÚMEROS GANADORES DE LOS SORTEOS CS-11",
+        "SUMARIO DE SORTEO",
+        "TIRA DE PESAJE"
+      ],
+      "CS02": {
+        "form": "Inspección diaria del funcionamiento de los equipos de sorteo CS-02",
+        "frequency": "before_each_draw",
+        "nonconformance_action": "replace equipment or scale",
+        "machine_serial_and_RFID_fields_published": false
+      },
+      "Sumario_cierre": {
+        "availability": "after_sales_close_before_winner_numbers_entered",
+        "fields": [
+          "draw_name",
+          "draw_number",
+          "date",
+          "CDC",
+          "status_closed",
+          "close_time",
+          "gross_sales",
+          "cancellations",
+          "net_sales"
+        ]
+      },
+      "Tira_de_Pesaje": {
+        "public_definition_records": "weight_of_each_sphere",
+        "signers": [
+          "weighing_responsible",
+          "operations_representative",
+          "director_general_representative",
+          "SEGOB_inspector"
+        ],
+        "explicit_start_end_timestamps_in_public_definition": false,
+        "explicit_sphere_number_or_RFID_mapping_in_public_definition": false,
+        "included_as_Chispazo_Acta_annex": true,
+        "same_draw_timing_under_activity_5": "after_SICAL_closed_state_verification"
+      },
+      "CS11": {
+        "form_name": "Números Ganadores de los Sorteos",
+        "printed_copies_activity_13_1": 4,
+        "copies_activity_13_6": 3,
+        "distribution_destinations_explicitly_named": [
+          "original_to_SGVO_for_Acta",
+          "copy_to_SEGOB",
+          "copy_to_IT_representative"
+        ],
+        "unnamed_copy_count": 1,
+        "quality_plan_fields": [
+          "date",
+          "draw_number",
+          "case_number",
+          "sphere_numbers_vs_form_numbers",
+          "participants"
+        ],
+        "timing": "after_extraction_and_display_verification"
+      },
+      "Acta": {
+        "normal_timing": "after_draw",
+        "exceptional_signature_delay": "next_business_day_up_to_5_business_days_if_printing_failure_and_result_not_compromised",
+        "bitacora_record_required_for_delay": true
+      },
+      "digital_weekly_DVD_manifest": {
+        "frequency": "weekly_Monday_to_Sunday",
+        "listed_contents": [
+          "winner_relation_and_its_electronic_signature",
+          "basic_information",
+          "results_obtained",
+          "winning_mask",
+          "consolidated_bets_for_Tris"
+        ],
+        "not_enumerated_in_DVD_list": [
+          "Tira_de_Pesaje",
+          "CS-11",
+          "Sumario_de_cierre",
+          "Sumario_post_result"
+        ],
+        "caveat": "Those records are separately listed as Acta attachments; do not infer they are absent from the full expediente, only that they are not enumerated in the DVD manifest."
+      },
+      "electronic_signatures": {
+        "participations_and_cancellations": "generated_immediately_after_sales_close",
+        "winner_relation": "generated_after_winner_numbers_are_captured"
+      },
+      "video": {
+        "continuous_recording": "from_sphere_weighing_to_draw",
+        "edited_recording": "draw_only_and_part_of_Acta"
+      },
+      "maintenance": "annual_preventive_and_if_applicable_corrective_calendar",
+      "scale_calibration": "at_least_annually",
+      "incidents": "Acta_and_CS09_if_they_affect_results",
+      "CS12": "event_access_register",
+      "CS18": "risk_communication_without_universal_public_timestamp"
+    },
+    "Reglamento_Chispazo": {
+      "url": "https://www.loterianacional.gob.mx/documentos/legal/reglamentojuegos/Reforma-Reg-Chispazo-marzo-2012.pdf",
+      "last_amendment": "2012-03-07",
+      "article_9": "28 spheres introduced into an urn before sales close; then sales close and participation file is generated/signed; five spheres extracted in ceremony"
+    },
+    "Chispazo_product_page": {
+      "url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "classification": "electronic_draw",
+      "de_las_tres_time": "15:00",
+      "clasico_time": "21:00"
+    },
+    "SGM_PRO_06_revision_21_project_copy": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/PROYECTO/SUSTANTIVAS/sgm_p0_6_21.pdf",
+      "revision": 21,
+      "folder_status": "PROJECT",
+      "Chispazo_weighing_wording": "preferably_before_sales_close_at_21:15",
+      "authority_status": "NOT_CURRENT_LISTED"
+    },
+    "archive_instruments": {
+      "url": "https://www.loterianacional.gob.mx/Transparencia/InstrumentosControlConsultaArchivistica",
+      "public_links": [
+        "Cuadro General de Clasificación Archivística",
+        "Guía Simple de Archivos",
+        "CADIDO 2017",
+        "Inventario Archivo de Trámite",
+        "Inventario Archivo de Concentración"
+      ],
+      "retrieval_status": "PDF_downloads_timeout_or_exceeded_limit",
+      "series_and_retention_verified": false
+    },
+    "SEGOB_inspection": {
+      "url": "https://sitios.segob.gob.mx/es/Juegos_y_Sorteos/inspecciones_lotenal_pronosticos",
+      "role": "Inspection_and_surveillance_gives_faith_legality_and_transparency_to_Loteria_Nacional_draws"
+    },
+    "SAF_MAN_12": {
+      "url": "https://www.loterianacional.gob.mx/documentos/Manual_de_Organizacion_General_de_Loteria_Nacional.pdf",
+      "document": "Manual de Organización General de Lotería Nacional",
+      "revision": 0,
+      "issue_date": "2026-02",
+      "section": "3.2.3.1 Subgerencia de Operación de Concursos, Juegos y Sorteos Electrónicos e Instantáneos",
+      "functions": {
+        "annual_preventive_corrective_maintenance_calendar": true,
+        "physical_and_digital_custody_of_actas_videos_operational_records": true,
+        "facilitate_original_documents_for_certification": true
+      },
+      "use": "Custodial-office identification; not a draw-level physical record."
+    },
+    "Maintenance_contract_058_2024": {
+      "url": "https://www.loterianacional.gob.mx/Documentos/Transparencia/InformacionSocialmenteUtil/Informe_Consolidado.pdf",
+      "report": "Informe de Gestión Gubernamental 2018-2024",
+      "pages": [
+        43,
+        58
+      ],
+      "contract": "058-2024",
+      "scope": "Preventive/corrective maintenance of 21 draw machines with controls and consoles for Melate, Revancha, Revanchita, Melate Retro, Tris, Tris Multiplicador, Chispazo and Gana Gato",
+      "status_in_report": "concluded_within_2024-01_to_2024-06_reporting_period",
+      "per_machine_serials_published": false,
+      "per_contest_work_orders_published": false
+    }
+  },
+  "timing_decisions": {
+    "preclose_candidates_conditional": [
+      "CS-02",
+      "machine_identity",
+      "initial_case_selection",
+      "maintenance_status",
+      "scale_calibration_status"
+    ],
+    "postclose_same_draw_not_predictors": [
+      "Tira_de_Pesaje",
+      "Sumario_cierre",
+      "participations_file_signature",
+      "CS-11",
+      "Acta",
+      "winner_relation_signature",
+      "video",
+      "CS-09",
+      "CS-12"
+    ],
+    "conditional_if_timestamped_preclose": [
+      "CS-18_risk_notice",
+      "machine_identity",
+      "final_case_assignment",
+      "maintenance_and_calibration_records"
+    ],
+    "RFID": "not_usable_until_individual_tags_reader_logs_and_sphere_number_map_are_obtained",
+    "sequence_conflict": "Regulation_article_9_urn_loading_preclose_vs_current_SGVO_activity_5_weighing_after_close_remains_unresolved",
+    "custodial_office": "SAF-MAN-12 identifies the electronic-draw Subgerencia as custodian of Actas, videorecordings and operational records; custodian identity does not make those retrospective records pre-close predictors."
+  },
+  "V265": {
+    "classification": "ASSOCIATION_SCREEN_ONLY",
+    "physical_bias_evidence": false,
+    "actionable_for_betting": false,
+    "per_sphere_weights_consumed": false,
+    "per_sphere_RFID_mapping_consumed": false,
+    "extraction_order_consumed": false,
+    "per_extraction_timestamps_consumed": false,
+    "source_provenance_required": false,
+    "anytime_evalue_gate_implemented": false
+  },
+  "analysis": {
+    "method": "deterministic_validation_of_official_document_metadata_and_cross_document_control_manifest",
+    "draw_outcomes_used": false,
+    "synthetic_records_used": false,
+    "physical_effect_estimated": false,
+    "OOS_gate_passed": false,
+    "multiplicity_gate_passed": false,
+    "anytime_evalue_gate_passed": false
+  },
+  "repository_protection": {
+    "V294_changed": false,
+    "canonical_history_changed": false,
+    "main_written": false,
+    "promotion_or_merge": false
+  }
+}

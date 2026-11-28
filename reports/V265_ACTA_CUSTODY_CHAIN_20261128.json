@@ -1,0 +1,76 @@
+{
+  "acta_chain": {
+    "acta_is_official_result_record": true,
+    "acta_signature_can_be_deferred_max_five_business_days_under_exception": true,
+    "cs11_is_separate_record_not_acta": true,
+    "cs12_is_access_record": true,
+    "cs18_is_optional_risk_communication": true,
+    "continuous_recording_from_weighing_to_draw": true,
+    "draw_level_acta_and_annexes_obtained": false,
+    "incidents_recorded_in_acta": true,
+    "original_video_master_obtained": false,
+    "room_cameras_record_exhibitor_numbers": true,
+    "signed_acta_scanned_to_oic": true,
+    "sical_discrepancy_requires_both_screens_and_provider_clarification": true,
+    "weekly_annex_dvd_delivery": true,
+    "weekly_dvd_or_delivery_office_obtained": false,
+    "weekly_archive_chispazo_codes": [
+      "CLSBR140",
+      "CLIER195",
+      "CLSKR170",
+      "CLSAR110"
+    ]
+  },
+  "all_document_anchors_pass": true,
+  "analysis": {
+    "anytime_evalue_gate_passed": false,
+    "multiplicity_gate_passed": false,
+    "oos_gate_passed": false,
+    "statistical_tests_run": [],
+    "type": "PUBLIC_DOCUMENT_STATIC_CROSSWALK_AND_AST_CONTRACT_AUDIT",
+    "uses_authentic_draw_level_physical_records": false,
+    "uses_draw_outcomes": false,
+    "uses_synthetic_records": false
+  },
+  "audit_id": "V265_ACTA_CUSTODY_CHAIN_20261128",
+  "classification": "DOCUMENTED_MECHANISM_ONLY",
+  "document_anchors": {
+    "acta_official_hierarchy": true,
+    "acta_scan_to_oic": true,
+    "continuous_video_scope": true,
+    "cs12_access": true,
+    "deferred_acta_signature": true,
+    "incident_definition": true,
+    "no_master_video": true,
+    "no_preclose_prediction": true,
+    "optional_cs18": true,
+    "room_camera_capture": true,
+    "sical_discrepancy_route": true,
+    "weekly_annex_archive": true,
+    "weekly_archive_codes": true
+  },
+  "preservation": {
+    "canonical_history_touched": false,
+    "main_written": false,
+    "merge_or_promotion": false,
+    "v294_touched": false
+  },
+  "v265_evaluator": {
+    "actionable_for_betting": false,
+    "anytime_evalue_gate_implemented": false,
+    "extraction_order_consumed": false,
+    "per_extraction_timestamps_consumed": false,
+    "per_sphere_rfid_mapping_consumed": false,
+    "per_sphere_weights_consumed": false,
+    "physical_bias_evidence": false,
+    "required_metadata_fields": [
+      "CONCURSO",
+      "sphere_set_id",
+      "machine_id",
+      "available_before_close",
+      "close_time_local",
+      "metadata_known_time_local"
+    ],
+    "source_provenance_required": false
+  }
+}

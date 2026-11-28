@@ -1,0 +1,49 @@
+SOLICITUD DE ACCESO — CHISPAZO CLÁSICO / EVIDENCIA FÍSICA Y OPERATIVA
+Versión de ampliación: 2026-11-25
+Ámbito: Sorteo electrónico Chispazo Clásico. Excluir procedimientos y expedientes de sorteos tradicionales, salvo que se solicite una aclaración comparativa explícita.
+
+DESTINATARIO FUNCIONAL PARA TURNO:
+Subgerencia de Operación de Concursos, Juegos y Sorteos Electrónicos e Instantáneos, identificada en SAF-MAN-12 (febrero de 2026, sección 3.2.3.1) como responsable del calendario anual de mantenimiento y de la custodia física/digital de Actas, videograbaciones y registros operativos, así como de facilitar originales para certificación.
+
+1. CUSTODIA Y EXPEDIENTES POR CONCURSO
+Para Chispazo Clásico, por cada concurso en el periodo que obre en archivos:
+- Acta íntegra y anexos: Sumario de cierre, Sumario posterior, CS-11, Tira de Pesaje, Relación de Ganadores y firmas electrónicas.
+- CS-02, CS-09, CS-12, CS-18 y cualquier registro complementario.
+- Máster audiovisual continuo desde el pesaje hasta el sorteo, además de versión editada; metadatos, timecodes, bitácora de exportación, checksum disponible y cadena de custodia.
+- Inventario del expediente: unidad productora, serie/subserie archivística, custodio, ubicación física/digital, fechas de transferencia y plazo de conservación.
+Solicito versión pública o copia certificada cuando sea legalmente posible; si un documento no existe, no se conserva o fue transferido/dado de baja, indicar la causa, fecha y acta/constancia correspondiente.
+
+2. TIRA DE PESAJE Y ESFERAS
+- Original legible de cada tira con las 28 lecturas individuales, unidad, identificación del estuche, máquina, báscula, tipo de esfera, firmas y cualquier fecha/hora impresa.
+- Formato de impresión y especificación controlada vigente.
+- Identificación individual de cada esfera y correspondencia número impreso ↔ RFID; si no existe, declararlo expresamente.
+- Fecha/hora de inicio y fin del pesaje, sustituciones de estuche y causa de rechazo.
+- Certificados de calibración de báscula y evidencia de vigencia en la fecha del concurso.
+
+3. MÁQUINAS, RFID Y ASIGNACIÓN
+- Inventario patrimonial de máquinas, controles, consolas, básculas, lectores y antenas RFID: modelo, número de serie, tag ID, fecha de alta/baja, estado y ubicación.
+- Asignación máquina-estuche-esferas-concurso y cambios/sustituciones.
+- Logs RFID originales: tag, lector, antena, fecha/hora con zona horaria, resultado de lectura, errores y vínculo con el concurso.
+- Identificación de RFID del estuche como contenedor, si existe; si no existe, indicarlo.
+
+4. MANTENIMIENTO 058-2024
+El Informe de Gestión Gubernamental 2018-2024 identifica el contrato 058-2024 para mantenimiento preventivo/correctivo de 21 máquinas con controles y consolas, incluyendo Chispazo. Solicito:
+- Contrato íntegro, anexos técnicos, inventario de activos cubiertos, entregables y actas de aceptación.
+- Órdenes de trabajo, bitácoras preventivas/correctivas, refacciones, fallas, pruebas posteriores y fechas de ejecución/recepción.
+- Identificación por serie de los equipos efectivamente atendidos y productos a los que estaban asignados.
+- Conciliación del inventario: el mismo informe menciona 14 máquinas adquiridas en 2022; indicar cómo se relacionan con las 21 cubiertas por el contrato 058-2024, sin asumir que son la misma flota.
+
+5. CRONOLOGÍA Y DISPONIBILIDAD
+Para cada registro, distinguir fecha/hora del hecho, captura, generación, firma, recepción, incorporación al expediente, digitalización y transferencia. Indicar zona horaria, sistema de origen, versión del documento y quién certifica la secuencia.
+Aclarar formalmente la secuencia del artículo 9 del Reglamento (urna antes del cierre) frente a la actividad 5 de SGVO-PRO-05 rev.39 (verificación SICAL cerrado y posterior pesaje/colocación en alimentadores). Identificar qué significa “urna” y qué etapa se refiere a alimentadores.
+
+6. CS-11 Y ARCHIVO DIGITAL
+La actividad 13.1 menciona cuatro ejemplares de CS-11; la actividad 13.6 enumera el original y dos copias. Indicar custodio/destino del cuarto ejemplar.
+La matriz de anexos del Acta incluye Tira, CS-11 y Sumarios, mientras que el manifiesto enumerado del DVD semanal no los lista. Indicar qué originales quedan en papel y qué copias digitales existen, con inventario de cada medio.
+
+7. ESPECIFICACIÓN NORMATIVA
+- Confirmar la versión controlada y vigente de SGVO-MAN-02 referida por SGVO-PRO-05.
+- Confirmar el documento y política correctos de límites de peso: la política 6 contiene los parámetros de peso, mientras actividad 5.2 y el plan de calidad remiten a política 8.
+- Confirmar el procedimiento vigente de mantenimiento y calibración de máquinas electrónicas y básculas.
+
+No solicito datos personales de participantes ni datos comerciales individuales. Acepto versiones públicas con datos personales testados, siempre que se conserven identificadores técnicos, timestamps y trazabilidad documental.
