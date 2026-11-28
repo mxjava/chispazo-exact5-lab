@@ -277,6 +277,10 @@ def verify_transparency_ledger_bundle_inclusion_v2(
     issued_at = _parse_utc_timestamp(checkpoint["issued_at_utc"], "checkpoint issued_at_utc")
     if issued_at > verified_at:
         raise ValueError("checkpoint issued_at_utc is later than supplied verification time")
+    if issued_at <= timestamp_inspection.accuracy_upper_bound_utc:
+        raise ValueError(
+            "checkpoint issued_at_utc must be strictly later than the RFC 3161 timestamp accuracy upper bound"
+        )
     signature = _decode_canonical_base64(checkpoint["signature_b64"], "checkpoint signature_b64")
     if len(signature) != 64:
         raise ValueError("checkpoint Ed25519 signature must be exactly 64 bytes")
