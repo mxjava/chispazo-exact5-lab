@@ -24,6 +24,7 @@ from origen.deployment_trust_provider_v1 import (
     DeploymentTrustSnapshot,
     ExternalEvidenceWatermarkV1,
     TrustProviderUnavailable,
+    TrustStateOutcome,
     TrustStateRejected,
     _accepted_external_evidence_watermark_sha256,
     _external_evidence_advance_copy,
