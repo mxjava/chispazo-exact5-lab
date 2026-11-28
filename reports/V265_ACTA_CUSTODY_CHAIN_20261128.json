@@ -13,7 +13,13 @@
     "signed_acta_scanned_to_oic": true,
     "sical_discrepancy_requires_both_screens_and_provider_clarification": true,
     "weekly_annex_dvd_delivery": true,
-    "weekly_dvd_or_delivery_office_obtained": false
+    "weekly_dvd_or_delivery_office_obtained": false,
+    "weekly_archive_chispazo_codes": [
+      "CLSBR140",
+      "CLIER195",
+      "CLSKR170",
+      "CLSAR110"
+    ]
   },
   "all_document_anchors_pass": true,
   "analysis": {
@@ -40,7 +46,8 @@
     "optional_cs18": true,
     "room_camera_capture": true,
     "sical_discrepancy_route": true,
-    "weekly_annex_archive": true
+    "weekly_annex_archive": true,
+    "weekly_archive_codes": true
   },
   "preservation": {
     "canonical_history_touched": false,
