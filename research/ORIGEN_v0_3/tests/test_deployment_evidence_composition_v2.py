@@ -155,6 +155,16 @@ class ProviderBoundTransparencyLedgerBundleTransitionV2Tests(unittest.TestCase):
             inspect(values, provider)
         self.assertEqual(provider.commit_count, 0)
 
+    def test_provider_time_must_not_regress_behind_persisted_time_watermark(self):
+        values, provider = build_provider_bound_case()
+        provider.snapshot = replace(
+            provider.snapshot,
+            trusted_time_latest_utc=NOW + timedelta(seconds=1),
+        )
+        with self.assertRaisesRegex(TrustStateRejected, "regressed behind"):
+            inspect(values, provider)
+        self.assertEqual(provider.commit_count, 0)
+
     def test_challenge_must_cover_full_clock_uncertainty_interval(self):
         values, provider = build_provider_bound_case(uncertainty_ms=100)
         challenge = replace(
