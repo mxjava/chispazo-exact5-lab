@@ -1,7 +1,7 @@
 ## Canonical raw signed policy envelope bytes (2026-11-27)
-- Regression-first test commit `daeb2394d4a32469dec063b42ed9b7bb96037c6c` added a valid-signature envelope with noncanonical leading/trailing whitespace; the test-only head is expected to fail because the old verifier accepted the alternate raw representation.
-- Follow-up test commit `8e436e753b4953bd88b568f56ccf59cda3477467` corrected the fixture to use valid JSON whitespace rather than trailing non-JSON bytes.
-- The verifier now requires the exact received envelope bytes to equal canonical serialization of the complete parsed document, including the signature field, before verifying the Ed25519 signature over the canonical unsigned claims. This keeps `envelope_sha256` tied to one exact signed representation.
+- Initial test-only commit `daeb2394d4a32469dec063b42ed9b7bb96037c6c` contained an incorrectly escaped trailing newline; its isolated run failed at JSON decoding, so that run is not treated as defect reproduction.
+- Corrected test-only commit `8e436e753b4953bd88b568f56ccf59cda3477467` uses valid leading/trailing JSON whitespace. Its exact-head ORIGEN run `46114442203` failed because the verifier returned successfully and the expected `ValueError` was not raised. This reproduces acceptance of alternate raw encodings for the same valid signed policy.
+- Fix commit `6c4ba03ea3d98bae32a011dc1ecac71e672a9c55` requires the exact received envelope bytes to equal canonical serialization of the complete parsed document, including the signature field, before verifying the Ed25519 signature over the canonical unsigned claims. This keeps `envelope_sha256` tied to one exact signed representation.
 - This is an encoding/integrity correction only. It does not authenticate root provisioning, trusted time, revocation freshness, or anti-rollback persistence; production remains fail-closed.
 
 ## Acta role separation and official 13:10 status refresh (2026-11-24)
