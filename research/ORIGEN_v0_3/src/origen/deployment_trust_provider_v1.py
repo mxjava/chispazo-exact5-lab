@@ -931,7 +931,20 @@ def _read_verified_operation_receipt(
 ) -> DeploymentTrustInspection | None:
     reader = getattr(provider, "read_operation_receipt", None)
     if not callable(reader):
+        if snapshot.operation_receipt_key_id is not None:
+            raise TrustProviderUnavailable(
+                "provider snapshot advertises an operation-receipt key but the read API is missing",
+                operation_id_sha256=operation_id_sha256,
+            )
         return None
+    if (
+        snapshot.operation_receipt_key_id is None
+        or snapshot.operation_receipt_public_key_bytes is None
+    ):
+        raise TrustProviderUnavailable(
+            "provider operation-receipt verification key is not provisioned",
+            operation_id_sha256=operation_id_sha256,
+        )
     try:
         raw = reader(
             policy_domain=CLASSIC_POLICY_DOMAIN,
