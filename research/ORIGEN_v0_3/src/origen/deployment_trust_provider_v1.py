@@ -590,6 +590,8 @@ def _validated_external_evidence_watermark(
     snapshot: DeploymentTrustSnapshot,
     expected_sha256: str,
     advance: ExternalEvidenceAdvanceV1 | None,
+    *,
+    allow_replay_candidate: bool = False,
 ) -> ExternalEvidenceWatermarkV1 | None:
     """Validate one candidate against the exact accepted watermark in a snapshot.
 
@@ -597,6 +599,8 @@ def _validated_external_evidence_watermark(
     its linearizable CAS transaction; this application-side check is not a
     substitute for durable independent storage.
     """
+    if type(allow_replay_candidate) is not bool:
+        raise TypeError("allow_replay_candidate must be an exact bool")
     _require_sha256(expected_sha256, "expected_external_evidence_watermark_sha256")
     current = _external_evidence_watermark_copy(snapshot.accepted_external_evidence_watermark)
     if current is not None and (
@@ -630,7 +634,7 @@ def _validated_external_evidence_watermark(
     # candidate; the provider must confirm the matching durable operation ID
     # before returning IDEMPOTENT. Without that operation record, its CAS must
     # reject the stale old checkpoint.
-    if (
+    if allow_replay_candidate and (
         candidate.new_tree_size == current.ledger_tree_size
         and candidate.new_root_sha256 == current.ledger_root_sha256
         and candidate.new_checkpoint_sha256 == current.ledger_checkpoint_sha256
@@ -1194,6 +1198,7 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         snapshot,
         expected_external_evidence_watermark_sha256,
         external_evidence_advance,
+        allow_replay_candidate=True,
     )
     next_external_evidence_watermark_sha256 = (
         _accepted_external_evidence_watermark_sha256(next_external_evidence_watermark)
@@ -1308,7 +1313,8 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
     except (TypeError, ValueError) as exc:
         raise TrustProviderUnavailable(
             "provider commit acknowledgement is malformed; transaction outcome is unknown; "
-            "reconcile durable provider state before retrying"
+            "reconcile before retrying",
+            operation_id_sha256=operation_id_sha256,
         ) from exc
 
     if commit.outcome in {
