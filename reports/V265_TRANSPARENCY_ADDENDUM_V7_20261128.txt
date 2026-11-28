@@ -26,7 +26,7 @@ III. ARCHIVOS Y FIRMAS ELECTRÓNICAS
 2. Constancias de grabación del dispositivo, entrega al Inspector SEGOB, depósito en caja de seguridad, accesos del OIC, retiro y resguardo.
 3. Diferenciar expresamente la firma de participaciones/cancelaciones posterior al cierre y anterior al sorteo, la firma de la Relación de Ganadores posterior al sorteo y el MJF diario.
 4. MJF y firma impresa del MJF; archivos, fechas, hashes y constancias de depósito después del cierre nocturno.
-5. DVD semanal previsto en la política 12: inventario de archivos, hashes, periodo lunes-domingo, oficio de entrega DTT, acuse de recepción, anexado al Acta y responsable de custodia.
+5. DVD semanal previsto en la política 12: inventario de archivos, hashes, periodo lunes-domingo, oficio de entrega DTT, acuse de recepción, anexado al Acta y responsable de custodia. Identificar expresamente los cuatro reportes Chispazo de la tabla: CLSBR140 (Relación de Ganadores y firma electrónica), CLIER195 (Información Básica), CLSKR170 (Resultados Obtenidos) y CLSAR110 (Máscara Ganadora). Entregar los archivos originales, no sólo la mascarilla pública.
 
 IV. CS-02, MÁQUINAS, ESTUCHES Y RFID
 1. Versión aprobada vigente del Manual de Apoyo SGVO-MAN-02 y del instructivo técnico que desarrolla la inspección CS-02; fecha de aprobación, vigencia, historial de versiones y autoridad que lo aprobó.
