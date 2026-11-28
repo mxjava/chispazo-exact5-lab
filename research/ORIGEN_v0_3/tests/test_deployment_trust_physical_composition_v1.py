@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import unittest
+from dataclasses import replace
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -14,6 +15,11 @@ from origen.deployment_trust_physical_composition_v1 import (
 from origen.custody_ledger_witness_integration_v1 import CustodyLedgerWitnessInspectionV1
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.physical_trust_context_v1 import PhysicalTrustContextV1, physical_trust_context_sha256
+from test_deployment_trust_provider_v1 import (
+    SyntheticTrustProvider,
+    TestDeploymentTrustProviderV1,
+)
+from test_receipt_policy_integration_v3 import POLICY_SEQUENCE, ROOT_KEY_ID
 
 
 NOW = datetime(2026, 11, 26, 20, 0, tzinfo=timezone.utc)
@@ -22,16 +28,21 @@ POLICY = b"synthetic exact signed policy"
 
 
 
-def physical_context():
+def physical_context(
+    *,
+    policy_root_public_key_bytes=b"p" * 32,
+    policy_root_key_id="synthetic-policy-root",
+    minimum_policy_sequence=7,
+):
     policy_tsa = b"synthetic policy TSA certificate"
     custody_tsa = b"synthetic custody TSA certificate"
     return PhysicalTrustContextV1(
         policy_tsa_root_certificate_der=policy_tsa,
         policy_tsa_root_sha256=hashlib.sha256(policy_tsa).hexdigest(),
         policy_tsa_policy_oid="1.2.3.4",
-        policy_root_public_key_bytes=b"p" * 32,
-        policy_root_key_id="synthetic-policy-root",
-        minimum_policy_sequence=7,
+        policy_root_public_key_bytes=policy_root_public_key_bytes,
+        policy_root_key_id=policy_root_key_id,
+        minimum_policy_sequence=minimum_policy_sequence,
         custody_tsa_root_certificate_der=custody_tsa,
         custody_tsa_root_sha256=hashlib.sha256(custody_tsa).hexdigest(),
         log_public_key_bytes=b"l" * 32,
@@ -285,6 +296,71 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
 
         physical.assert_not_called()
         deployment.assert_not_called()
+
+    def test_real_synthetic_provider_path_reuses_one_snapshot_and_commits(self):
+        provider_case = TestDeploymentTrustProviderV1()
+        provider_case.setUp()
+        context = physical_context(
+            policy_root_public_key_bytes=provider_case.root_public_key,
+            policy_root_key_id=ROOT_KEY_ID,
+            minimum_policy_sequence=POLICY_SEQUENCE - 1,
+        )
+        snapshot = replace(
+            provider_case.snapshot,
+            physical_trust_context_generation=context.context_generation,
+            physical_trust_context_sha256=physical_trust_context_sha256(context),
+        )
+        inner = provider_case.provider
+        inner.snapshot = snapshot
+
+        class Provider:
+            def __init__(self):
+                self.snapshot_reads = 0
+                self.context_reads = 0
+
+            def read_snapshot(self, *, policy_domain):
+                self.snapshot_reads += 1
+                return inner.read_snapshot(policy_domain=policy_domain)
+
+            def read_physical_trust_context(self, *, policy_domain):
+                self.context_reads += 1
+                return context
+
+            def compare_and_advance(self, **kwargs):
+                return inner.compare_and_advance(**kwargs)
+
+        provider = Provider()
+        with patch(
+            "origen.deployment_trust_physical_composition_v1.verify_custody_timestamp_ledger_witness_v1",
+            return_value=physical_result(),
+        ):
+            result = verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
+                provider_case.receipt_bytes,
+                provider_case.policy_bytes,
+                provider=provider,
+                physical_verification_kwargs={},
+            )
+
+        self.assertEqual(provider.snapshot_reads, 1)
+        self.assertEqual(provider.context_reads, 1)
+        self.assertEqual(inner.commit_count, 1)
+        self.assertEqual(
+            inner.last_commit_arguments["policy_sequence"],
+            POLICY_SEQUENCE,
+        )
+        self.assertEqual(
+            inner.last_commit_arguments["expected_state_generation"],
+            snapshot.state_generation,
+        )
+        self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+        self.assertIs(
+            result.deployment_trust_inspection.provenance_status,
+            ProvenanceStatus.BLOCKED_PROVENANCE,
+        )
+        self.assertEqual(
+            result.deployment_trust_inspection.state_generation_after,
+            snapshot.state_generation + 1,
+        )
 
     def test_caller_cannot_supply_physical_trust_anchors_or_floors(self):
         with self.assertRaisesRegex(ValueError, "caller must not supply physical trust anchors"):
