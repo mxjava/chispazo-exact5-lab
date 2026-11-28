@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "docs/evidence/V265_SPHERE_SET_SUBSTITUTION_TIMING_20261128.md"
 V265 = ROOT / "src/v265/CHISPAZO_V265_PHYSICAL_METADATA_EVALUATOR.py"
 ANCHORS = {
+    "manual_project_not_current": "Ese manual aparece en **Proyectos Normativos Históricas**",
     "traditional_motor_procedure_excluded": "SGVO-PRO-28 tiene un nombre que podría inducir a confusión",
     "cs02_preclose": "CS-02, antes del cierre",
     "planned_set_preclose": "Estuche inicial, antes del cierre",
@@ -61,6 +62,14 @@ def build_report() -> dict:
         "classification": "DOCUMENTED_MECHANISM_ONLY_EXPOSURE_SCHEMA_AMBIGUITY",
         "anchors": anchors,
         "all_anchors_pass": all(anchors.values()),
+        "manual_status": {
+            "listed_as_current_vigente": False,
+            "listed_as_project": True,
+            "project_start": "23/02/2026",
+            "project_end": "04/03/2026",
+            "pdf_content_retrieved": False,
+            "used_as_binding_instruction": False,
+        },
         "official_sequence": {
             "cs02_before_close": True,
             "initial_set_confirmed_before_close": True,

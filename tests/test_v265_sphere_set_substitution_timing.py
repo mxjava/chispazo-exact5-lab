@@ -16,6 +16,16 @@ def test_official_sequence_anchors_are_complete():
     assert all(report["anchors"].values())
     assert report["official_sequence"]["failed_weight_can_replace_set_after_close"] is True
     assert report["anchors"]["traditional_motor_procedure_excluded"] is True
+    assert report["anchors"]["manual_project_not_current"] is True
+
+
+def test_sgvo_man02_project_is_not_treated_as_current_instruction():
+    report = MODULE.build_report()
+    status = report["manual_status"]
+    assert status["listed_as_current_vigente"] is False
+    assert status["listed_as_project"] is True
+    assert status["pdf_content_retrieved"] is False
+    assert status["used_as_binding_instruction"] is False
 
 
 def test_v265_has_one_ambiguous_sphere_set_field():

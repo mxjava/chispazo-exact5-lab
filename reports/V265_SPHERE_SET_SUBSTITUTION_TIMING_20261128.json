@@ -14,6 +14,7 @@
     "actual_set_is_distinct": true,
     "cs02_preclose": true,
     "cs11_retrospective": true,
+    "manual_project_not_current": true,
     "no_draw_level_records": true,
     "no_synthetic_data": true,
     "planned_and_actual_are_distinct": true,
@@ -29,6 +30,14 @@
     "if_id_source_is_cs11": "POST_DRAW_NOT_PRE_CLOSE",
     "risk": "PLANNED_VS_ACTUAL_SPHERE_SET_NOT_DISTINGUISHED",
     "same_contest_betting_uses_postclose_actual_set": false
+  },
+  "manual_status": {
+    "listed_as_current_vigente": false,
+    "listed_as_project": true,
+    "project_start": "23/02/2026",
+    "project_end": "04/03/2026",
+    "pdf_content_retrieved": false,
+    "used_as_binding_instruction": false
   },
   "official_sequence": {
     "actual_set_may_differ_from_preclose_plan": true,

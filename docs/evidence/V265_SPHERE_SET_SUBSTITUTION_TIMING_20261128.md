@@ -6,9 +6,16 @@
 La Normateca vigente identifica SGVO-PRO-05, revisión 39, como el procedimiento para sorteos electrónicos y Chispazo aparece dentro de esa familia. La página oficial de Chispazo lo clasifica expresamente como sorteo electrónico y fija el Clásico a las 21:00. Este análisis no usa procedimientos de sorteos tradicionales.
 
 - Normateca sustantiva vigente: https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2
+- Proyectos normativos históricos: https://www.loterianacional.gob.mx/Normateca/Proyectos?id=0
 - SGVO-PRO-05, revisión 39: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf
 - SGVO-PRO-28, alcance de fallas en motor de Esfera Mayor: https://www.loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_28.pdf
 - Chispazo oficial: https://www.loterianacional.gob.mx/Chispazo/Chispazo
+
+## Estado del Manual de Apoyo SGVO-MAN-02
+
+La Normateca de **Sustantivas Vigentes** lista SGVO-PRO-05, pero no lista el Manual de Apoyo para la Operación de Sorteos y Equipos Electrónicos (SGVO-MAN-02). Ese manual aparece en **Proyectos Normativos Históricas** con inicio 23/02/2026, fin 04/03/2026 y archivo identificado como sgvo_man_02p.pdf. Por tanto, la entrada acredita que hubo un proyecto publicado para revisión, no que exista una versión aprobada vigente. El contenido del PDF de proyecto no se obtuvo en esta revisión y no se usa como instrucción operativa.
+
+SGVO-PRO-05 remite al Manual de Apoyo para detalles de operación e inspección; al no localizarse ese manual en la lista vigente, los detalles técnicos completos de CS-02, identificación de activos y ejecución del pesaje siguen siendo un bloqueo documental. No se debe llenar ese vacío con el borrador del proyecto ni con procedimientos de sorteos tradicionales.
 
 ## Exclusión estricta de procedimientos tradicionales
 
