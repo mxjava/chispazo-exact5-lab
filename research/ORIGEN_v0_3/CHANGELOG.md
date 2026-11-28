@@ -1,4 +1,10 @@
 ## Provider-owned nested-signature bundle TSA pin (2026-11-28)
+
+## V1/V2 composition downgrade guard (2026-11-28)
+- The provider trust context can carry a dedicated nested-signature-bundle TSA pin (PR #151), and timestamp challenges can carry a third nonce (PR #147). The existing deployment composition still emits only ExternalEvidenceAdvanceV1 and does not verify the nested bundle token.
+- The V1 composition now fails closed before evidence verification/CAS if either V2-only signal is present; it cannot silently ignore a provisioned V2 pin or challenge nonce.
+- Added synthetic adversarial coverage for both downgrade paths and asserted that neither reaches provider CAS. This is a guard, not V2 composition support; the V2 verifier/provider integration remains outstanding.
+
 - Extended the physical trust-context transport with an optional all-or-none nested-signature bundle TSA root DER, exact lowercase SHA-256 fingerprint and canonical policy OID. The fields are copied at the deployment composition boundary and included in the context digest whenever present; legacy V1 contexts remain unchanged when all three are absent.
 - Added adversarial tests for partial provisioning, mutable/oversized DER, fingerprint substitution, non-canonical OIDs, digest binding and provider-context snapshot copying.
 - This is a trust-pin interface only. It does not authenticate provider provisioning, TSA authority, certificate path/revocation, or any physical draw evidence. The V2 composition still must require and consume this pin before CAS; production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
