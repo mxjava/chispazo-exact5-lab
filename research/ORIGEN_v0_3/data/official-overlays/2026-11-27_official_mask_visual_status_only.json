@@ -1,0 +1,82 @@
+{
+  "schema": "origen.official-chispazo-mask-observation.v1",
+  "observation_date": "2026-11-28",
+  "draw_date": "2026-11-27",
+  "source": {
+    "publisher": "Lotería Nacional, México",
+    "index_url": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "pdf_url": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-27.pdf?v=27112026220824",
+    "index_entry": "RESULTADOS 2026-11-27",
+    "original_pdf_bytes": "NOT_CAPTURED",
+    "original_pdf_sha256": "NOT_CAPTURED",
+    "observation_method": "Official PDF text extraction and rendered one-page visual inspection"
+  },
+  "official_schedule": {
+    "source_url": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "de_las_tres_local_time": "15:00",
+    "clasico_local_time": "21:00"
+  },
+  "draws": [
+    {
+      "draw_id": "12399",
+      "modality": "DE_LAS_TRES",
+      "modality_logo_visually_confirmed": true,
+      "scheduled_local_time": "15:00",
+      "winning_numbers": [
+        10,
+        14,
+        15,
+        17,
+        24
+      ],
+      "winners_by_hits": {
+        "2": 29191,
+        "3": 4324,
+        "4": 180,
+        "5": 1
+      },
+      "individual_prizes_mxn": {
+        "2": 10,
+        "3": 47.34,
+        "4": 1033.7,
+        "5": 197298.65
+      },
+      "total_winners": 33696,
+      "total_prize_pool_mxn": 879972.81
+    },
+    {
+      "draw_id": "12400",
+      "modality": "CLASSIC",
+      "modality_logo_visually_confirmed": true,
+      "scheduled_local_time": "21:00",
+      "winning_numbers": [
+        3,
+        12,
+        15,
+        17,
+        18
+      ],
+      "winners_by_hits": {
+        "2": 45998,
+        "3": 6741,
+        "4": 285,
+        "5": 1
+      },
+      "individual_prizes_mxn": {
+        "2": 10,
+        "3": 46.71,
+        "4": 1004.21,
+        "5": 303479.54
+      },
+      "total_winners": 53025,
+      "total_prize_pool_mxn": 1364531.5
+    }
+  ],
+  "limitations": [
+    "This is public mask publication evidence, not the signed Article 15 Acta or a physical custody package.",
+    "Original PDF bytes were not captured; no source-byte SHA-256 is claimed.",
+    "No CS-11, weighing strip, CS-02, calibration certificate, signed participation file, original video, TSA token, ledger proof, or independent custody record was acquired.",
+    "No canonical history append is authorized by this observation."
+  ],
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
