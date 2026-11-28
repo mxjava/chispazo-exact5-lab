@@ -1,3 +1,10 @@
+## V2 provider-CAS three-nonce binding (2026-11-28)
+- The application now refuses an ExternalEvidenceAdvanceV2 unless the exact provider-issued TimestampNonceChallengeV1 object, challenge ID and canonical digest are present and agree.
+- The V2 envelope's third nonce must equal the challenge's nested-signature-bundle nonce; the challenge must match the exact provider snapshot, physical-context generation/digest and complete trusted-time lease.
+- V2 also requires the distinct provider-owned nested-signature-bundle TSA root/fingerprint/OID pin before CAS. The V1 composition path remains downgrade-protected.
+- The provider CAS contract now explicitly requires authoritative reloading, three-nonce single-use consumption, and independent RFC 3161 verification against the nested-bundle TSA pin inside the same linearizable transaction.
+- Synthetic regressions cover missing challenge, third-nonce substitution, challenge ID/state substitution, missing TSA pin and context drift. This remains a transport/preflight contract; no institutional provider or authenticated provisioning is claimed.
+
 ## Provider-owned nested-signature bundle TSA pin (2026-11-28)
 
 ## V1/V2 composition downgrade guard (2026-11-28)
