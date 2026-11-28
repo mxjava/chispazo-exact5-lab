@@ -44,11 +44,14 @@ def physical_context():
         context_generation=3,
     )
 
-def provider_snapshot(context, *, context_digest=None):
+def provider_snapshot(context, *, context_digest=None, root_public_key_bytes=None):
     return SimpleNamespace(
         trusted_time_utc=NOW,
         policy_domain="origen.chispazo.classic.provenance",
-        root_public_key_bytes=context.policy_root_public_key_bytes,
+        root_public_key_bytes=(
+            context.policy_root_public_key_bytes
+            if root_public_key_bytes is None else root_public_key_bytes
+        ),
         root_key_id=context.policy_root_key_id,
         minimum_policy_sequence=context.minimum_policy_sequence,
         physical_trust_context_generation=context.context_generation,
@@ -170,18 +173,21 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
         )
 
     def test_failed_physical_bundle_never_reads_or_advances_provider(self):
+        context = physical_context()
+        snapshot = provider_snapshot(context)
+
         class Provider:
             def read_snapshot(self, *, policy_domain):
-                return object()
+                return snapshot
 
             def read_physical_trust_context(self, *, policy_domain):
-                return physical_context()
+                return context
 
         provider = Provider()
         with (
             patch(
                 "origen.deployment_trust_physical_composition_v1._snapshot_copy",
-                return_value=SimpleNamespace(trusted_time_utc=NOW),
+                return_value=snapshot,
             ),
             patch(
                 "origen.deployment_trust_physical_composition_v1.verify_custody_timestamp_ledger_witness_v1",
@@ -228,6 +234,47 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 TrustStateRejected,
                 "physical trust context does not match the exact provider snapshot",
+            ):
+                verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
+                    RECEIPT,
+                    POLICY,
+                    provider=Provider(),
+                    physical_verification_kwargs={"verification_time": NOW},
+                )
+
+        physical.assert_not_called()
+        deployment.assert_not_called()
+
+    def test_physical_context_root_must_match_provider_snapshot(self):
+        context = physical_context()
+        snapshot = provider_snapshot(
+            context,
+            root_public_key_bytes=b"x" * 32,
+        )
+
+        class Provider:
+            def read_snapshot(self, *, policy_domain):
+                return snapshot
+
+            def read_physical_trust_context(self, *, policy_domain):
+                return context
+
+        with (
+            patch(
+                "origen.deployment_trust_physical_composition_v1._snapshot_copy",
+                return_value=snapshot,
+            ),
+            patch(
+                "origen.deployment_trust_physical_composition_v1.verify_custody_timestamp_ledger_witness_v1"
+            ) as physical,
+            patch(
+                "origen.deployment_trust_physical_composition_v1._inspect_receipt_with_deployment_trust_provider_snapshot",
+                create=True,
+            ) as deployment,
+        ):
+            with self.assertRaisesRegex(
+                TrustStateRejected,
+                "policy root/key ID/bootstrap floor differs",
             ):
                 verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
                     RECEIPT,
