@@ -59,6 +59,7 @@ def build_provider_bound_case(*, uncertainty_ms=0):
         ledger_tree_size=values["expected_old_tree_size"],
         ledger_root_sha256=values["expected_old_root_sha256"],
         ledger_checkpoint_sha256=values["expected_old_checkpoint_sha256"],
+        registry_sequence=provider.physical_context.minimum_registry_sequence,
     )
     snapshot = replace(
         provider.snapshot,
@@ -140,6 +141,23 @@ class ProviderBoundTransparencyLedgerBundleTransitionV2Tests(unittest.TestCase):
             physical_trust_context_sha256=digest,
         )
         with self.assertRaisesRegex(TrustStateRejected, "watermark identity differs"):
+            inspect(values, provider)
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_accepted_registry_watermark_below_context_floor_is_rejected(self):
+        values, provider = build_provider_bound_case()
+        watermark = replace(
+            provider.snapshot.accepted_external_evidence_watermark,
+            registry_sequence=provider.physical_context.minimum_registry_sequence - 1,
+        )
+        provider.snapshot = replace(
+            provider.snapshot,
+            accepted_external_evidence_watermark=watermark,
+        )
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "accepted witness-registry watermark is below the provider trust-context floor",
+        ):
             inspect(values, provider)
         self.assertEqual(provider.commit_count, 0)
 

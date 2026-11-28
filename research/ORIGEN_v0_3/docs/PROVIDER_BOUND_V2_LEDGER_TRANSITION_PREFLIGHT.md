@@ -13,7 +13,7 @@ The V2 transition verifier composed timestamp-bundle inclusion and RFC 6962 cons
 1. Reads and validates exactly one deployment snapshot.
 2. Reads the physical trust context and checks its generation and canonical digest against that snapshot.
 3. Binds the context's policy root/key/floor to the deployment snapshot.
-4. Binds the accepted ledger/witness watermark identities to the provider-owned log and registry pins.
+4. Binds the accepted ledger/witness watermark identities to the provider-owned log and registry pins, and rejects an accepted witness-registry sequence below `minimum_registry_sequence`. Because this preflight does not ingest a new signed registry transition, it cannot bootstrap a watermark that is below the configured floor.
 5. Requires the distinct nested-signature-bundle TSA root/fingerprint/OID triple.
 6. Reads one provider-issued timestamp challenge and checks its domain, backend, state/root/context generations, digest, third nonce and full clock-uncertainty/lease interval.
 7. Derives the old checkpoint size/root/digest, log key/IDs, policy root/floor, TSA pin, nonce and earliest verification time from those provider reads.
@@ -23,7 +23,7 @@ No independent trust pin, old watermark, nonce or verification clock is accepted
 
 ## Adversarial tests
 
-Synthetic tests cover a valid provider-bound transition, context digest drift, log-key/watermark identity drift, missing third nonce, challenge expiry inside the clock uncertainty interval, trusted-time rollback, missing independently provisioned genesis watermark, old-checkpoint substitution and provider snapshot outage. The policy/ledger/provider fixture is built from one shared synthetic key set so it cannot accidentally combine unrelated ephemeral roots. Every failure occurs before any CAS call; the adapter itself never calls CAS.
+Synthetic tests cover a valid provider-bound transition at the registry floor, a below-floor accepted registry watermark, context digest drift, log-key/watermark identity drift, missing third nonce, challenge expiry inside the clock uncertainty interval, trusted-time rollback, missing independently provisioned genesis watermark, old-checkpoint substitution and provider snapshot outage. The policy/ledger/provider fixture is built from one shared synthetic key set so it cannot accidentally combine unrelated ephemeral roots. Every failure occurs before any CAS call; the adapter itself never calls CAS.
 
 ## Security boundary
 
