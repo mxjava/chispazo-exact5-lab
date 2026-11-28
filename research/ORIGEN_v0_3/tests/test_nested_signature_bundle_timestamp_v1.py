@@ -120,7 +120,7 @@ class NestedSignatureBundleTimestampV1Tests(unittest.TestCase):
     def test_accuracy_upper_bound_must_be_strictly_before_classic_close(self):
         _, _, _, values = self._case(
             gen_time=CLOSE,
-            accuracy={"millis": 0},
+            accuracy={"seconds": 0},
         )
         with self.assertRaisesRegex(ValueError, "strictly before CLASSIC close"):
             verify_nested_signature_bundle_timestamp_v1(**values)
