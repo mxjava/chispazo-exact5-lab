@@ -7,7 +7,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
+
+
+MAX_NESTED_BUNDLE_TSA_ROOT_DER_BYTES = 1_048_576
+_NESTED_BUNDLE_TSA_OID = re.compile(r"(?:0|1|2)(?:\.(?:0|[1-9][0-9]*)){1,30}\Z")
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +36,9 @@ class PhysicalTrustContextV1:
     minimum_registry_sequence: int
     minimum_log_tree_size: int = 0
     context_generation: int = 0
+    nested_signature_bundle_tsa_root_certificate_der: bytes | None = None
+    nested_signature_bundle_tsa_root_sha256: str | None = None
+    nested_signature_bundle_tsa_policy_oid: str | None = None
 
     def __post_init__(self) -> None:
         byte_fields = (
@@ -72,6 +80,48 @@ class PhysicalTrustContextV1:
             value = getattr(self, field)
             if type(value) is not str or not value.strip():
                 raise ValueError(f"{field} must be a non-empty identifier")
+        nested_tsa = (
+            self.nested_signature_bundle_tsa_root_certificate_der,
+            self.nested_signature_bundle_tsa_root_sha256,
+            self.nested_signature_bundle_tsa_policy_oid,
+        )
+        if any(value is None for value in nested_tsa) and not all(
+            value is None for value in nested_tsa
+        ):
+            raise ValueError(
+                "nested-signature bundle TSA root DER, fingerprint and policy OID must be provisioned together"
+            )
+        if all(value is not None for value in nested_tsa):
+            root_der, root_sha256, policy_oid = nested_tsa
+            if (
+                type(root_der) is not bytes
+                or not root_der
+                or len(root_der) > MAX_NESTED_BUNDLE_TSA_ROOT_DER_BYTES
+            ):
+                raise ValueError(
+                    "nested-signature bundle TSA root must be non-empty exact immutable DER bytes within the size limit"
+                )
+            if (
+                type(root_sha256) is not str
+                or not re.fullmatch(r"[0-9a-f]{64}", root_sha256)
+                or hashlib.sha256(root_der).hexdigest() != root_sha256
+            ):
+                raise ValueError(
+                    "nested-signature bundle TSA fingerprint does not bind the exact root DER bytes"
+                )
+            if (
+                type(policy_oid) is not str
+                or len(policy_oid) > 128
+                or not _NESTED_BUNDLE_TSA_OID.fullmatch(policy_oid)
+            ):
+                raise ValueError(
+                    "nested-signature bundle TSA policy OID must be canonical numeric dotted text"
+                )
+            arcs = policy_oid.split(".")
+            if int(arcs[0]) > 2 or (int(arcs[0]) < 2 and int(arcs[1]) > 39):
+                raise ValueError(
+                    "nested-signature bundle TSA policy OID has invalid first arcs"
+                )
         for field in (
             "minimum_policy_sequence",
             "minimum_registry_sequence",
@@ -110,6 +160,13 @@ def physical_trust_context_sha256(context: PhysicalTrustContextV1) -> str:
         "registry_id": context.registry_id,
         "minimum_registry_sequence": context.minimum_registry_sequence,
     }
+    if context.nested_signature_bundle_tsa_root_certificate_der is not None:
+        payload["nested_signature_bundle_tsa_root_sha256"] = (
+            context.nested_signature_bundle_tsa_root_sha256
+        )
+        payload["nested_signature_bundle_tsa_policy_oid"] = (
+            context.nested_signature_bundle_tsa_policy_oid
+        )
     canonical = json.dumps(
         payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
     ).encode("ascii")

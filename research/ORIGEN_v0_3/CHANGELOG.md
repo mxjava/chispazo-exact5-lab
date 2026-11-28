@@ -1,3 +1,8 @@
+## Provider-owned nested-signature bundle TSA pin (2026-11-28)
+- Extended the physical trust-context transport with an optional all-or-none nested-signature bundle TSA root DER, exact lowercase SHA-256 fingerprint and canonical policy OID. The fields are copied at the deployment composition boundary and included in the context digest whenever present; legacy V1 contexts remain unchanged when all three are absent.
+- Added adversarial tests for partial provisioning, mutable/oversized DER, fingerprint substitution, non-canonical OIDs, digest binding and provider-context snapshot copying.
+- This is a trust-pin interface only. It does not authenticate provider provisioning, TSA authority, certificate path/revocation, or any physical draw evidence. The V2 composition still must require and consume this pin before CAS; production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
 ## V2 timestamp-bundle exact-byte provider CAS envelope (2026-11-27)
 - Added `ExternalEvidenceAdvanceV2`, which carries the canonical nested-signature timestamp sidecar, exact RFC 3161 token DER and provider-issued bundle nonce alongside the existing exact evidence envelope.
 - Added structural preflight that rebuilds the sidecar from exact manifest/policy/artifact/signature bytes and checks the V2 leaf's exact sidecar/token digests, normalized manifest commitment, artifact set, proof digest and checkpoint/proof identity bindings.
