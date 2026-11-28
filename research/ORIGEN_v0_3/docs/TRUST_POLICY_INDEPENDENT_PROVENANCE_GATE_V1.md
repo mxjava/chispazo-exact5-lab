@@ -8,7 +8,7 @@ Research-only diagnostic composition. This increment is stacked on PR #126 and d
 
 `verify_policy_bound_independent_provenance` accepts only the original receipt bytes and original signed policy-envelope bytes.
 
-1. The existing `verify_policy_bound_receipt_attestation` verifies the policy envelope using a separately supplied Ed25519 root pin, key ID, minimum sequence and verification clock.
+1. The existing `verify_policy_bound_receipt_attestation` verifies the policy envelope using a separately supplied Ed25519 root pin, key ID, minimum sequence and verification clock. At the composition boundary it samples the caller's timezone offset exactly once, normalizes one UTC instant, and passes that same datetime to both the policy and receipt verifiers; a stateful `tzinfo` cannot split their verification times.
 2. That verifier derives `VerifiedTrustPolicy` from the exact signed envelope bytes and passes its `TrustPolicy` to `verify_receipt_attestation`; no caller-created `VerifiedTrustPolicy` or verified-receipt object is accepted.
 3. Only after the policy and receipt root-attestation checks succeed does the composition call `verify_independent_provenance` with the exact same immutable receipt-bytes object.
 4. The independent adapter must return the exact enum value `BLOCKED_PROVENANCE`. An unexpected type or any other value raises a contract error; it is never converted into success.
@@ -48,7 +48,7 @@ The inherited receipt schema is CLASSIC-only and enforces the 21:00 America/Mexi
 
 ## Tests
 
-All fixtures use freshly generated in-memory Ed25519 keys and synthetic receipt/policy bytes. Tests cover successful ordered composition that remains blocked, policy/receipt/root tampering before the independent gate, unexpected gate outcomes, propagated backend exceptions, rejection of preconstructed verified-policy objects, and the absence of any authenticated enum member.
+All fixtures use freshly generated in-memory Ed25519 keys, synthetic receipt/policy bytes and a stateful synthetic timezone. Tests require exactly one sample of the caller-provided timezone and the same normalized UTC instant for both verifiers. They also cover successful ordered composition that remains blocked, policy/receipt/root tampering before the independent gate, unexpected gate outcomes, propagated backend exceptions, rejection of preconstructed verified-policy objects, and the absence of any authenticated enum member.
 
 ## Non-promotion
 
