@@ -1,3 +1,9 @@
+## V2 ledger transition composition (2026-11-28)
+- Added a diagnostic composition that verifies the V2 timestamp-bundle/ledger inclusion and RFC 6962 append-only consistency against the same exact new checkpoint bytes.
+- Binds the exact old signed checkpoint digest, tree size and root to the accepted watermark; rejects same-size/idempotent checkpoints as an evidence advance.
+- Synthetic adversarial tests cover old-watermark digest/size/root substitution, consistency-path tampering and non-advancing checkpoints.
+- This is not yet wired into the full V2 custody/ledger/witness provider CAS. Caller-supplied trust roots/floor/clock and missing independent witness quorum keep all results BLOCKED_PROVENANCE.
+
 ## V2 provider-CAS three-nonce binding (2026-11-28)
 - The application now refuses an ExternalEvidenceAdvanceV2 unless the exact provider-issued TimestampNonceChallengeV1 object, challenge ID and canonical digest are present and agree.
 - The V2 envelope's third nonce must equal the challenge's nested-signature-bundle nonce; the challenge must match the exact provider snapshot, physical-context generation/digest and complete trusted-time lease.
