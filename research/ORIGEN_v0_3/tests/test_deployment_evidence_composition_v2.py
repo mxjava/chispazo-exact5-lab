@@ -14,10 +14,11 @@ from origen.deployment_trust_provider_v1 import (
 )
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.physical_trust_context_v1 import physical_trust_context_sha256
-from test_custody_ledger_witness_integration_v1 import _build_case
 from test_deployment_evidence_composition_v1 import _provider_for
 from test_transparency_checkpoint_consistency_v1 import NOW
-from test_transparency_ledger_bundle_transition_v2 import build_transition_case
+from test_transparency_ledger_bundle_transition_v2 import (
+    build_transition_case_with_provider,
+)
 
 
 _BYTE_ARGUMENTS = (
@@ -36,8 +37,7 @@ _BYTE_ARGUMENTS = (
 
 
 def build_provider_bound_case(*, uncertainty_ms=0):
-    values = build_transition_case()
-    data, ledger, _, _ = _build_case()
+    values, data, ledger = build_transition_case_with_provider()
     provider = _provider_for(data, ledger, uncertainty_ms=uncertainty_ms)
 
     context = replace(
