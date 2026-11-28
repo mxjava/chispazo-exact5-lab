@@ -26,7 +26,7 @@ from .trust_policy_envelope_v3 import verify_signed_trust_policy_v3
 SCHEMA_VERSION = "origen.nested-signature-bundle-timestamp.v1"
 MAX_BUNDLE_BYTES = 2 * 1024 * 1024
 MAX_SIGNATURES = 256
-_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 @dataclass(frozen=True, slots=True)
