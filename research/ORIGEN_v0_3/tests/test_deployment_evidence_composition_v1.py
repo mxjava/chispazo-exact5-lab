@@ -951,12 +951,45 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         self.assertEqual(provider.read_count, 1)
         self.assertEqual(provider.commit_count, 0)
 
-    def test_replayed_ledger_checkpoint_is_rejected_before_provider_cas_even_with_fresh_nonce_challenge(self):
+    def test_replayed_full_evidence_uses_durable_operation_record_without_second_nonce_consumption(self):
+        data, ledger, batches, _ = _build_case()
+        provider = _provider_for(data, ledger)
+        first = _inspect(data, ledger, batches, provider)
+        generation_after_first = provider.snapshot.state_generation
+        accepted_sequence_after_first = provider.snapshot.accepted_policy_sequence
+        operation_id = first.deployment_trust.operation_id_sha256
+
+        provider.nonce_challenge = TimestampNonceChallengeV1(
+            challenge_id="synthetic-timestamp-challenge-0002",
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            state_backend_id=provider.snapshot.state_backend_id,
+            policy_timestamp_nonce=data["policy_timestamp_expected_nonce"],
+            custody_timestamp_nonce=data["expected_nonce"],
+            state_generation=provider.snapshot.state_generation,
+            root_generation=provider.snapshot.root_generation,
+            physical_trust_context_generation=provider.snapshot.physical_trust_context_generation,
+            physical_trust_context_sha256=provider.snapshot.physical_trust_context_sha256,
+            issued_at_utc=NOW - timedelta(seconds=1),
+            expires_at_utc=NOW + timedelta(seconds=30),
+        )
+        provider.pending_timestamp_nonce_challenge = provider.nonce_challenge
+
+        replay = _inspect(data, ledger, batches, provider)
+
+        self.assertIs(replay.deployment_trust.state_outcome, TrustStateOutcome.IDEMPOTENT)
+        self.assertEqual(replay.deployment_trust.operation_id_sha256, operation_id)
+        self.assertEqual(provider.commit_count, 2)
+        self.assertEqual(provider.snapshot.state_generation, generation_after_first)
+        self.assertEqual(provider.snapshot.accepted_policy_sequence, accepted_sequence_after_first)
+        self.assertEqual(len(provider.consumed_timestamp_nonce_values), 2)
+        self.assertEqual(len(provider.consumed_timestamp_nonce_challenge_ids), 1)
+
+    def test_replayed_full_evidence_without_durable_operation_record_is_rejected_by_provider(self):
         data, ledger, batches, _ = _build_case()
         provider = _provider_for(data, ledger)
         _inspect(data, ledger, batches, provider)
         generation_after_first = provider.snapshot.state_generation
-        accepted_sequence_after_first = provider.snapshot.accepted_policy_sequence
+        provider.operation_commits.clear()
 
         provider.nonce_challenge = TimestampNonceChallengeV1(
             challenge_id="synthetic-timestamp-challenge-0002",
@@ -976,9 +1009,8 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         with self.assertRaises(TrustStateRejected):
             _inspect(data, ledger, batches, provider)
 
-        self.assertEqual(provider.commit_count, 1)
+        self.assertEqual(provider.commit_count, 2)
         self.assertEqual(provider.snapshot.state_generation, generation_after_first)
-        self.assertEqual(provider.snapshot.accepted_policy_sequence, accepted_sequence_after_first)
         self.assertEqual(len(provider.consumed_timestamp_nonce_values), 2)
         self.assertEqual(len(provider.consumed_timestamp_nonce_challenge_ids), 1)
 
