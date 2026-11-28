@@ -21,7 +21,8 @@
     "load/extraction order and per-extraction timestamps",
     "signed CS-11 and four-copy delivery receipts",
     "original continuous video, hashes and chain of custody",
-    "CS-09, CS-12 and CS-18 original records"
+    "CS-09, CS-12 and CS-18 original records",
+    "original Acta and complete attachments for each contest"
   ],
   "calibration": {
     "actual_calendar_obtained": false,
@@ -58,8 +59,18 @@
     "v294_touched": false
   },
   "prospective_status": "BLOCKED_PENDING_AUTHENTICATED_PRE_CLOSE_PHYSICAL_RECORDS",
+  "segob_legal_basis": {
+    "article_15_acta_contains_background_results_incidents": true,
+    "article_8_official_results_are_acta_only": true,
+    "article_9_28_spheres_and_five_extractions": true,
+    "article_9_close_then_signed_participation_file_pre_draw": true,
+    "chispazo_regulation_last_reform": "2012-03-07",
+    "cs11_is_acta": false,
+    "terminal_web_and_mask_are_informational": true
+  },
   "source_map_checks": {
     "annual_calibration": true,
+    "cs11_is_not_acta": true,
     "cs11_postdraw": true,
     "current_postclose_sequence": true,
     "current_sgvo_listed": true,
@@ -67,6 +78,9 @@
     "legacy_sgm_not_current_index": true,
     "manual_support_project_only": true,
     "no_authentic_records": true,
+    "segob_art15_acta": true,
+    "segob_art8_official_results": true,
+    "segob_art9_sequence": true,
     "video_scope": true
   },
   "v265_evaluator": {
