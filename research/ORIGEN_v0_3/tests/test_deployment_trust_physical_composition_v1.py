@@ -15,10 +15,7 @@ from origen.deployment_trust_physical_composition_v1 import (
 from origen.custody_ledger_witness_integration_v1 import CustodyLedgerWitnessInspectionV1
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.physical_trust_context_v1 import PhysicalTrustContextV1, physical_trust_context_sha256
-from test_deployment_trust_provider_v1 import (
-    SyntheticTrustProvider,
-    TestDeploymentTrustProviderV1,
-)
+import test_deployment_trust_provider_v1 as provider_fixtures
 from test_receipt_policy_integration_v3 import POLICY_SEQUENCE, ROOT_KEY_ID
 
 
@@ -298,7 +295,7 @@ class DeploymentPhysicalCompositionTests(unittest.TestCase):
         deployment.assert_not_called()
 
     def test_real_synthetic_provider_path_reuses_one_snapshot_and_commits(self):
-        provider_case = TestDeploymentTrustProviderV1()
+        provider_case = provider_fixtures.TestDeploymentTrustProviderV1()
         provider_case.setUp()
         context = physical_context(
             policy_root_public_key_bytes=provider_case.root_public_key,
