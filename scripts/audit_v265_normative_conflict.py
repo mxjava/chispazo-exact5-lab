@@ -19,6 +19,10 @@ ANCHORS = {
     "video_scope": "Grabación desde pesaje hasta sorteo",
     "cs11_postdraw": "CS-11",
     "no_authentic_records": "No se obtuvo calendario, marca/modelo/serie de báscula usada en Chispazo",
+    "segob_art9_sequence": "Su artículo 9 describe 28 esferas numeradas, cierre de ventas",
+    "segob_art15_acta": "El artículo 15 del Reglamento establece que el Acta debe recoger antecedentes, resultados e incidentes",
+    "segob_art8_official_results": "los resultados oficiales son los asentados en esa Acta",
+    "cs11_is_not_acta": "el formato CS-11 “Números Ganadores de los Sorteos” es un anexo/registro de resultados dentro del expediente, no sustituye al Acta",
 }
 
 
@@ -104,6 +108,15 @@ def build_report() -> dict:
             "current_schedule_classic_2100": True,
             "legacy_timing_used_for_current_model": False,
         },
+        "segob_legal_basis": {
+            "chispazo_regulation_last_reform": "2012-03-07",
+            "article_9_close_then_signed_participation_file_pre_draw": True,
+            "article_9_28_spheres_and_five_extractions": True,
+            "article_15_acta_contains_background_results_incidents": True,
+            "article_8_official_results_are_acta_only": True,
+            "terminal_web_and_mask_are_informational": True,
+            "cs11_is_acta": False,
+        },
         "calibration": {
             "annual_requirement_in_current_sgvo_policy_25": True,
             "actual_calendar_obtained": False,
@@ -131,6 +144,7 @@ def build_report() -> dict:
             "signed CS-11 and four-copy delivery receipts",
             "original continuous video, hashes and chain of custody",
             "CS-09, CS-12 and CS-18 original records",
+            "original Acta and complete attachments for each contest",
         ],
         "preservation": {
             "canonical_history_touched": False,
