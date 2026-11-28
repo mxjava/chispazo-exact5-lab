@@ -1,3 +1,9 @@
+## Provider physical-composition V1 binding fix (2026-11-28)
+- Replaced an invalid call to the public provider facade with the exact-snapshot internal composition helper; the old test had masked the runtime keyword mismatch with a permissive mock.
+- Bound the provider-returned physical trust context to the same deployment snapshot by generation, canonical digest, policy root key, root key ID and minimum policy sequence before physical verification.
+- Added adversarial tests for context-digest and policy-root substitution; failures occur before physical verification/CAS.
+- Synthetic research-only tests do not authenticate a real provider or institutional provisioning; production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
 ## Provider-bound V2 ledger transition preflight (2026-11-28)
 - Added a provider-bound adapter that reads one deployment snapshot, physical trust context and three-nonce challenge, then derives log/policy/TSA pins, old checkpoint watermark, nonce and earliest verification time from those reads.
 - Rejects context generation/digest drift, watermark/log/registry identity mismatch, missing nested-bundle TSA pin, missing third nonce, expired challenge and missing independently provisioned genesis watermark before transition verification.

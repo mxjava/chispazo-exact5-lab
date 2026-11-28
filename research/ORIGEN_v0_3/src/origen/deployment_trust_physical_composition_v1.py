@@ -21,11 +21,15 @@ from .deployment_trust_provider_v1 import (
     DeploymentTrustInspection,
     DeploymentTrustProvider,
     DeploymentTrustSnapshot,
+    _inspect_receipt_with_deployment_trust_provider_snapshot,
     _snapshot_copy,
-    inspect_receipt_with_deployment_trust_provider,
+    TrustStateRejected,
 )
 from .independent_trust_adapter import ProvenanceStatus
-from .physical_trust_context_v1 import PhysicalTrustContextV1
+from .physical_trust_context_v1 import (
+    PhysicalTrustContextV1,
+    physical_trust_context_sha256,
+)
 from .custody_ledger_witness_integration_v1 import (
     CustodyLedgerWitnessInspectionV1,
     verify_custody_timestamp_ledger_witness_v1,
@@ -131,6 +135,23 @@ def verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
     if type(supplied_physical_context) is not PhysicalTrustContextV1:
         raise TypeError("provider returned an unexpected physical trust context type")
     context = supplied_physical_context
+    if (
+        snapshot.physical_trust_context_generation is None
+        or snapshot.physical_trust_context_sha256 is None
+        or context.context_generation != snapshot.physical_trust_context_generation
+        or physical_trust_context_sha256(context) != snapshot.physical_trust_context_sha256
+    ):
+        raise TrustStateRejected(
+            "physical trust context does not match the exact provider snapshot generation and digest"
+        )
+    if (
+        context.policy_root_public_key_bytes != snapshot.root_public_key_bytes
+        or context.policy_root_key_id != snapshot.root_key_id
+        or context.minimum_policy_sequence != snapshot.minimum_policy_sequence
+    ):
+        raise TrustStateRejected(
+            "physical trust context policy root/key ID/bootstrap floor differs from the deployment snapshot"
+        )
 
     # Snapshot the keyword mapping so caller mutation cannot change the
     # argument set between the physical and deployment verification stages.
@@ -163,11 +184,12 @@ def verify_custody_timestamp_ledger_witness_with_deployment_trust_provider_v1(
     if physical.provenance_status is not ProvenanceStatus.BLOCKED_PROVENANCE:
         raise RuntimeError("physical composition did not preserve BLOCKED_PROVENANCE")
 
-    deployment = inspect_receipt_with_deployment_trust_provider(
+    deployment = _inspect_receipt_with_deployment_trust_provider_snapshot(
         original_receipt_bytes,
         signed_policy_envelope_bytes,
         provider=provider,
         provider_snapshot=snapshot,
+        physical_trust_context=context,
     )
     if type(deployment) is not DeploymentTrustInspection:
         raise TypeError("deployment trust verifier returned an unexpected result type")
