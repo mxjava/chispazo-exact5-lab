@@ -1307,16 +1307,26 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
                     )
                     return observed
                 self.provider.read_snapshot = read_then_mutate
-                with self.assertRaisesRegex(
-                    TrustStateRejected,
-                    "compare-and-advance rejected a stale, regressed, or equivocal state",
-                ):
-                    self.inspect()
+                if field == "state_backend_id":
+                    # A backend change between snapshot and read-only receipt lookup
+                    # makes the durable outcome unknown before CAS can be attempted.
+                    with self.assertRaisesRegex(
+                        TrustProviderUnavailable,
+                        "operation-receipt query failed",
+                    ):
+                        self.inspect()
+                    self.assertEqual(self.provider.commit_count, 0)
+                else:
+                    with self.assertRaisesRegex(
+                        TrustStateRejected,
+                        "compare-and-advance rejected a stale, regressed, or equivocal state",
+                    ):
+                        self.inspect()
+                    self.assertEqual(self.provider.commit_count, 1)
                 self.assertEqual(
                     self.provider.snapshot.accepted_policy_sequence,
                     POLICY_SEQUENCE - 1,
                 )
-                self.assertEqual(self.provider.commit_count, 1)
                 self.provider.read_snapshot = original_read
                 self.provider.commit_count = 0
 
