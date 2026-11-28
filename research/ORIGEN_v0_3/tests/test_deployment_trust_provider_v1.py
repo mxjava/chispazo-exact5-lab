@@ -607,6 +607,9 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             provisioning_record_sha256="b" * 64,
         )
         self.provider = SyntheticTrustProvider(self.snapshot)
+        # Subsequent fixture mutations must retain the provider-pinned synthetic
+        # operation-receipt verification key and its trust-configuration binding.
+        self.snapshot = self.provider.snapshot
 
     def with_signed_sample(self, snapshot, **changes):
         candidate = replace(snapshot, **changes)
