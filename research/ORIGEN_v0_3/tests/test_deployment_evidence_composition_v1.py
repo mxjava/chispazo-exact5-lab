@@ -1045,3 +1045,47 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
                     **_arguments(data, ledger, batches)
                 )
 
+
+    def test_v1_composition_refuses_v2_nested_timestamp_pin_or_nonce_downgrade(self):
+        data, ledger, batches, _ = _build_case()
+
+        nonce_provider = _provider_for(data, ledger)
+        nonce_provider.nonce_challenge = replace(
+            nonce_provider.nonce_challenge,
+            nested_signature_bundle_timestamp_nonce=987654321,
+        )
+        nonce_provider.pending_timestamp_nonce_challenge = nonce_provider.nonce_challenge
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "V1 evidence composition cannot consume the V2 nested-signature bundle TSA pin/nonce; refusing downgrade",
+        ):
+            _inspect(data, ledger, batches, nonce_provider)
+        self.assertEqual(nonce_provider.commit_count, 0)
+
+        pin_provider = _provider_for(data, ledger)
+        root_der = b"synthetic-nested-bundle-tsa-root"
+        pinned_context = replace(
+            pin_provider.physical_context,
+            nested_signature_bundle_tsa_root_certificate_der=root_der,
+            nested_signature_bundle_tsa_root_sha256=hashlib.sha256(root_der).hexdigest(),
+            nested_signature_bundle_tsa_policy_oid="1.2.3.4.5",
+        )
+        context_digest = physical_trust_context_sha256(pinned_context)
+        pin_provider.physical_context = pinned_context
+        pin_provider.snapshot = replace(
+            pin_provider.snapshot,
+            physical_trust_context_sha256=context_digest,
+        )
+        pin_provider.nonce_challenge = replace(
+            pin_provider.nonce_challenge,
+            physical_trust_context_sha256=context_digest,
+        )
+        pin_provider.pending_timestamp_nonce_challenge = pin_provider.nonce_challenge
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "V1 evidence composition cannot consume the V2 nested-signature bundle TSA pin/nonce; refusing downgrade",
+        ):
+            _inspect(data, ledger, batches, pin_provider)
+        self.assertEqual(pin_provider.commit_count, 0)
+

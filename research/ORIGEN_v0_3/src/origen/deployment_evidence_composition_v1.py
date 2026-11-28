@@ -365,6 +365,15 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
         or nonce_challenge.expires_at_utc > snapshot.clock_sample_valid_until_utc
     ):
         raise TrustStateRejected("timestamp nonce challenge is outside the complete trusted-time interval or clock lease")
+    # V1 has no nested-signature timestamp verifier or V2 CAS envelope.
+    # Never silently downgrade a provider context/challenge that advertises V2.
+    if (
+        physical_context.nested_signature_bundle_tsa_root_certificate_der is not None
+        or nonce_challenge.nested_signature_bundle_timestamp_nonce is not None
+    ):
+        raise TrustStateRejected(
+            "V1 evidence composition cannot consume the V2 nested-signature bundle TSA pin/nonce; refusing downgrade"
+        )
     nonce_challenge_digest = timestamp_nonce_challenge_sha256(nonce_challenge)
 
     effective_floor = max(
