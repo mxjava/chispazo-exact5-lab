@@ -80,6 +80,34 @@ Any exception raised by `compare_and_advance`, including a provider/RPC exceptio
 
 The synthetic provider tests exercise the receipt/policy/time contract and this ambiguous-acknowledgement behavior only. They are not an independent provider implementation. No institutional CAS, clock, root provisioning or custody is installed.
 
+## 5.3 Stable CAS operation identity and retry contract
+
+Every provider CAS request now carries a deterministic `operation_id_sha256`. The identifier is domain-separated and uses typed, length-prefixed components over:
+
+- the fixed CLASSIC policy domain;
+- the exact original signed policy-envelope bytes;
+- the exact original receipt bytes; and
+- every field and exact byte string in the complete `ExternalEvidenceAdvanceV1`, when present.
+
+The identifier deliberately excludes transient provider state generation, the current clock sample and the one-use timestamp nonce challenge. A process retry with the same exact evidence therefore recomputes the same operation identity even if the caller has lost the original acknowledgement.
+
+The provider contract must:
+
+1. Recompute the operation identity from the exact byte inputs; never trust the caller's digest as proof of content.
+2. Look up/reserve the operation identity before rejecting a stale snapshot, within the same linearizable transaction domain.
+3. Atomically persist the operation receipt with the policy/time/evidence state transition.
+4. Return the stored operation result as `IDEMPOTENT` for the same operation identity and exact evidence, without applying the policy, ledger/witness watermark or one-use nonce consumption twice.
+5. Reject a reused operation identity whose recomputed exact-evidence identity differs as `EQUIVOCATION`.
+6. Retain operation receipts durably across process restart and expose an authenticated reconciliation path.
+
+The application includes the operation identity in its diagnostic inspection and attaches it to `TrustProviderUnavailable.operation_id_sha256` whenever a provider call or acknowledgement has an unknown outcome. A caller retry must reuse the same exact policy, receipt and full-evidence bytes; it must not construct a new operation identity for the same evidence.
+
+For a full-evidence retry, the application may observe that the proposed new watermark is already the current watermark. This is only a replay candidate. The provider must confirm the matching durable operation record before returning `IDEMPOTENT`; if no matching record exists, it must reject the stale old-checkpoint transition. The application-side equality check is not evidence that a prior transaction committed.
+
+**Limitations:** this repository still contains no real provider implementation or authenticated operation-receipt read API. The synthetic provider tests only exercise the contract. A later policy rotation may cause the normal policy floor to reject an old request before it can be replayed; a separately authenticated `read_operation_receipt` interface is still required for reconciliation across later policy changes and for audit retrieval. The operation ID is not an authentication credential and does not authenticate provider identity, storage durability or institutional independence.
+
+All successful inspections remain `BLOCKED_PROVENANCE`. Production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.
+
 ## 6. Required adversarial deployment tests
 
 Before any deployment can leave the blocked state, tests must cover:

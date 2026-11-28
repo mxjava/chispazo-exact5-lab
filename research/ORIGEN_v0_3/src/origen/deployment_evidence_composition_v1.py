@@ -529,6 +529,7 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
         snapshot,
         _accepted_external_evidence_watermark_sha256(accepted_watermark),
         external_evidence_advance,
+        allow_replay_candidate=True,
     )
 
     # The provider boundary re-verifies exact policy/receipt bytes and performs
