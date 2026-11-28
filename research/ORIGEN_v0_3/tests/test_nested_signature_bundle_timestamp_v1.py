@@ -12,6 +12,7 @@ from origen.nested_signature_bundle_timestamp_v1 import (
     verify_nested_signature_bundle_timestamp_v1,
 )
 from test_custody_ledger_witness_integration_v1 import _build_case
+from origen.transparency_ledger_verifier_v1 import _manifest_commitment_sha256
 from test_rfc3161_tsa_verifier_v1 import _token
 from test_transparency_checkpoint_consistency_v1 import NOW
 
@@ -61,6 +62,10 @@ class NestedSignatureBundleTimestampV1Tests(unittest.TestCase):
             result.manifest_commitment_sha256,
             hashlib.sha256(canonical_manifest_content_bytes_v1(ledger["manifest_bytes"])).hexdigest(),
         )
+        self.assertEqual(
+            result.manifest_commitment_sha256,
+            _manifest_commitment_sha256(ledger["manifest_bytes"]),
+        )
         self.assertEqual(result.policy_envelope_sha256, hashlib.sha256(data["signed_policy_envelope_bytes"]).hexdigest())
         self.assertEqual(result.bundle_sha256, hashlib.sha256(payload).hexdigest())
         self.assertEqual(result.timestamp.message_imprint_hex, hashlib.sha256(payload).hexdigest())
@@ -102,6 +107,10 @@ class NestedSignatureBundleTimestampV1Tests(unittest.TestCase):
             data["signature_bytes_by_sha256"],
         )
         self.assertEqual(payload, alternate_payload)
+        self.assertEqual(
+            _manifest_commitment_sha256(ledger["manifest_bytes"]),
+            _manifest_commitment_sha256(alternate_manifest),
+        )
 
     def test_missing_or_extra_signature_bytes_are_rejected(self):
         _, _, _, values = self._case()
