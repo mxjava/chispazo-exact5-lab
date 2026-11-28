@@ -560,6 +560,8 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
         provider_snapshot=snapshot,
         timestamp_nonce_challenge_id=nonce_challenge.challenge_id,
         timestamp_nonce_challenge_sha256=nonce_challenge_digest,
+        timestamp_nonce_challenge=nonce_challenge,
+        physical_trust_context=physical_context,
         external_evidence_advance=external_evidence_advance,
     )
     if type(deployment_trust) is not DeploymentTrustInspection:
