@@ -367,6 +367,8 @@ class DeploymentTrustInspection:
     timestamp_nonce_challenge_id: str | None = None
     timestamp_nonce_challenge_sha256: str | None = None
     operation_id_sha256: str | None = None
+    operation_replayed: bool = False
+    operation_receipt_sha256: str | None = None
 
 
 class TrustProviderUnavailable(RuntimeError):
