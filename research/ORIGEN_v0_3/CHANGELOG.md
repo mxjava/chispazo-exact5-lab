@@ -1,7 +1,8 @@
 ## Provider-bound V2 ledger transition preflight (2026-11-28)
 - Added a provider-bound adapter that reads one deployment snapshot, physical trust context and three-nonce challenge, then derives log/policy/TSA pins, old checkpoint watermark, nonce and earliest verification time from those reads.
 - Rejects context generation/digest drift, watermark/log/registry identity mismatch, missing nested-bundle TSA pin, missing third nonce, expired challenge and missing independently provisioned genesis watermark before transition verification.
-- Adds synthetic tests for successful binding, adversarial substitutions and provider outage; the adapter never calls CAS and all successful results remain BLOCKED_PROVENANCE.
+- Enforces monotonic trusted-time against the provider's persisted time watermark and rejects a clock uncertainty interval that regresses.
+- Adds synthetic tests for successful binding, adversarial substitutions, time rollback and provider outage; the adapter never calls CAS and all successful results remain BLOCKED_PROVENANCE.
 - This is not the full V2 custody/ledger/witness CAS composition. The provider must independently re-verify exact evidence and atomically consume all three nonces. Institutional provisioning, witness quorum, revocation and physical custody remain unauthenticated.
 
 ## V2 ledger transition composition (2026-11-28)
