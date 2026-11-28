@@ -140,7 +140,7 @@ class TestPolicyBoundIndependentProvenanceV1(unittest.TestCase):
             minimum_policy_sequence=7,
             verification_time=self.now,
         )
-        with self.assertRaisesRegex(ValueError, "exact bytes"):
+        with self.assertRaisesRegex(TypeError, "exact bytes"):
             self.verify(policy=verified)
 
     def test_gate_has_no_authenticated_enum_member(self):
