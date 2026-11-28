@@ -4,7 +4,7 @@ import hashlib
 import json
 import unittest
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from origen.deployment_trust_provider_v1 import (
     CLASSIC_POLICY_DOMAIN,
@@ -158,7 +158,7 @@ def make_provider_snapshot(context):
         clock_sample_id="synthetic-clock-sample-1",
         clock_sample_valid_until_utc=now + timedelta(minutes=3),
         maximum_clock_sample_age_ms=180000,
-        state_backend_id="synthetic-backend",
+        state_backend_id="research-backend-1",
         provisioning_record_sha256="b" * 64,
         physical_trust_context_generation=context.context_generation,
         physical_trust_context_sha256=physical_trust_context_sha256(context),
