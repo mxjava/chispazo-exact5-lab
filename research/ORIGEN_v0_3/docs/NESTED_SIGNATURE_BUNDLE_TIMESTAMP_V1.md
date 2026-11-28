@@ -8,13 +8,13 @@ The physical manifest's nested signatures cover the manifest claims. Inserting t
 
 This increment therefore constructs a separate canonical bundle after the manifest signatures exist. The bundle contains:
 
-- the exact original physical-manifest bytes and their SHA-256;
+- the canonical manifest content with only `ledger_anchor.inclusion_proof_sha256` omitted, plus its normalized commitment SHA-256;
 - the exact original signed V3 policy-envelope bytes and their SHA-256;
 - every original physical artifact byte string, base64-encoded and keyed by its SHA-256;
 - every declared nested signature claim; and
 - every exact 64-byte Ed25519 signature, base64-encoded and keyed by its SHA-256.
 
-An RFC 3161 token's message imprint is verified over the canonical bundle bytes. This proves, relative to the caller-supplied TSA root and clock, that the exact manifest, policy, original artifact bytes and complete nested-signature set existed no later than the token's accuracy upper bound.
+An RFC 3161 token's message imprint is verified over the canonical bundle bytes. This proves, relative to the caller-supplied TSA root and clock, that the normalized manifest claims, exact policy bytes, original artifact bytes and complete nested-signature set existed no later than the token's accuracy upper bound. The exact raw manifest hash is returned separately for later ledger verification; the ledger-derived inclusion-proof digest is deliberately excluded from the timestamp bundle.
 
 ## Verification contract
 
@@ -31,7 +31,7 @@ It:
 8. checks that the full timestamp accuracy interval is within policy validity and every signer's key validity interval; and
 9. returns per-signature existence-by-upper-bound and key/role-at-timestamp diagnostics.
 
-The sidecar is deliberately not injected into the manifest signature payload. The returned `ledger_binding_status` is therefore `NOT_BOUND_TO_LEDGER_ENTRY`. A subsequent increment must bind the exact bundle bytes and token digest into a separately verified transparency-ledger entry and carry them through the provider CAS envelope.
+The sidecar is deliberately not injected into the manifest signature payload. There is also a ledger cycle to avoid: the manifest's inclusion-proof digest depends on a ledger entry, and that entry must later commit to the timestamp bundle. Therefore the bundle omits only `ledger_anchor.inclusion_proof_sha256`, matching the existing nested-signature payload and manifest-commitment normalization. The ledger verifier must still validate the exact raw manifest bytes and exact inclusion-proof bytes. The returned `ledger_binding_status` is currently `NOT_BOUND_TO_LEDGER_ENTRY`; a subsequent ledger-entry v2 must commit to the normalized manifest commitment, bundle SHA-256 and timestamp-token SHA-256, then be checked through inclusion, consistency, witnesses and provider CAS.
 
 ## Important non-claims
 
@@ -47,7 +47,7 @@ Every successful inspection remains `BLOCKED_PROVENANCE`; production remains `BL
 
 ## Adversarial test coverage
 
-The isolated tests cover exact bundle imprint, complete signature set, missing/extra signatures, artifact-byte substitution, signature-byte substitution, wrong imprint, nonce mismatch, wrong TSA policy OID, and the strict CLASSIC close boundary. The tests assert that key authorization at creation remains unproven and that the sidecar is not yet ledger-bound.
+The isolated tests cover exact bundle imprint, proof-digest normalization (changing only the ledger inclusion-proof digest leaves the sidecar payload unchanged), complete signature set, missing/extra signatures, artifact-byte substitution, signature-byte substitution, wrong imprint, nonce mismatch, wrong TSA policy OID, and the strict CLASSIC close boundary. The tests assert that key authorization at creation remains unproven and that the sidecar is not yet ledger-bound.
 
 ## Next required integration
 
