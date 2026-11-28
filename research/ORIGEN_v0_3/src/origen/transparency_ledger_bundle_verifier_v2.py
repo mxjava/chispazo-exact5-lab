@@ -8,6 +8,7 @@ a cycle. Every result remains BLOCKED_PROVENANCE.
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -27,7 +28,6 @@ from .transparency_ledger_verifier_v1 import (
     CHECKPOINT_SCHEMA,
     LEDGER_REMAINING_BLOCKERS,
     MAX_TREE_SIZE,
-    PROOF_SCHEMA,
     _decode_canonical_base64,
     _digest,
     _exact_fields,
@@ -81,6 +81,25 @@ class TransparencyLedgerBundleInspectionV2:
     append_only_continuity_status: str
     provenance_status: ProvenanceStatus
     remaining_blockers: tuple[str, ...]
+
+
+def _snapshot_exact_byte_map(value: object, field: str) -> dict[str, bytes]:
+    if type(value) is not dict:
+        raise TypeError(f"{field} must be an exact dict")
+    try:
+        items = tuple(value.items())
+    except RuntimeError as exc:
+        raise ValueError(f"{field} changed while being snapshotted") from exc
+    if len(items) != len(value):
+        raise ValueError(f"{field} changed while being snapshotted")
+    snapshot: dict[str, bytes] = {}
+    for key, raw in items:
+        if type(key) is not str:
+            raise TypeError(f"{field} keys must be exact strings")
+        if type(raw) is not bytes:
+            raise TypeError(f"{field} values must be exact immutable bytes")
+        snapshot[key] = raw
+    return snapshot
 
 
 def verify_transparency_ledger_bundle_inclusion_v2(
@@ -139,21 +158,30 @@ def verify_transparency_ledger_bundle_inclusion_v2(
     expected_log_id = _identifier(expected_log_id, "expected_log_id")
     expected_log_key_id = _identifier(expected_log_key_id, "expected_log_key_id")
 
+    # Snapshot both maps once and pass only those immutable-bytes snapshots to
+    # the canonical builder and downstream verifier. This closes a TOCTOU gap
+    # where a caller could mutate a mapping between the two verification steps.
+    artifacts_snapshot = _snapshot_exact_byte_map(
+        artifact_bytes_by_sha256, "artifact_bytes_by_sha256"
+    )
+    signatures_snapshot = _snapshot_exact_byte_map(
+        signature_bytes_by_sha256, "signature_bytes_by_sha256"
+    )
     # Reconstruct the sidecar from exact inputs; never trust a supplied digest
     # or a caller-created inspection object as a substitute for its bytes.
     rebuilt_bundle = canonical_nested_signature_bundle_timestamp_payload_v1(
         raw_manifest_bytes,
         signed_policy_envelope_bytes,
-        artifact_bytes_by_sha256,
-        signature_bytes_by_sha256,
+        artifacts_snapshot,
+        signatures_snapshot,
     )
     if rebuilt_bundle != raw_timestamp_bundle_bytes:
         raise ValueError("timestamp bundle bytes do not equal the canonical exact-evidence sidecar")
     timestamp_inspection = verify_nested_signature_bundle_timestamp_v1(
         raw_manifest_bytes,
         signed_policy_envelope_bytes,
-        artifact_bytes_by_sha256,
-        signature_bytes_by_sha256,
+        artifacts_snapshot,
+        signatures_snapshot,
         timestamp_token_der,
         pinned_root_public_key_bytes=pinned_root_public_key_bytes,
         expected_root_key_id=expected_root_key_id,
@@ -254,7 +282,7 @@ def verify_transparency_ledger_bundle_inclusion_v2(
         raise ValueError("checkpoint Ed25519 signature must be exactly 64 bytes")
     unsigned_checkpoint = dict(checkpoint)
     unsigned_checkpoint.pop("signature_b64")
-    signed_payload = CHECKPOINT_DOMAIN + __import__("json").dumps(
+    signed_payload = CHECKPOINT_DOMAIN + json.dumps(
         unsigned_checkpoint,
         sort_keys=True,
         separators=(",", ":"),
