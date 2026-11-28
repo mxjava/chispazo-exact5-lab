@@ -108,9 +108,9 @@ class DeploymentEvidenceInspectionV1:
     clock_sample_sha256: str
     physical_trust_context_sha256: str
     physical_trust_context_generation: int
-    timestamp_nonce_challenge_id: str
-    timestamp_nonce_challenge_sha256: str
-    timestamp_nonce_challenge_generation: int
+    timestamp_nonce_challenge_id: str | None
+    timestamp_nonce_challenge_sha256: str | None
+    timestamp_nonce_challenge_generation: int | None
     trusted_time_earliest_utc: datetime
     trusted_time_latest_utc: datetime
     provenance_status: ProvenanceStatus
@@ -555,10 +555,19 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
         or deployment_trust.root_generation != snapshot.root_generation
         or deployment_trust.trust_configuration_sha256 != trust_configuration_digest
         or deployment_trust.clock_sample_sha256 != clock_sample_digest
-        or deployment_trust.timestamp_nonce_challenge_id != nonce_challenge.challenge_id
-        or deployment_trust.timestamp_nonce_challenge_sha256 != nonce_challenge_digest
+        or (
+            (
+                deployment_trust.timestamp_nonce_challenge_id is not None
+                or deployment_trust.timestamp_nonce_challenge_sha256 is not None
+            )
+            if deployment_trust.operation_replayed
+            else (
+                deployment_trust.timestamp_nonce_challenge_id != nonce_challenge.challenge_id
+                or deployment_trust.timestamp_nonce_challenge_sha256 != nonce_challenge_digest
+            )
+        )
     ):
-        raise RuntimeError("deployment trust commit is not bound to the exact verified snapshot")
+        raise RuntimeError("deployment trust result is not bound to the exact verified snapshot or replay record")
 
     blockers = tuple(dict.fromkeys(
         tuple(
@@ -579,9 +588,14 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
         clock_sample_sha256=clock_sample_digest,
         physical_trust_context_sha256=physical_context_digest,
         physical_trust_context_generation=physical_context.context_generation,
-        timestamp_nonce_challenge_id=nonce_challenge.challenge_id,
-        timestamp_nonce_challenge_sha256=nonce_challenge_digest,
-        timestamp_nonce_challenge_generation=nonce_challenge.state_generation,
+        # A replay returns the historical operation record and does not
+        # claim that the newly issued challenge was consumed.
+        timestamp_nonce_challenge_id=deployment_trust.timestamp_nonce_challenge_id,
+        timestamp_nonce_challenge_sha256=deployment_trust.timestamp_nonce_challenge_sha256,
+        timestamp_nonce_challenge_generation=(
+            None if deployment_trust.operation_replayed
+            else nonce_challenge.state_generation
+        ),
         trusted_time_earliest_utc=earliest,
         trusted_time_latest_utc=latest,
         provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,

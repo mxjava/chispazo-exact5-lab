@@ -90,8 +90,19 @@ class SyntheticTrustProvider:
     """Test-only CAS provider. It is not a deployment backend."""
 
     def __init__(self, snapshot):
-        self.snapshot = snapshot
+        self.operation_receipt_private_key = Ed25519PrivateKey.generate()
+        self.operation_receipt_key_id = "synthetic-operation-receipt-key-1"
+        operation_receipt_public_key = self.operation_receipt_private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        self.snapshot = replace(
+            snapshot,
+            operation_receipt_key_id=self.operation_receipt_key_id,
+            operation_receipt_public_key_bytes=operation_receipt_public_key,
+        )
         self.read_count = 0
+        self.operation_receipt_read_count = 0
         self.commit_count = 0
         self.last_commit_arguments = None
         self.race_before_commit = False
@@ -102,6 +113,7 @@ class SyntheticTrustProvider:
         self.consumed_timestamp_nonce_challenge_ids = set()
         self.consumed_timestamp_nonce_values = set()
         self.operation_commits = {}
+        self.operation_receipt_records = {}
 
     def read_snapshot(self, *, policy_domain):
         self.read_count += 1
@@ -110,6 +122,63 @@ class SyntheticTrustProvider:
         # Return the stored snapshot even when it is mis-scoped so the
         # application boundary, not this test double, must reject it.
         return self.snapshot
+
+    def read_operation_receipt(
+        self, *, policy_domain, expected_state_backend_id, operation_id_sha256
+    ):
+        self.operation_receipt_read_count += 1
+        if policy_domain != CLASSIC_POLICY_DOMAIN:
+            raise ValueError("wrong operation receipt policy domain")
+        if expected_state_backend_id != self.snapshot.state_backend_id:
+            raise ValueError("wrong operation receipt state backend")
+        return self.operation_receipt_records.get(operation_id_sha256)
+
+    def _persist_operation_receipt(
+        self,
+        *,
+        expected_state_generation,
+        expected_trust_configuration_sha256,
+        expected_clock_sample_sha256,
+        root_key_id,
+        root_generation,
+        policy_sequence,
+        policy_envelope_sha256,
+        raw_policy_envelope_bytes,
+        raw_receipt_bytes,
+        operation_id_sha256,
+        commit,
+    ):
+        earliest, latest = _time_window(self.snapshot)
+        stamp = lambda value: value.isoformat(timespec="microseconds").replace("+00:00", "Z")
+        document = {
+            "schema": "origen.deployment-trust-operation-receipt.v1",
+            "policy_domain": CLASSIC_POLICY_DOMAIN,
+            "state_backend_id": self.snapshot.state_backend_id,
+            "operation_id_sha256": operation_id_sha256,
+            "policy_envelope_sha256": hashlib.sha256(raw_policy_envelope_bytes).hexdigest(),
+            "receipt_sha256": hashlib.sha256(raw_receipt_bytes).hexdigest(),
+            "policy_sequence": policy_sequence,
+            "state_generation_before": expected_state_generation,
+            "state_generation_after": commit.state_generation,
+            "outcome": commit.outcome.value,
+            "accepted_external_evidence_watermark_sha256": commit.accepted_external_evidence_watermark_sha256,
+            "trusted_time_latest_utc": stamp(commit.trusted_time_latest_utc),
+            "root_key_id": root_key_id,
+            "root_generation": root_generation,
+            "provisioning_record_sha256": self.snapshot.provisioning_record_sha256,
+            "trust_configuration_sha256": expected_trust_configuration_sha256,
+            "clock_source_id": self.snapshot.clock_source_id,
+            "clock_sample_sha256": expected_clock_sample_sha256,
+            "clock_sample_valid_until_utc": stamp(self.snapshot.clock_sample_valid_until_utc),
+            "time_window_start_utc": stamp(earliest),
+            "time_window_end_utc": stamp(latest),
+            "provider_key_id": self.snapshot.operation_receipt_key_id,
+        }
+        message = b"ORIGEN_DEPLOYMENT_TRUST_OPERATION_RECEIPT_V1\x00" + _canonical(document)
+        document["signature_b64"] = base64.b64encode(
+            self.operation_receipt_private_key.sign(message)
+        ).decode("ascii")
+        self.operation_receipt_records[operation_id_sha256] = _canonical(document)
 
     def _consume_timestamp_nonce_challenge(self, challenge_id):
         challenge = self.pending_timestamp_nonce_challenge
@@ -429,6 +498,19 @@ class SyntheticTrustProvider:
                 operation_id_sha256,
             )
             self.operation_commits[operation_id_sha256] = commit
+            self._persist_operation_receipt(
+                expected_state_generation=expected_state_generation,
+                expected_trust_configuration_sha256=expected_trust_configuration_sha256,
+                expected_clock_sample_sha256=expected_clock_sample_sha256,
+                root_key_id=root_key_id,
+                root_generation=root_generation,
+                policy_sequence=policy_sequence,
+                policy_envelope_sha256=policy_envelope_sha256,
+                raw_policy_envelope_bytes=raw_policy_envelope_bytes,
+                raw_receipt_bytes=raw_receipt_bytes,
+                operation_id_sha256=operation_id_sha256,
+                commit=commit,
+            )
             return commit
 
         if policy_advanced:
@@ -460,6 +542,19 @@ class SyntheticTrustProvider:
             operation_id_sha256,
         )
         self.operation_commits[operation_id_sha256] = commit
+        self._persist_operation_receipt(
+            expected_state_generation=expected_state_generation,
+            expected_trust_configuration_sha256=expected_trust_configuration_sha256,
+            expected_clock_sample_sha256=expected_clock_sample_sha256,
+            root_key_id=root_key_id,
+            root_generation=root_generation,
+            policy_sequence=policy_sequence,
+            policy_envelope_sha256=policy_envelope_sha256,
+            raw_policy_envelope_bytes=raw_policy_envelope_bytes,
+            raw_receipt_bytes=raw_receipt_bytes,
+            operation_id_sha256=operation_id_sha256,
+            commit=commit,
+        )
         return commit
 
 
@@ -512,6 +607,9 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             provisioning_record_sha256="b" * 64,
         )
         self.provider = SyntheticTrustProvider(self.snapshot)
+        # Subsequent fixture mutations must retain the provider-pinned synthetic
+        # operation-receipt verification key and its trust-configuration binding.
+        self.snapshot = self.provider.snapshot
 
     def with_signed_sample(self, snapshot, **changes):
         candidate = replace(snapshot, **changes)
@@ -1209,16 +1307,26 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
                     )
                     return observed
                 self.provider.read_snapshot = read_then_mutate
-                with self.assertRaisesRegex(
-                    TrustStateRejected,
-                    "compare-and-advance rejected a stale, regressed, or equivocal state",
-                ):
-                    self.inspect()
+                if field == "state_backend_id":
+                    # A backend change between snapshot and read-only receipt lookup
+                    # makes the durable outcome unknown before CAS can be attempted.
+                    with self.assertRaisesRegex(
+                        TrustProviderUnavailable,
+                        "operation-receipt query failed",
+                    ):
+                        self.inspect()
+                    self.assertEqual(self.provider.commit_count, 0)
+                else:
+                    with self.assertRaisesRegex(
+                        TrustStateRejected,
+                        "compare-and-advance rejected a stale, regressed, or equivocal state",
+                    ):
+                        self.inspect()
+                    self.assertEqual(self.provider.commit_count, 1)
                 self.assertEqual(
                     self.provider.snapshot.accepted_policy_sequence,
                     POLICY_SEQUENCE - 1,
                 )
-                self.assertEqual(self.provider.commit_count, 1)
                 self.provider.read_snapshot = original_read
                 self.provider.commit_count = 0
 
@@ -1537,9 +1645,66 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.provider.compare_and_advance = original
         result = self.inspect()
         self.assertEqual(result.operation_id_sha256, operation_id)
-        self.assertIs(result.state_outcome, TrustStateOutcome.IDEMPOTENT)
+        self.assertTrue(result.operation_replayed)
+        self.assertEqual(
+            result.operation_receipt_sha256,
+            hashlib.sha256(self.provider.operation_receipt_records[operation_id]).hexdigest(),
+        )
+        self.assertIs(result.state_outcome, TrustStateOutcome.ADVANCED)
         self.assertEqual(self.provider.snapshot.state_generation, generation_after_first)
-        self.assertEqual(self.provider.commit_count, 2)
+        self.assertEqual(self.provider.commit_count, 1)
+
+    def test_authenticated_operation_receipt_recovers_after_policy_floor_rotation(self):
+        first = self.inspect()
+        operation_id = first.operation_id_sha256
+        generation_after_commit = self.provider.snapshot.state_generation
+        original_record = self.provider.operation_receipt_records[operation_id]
+        self.assertFalse(first.operation_replayed)
+
+        # Simulate a later authorized policy-floor transition. The old policy
+        # bytes are now below the live floor, but the provider retains its
+        # signed durable record for the exact original operation.
+        self.provider.snapshot = replace(
+            self.provider.snapshot,
+            state_generation=generation_after_commit + 1,
+            minimum_policy_sequence=POLICY_SEQUENCE + 1,
+            accepted_policy_sequence=POLICY_SEQUENCE + 1,
+            accepted_policy_envelope_sha256="d" * 64,
+        )
+        commits_before_replay = self.provider.commit_count
+        result = self.inspect()
+
+        self.assertTrue(result.operation_replayed)
+        self.assertEqual(result.operation_id_sha256, operation_id)
+        self.assertEqual(result.operation_receipt_sha256, hashlib.sha256(original_record).hexdigest())
+        self.assertEqual(result.policy_sequence, POLICY_SEQUENCE)
+        self.assertEqual(result.state_generation_after, generation_after_commit)
+        self.assertIs(result.state_outcome, TrustStateOutcome.ADVANCED)
+        self.assertEqual(self.provider.commit_count, commits_before_replay)
+        self.assertEqual(self.provider.snapshot.state_generation, generation_after_commit + 1)
+
+    def test_invalid_signed_operation_receipt_fails_closed_without_cas_fallback(self):
+        first = self.inspect()
+        operation_id = first.operation_id_sha256
+        record = self.provider.operation_receipt_records[operation_id]
+        self.provider.operation_receipt_records[operation_id] = record[:-1] + (
+            b" " if record[-1:] != b" " else b"!"
+        )
+        self.provider.snapshot = replace(
+            self.provider.snapshot,
+            state_generation=self.provider.snapshot.state_generation + 1,
+            minimum_policy_sequence=POLICY_SEQUENCE + 1,
+            accepted_policy_sequence=POLICY_SEQUENCE + 1,
+            accepted_policy_envelope_sha256="e" * 64,
+        )
+        commits_before = self.provider.commit_count
+        with self.assertRaisesRegex(
+            TrustProviderUnavailable,
+            "invalid or nonmatching signed operation receipt",
+        ) as raised:
+            self.inspect()
+        self.assertEqual(raised.exception.operation_id_sha256, operation_id)
+        self.assertEqual(self.provider.commit_count, commits_before)
 
     def test_provider_recomputes_operation_id_and_rejects_substituted_evidence(self):
         original = self.provider.compare_and_advance

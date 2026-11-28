@@ -46,6 +46,8 @@ from .trust_verifier_v1 import (
 CLASSIC_POLICY_DOMAIN = "origen.chispazo.classic.provenance"
 CLOCK_SAMPLE_SCHEMA = "origen.clock-sample-attestation.v1"
 MAX_CLOCK_SAMPLE_BYTES = 4096
+MAX_OPERATION_RECEIPT_BYTES = 8192
+OPERATION_RECEIPT_SCHEMA = "origen.deployment-trust-operation-receipt.v1"
 _CLOCK_SAMPLE_UTC = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z\Z"
 )
@@ -160,6 +162,8 @@ class DeploymentTrustSnapshot:
     physical_trust_context_generation: int | None = None
     physical_trust_context_sha256: str | None = None
     accepted_external_evidence_watermark: ExternalEvidenceWatermarkV1 | None = None
+    operation_receipt_key_id: str | None = None
+    operation_receipt_public_key_bytes: bytes | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -174,6 +178,8 @@ class DeploymentTrustCommit:
     accepted_external_evidence_watermark_sha256: str | None = None
     receipt_sha256: str | None = None
     operation_id_sha256: str | None = None
+    operation_replayed: bool = False
+    operation_receipt_sha256: str | None = None
 
 
 class DeploymentTrustProvider(Protocol):
@@ -249,6 +255,26 @@ class DeploymentTrustProvider(Protocol):
         This prevents accidental cross-domain or cross-backend challenge reuse.
         The challenge is not trusted merely because this interface returns it;
         the deployment implementation and its state remain external.
+        """
+        ...
+
+    def read_operation_receipt(
+        self,
+        *,
+        policy_domain: str,
+        expected_state_backend_id: str,
+        operation_id_sha256: str,
+    ) -> bytes | None:
+        """Read an exact provider-signed durable operation receipt without mutation.
+
+        The lookup is by the stable operation ID and must occur before applying
+        the current policy sequence floor. A returned record binds the exact
+        policy/receipt digests, CLASSIC domain, backend, original state
+        transition, and provider key ID. It must be signed by the provider's
+        separately provisioned operation-receipt key exposed in the same
+        snapshot. The query must not consume a timestamp nonce or change state.
+        Return None only when no durable record exists. Never synthesize a
+        receipt from current state or caller assertions.
         """
         ...
 
@@ -341,6 +367,8 @@ class DeploymentTrustInspection:
     timestamp_nonce_challenge_id: str | None = None
     timestamp_nonce_challenge_sha256: str | None = None
     operation_id_sha256: str | None = None
+    operation_replayed: bool = False
+    operation_receipt_sha256: str | None = None
 
 
 class TrustProviderUnavailable(RuntimeError):
@@ -744,6 +772,264 @@ def _deployment_trust_operation_id_sha256(
     return digest.hexdigest()
 
 
+def _operation_receipt_pairs_no_duplicates(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("operation receipt contains a duplicate JSON key")
+        result[key] = value
+    return result
+
+
+def _operation_receipt_reject_constant(value: str):
+    raise ValueError("operation receipt contains a non-finite JSON number")
+
+
+def _verify_deployment_trust_operation_receipt(
+    raw: bytes,
+    *,
+    snapshot: DeploymentTrustSnapshot,
+    expected_operation_id_sha256: str,
+    raw_policy_envelope_bytes: bytes,
+    raw_receipt_bytes: bytes,
+) -> dict[str, object]:
+    """Verify a provider-signed durable record for one exact evidence operation."""
+    if type(raw) is not bytes or not 1 <= len(raw) <= MAX_OPERATION_RECEIPT_BYTES:
+        raise ValueError("operation receipt must be exact bytes within size limit")
+    if (
+        type(snapshot.operation_receipt_key_id) is not str
+        or type(snapshot.operation_receipt_public_key_bytes) is not bytes
+        or len(snapshot.operation_receipt_public_key_bytes) != 32
+    ):
+        raise ValueError("provider operation-receipt verification key is not provisioned")
+
+    try:
+        document = json.loads(
+            raw.decode("ascii"),
+            object_pairs_hook=_operation_receipt_pairs_no_duplicates,
+            parse_constant=_operation_receipt_reject_constant,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("operation receipt must be valid ASCII JSON") from exc
+    if type(document) is not dict:
+        raise ValueError("operation receipt must be a JSON object")
+    fields_expected = {
+        "schema", "policy_domain", "state_backend_id", "operation_id_sha256",
+        "policy_envelope_sha256", "receipt_sha256", "policy_sequence",
+        "state_generation_before", "state_generation_after", "outcome",
+        "accepted_external_evidence_watermark_sha256", "trusted_time_latest_utc",
+        "root_key_id", "root_generation", "provisioning_record_sha256",
+        "trust_configuration_sha256", "clock_source_id", "clock_sample_sha256",
+        "clock_sample_valid_until_utc", "time_window_start_utc",
+        "time_window_end_utc", "provider_key_id", "signature_b64",
+    }
+    if set(document) != fields_expected:
+        raise ValueError("operation receipt fields mismatch")
+    canonical_document = json.dumps(
+        document, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+        allow_nan=False,
+    ).encode("ascii")
+    if raw != canonical_document:
+        raise ValueError("operation receipt is not canonical JSON")
+    if document["schema"] != OPERATION_RECEIPT_SCHEMA:
+        raise ValueError("unsupported operation receipt schema")
+    if document["policy_domain"] != CLASSIC_POLICY_DOMAIN:
+        raise ValueError("operation receipt is not scoped to the fixed CLASSIC domain")
+    if document["state_backend_id"] != snapshot.state_backend_id:
+        raise ValueError("operation receipt belongs to a different state backend")
+    if document["operation_id_sha256"] != expected_operation_id_sha256:
+        raise ValueError("operation receipt does not bind the exact evidence operation ID")
+
+    policy_digest = hashlib.sha256(raw_policy_envelope_bytes).hexdigest()
+    receipt_digest = hashlib.sha256(raw_receipt_bytes).hexdigest()
+    if document["policy_envelope_sha256"] != policy_digest:
+        raise ValueError("operation receipt does not bind the exact policy envelope bytes")
+    if document["receipt_sha256"] != receipt_digest:
+        raise ValueError("operation receipt does not bind the exact receipt bytes")
+    _require_sha256(document["operation_id_sha256"], "operation receipt operation_id_sha256")
+    _require_sha256(document["policy_envelope_sha256"], "operation receipt policy_envelope_sha256")
+    _require_sha256(document["receipt_sha256"], "operation receipt receipt_sha256")
+    _require_sha256(
+        document["accepted_external_evidence_watermark_sha256"],
+        "operation receipt accepted_external_evidence_watermark_sha256",
+    )
+    _require_sha256(document["provisioning_record_sha256"], "operation receipt provisioning_record_sha256")
+    _require_sha256(document["trust_configuration_sha256"], "operation receipt trust_configuration_sha256")
+    _require_sha256(document["clock_sample_sha256"], "operation receipt clock_sample_sha256")
+    _require_identifier(document["root_key_id"], "operation receipt root_key_id")
+    _require_identifier(document["clock_source_id"], "operation receipt clock_source_id")
+    if document["provider_key_id"] != snapshot.operation_receipt_key_id:
+        raise ValueError("operation receipt provider key ID does not match the pinned snapshot key")
+    if type(document["root_generation"]) is not int or not 1 <= document["root_generation"] <= MAX_POLICY_SEQUENCE:
+        raise ValueError("operation receipt root_generation is invalid")
+    if type(document["policy_sequence"]) is not int or not 1 <= document["policy_sequence"] <= MAX_POLICY_SEQUENCE:
+        raise ValueError("operation receipt policy_sequence is invalid")
+    before = document["state_generation_before"]
+    after = document["state_generation_after"]
+    if type(before) is not int or type(after) is not int or not 0 <= before <= after <= MAX_POLICY_SEQUENCE:
+        raise ValueError("operation receipt state generations are invalid")
+    try:
+        outcome = TrustStateOutcome(document["outcome"])
+    except (TypeError, ValueError) as exc:
+        raise ValueError("operation receipt outcome is invalid") from exc
+    if outcome not in {
+        TrustStateOutcome.ADVANCED,
+        TrustStateOutcome.IDEMPOTENT,
+        TrustStateOutcome.TIME_ADVANCED,
+        TrustStateOutcome.EVIDENCE_ADVANCED,
+        TrustStateOutcome.TIME_AND_EVIDENCE_ADVANCED,
+    }:
+        raise ValueError("operation receipt cannot attest a rejected provider outcome")
+    if (outcome is TrustStateOutcome.IDEMPOTENT and after != before) or (
+        outcome is not TrustStateOutcome.IDEMPOTENT and after != before + 1
+    ):
+        raise ValueError("operation receipt state-generation transition is inconsistent")
+
+    trusted_latest = _clock_sample_timestamp(
+        document["trusted_time_latest_utc"], "operation receipt trusted_time_latest_utc"
+    )
+    clock_valid_until = _clock_sample_timestamp(
+        document["clock_sample_valid_until_utc"], "operation receipt clock_sample_valid_until_utc"
+    )
+    window_start = _clock_sample_timestamp(
+        document["time_window_start_utc"], "operation receipt time_window_start_utc"
+    )
+    window_end = _clock_sample_timestamp(
+        document["time_window_end_utc"], "operation receipt time_window_end_utc"
+    )
+    if not window_start <= window_end <= clock_valid_until or trusted_latest < window_end:
+        raise ValueError("operation receipt time interval is inconsistent")
+    signature_b64 = document["signature_b64"]
+    if type(signature_b64) is not str:
+        raise ValueError("operation receipt signature_b64 must be canonical base64")
+    try:
+        signature = base64.b64decode(signature_b64, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("operation receipt signature_b64 is invalid") from exc
+    if len(signature) != 64 or base64.b64encode(signature).decode("ascii") != signature_b64:
+        raise ValueError("operation receipt signature must be 64 canonical base64 bytes")
+    unsigned = dict(document)
+    unsigned.pop("signature_b64")
+    message = b"ORIGEN_DEPLOYMENT_TRUST_OPERATION_RECEIPT_V1\x00" + json.dumps(
+        unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+        allow_nan=False,
+    ).encode("ascii")
+    try:
+        Ed25519PublicKey.from_public_bytes(
+            snapshot.operation_receipt_public_key_bytes
+        ).verify(signature, message)
+    except (InvalidSignature, ValueError) as exc:
+        raise ValueError("provider operation receipt signature verification failed") from exc
+    return document
+
+
+def _read_verified_operation_receipt(
+    provider: DeploymentTrustProvider,
+    snapshot: DeploymentTrustSnapshot,
+    *,
+    operation_id_sha256: str,
+    raw_policy_envelope_bytes: bytes,
+    raw_receipt_bytes: bytes,
+) -> DeploymentTrustInspection | None:
+    reader = getattr(provider, "read_operation_receipt", None)
+    if not callable(reader):
+        if snapshot.operation_receipt_key_id is not None:
+            raise TrustProviderUnavailable(
+                "provider snapshot advertises an operation-receipt key but the read API is missing",
+                operation_id_sha256=operation_id_sha256,
+            )
+        return None
+    if (
+        snapshot.operation_receipt_key_id is None
+        or snapshot.operation_receipt_public_key_bytes is None
+    ):
+        raise TrustProviderUnavailable(
+            "provider operation-receipt verification key is not provisioned",
+            operation_id_sha256=operation_id_sha256,
+        )
+    try:
+        raw = reader(
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            expected_state_backend_id=snapshot.state_backend_id,
+            operation_id_sha256=operation_id_sha256,
+        )
+    except Exception as exc:
+        raise TrustProviderUnavailable(
+            "provider operation-receipt query failed; durable outcome remains unknown",
+            operation_id_sha256=operation_id_sha256,
+        ) from exc
+    if raw is None:
+        return None
+    try:
+        document = _verify_deployment_trust_operation_receipt(
+            raw,
+            snapshot=snapshot,
+            expected_operation_id_sha256=operation_id_sha256,
+            raw_policy_envelope_bytes=raw_policy_envelope_bytes,
+            raw_receipt_bytes=raw_receipt_bytes,
+        )
+        state_generation_after = document["state_generation_after"]
+        if state_generation_after > snapshot.state_generation:
+            raise ValueError("operation receipt is ahead of the current provider state generation")
+        if document["policy_sequence"] > snapshot.accepted_policy_sequence:
+            raise ValueError("operation receipt policy sequence is ahead of current provider state")
+        if (
+            document["policy_sequence"] == snapshot.accepted_policy_sequence
+            and document["policy_envelope_sha256"] != snapshot.accepted_policy_envelope_sha256
+        ):
+            raise ValueError("operation receipt conflicts with the current accepted policy digest")
+        if document["root_generation"] > snapshot.root_generation:
+            raise ValueError("operation receipt root generation is ahead of current provider state")
+        if (
+            document["root_generation"] == snapshot.root_generation
+            and document["root_key_id"] != snapshot.root_key_id
+        ):
+            raise ValueError("operation receipt root key conflicts with current provider state")
+        latest = _clock_sample_timestamp(
+            document["trusted_time_latest_utc"], "operation receipt trusted_time_latest_utc"
+        )
+        if snapshot.trusted_time_latest_utc is None or latest > snapshot.trusted_time_latest_utc:
+            raise ValueError("operation receipt is ahead of the current trusted-time watermark")
+        return DeploymentTrustInspection(
+            receipt_sha256=document["receipt_sha256"],
+            policy_envelope_sha256=document["policy_envelope_sha256"],
+            policy_domain=document["policy_domain"],
+            policy_sequence=document["policy_sequence"],
+            root_key_id=document["root_key_id"],
+            root_generation=document["root_generation"],
+            provisioning_record_sha256=document["provisioning_record_sha256"],
+            trust_configuration_sha256=document["trust_configuration_sha256"],
+            clock_source_id=document["clock_source_id"],
+            clock_sample_sha256=document["clock_sample_sha256"],
+            clock_sample_valid_until_utc=_clock_sample_timestamp(
+                document["clock_sample_valid_until_utc"],
+                "operation receipt clock_sample_valid_until_utc",
+            ),
+            state_backend_id=document["state_backend_id"],
+            time_window_start_utc=_clock_sample_timestamp(
+                document["time_window_start_utc"], "operation receipt time_window_start_utc"
+            ),
+            time_window_end_utc=_clock_sample_timestamp(
+                document["time_window_end_utc"], "operation receipt time_window_end_utc"
+            ),
+            state_generation_before=document["state_generation_before"],
+            state_generation_after=document["state_generation_after"],
+            state_outcome=TrustStateOutcome(document["outcome"]),
+            provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
+            timestamp_nonce_challenge_id=None,
+            timestamp_nonce_challenge_sha256=None,
+            operation_id_sha256=operation_id_sha256,
+            operation_replayed=True,
+            operation_receipt_sha256=hashlib.sha256(raw).hexdigest(),
+        )
+    except (TypeError, ValueError) as exc:
+        raise TrustProviderUnavailable(
+            "provider returned an invalid or nonmatching signed operation receipt; "
+            "durable outcome remains unknown",
+            operation_id_sha256=operation_id_sha256,
+        ) from exc
+
+
 def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
     """Fingerprint immutable deployment trust configuration, not its authenticity."""
     payload = {
@@ -762,6 +1048,11 @@ def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
         ).hexdigest(),
         "state_backend_id": snapshot.state_backend_id,
         "provisioning_record_sha256": snapshot.provisioning_record_sha256,
+        "operation_receipt_key_id": snapshot.operation_receipt_key_id,
+        "operation_receipt_public_key_sha256": (
+            None if snapshot.operation_receipt_public_key_bytes is None
+            else hashlib.sha256(snapshot.operation_receipt_public_key_bytes).hexdigest()
+        ),
     }
     if snapshot.physical_trust_context_generation is not None:
         payload["physical_trust_context_generation"] = snapshot.physical_trust_context_generation
@@ -963,6 +1254,8 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         accepted_external_evidence_watermark=_external_evidence_watermark_copy(
             value.accepted_external_evidence_watermark
         ),
+        operation_receipt_key_id=value.operation_receipt_key_id,
+        operation_receipt_public_key_bytes=value.operation_receipt_public_key_bytes,
     )
 
     if (
@@ -992,6 +1285,17 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         if type(context_generation) is not int or not 1 <= context_generation <= MAX_POLICY_SEQUENCE:
             raise ValueError("physical_trust_context_generation must be an exact positive integer")
         _require_sha256(context_digest, "physical_trust_context_sha256")
+
+    if (snapshot.operation_receipt_key_id is None) != (
+        snapshot.operation_receipt_public_key_bytes is None
+    ):
+        raise ValueError("operation receipt key ID and public key must be supplied together")
+    if snapshot.operation_receipt_key_id is not None:
+        _require_identifier(snapshot.operation_receipt_key_id, "operation_receipt_key_id")
+        if type(snapshot.operation_receipt_public_key_bytes) is not bytes or len(
+            snapshot.operation_receipt_public_key_bytes
+        ) != 32:
+            raise ValueError("operation receipt public key must be exactly 32 immutable bytes")
 
     integer_fields = (
         ("root_generation", snapshot.root_generation, 1, MAX_POLICY_SEQUENCE),
@@ -1191,6 +1495,28 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         original_receipt_bytes,
         external_evidence_advance,
     )
+    # A durable replay must not bypass the current provider-time monotonicity
+    # and lease checks. The snapshot copy above has already verified the
+    # provider's signed clock-sample bytes; enforce its interval before lookup.
+    earliest, latest = _time_window(snapshot)
+    if latest > snapshot.clock_sample_valid_until_utc:
+        raise ValueError("trusted-time uncertainty interval exceeds the provider clock sample lease")
+    if (
+        snapshot.trusted_time_latest_utc is not None
+        and earliest < snapshot.trusted_time_latest_utc
+    ):
+        raise TrustStateRejected(
+            "trusted-time interval regressed behind the persisted time watermark"
+        )
+    replay = _read_verified_operation_receipt(
+        provider,
+        snapshot,
+        operation_id_sha256=operation_id_sha256,
+        raw_policy_envelope_bytes=signed_policy_envelope_bytes,
+        raw_receipt_bytes=original_receipt_bytes,
+    )
+    if replay is not None:
+        return replay
     expected_external_evidence_watermark_sha256 = (
         _accepted_external_evidence_watermark_sha256(snapshot.accepted_external_evidence_watermark)
     )
@@ -1205,10 +1531,6 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
     )
     trust_configuration_digest = _trust_configuration_sha256(snapshot)
     clock_sample_digest = _clock_sample_sha256(snapshot)
-    earliest, latest = _time_window(snapshot)
-    if latest > snapshot.clock_sample_valid_until_utc:
-        raise ValueError("trusted-time uncertainty interval exceeds the provider clock sample lease")
-
     effective_floor = max(
         snapshot.minimum_policy_sequence,
         snapshot.accepted_policy_sequence,

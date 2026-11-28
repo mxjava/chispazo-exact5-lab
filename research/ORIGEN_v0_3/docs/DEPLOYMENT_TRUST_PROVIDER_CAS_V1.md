@@ -560,3 +560,61 @@ isolated, reviewed verification service). A digest-only caller assertion is
 insufficient. The synthetic provider exercises monotonic state transitions,
 exact-byte binding and interface shape only; it does not implement institutional
 signature verification or durable storage.
+
+
+## Authenticated durable operation-receipt lookup
+
+The stable operation ID introduced for ambiguous CAS acknowledgements now has a
+read-only reconciliation path. Before re-verifying a submitted policy against
+the current policy sequence floor or validating a candidate against the
+current ledger watermark, the application may ask the deployment provider for
+the durable receipt associated with the recomputed operation ID.
+
+The provider contract is:
+
+- read_operation_receipt(policy_domain, expected_state_backend_id, operation_id_sha256)
+  returns the exact canonical bytes of a previously committed operation receipt,
+  or None if no durable record exists.
+- The returned envelope uses the schema
+  origen.deployment-trust-operation-receipt.v1 and is signed with a
+  provider operation-receipt Ed25519 key whose key ID and 32-byte public key
+  are included in the provider snapshot and bound into the trust-configuration
+  digest.
+- The signed record binds the fixed CLASSIC domain, state backend, stable
+  operation ID, exact policy-envelope SHA-256, exact receipt SHA-256, accepted
+  policy sequence, original state-generation transition, outcome, accepted
+  external-evidence watermark digest, root generation, provisioning-record
+  digest, trust-configuration digest, clock-sample digest, and original
+  time-window metadata.
+- The application recomputes the operation ID from the caller's exact original
+  policy/receipt/evidence bytes, verifies the provider signature and all exact
+  byte digests, then checks that the record is not ahead of current provider
+  generation, accepted policy sequence, root generation, or trusted-time
+  watermark.
+- A verified replay returns the original operation inspection with
+  operation_replayed=true. It does not call CAS again, advance state, or
+  consume a newly issued timestamp nonce. A malformed, mismatched, or
+  unverifiable response raises TrustProviderUnavailable; the application
+  never falls through to ordinary policy verification after a provider has
+  returned a purported record that fails verification.
+
+This ordering is necessary because an operation that committed before a policy
+rotation may contain policy bytes that are now below the live sequence floor.
+The provider must retain the signed durable operation receipt and make it
+queryable by the stable ID without first requiring the old policy to pass the
+current floor. A missing record is not proof of commit; the normal verification
+and CAS path continues only when the provider returns None.
+
+The operation-receipt key is a separate provider identity, not the clock/TSA
+key and not the institutional policy root. Its provisioning, durable retention,
+rotation/rollover, revocation and recovery ceremony are deployment obligations.
+This research contract currently fails closed if the snapshot does not expose
+a matching key or if a response is signed under a different key. A provider
+must not rotate this key without an independently authenticated rollover path
+that preserves verification of retained historical operation receipts.
+
+All provider receipts and keys in tests are generated in memory and are
+synthetic. No external provider, operation ledger, signing key, or durable
+retention service is deployed. The lookup interface is not evidence that a
+provider is authentic or independent. Production remains
+BLOCKED / RESEARCH_ONLY_NO_EDGE.

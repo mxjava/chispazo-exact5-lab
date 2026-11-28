@@ -977,9 +977,16 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
 
         replay = _inspect(data, ledger, batches, provider)
 
-        self.assertIs(replay.deployment_trust.state_outcome, TrustStateOutcome.IDEMPOTENT)
+        self.assertTrue(replay.deployment_trust.operation_replayed)
         self.assertEqual(replay.deployment_trust.operation_id_sha256, operation_id)
-        self.assertEqual(provider.commit_count, 2)
+        self.assertIs(replay.deployment_trust.state_outcome, TrustStateOutcome.ADVANCED)
+        self.assertIsNone(replay.timestamp_nonce_challenge_id)
+        self.assertIsNone(replay.timestamp_nonce_challenge_sha256)
+        self.assertIsNone(replay.timestamp_nonce_challenge_generation)
+        self.assertIsNone(replay.deployment_trust.timestamp_nonce_challenge_id)
+        self.assertIsNone(replay.deployment_trust.timestamp_nonce_challenge_sha256)
+        self.assertIsNotNone(replay.deployment_trust.operation_receipt_sha256)
+        self.assertEqual(provider.commit_count, 1)
         self.assertEqual(provider.snapshot.state_generation, generation_after_first)
         self.assertEqual(provider.snapshot.accepted_policy_sequence, accepted_sequence_after_first)
         self.assertEqual(len(provider.consumed_timestamp_nonce_values), 2)
@@ -991,6 +998,7 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
         _inspect(data, ledger, batches, provider)
         generation_after_first = provider.snapshot.state_generation
         provider.operation_commits.clear()
+        provider.operation_receipt_records.clear()
 
         provider.nonce_challenge = TimestampNonceChallengeV1(
             challenge_id="synthetic-timestamp-challenge-0002",
