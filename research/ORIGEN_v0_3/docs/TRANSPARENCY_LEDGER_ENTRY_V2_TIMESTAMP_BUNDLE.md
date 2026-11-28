@@ -48,7 +48,7 @@ This creates an acyclic commitment chain:
 3. verifies the RFC 3161 token, nonce, TSA root fingerprint, policy OID, accuracy interval and strict pre-close bound through the V1 verifier;
 4. parses a canonical V2 ledger leaf with an exact field set and checks both timestamp digests against the exact bytes;
 5. binds the normalized manifest commitment and sorted artifact digest set;
-6. verifies the exact signed checkpoint, checkpoint identity, time, tree-size floor, inclusion-proof digest and RFC 6962 inclusion path over the exact V2 leaf bytes.
+6. verifies the exact signed checkpoint, checkpoint identity, time, tree-size floor, inclusion-proof digest and RFC 6962 inclusion path over the exact V2 leaf bytes; additionally, the checkpoint's signed issue time must be strictly later than the RFC 3161 accuracy upper bound, so the log cannot claim to have committed a token before that token could have existed.
 
 The output explicitly reports sidecar/token commitment and inclusion. It remains `BLOCKED_PROVENANCE`.
 
