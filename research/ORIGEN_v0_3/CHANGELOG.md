@@ -1,3 +1,10 @@
+## Retained operation-receipt verification keys across provider rotation (2026-11-28)
+- Reproduced that the authenticated lost-ack replay path only trusted the provider's current operation-receipt signing key; rotating that key made previously committed signed operation receipts unverifiable even when the provider retained them.
+- Added a bounded canonical retained-key tuple with unique key IDs/public keys, exact UTC validity intervals and explicit revocation state. The active signing key remains separate.
+- Bound retained key IDs, SHA-256 public-key fingerprints, validity windows and revocation flags into the provider trust-configuration digest.
+- Historical operation receipts now select exactly one active/retained key by their signed provider key ID; retained keys must be non-revoked and cover the entire original trusted-time uncertainty interval. Unknown, duplicate, revoked, expired or malformed entries fail closed.
+- Added synthetic tests for replay after key rotation, expired/revoked retained keys, duplicate ID/public-key aliases and keyring fingerprint binding. This does not authenticate provider provisioning, key archival, revocation authority or durable storage. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
 ## 2026-11-27 — stable exact-evidence CAS operation identity (research only)
 
 - Added a domain-separated, length-framed operation ID over the exact policy, receipt and complete nested evidence bytes.
