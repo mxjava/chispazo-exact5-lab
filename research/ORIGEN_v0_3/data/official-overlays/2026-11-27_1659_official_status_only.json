@@ -1,11 +1,11 @@
 {
   "schema": "origen.official-status-only.v1",
-  "captured_at_local": "2026-11-27T18:02:09-06:00",
+  "captured_at_local": "2026-11-27T18:07:23-06:00",
   "status_only": true,
   "observations": [
     {
       "source": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
-      "observation": "The dedicated Chispazo results page displays contest 12399, dated 27/11/2026, with winning combination 10 14 15 17 24. The page does not print the modality beside the result.",
+      "observation": "Directly opened official results page displays contest 12399, dated 27/11/2026, winning combination 10 14 15 17 24, one first-place winner and 33,696 total winners. The page does not print the modality beside the result.",
       "modality_label_present": false,
       "classification": "RESULT_PUBLISHED_MODALITY_NOT_PRINTED_ON_DEDICATED_PAGE"
     },
@@ -18,6 +18,11 @@
       "source": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
       "observation": "The official Chispazo product page maps De las Tres to 15:00 and Clásico to 21:00. This confirms the modality schedule.",
       "classification": "OFFICIAL_PRODUCT_MODALITY_SCHEDULE"
+    },
+    {
+      "source": "https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados",
+      "observation": "The commercializadores subdomain results mirror was directly opened and still displayed contest 12398 dated 26/11/2026, while the main loterianacional.gob.mx results page displayed 12399 dated 27/11/2026. Treat this mirror as stale for the current 27-Nov result; do not use it to overwrite the main official result page.",
+      "classification": "STALE_MIRROR_OBSERVED_12398_NOT_CURRENT"
     },
     {
       "source": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
@@ -39,11 +44,17 @@
     {
       "claim": "12400 was previously withdrawn as unsupported",
       "status": "WITHDRAWAL_ITSELF_WITHDRAWN_AFTER_DIRECT_PAGE_OPEN",
-      "reason": "The directly opened current official home page now explicitly lists 27-Nov-2026 21:00, Sorteo 12400, in the 'Ilumina tu suerte' section. A separate 4297 card is visibly under a different prize section. Earlier search-result snippets showed a different/cached content representation; the direct page lines are the basis for this current classification."
+      "reason": "The directly opened current official home page explicitly lists 27-Nov-2026 21:00, Sorteo 12400, in the 'Ilumina tu suerte' section. A separate 4297 card is visibly under a different prize section. Earlier search-result snippets showed a different/cached content representation; the direct page lines are the basis for this current classification."
+    },
+    {
+      "claim": "Commercializadores mirror page is current for 27-Nov",
+      "status": "NOT_SUPPORTED",
+      "reason": "Direct open of the main official results page shows 12399 dated 27-Nov, while the commercializadores subdomain page still shows 12398 dated 26-Nov. The mirror is stale in this observation."
     }
   ],
   "source_bytes": {
-    "official_html_original_bytes": "NOT_CAPTURED",
+    "main_official_html_original_bytes": "NOT_CAPTURED",
+    "commercializadores_html_original_bytes": "NOT_CAPTURED",
     "official_mask_pdf_original_bytes": "NOT_CAPTURED",
     "sha256": "NOT_COMPUTED",
     "official_mask_pdf_visual_rendering": "INSPECTED"
