@@ -1905,7 +1905,7 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         retired = OperationReceiptVerificationKeyV1(
             key_id="synthetic-offset-key",
             public_key_bytes=bytes.fromhex("44" * 32),
-            valid_from_utc=NOW.astimezone(timezone(timedelta(hours=0))),
+            valid_from_utc=NOW.astimezone(timezone(timedelta(hours=1))),
             valid_until_utc=NOW + timedelta(days=365),
             revoked=False,
         )
