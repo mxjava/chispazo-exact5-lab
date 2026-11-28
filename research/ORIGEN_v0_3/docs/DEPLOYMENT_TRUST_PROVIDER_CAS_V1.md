@@ -560,3 +560,20 @@ isolated, reviewed verification service). A digest-only caller assertion is
 insufficient. The synthetic provider exercises monotonic state transitions,
 exact-byte binding and interface shape only; it does not implement institutional
 signature verification or durable storage.
+
+
+### V2 provider-CAS envelope for the nested-signature timestamp bundle (2026-11-27)
+
+`ExternalEvidenceAdvanceV2` extends the V1 exact-byte envelope with:
+
+- the exact canonical nested-signature timestamp sidecar bytes;
+- the exact detached RFC 3161 token DER bytes over that sidecar; and
+- the provider-issued nested-signature-bundle timestamp nonce.
+
+The V2 preflight reconstructs the sidecar from the exact manifest, signed policy, artifact bytes and detached-signature bytes. It rejects a sidecar mismatch, requires the V2 ledger-leaf schema, checks the exact manifest commitment and artifact digest set, and verifies that the V2 leaf commits to the exact sidecar and token digests. It also checks that the manifest binds the exact inclusion proof and that the proof/checkpoint identities and tree metadata agree with the CAS envelope.
+
+The timestamp challenge contract now supports an optional third nonce. When present, it must be a positive signed-64-bit integer distinct from the policy and custody nonces, and it is included in the challenge digest. A provider using V2 must require this nonce to match the V2 advance and consume it in the same linearizable transaction as policy/time state and the evidence watermark.
+
+**Boundary:** this preflight is structural byte-binding only. It does not cryptographically verify the RFC 3161 token, TSA chain, policy OID, nested signatures, checkpoint signature, Merkle inclusion, consistency proof, revocation or institutional trust. The production provider must independently re-verify all exact V2 bytes against its own provisioned policy-TSA/log roots, nonce challenge, trusted clock and revocation/quorum state inside the CAS transaction. The repository still ships no production provider.
+
+`SQLiteReferenceExternalEvidenceCASV1` intentionally remains V1-only and rejects the V2 subtype: it is a local monotonic-watermark fixture and does not perform the required cryptographic re-verification. V1 callers and their byte envelope remain unchanged. The V2 composition has not yet been wired into the custody/ledger/witness provider entry point; production remains `BLOCKED / RESEARCH_ONLY_NO_EDGE`.

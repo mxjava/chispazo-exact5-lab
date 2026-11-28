@@ -31,6 +31,7 @@ class TimestampNonceChallengeV1:
     physical_trust_context_sha256: str
     issued_at_utc: datetime
     expires_at_utc: datetime
+    nested_signature_bundle_timestamp_nonce: int | None = None
 
     def __post_init__(self) -> None:
         if type(self.challenge_id) is not str or not _IDENTIFIER.fullmatch(self.challenge_id):
@@ -43,8 +44,16 @@ class TimestampNonceChallengeV1:
             value = getattr(self, field)
             if type(value) is not int or not 1 <= value <= _MAX_NONCE:
                 raise ValueError(f"{field} must be an exact positive signed 64-bit integer")
-        if self.policy_timestamp_nonce == self.custody_timestamp_nonce:
-            raise ValueError("policy and custody timestamp nonces must be distinct")
+        nonces = [self.policy_timestamp_nonce, self.custody_timestamp_nonce]
+        if self.nested_signature_bundle_timestamp_nonce is not None:
+            value = self.nested_signature_bundle_timestamp_nonce
+            if type(value) is not int or not 1 <= value <= _MAX_NONCE:
+                raise ValueError(
+                    "nested_signature_bundle_timestamp_nonce must be an exact positive signed 64-bit integer"
+                )
+            nonces.append(value)
+        if len(set(nonces)) != len(nonces):
+            raise ValueError("all present timestamp challenge nonces must be distinct")
         for field, minimum in (
             ("state_generation", 0),
             ("root_generation", 1),
@@ -80,6 +89,7 @@ def copy_timestamp_nonce_challenge(value: object) -> TimestampNonceChallengeV1:
         physical_trust_context_sha256=value.physical_trust_context_sha256,
         issued_at_utc=value.issued_at_utc,
         expires_at_utc=value.expires_at_utc,
+        nested_signature_bundle_timestamp_nonce=value.nested_signature_bundle_timestamp_nonce,
     )
 
 
@@ -93,6 +103,7 @@ def timestamp_nonce_challenge_sha256(value: TimestampNonceChallengeV1) -> str:
         "state_backend_id": challenge.state_backend_id,
         "policy_timestamp_nonce": challenge.policy_timestamp_nonce,
         "custody_timestamp_nonce": challenge.custody_timestamp_nonce,
+        "nested_signature_bundle_timestamp_nonce": challenge.nested_signature_bundle_timestamp_nonce,
         "state_generation": challenge.state_generation,
         "root_generation": challenge.root_generation,
         "physical_trust_context_generation": challenge.physical_trust_context_generation,

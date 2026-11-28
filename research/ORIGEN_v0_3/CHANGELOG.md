@@ -1,3 +1,10 @@
+## V2 timestamp-bundle exact-byte provider CAS envelope (2026-11-27)
+- Added `ExternalEvidenceAdvanceV2`, which carries the canonical nested-signature timestamp sidecar, exact RFC 3161 token DER and provider-issued bundle nonce alongside the existing exact evidence envelope.
+- Added structural preflight that rebuilds the sidecar from exact manifest/policy/artifact/signature bytes and checks the V2 leaf's exact sidecar/token digests, normalized manifest commitment, artifact set, proof digest and checkpoint/proof identity bindings.
+- Extended the nonce challenge with an optional third distinct nonce, included in the challenge digest. V1 challenges remain valid when it is absent.
+- Added adversarial tests for token/sidecar substitution, V1 leaf downgrade, altered V2 digest, invalid/reused nonce values and challenge-digest binding.
+- This is a CAS envelope and structural preflight, not cryptographic re-verification. A real provider must verify the RFC 3161 token, nested signatures, checkpoint, inclusion/consistency, revocation and trusted context inside its own linearizable transaction. The SQLite reference CAS deliberately remains V1-only. V2 custody/ledger/witness composition is not yet wired; no production promotion.
+
 ## Detached nested-signature bundle timestamp sidecar (2026-11-27)
 - Added a bounded canonical sidecar containing normalized CLASSIC manifest content (excluding only the ledger inclusion-proof digest to avoid a bundle/ledger cycle), exact signed V3 policy bytes, every original artifact byte string, every nested signature claim and every exact Ed25519 signature byte string.
 - Added an RFC 3161 verifier that checks exact bundle imprint, nonce, TSA root fingerprint, policy OID, accuracy interval, CLASSIC 21:00 close, exact artifact hashes/lengths, signed-policy validity, signer-key validity and signed key/role/artifact authorization at timestamp.
