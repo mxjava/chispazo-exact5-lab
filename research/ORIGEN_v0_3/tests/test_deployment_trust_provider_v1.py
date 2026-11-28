@@ -24,6 +24,7 @@ from origen.deployment_trust_provider_v1 import (
     TrustStateOutcome,
     TrustStateRejected,
     _accepted_external_evidence_watermark_sha256,
+    _deployment_trust_operation_id_sha256,
     _clock_sample_sha256,
     _trust_configuration_sha256,
     _validated_external_evidence_watermark,
@@ -100,6 +101,7 @@ class SyntheticTrustProvider:
         self.pending_timestamp_nonce_challenge = None
         self.consumed_timestamp_nonce_challenge_ids = set()
         self.consumed_timestamp_nonce_values = set()
+        self.operation_commits = {}
 
     def read_snapshot(self, *, policy_domain):
         self.read_count += 1
@@ -127,6 +129,7 @@ class SyntheticTrustProvider:
         policy_sequence,
         policy_envelope_sha256,
         expected_external_evidence_watermark_sha256,
+        operation_id_sha256,
         raw_policy_envelope_bytes,
         raw_receipt_bytes,
         external_evidence_advance=None,
@@ -144,12 +147,42 @@ class SyntheticTrustProvider:
             "policy_sequence": policy_sequence,
             "policy_envelope_sha256": policy_envelope_sha256,
             "expected_external_evidence_watermark_sha256": expected_external_evidence_watermark_sha256,
+            "operation_id_sha256": operation_id_sha256,
             "raw_policy_envelope_bytes": raw_policy_envelope_bytes,
             "raw_receipt_bytes": raw_receipt_bytes,
             "external_evidence_advance": external_evidence_advance,
             "timestamp_nonce_challenge_id": timestamp_nonce_challenge_id,
             "timestamp_nonce_challenge_sha256": timestamp_nonce_challenge_sha256,
         }
+        try:
+            expected_operation_id = _deployment_trust_operation_id_sha256(
+                raw_policy_envelope_bytes,
+                raw_receipt_bytes,
+                external_evidence_advance,
+            )
+        except (TypeError, ValueError):
+            expected_operation_id = None
+        if operation_id_sha256 != expected_operation_id:
+            return DeploymentTrustCommit(
+                TrustStateOutcome.EQUIVOCATION,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
+        if operation_id_sha256 in self.operation_commits:
+            return DeploymentTrustCommit(
+                TrustStateOutcome.IDEMPOTENT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+                _accepted_external_evidence_watermark_sha256(
+                    self.snapshot.accepted_external_evidence_watermark
+                ),
+                hashlib.sha256(raw_receipt_bytes).hexdigest(),
+                operation_id_sha256,
+            )
         if self.fail_commit:
             raise OSError("synthetic durable commit failure")
         if self.race_before_commit:
@@ -374,7 +407,7 @@ class SyntheticTrustProvider:
             self._consume_timestamp_nonce_challenge(timestamp_nonce_challenge_id)
 
         if not (policy_advanced or time_advanced or evidence_advanced):
-            return DeploymentTrustCommit(
+            commit = DeploymentTrustCommit(
                 TrustStateOutcome.IDEMPOTENT,
                 self.snapshot.state_generation,
                 policy_sequence,
@@ -382,7 +415,10 @@ class SyntheticTrustProvider:
                 self.snapshot.trusted_time_latest_utc,
                 _accepted_external_evidence_watermark_sha256(next_watermark),
                 hashlib.sha256(raw_receipt_bytes).hexdigest(),
+                operation_id_sha256,
             )
+            self.operation_commits[operation_id_sha256] = commit
+            return commit
 
         if policy_advanced:
             outcome = TrustStateOutcome.ADVANCED
@@ -402,7 +438,7 @@ class SyntheticTrustProvider:
             trusted_time_latest_utc=candidate_latest if time_advanced else self.snapshot.trusted_time_latest_utc,
             accepted_external_evidence_watermark=next_watermark,
         )
-        return DeploymentTrustCommit(
+        commit = DeploymentTrustCommit(
             outcome,
             next_generation,
             policy_sequence,
@@ -410,7 +446,10 @@ class SyntheticTrustProvider:
             self.snapshot.trusted_time_latest_utc,
             _accepted_external_evidence_watermark_sha256(next_watermark),
             hashlib.sha256(raw_receipt_bytes).hexdigest(),
+            operation_id_sha256,
         )
+        self.operation_commits[operation_id_sha256] = commit
+        return commit
 
 
 class TestDeploymentTrustProviderV1(unittest.TestCase):
@@ -1386,6 +1425,135 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
                 self.policy_bytes,
                 external_evidence_advance=object(),
             )
+
+
+
+
+    def test_operation_id_is_deterministic_and_binds_exact_policy_and_receipt_bytes(self):
+        first = _deployment_trust_operation_id_sha256(
+            self.policy_bytes, self.receipt_bytes, None
+        )
+        repeated = _deployment_trust_operation_id_sha256(
+            self.policy_bytes, self.receipt_bytes, None
+        )
+        changed_receipt = _deployment_trust_operation_id_sha256(
+            self.policy_bytes, self.receipt_bytes + b"\\x00", None
+        )
+        self.assertEqual(first, repeated)
+        self.assertNotEqual(first, changed_receipt)
+        self.assertEqual(len(first), 64)
+
+    def test_operation_id_binds_nested_custody_signature_bytes(self):
+        raw_receipt = b"receipt"
+        raw_policy = b"policy"
+        artifact = b"artifact"
+        signature = b"signature"
+        values = {
+            "policy_domain": CLASSIC_POLICY_DOMAIN,
+            "state_backend_id": "synthetic-cas-store",
+            "log_id": "synthetic-log",
+            "log_key_id": "synthetic-log-key",
+            "log_public_key_sha256": "a" * 64,
+            "old_tree_size": 1,
+            "old_root_sha256": "b" * 64,
+            "old_checkpoint_sha256": "c" * 64,
+            "new_tree_size": 2,
+            "new_root_sha256": "d" * 64,
+            "new_checkpoint_sha256": "e" * 64,
+            "registry_id": "synthetic-registry",
+            "registry_root_key_id": "synthetic-registry-root",
+            "registry_root_public_key_sha256": "f" * 64,
+            "registry_sequence": 2,
+            "registry_sha256": "1" * 64,
+            "raw_manifest_bytes": b"manifest",
+            "raw_ledger_entry_bytes": b"ledger",
+            "raw_inclusion_proof_bytes": b"inclusion",
+            "raw_old_checkpoint_bytes": b"old-checkpoint",
+            "raw_new_checkpoint_bytes": b"new-checkpoint",
+            "raw_consistency_proof_bytes": b"consistency",
+            "raw_registry_bytes": b"registry",
+            "raw_witness_statement_bytes": (b"witness-1", b"witness-2"),
+            "receipt_sha256": hashlib.sha256(raw_receipt).hexdigest(),
+            "policy_envelope_sha256": hashlib.sha256(raw_policy).hexdigest(),
+            "raw_receipt_bytes": raw_receipt,
+            "raw_policy_envelope_bytes": raw_policy,
+            "raw_custody_record_bytes": b"custody-record",
+            "raw_portfolio_bytes": b"portfolio",
+            "raw_custody_signature_bytes": b"custody-signature",
+            "custodian_key_id": "synthetic-custodian",
+            "raw_timestamp_token_der": b"custody-tsa",
+            "raw_policy_timestamp_token_der": b"policy-tsa",
+            "raw_artifact_bytes_by_sha256": ((hashlib.sha256(artifact).hexdigest(), artifact),),
+            "raw_signature_bytes_by_sha256": ((hashlib.sha256(signature).hexdigest(), signature),),
+        }
+        first_advance = ExternalEvidenceAdvanceV1(**values)
+        changed_values = dict(values)
+        changed_values["raw_custody_signature_bytes"] = b"different-custody-signature"
+        second_advance = ExternalEvidenceAdvanceV1(**changed_values)
+        first = _deployment_trust_operation_id_sha256(
+            raw_policy, raw_receipt, first_advance
+        )
+        second = _deployment_trust_operation_id_sha256(
+            raw_policy, raw_receipt, second_advance
+        )
+        self.assertNotEqual(first, second)
+
+    def test_lost_acknowledgement_can_retry_same_operation_without_double_advance(self):
+        original = self.provider.compare_and_advance
+        generation_before = self.provider.snapshot.state_generation
+
+        def commit_then_raise(**kwargs):
+            original(**kwargs)
+            raise OSError("synthetic acknowledgement lost after durable commit")
+
+        self.provider.compare_and_advance = commit_then_raise
+        with self.assertRaises(TrustProviderUnavailable) as raised:
+            self.inspect()
+
+        operation_id = raised.exception.operation_id_sha256
+        self.assertEqual(
+            operation_id,
+            _deployment_trust_operation_id_sha256(
+                self.policy_bytes, self.receipt_bytes, None
+            ),
+        )
+        generation_after_first = self.provider.snapshot.state_generation
+        self.assertGreater(generation_after_first, generation_before)
+
+        self.provider.compare_and_advance = original
+        result = self.inspect()
+        self.assertEqual(result.operation_id_sha256, operation_id)
+        self.assertIs(result.state_outcome, TrustStateOutcome.IDEMPOTENT)
+        self.assertEqual(self.provider.snapshot.state_generation, generation_after_first)
+        self.assertEqual(self.provider.commit_count, 2)
+
+    def test_provider_recomputes_operation_id_and_rejects_substituted_evidence(self):
+        original = self.provider.compare_and_advance
+
+        def substituted_operation_id(**kwargs):
+            kwargs["operation_id_sha256"] = "f" * 64
+            return original(**kwargs)
+
+        self.provider.compare_and_advance = substituted_operation_id
+        with self.assertRaises(TrustStateRejected):
+            self.inspect()
+        self.assertEqual(self.provider.snapshot.state_generation, 7)
+
+    def test_provider_commit_must_bind_exact_operation_id(self):
+        original = self.provider.compare_and_advance
+
+        def wrong_operation_ack(**kwargs):
+            commit = original(**kwargs)
+            return replace(commit, operation_id_sha256="f" * 64)
+
+        self.provider.compare_and_advance = wrong_operation_ack
+        with self.assertRaisesRegex(
+            TrustProviderUnavailable,
+            "exact evidence operation ID",
+        ) as raised:
+            self.inspect()
+        self.assertIsNotNone(raised.exception.operation_id_sha256)
+        self.assertEqual(self.provider.snapshot.state_generation, 8)
 
 
 if __name__ == "__main__":
