@@ -10,6 +10,7 @@ from origen.deployment_evidence_composition_v2 import (
 from origen.deployment_trust_provider_v1 import (
     TrustProviderUnavailable,
     TrustStateRejected,
+    _accepted_external_evidence_watermark_sha256,
 )
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.physical_trust_context_v1 import physical_trust_context_sha256
@@ -93,10 +94,16 @@ class ProviderBoundTransparencyLedgerBundleTransitionV2Tests(unittest.TestCase):
         self.assertTrue(result.transition.checkpoint_consistency.consistency_verified)
         self.assertEqual(
             result.accepted_watermark_sha256,
-            result.transition.accepted_old_checkpoint_sha256
-            and result.accepted_watermark_sha256,
+            _accepted_external_evidence_watermark_sha256(
+                provider.snapshot.accepted_external_evidence_watermark
+            ),
         )
         self.assertEqual(result.timestamp_nonce_challenge_id, provider.nonce_challenge.challenge_id)
+        from origen.timestamp_nonce_challenge_v1 import timestamp_nonce_challenge_sha256
+        self.assertEqual(
+            result.timestamp_nonce_challenge_sha256,
+            timestamp_nonce_challenge_sha256(provider.nonce_challenge),
+        )
         self.assertEqual(result.provider_state_generation, provider.snapshot.state_generation)
         self.assertEqual(
             result.physical_trust_context_sha256,
