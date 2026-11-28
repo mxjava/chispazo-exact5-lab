@@ -397,14 +397,16 @@ class SyntheticTrustProvider:
                 expected_external_evidence_watermark_sha256,
                 external_evidence_advance,
             )
-        except TrustStateRejected:
-            return DeploymentTrustCommit(
-                TrustStateOutcome.CONFLICT,
-                self.snapshot.state_generation,
-                policy_sequence,
-                policy_envelope_sha256,
-                self.snapshot.trusted_time_latest_utc,
-            )
+        except TrustStateRejected as exc:
+            if "new ledger checkpoint does not extend the exact persisted checkpoint" in str(exc):
+                return DeploymentTrustCommit(
+                    TrustStateOutcome.CONFLICT,
+                    self.snapshot.state_generation,
+                    policy_sequence,
+                    policy_envelope_sha256,
+                    self.snapshot.trusted_time_latest_utc,
+                )
+            raise
         policy_advanced = policy_sequence > self.snapshot.accepted_policy_sequence
         time_advanced = (
             self.snapshot.trusted_time_latest_utc is None
