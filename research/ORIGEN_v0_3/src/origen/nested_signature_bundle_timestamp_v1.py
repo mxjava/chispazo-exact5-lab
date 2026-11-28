@@ -45,6 +45,7 @@ class NestedSignatureTimestampItemV1:
 @dataclass(frozen=True, slots=True)
 class NestedSignatureBundleTimestampInspectionV1:
     manifest_sha256: str
+    manifest_commitment_sha256: str
     policy_envelope_sha256: str
     bundle_sha256: str
     timestamp_token_sha256: str
@@ -161,22 +162,46 @@ def _validate_policy_oid(value: object) -> str:
     return value
 
 
+def canonical_manifest_content_bytes_v1(raw_manifest_bytes: bytes) -> bytes:
+    """Return canonical manifest content with only the ledger proof digest omitted.
+
+    The inclusion-proof digest depends on the ledger entry. A later ledger entry
+    must commit to this timestamp bundle, so including that digest in the bundle
+    would create a cycle. All other manifest claims remain in these bytes.
+    """
+    if type(raw_manifest_bytes) is not bytes or not raw_manifest_bytes:
+        raise ValueError("raw_manifest_bytes must be non-empty exact bytes")
+    parse_unverified_physical_manifest(raw_manifest_bytes)
+    document = json.loads(raw_manifest_bytes.decode("utf-8"))
+    document["ledger_anchor"].pop("inclusion_proof_sha256")
+    return json.dumps(
+        document,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("ascii")
+
+
 def canonical_nested_signature_bundle_timestamp_payload_v1(
     raw_manifest_bytes: bytes,
     signed_policy_envelope_bytes: bytes,
     artifact_bytes_by_sha256: dict[str, bytes],
     signature_bytes_by_sha256: dict[str, bytes],
 ) -> bytes:
-    """Canonical sidecar payload containing exact manifest, policy and signature bytes.
+    """Canonical sidecar payload for normalized manifest, policy, artifacts and signatures.
 
-    This payload is not inserted into the manifest signed by the nested
-    signers. The RFC 3161 token therefore does not create a circular dependency.
+    Only ledger_anchor.inclusion_proof_sha256 is omitted from the manifest
+    content because it depends on the ledger entry that will later commit to
+    this bundle. All other manifest claims and exact artifact/signature bytes
+    are included. The token is a detached sidecar, not a nested-signature claim.
     """
     if type(raw_manifest_bytes) is not bytes or not raw_manifest_bytes:
         raise ValueError("raw_manifest_bytes must be non-empty exact bytes")
     if type(signed_policy_envelope_bytes) is not bytes or not signed_policy_envelope_bytes:
         raise ValueError("signed_policy_envelope_bytes must be non-empty exact bytes")
     manifest = parse_unverified_physical_manifest(raw_manifest_bytes)
+    normalized_manifest_bytes = canonical_manifest_content_bytes_v1(raw_manifest_bytes)
     artifacts = _snapshot_artifact_bytes(artifact_bytes_by_sha256, manifest)
     signatures = _snapshot_signature_bytes(signature_bytes_by_sha256, manifest)
     claims_by_digest = {item.signature_sha256: item for item in manifest.signatures}
@@ -184,8 +209,8 @@ def canonical_nested_signature_bundle_timestamp_payload_v1(
     bundle = {
         "schema_version": SCHEMA_VERSION,
         "policy_domain": CLASSIC_PHYSICAL_POLICY_DOMAIN,
-        "manifest_sha256": hashlib.sha256(raw_manifest_bytes).hexdigest(),
-        "manifest_bytes_b64": base64.b64encode(raw_manifest_bytes).decode("ascii"),
+        "manifest_commitment_sha256": hashlib.sha256(normalized_manifest_bytes).hexdigest(),
+        "normalized_manifest_bytes_b64": base64.b64encode(normalized_manifest_bytes).decode("ascii"),
         "policy_envelope_sha256": hashlib.sha256(signed_policy_envelope_bytes).hexdigest(),
         "policy_envelope_bytes_b64": base64.b64encode(signed_policy_envelope_bytes).decode("ascii"),
         "artifacts": [
@@ -270,6 +295,9 @@ def verify_nested_signature_bundle_timestamp_v1(
     )
     bundle_sha256 = hashlib.sha256(payload).hexdigest()
     manifest_sha256 = hashlib.sha256(raw_manifest_bytes).hexdigest()
+    manifest_commitment_sha256 = hashlib.sha256(
+        canonical_manifest_content_bytes_v1(raw_manifest_bytes)
+    ).hexdigest()
     policy_sha256 = hashlib.sha256(signed_policy_envelope_bytes).hexdigest()
 
     physical = verify_physical_evidence_signatures_v3(
@@ -369,6 +397,7 @@ def verify_nested_signature_bundle_timestamp_v1(
     token_sha256 = hashlib.sha256(timestamp_token_der).hexdigest()
     return NestedSignatureBundleTimestampInspectionV1(
         manifest_sha256=manifest_sha256,
+        manifest_commitment_sha256=manifest_commitment_sha256,
         policy_envelope_sha256=policy_sha256,
         bundle_sha256=bundle_sha256,
         timestamp_token_sha256=token_sha256,
