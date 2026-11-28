@@ -46,9 +46,11 @@ The envelope binds:
   revocation flags;
 - Ed25519 signature over all preceding claims.
 
-The verifier enforces the externally supplied minimum sequence and the
-caller-supplied verification time. The caller's clock is not independently
-authenticated by this module.
+The verifier enforces the externally supplied minimum sequence as an exact
+positive signed 64-bit integer (1..`MAX_POLICY_SEQUENCE`) and the
+caller-supplied verification time. An out-of-domain sequence floor is rejected
+at the API boundary before the envelope is evaluated. The caller's clock is
+not independently authenticated by this module.
 
 ## Security boundary / non-claims
 
