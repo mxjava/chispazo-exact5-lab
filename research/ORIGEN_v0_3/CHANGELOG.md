@@ -1,3 +1,12 @@
+## 2026-11-27 — stable exact-evidence CAS operation identity (research only)
+
+- Added a domain-separated, length-framed operation ID over the exact policy, receipt and complete nested evidence bytes.
+- Required the external provider to persist the operation receipt atomically with CAS state and return an idempotent replay without applying evidence or consuming one-use nonces twice.
+- Exposed the operation ID on successful diagnostics and ambiguous-outcome exceptions so the same exact evidence can be retried safely.
+- Added synthetic adversarial tests for deterministic identity, nested custody-signature binding, provider-side recomputation, lost-ack replay and no double generation advance.
+- Added a local replay-candidate check for an already accepted full-evidence watermark; the provider must still confirm the durable operation record.
+- No production provider, authenticated operation-receipt query, institutional provisioning or production eligibility is implemented. All results remain BLOCKED_PROVENANCE.
+
 ## Provider-raised rejection exceptions are ambiguous (2026-11-27)
 - Removed the special pass-through for provider-thrown `TrustStateRejected` exceptions. A remote provider or RPC adapter can commit durably and then raise any local exception class; the exception type alone is not an authenticated CAS outcome.
 - All exceptions raised by `compare_and_advance` now become `TrustProviderUnavailable` with an explicit unknown-outcome/reconciliation instruction. Only a validated `DeploymentTrustCommit` with an explicit conflict/rollback/time-rollback/equivocation outcome is classified as `TrustStateRejected`.
