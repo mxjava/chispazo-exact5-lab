@@ -1,3 +1,9 @@
+## Canonical raw signed policy envelope bytes (2026-11-27)
+- Regression-first test commit `daeb2394d4a32469dec063b42ed9b7bb96037c6c` added a valid-signature envelope with noncanonical leading/trailing whitespace; the test-only head is expected to fail because the old verifier accepted the alternate raw representation.
+- Follow-up test commit `8e436e753b4953bd88b568f56ccf59cda3477467` corrected the fixture to use valid JSON whitespace rather than trailing non-JSON bytes.
+- The verifier now requires the exact received envelope bytes to equal canonical serialization of the complete parsed document, including the signature field, before verifying the Ed25519 signature over the canonical unsigned claims. This keeps `envelope_sha256` tied to one exact signed representation.
+- This is an encoding/integrity correction only. It does not authenticate root provisioning, trusted time, revocation freshness, or anti-rollback persistence; production remains fail-closed.
+
 ## Acta role separation and official 13:10 status refresh (2026-11-24)
 - Physical manifest regression: all four required DRAW-ACTA roles could reuse one subject_id; parser now requires distinct declared subjects for the General Directorate, Sales Operations, IT and SEGOB roles.
 - Test commit: `3e1384b76db02319c44f9de88baf28ed04197726`; implementation commit: `d8c7b0e8e5ed433f25549aecddb374424d64d41a`.
