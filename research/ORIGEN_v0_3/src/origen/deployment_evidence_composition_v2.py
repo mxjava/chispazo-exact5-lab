@@ -187,6 +187,13 @@ def inspect_provider_bound_transparency_ledger_bundle_transition_v2(
         raise TrustStateRejected(
             "trusted-time uncertainty interval exceeds the provider clock sample lease"
         )
+    if (
+        snapshot.trusted_time_latest_utc is not None
+        and earliest < snapshot.trusted_time_latest_utc
+    ):
+        raise TrustStateRejected(
+            "trusted-time uncertainty interval regressed behind the provider's persisted time watermark"
+        )
 
     read_challenge = getattr(provider, "read_timestamp_nonce_challenge", None)
     if not callable(read_challenge):
