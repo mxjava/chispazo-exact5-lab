@@ -83,7 +83,7 @@ class TestSignedTrustPolicyEnvelopeV1(unittest.TestCase):
 
     def test_noncanonical_envelope_bytes_are_rejected_even_with_valid_signature(self):
         raw, root_public, _ = fixture()
-        noncanonical = b" " + raw + b"\\n"
+        noncanonical = b" " + raw + b"\n"
         with self.assertRaisesRegex(ValueError, "canonical JSON encoding"):
             self.verify(noncanonical, root_public)
 
