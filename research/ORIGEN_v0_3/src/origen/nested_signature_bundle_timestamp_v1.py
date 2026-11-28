@@ -2,8 +2,9 @@
 
 The bundle is deliberately a sidecar: nested signatures do not sign their own
 TSA token digest, avoiding a circular signature/token dependency. The token
-imprints the exact manifest bytes, policy bytes, every original artifact byte
-string, and every exact detached signature byte string. The ledger must separately commit this sidecar before
+imprints the normalized manifest content (excluding only the ledger inclusion-
+proof digest), exact policy bytes, every original artifact byte string, and
+every exact detached signature byte string. The ledger must separately commit this sidecar before
 it can be treated as part of the full evidence chain. All caller pins remain
 unauthenticated and every result remains BLOCKED_PROVENANCE.
 """
