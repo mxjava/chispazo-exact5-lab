@@ -10,6 +10,7 @@ This increment therefore constructs a separate canonical bundle after the manife
 
 - the exact original physical-manifest bytes and their SHA-256;
 - the exact original signed V3 policy-envelope bytes and their SHA-256;
+- every original physical artifact byte string, base64-encoded and keyed by its SHA-256;
 - every declared nested signature claim; and
 - every exact 64-byte Ed25519 signature, base64-encoded and keyed by its SHA-256.
 
@@ -20,10 +21,11 @@ An RFC 3161 token's message imprint is verified over the canonical bundle bytes.
 The entry point is `verify_nested_signature_bundle_timestamp_v1`.
 
 It:
-1. parses the exact CLASSIC manifest and snapshots the exact signature-byte map;
-2. rejects missing, extra, duplicate, substituted, mutable or non-Ed25519 signature bytes;
-3. invokes the V3 physical verifier to re-check artifact digests, signature digests, nested Ed25519 signatures and signed key/role/artifact authorization;
-4. verifies the exact V3 policy envelope against the supplied root pin, key ID, CLASSIC domain and minimum sequence;\n5. snapshots every original artifact byte string, verifies its digest and declared length, and includes its exact bytes in the timestamped bundle;
+1. parses the exact CLASSIC manifest and snapshots the exact artifact and signature byte maps;
+2. rejects missing, extra, duplicate, substituted or mutable artifact bytes and missing, extra, substituted, mutable or non-Ed25519 signature bytes;
+3. invokes the V3 physical verifier to re-check artifact digests, lengths, signature digests, nested Ed25519 signatures and signed key/role/artifact authorization;
+4. verifies the exact V3 policy envelope against the supplied root pin, key ID, CLASSIC domain and minimum sequence;
+5. includes every exact original artifact byte string and every exact signature byte string in the canonical timestamped bundle;
 6. verifies the RFC 3161 token over the exact canonical bundle, including expected nonce, TSA root fingerprint and policy OID;
 7. requires explicit accuracy and requires its upper bound to be strictly before the manifest's CLASSIC 21:00 close;
 8. checks that the full timestamp accuracy interval is within policy validity and every signer's key validity interval; and
