@@ -608,10 +608,45 @@ and CAS path continues only when the provider returns None.
 The operation-receipt key is a separate provider identity, not the clock/TSA
 key and not the institutional policy root. Its provisioning, durable retention,
 rotation/rollover, revocation and recovery ceremony are deployment obligations.
-This research contract currently fails closed if the snapshot does not expose
-a matching key or if a response is signed under a different key. A provider
-must not rotate this key without an independently authenticated rollover path
-that preserves verification of retained historical operation receipts.
+
+### Retained-key rotation contract
+
+The active provider operation-receipt signing key remains represented by
+`operation_receipt_key_id` and `operation_receipt_public_key_bytes`. The
+provider snapshot may additionally carry a bounded, canonical tuple of
+`OperationReceiptVerificationKeyV1` entries for retired verification keys.
+Each retained entry contains a unique key ID, exact 32-byte Ed25519 public key,
+canonical UTC validity endpoints and an exact revocation flag.
+
+- The retained-key tuple is sorted by key ID, contains no duplicate key IDs or
+  public-key bytes, and is capped at 16 entries. It is copied into the
+  application snapshot before verification.
+- The complete retained-key set, including public-key fingerprints, validity
+  endpoints and revocation flags, is included in the trust-configuration digest.
+  Changing or removing a retained key therefore changes the expected provider
+  configuration for the CAS contract.
+- The signed operation receipt's `provider_key_id` selects exactly one active
+  or retained key. A retained key must be non-revoked and its validity interval
+  must cover the complete original trusted-time uncertainty window in the
+  signed operation receipt. Unknown, ambiguous, revoked or out-of-window keys
+  fail closed; the application never retries under the current active key.
+- A provider must retain old public verification keys for at least the complete
+  operation-receipt retention/reconciliation period. Emergency revocation
+  intentionally makes records under that key unverifiable; recovery must use a
+  separately authorized provider recovery/attestation process, not silently
+  re-sign or reinterpret the old record.
+- Keyring contents are still provider snapshot assertions. This library does
+  not authenticate the provider, its rollover ceremony, key archive, revocation
+  authority or anti-rollback storage. A production implementation must bind
+  keyring updates to its independently provisioned trust configuration and
+  preserve the exact old key history in durable, audited storage.
+
+The new synthetic regression reproduces the previous failure mode: after an
+operation commits under key K1, the provider rotates its active signer to K2
+while retaining K1. A retry must verify the original signed record with K1,
+return the original diagnostic and avoid another CAS or nonce consumption.
+Additional tests reject an expired, revoked, duplicate-ID, duplicate-public-key
+or non-canonical-time retained key.
 
 All provider receipts and keys in tests are generated in memory and are
 synthetic. No external provider, operation ledger, signing key, or durable

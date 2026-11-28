@@ -47,6 +47,7 @@ CLASSIC_POLICY_DOMAIN = "origen.chispazo.classic.provenance"
 CLOCK_SAMPLE_SCHEMA = "origen.clock-sample-attestation.v1"
 MAX_CLOCK_SAMPLE_BYTES = 4096
 MAX_OPERATION_RECEIPT_BYTES = 8192
+MAX_OPERATION_RECEIPT_RETIRED_KEYS = 16
 OPERATION_RECEIPT_SCHEMA = "origen.deployment-trust-operation-receipt.v1"
 _CLOCK_SAMPLE_UTC = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z\Z"
@@ -131,6 +132,21 @@ class ExternalEvidenceAdvanceV1:
 
 
 @dataclass(frozen=True, slots=True)
+class OperationReceiptVerificationKeyV1:
+    """Retained provider key used only to verify historical operation receipts.
+
+    Validity endpoints must be exact UTC datetimes. A revoked key is never used
+    for replay, including records signed before the revocation was recorded.
+    """
+
+    key_id: str
+    public_key_bytes: bytes
+    valid_from_utc: datetime
+    valid_until_utc: datetime
+    revoked: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class DeploymentTrustSnapshot:
     """One immutable snapshot returned by the deployment trust-state provider.
 
@@ -164,6 +180,7 @@ class DeploymentTrustSnapshot:
     accepted_external_evidence_watermark: ExternalEvidenceWatermarkV1 | None = None
     operation_receipt_key_id: str | None = None
     operation_receipt_public_key_bytes: bytes | None = None
+    operation_receipt_retired_keys: tuple[OperationReceiptVerificationKeyV1, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -858,8 +875,9 @@ def _verify_deployment_trust_operation_receipt(
     _require_sha256(document["clock_sample_sha256"], "operation receipt clock_sample_sha256")
     _require_identifier(document["root_key_id"], "operation receipt root_key_id")
     _require_identifier(document["clock_source_id"], "operation receipt clock_source_id")
-    if document["provider_key_id"] != snapshot.operation_receipt_key_id:
-        raise ValueError("operation receipt provider key ID does not match the pinned snapshot key")
+    provider_key_id = _require_identifier(
+        document["provider_key_id"], "operation receipt provider_key_id"
+    )
     if type(document["root_generation"]) is not int or not 1 <= document["root_generation"] <= MAX_POLICY_SEQUENCE:
         raise ValueError("operation receipt root_generation is invalid")
     if type(document["policy_sequence"]) is not int or not 1 <= document["policy_sequence"] <= MAX_POLICY_SEQUENCE:
@@ -899,6 +917,26 @@ def _verify_deployment_trust_operation_receipt(
     )
     if not window_start <= window_end <= clock_valid_until or trusted_latest < window_end:
         raise ValueError("operation receipt time interval is inconsistent")
+
+    if provider_key_id == snapshot.operation_receipt_key_id:
+        verification_key_bytes = snapshot.operation_receipt_public_key_bytes
+    else:
+        retired_matches = [
+            key for key in snapshot.operation_receipt_retired_keys
+            if key.key_id == provider_key_id
+        ]
+        if len(retired_matches) != 1:
+            raise ValueError("operation receipt provider key is not present in the pinned active/retired key set")
+        retired_key = retired_matches[0]
+        if retired_key.revoked:
+            raise ValueError("operation receipt was signed by a revoked retained provider key")
+        if not (
+            retired_key.valid_from_utc <= window_start
+            and window_end <= retired_key.valid_until_utc
+        ):
+            raise ValueError("retained provider key does not cover the operation receipt's full trusted-time window")
+        verification_key_bytes = retired_key.public_key_bytes
+
     signature_b64 = document["signature_b64"]
     if type(signature_b64) is not str:
         raise ValueError("operation receipt signature_b64 must be canonical base64")
@@ -915,9 +953,7 @@ def _verify_deployment_trust_operation_receipt(
         allow_nan=False,
     ).encode("ascii")
     try:
-        Ed25519PublicKey.from_public_bytes(
-            snapshot.operation_receipt_public_key_bytes
-        ).verify(signature, message)
+        Ed25519PublicKey.from_public_bytes(verification_key_bytes).verify(signature, message)
     except (InvalidSignature, ValueError) as exc:
         raise ValueError("provider operation receipt signature verification failed") from exc
     return document
@@ -1053,6 +1089,16 @@ def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
             None if snapshot.operation_receipt_public_key_bytes is None
             else hashlib.sha256(snapshot.operation_receipt_public_key_bytes).hexdigest()
         ),
+        "operation_receipt_retired_keys": [
+            {
+                "key_id": key.key_id,
+                "public_key_sha256": hashlib.sha256(key.public_key_bytes).hexdigest(),
+                "valid_from_utc": key.valid_from_utc.isoformat(timespec="microseconds").replace("+00:00", "Z"),
+                "valid_until_utc": key.valid_until_utc.isoformat(timespec="microseconds").replace("+00:00", "Z"),
+                "revoked": key.revoked,
+            }
+            for key in snapshot.operation_receipt_retired_keys
+        ],
     }
     if snapshot.physical_trust_context_generation is not None:
         payload["physical_trust_context_generation"] = snapshot.physical_trust_context_generation
@@ -1221,6 +1267,18 @@ def _clock_sample_sha256(snapshot: DeploymentTrustSnapshot) -> str:
     return hashlib.sha256(snapshot.clock_sample_envelope_bytes).hexdigest()
 
 
+def _operation_receipt_verification_key_copy(value: object) -> OperationReceiptVerificationKeyV1:
+    if type(value) is not OperationReceiptVerificationKeyV1:
+        raise TypeError("retained operation-receipt keys must be exact OperationReceiptVerificationKeyV1 values")
+    return OperationReceiptVerificationKeyV1(
+        key_id=value.key_id,
+        public_key_bytes=value.public_key_bytes,
+        valid_from_utc=value.valid_from_utc,
+        valid_until_utc=value.valid_until_utc,
+        revoked=value.revoked,
+    )
+
+
 def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
     if type(value) is not DeploymentTrustSnapshot:
         raise TypeError("provider must return an exact DeploymentTrustSnapshot")
@@ -1256,6 +1314,11 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
         ),
         operation_receipt_key_id=value.operation_receipt_key_id,
         operation_receipt_public_key_bytes=value.operation_receipt_public_key_bytes,
+        operation_receipt_retired_keys=(
+            tuple(_operation_receipt_verification_key_copy(key) for key in value.operation_receipt_retired_keys)
+            if type(value.operation_receipt_retired_keys) is tuple
+            else value.operation_receipt_retired_keys
+        ),
     )
 
     if (
@@ -1296,6 +1359,44 @@ def _snapshot_copy(value: object) -> DeploymentTrustSnapshot:
             snapshot.operation_receipt_public_key_bytes
         ) != 32:
             raise ValueError("operation receipt public key must be exactly 32 immutable bytes")
+
+    if type(snapshot.operation_receipt_retired_keys) is not tuple or len(
+        snapshot.operation_receipt_retired_keys
+    ) > MAX_OPERATION_RECEIPT_RETIRED_KEYS:
+        raise ValueError(
+            f"operation_receipt_retired_keys must be an exact tuple of 0..{MAX_OPERATION_RECEIPT_RETIRED_KEYS} entries"
+        )
+    if snapshot.operation_receipt_retired_keys and snapshot.operation_receipt_key_id is None:
+        raise ValueError("retained operation-receipt keys require an active provider receipt key")
+    seen_operation_key_ids = set()
+    seen_operation_public_keys = set()
+    if snapshot.operation_receipt_key_id is not None:
+        seen_operation_key_ids.add(snapshot.operation_receipt_key_id)
+        seen_operation_public_keys.add(snapshot.operation_receipt_public_key_bytes)
+    previous_operation_key_id = None
+    for index, key in enumerate(snapshot.operation_receipt_retired_keys):
+        if type(key) is not OperationReceiptVerificationKeyV1:
+            raise TypeError(f"operation_receipt_retired_keys[{index}] has an unexpected type")
+        _require_identifier(key.key_id, f"operation_receipt_retired_keys[{index}].key_id")
+        if type(key.public_key_bytes) is not bytes or len(key.public_key_bytes) != 32:
+            raise ValueError(f"operation_receipt_retired_keys[{index}].public_key_bytes must be exactly 32 immutable bytes")
+        if type(key.valid_from_utc) is not datetime or key.valid_from_utc.tzinfo is not timezone.utc:
+            raise ValueError(f"operation_receipt_retired_keys[{index}].valid_from_utc must be an exact UTC datetime")
+        if type(key.valid_until_utc) is not datetime or key.valid_until_utc.tzinfo is not timezone.utc:
+            raise ValueError(f"operation_receipt_retired_keys[{index}].valid_until_utc must be an exact UTC datetime")
+        if key.valid_from_utc > key.valid_until_utc:
+            raise ValueError(f"operation_receipt_retired_keys[{index}] validity interval is inverted")
+        if type(key.revoked) is not bool:
+            raise ValueError(f"operation_receipt_retired_keys[{index}].revoked must be an exact boolean")
+        if key.key_id in seen_operation_key_ids:
+            raise ValueError("operation-receipt key IDs must be unique across active and retained keys")
+        if key.public_key_bytes in seen_operation_public_keys:
+            raise ValueError("operation-receipt public keys must be unique across active and retained keys")
+        if previous_operation_key_id is not None and key.key_id <= previous_operation_key_id:
+            raise ValueError("retained operation-receipt keys must be sorted by unique key ID")
+        seen_operation_key_ids.add(key.key_id)
+        seen_operation_public_keys.add(key.public_key_bytes)
+        previous_operation_key_id = key.key_id
 
     integer_fields = (
         ("root_generation", snapshot.root_generation, 1, MAX_POLICY_SEQUENCE),
