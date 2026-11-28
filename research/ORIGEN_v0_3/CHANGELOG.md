@@ -1,3 +1,8 @@
+## V1 trust-policy minimum-sequence input bound (2026-11-28)
+- Test-only commit `7d8cb791b0dbbe2d7be7aa004347627c3acd5f30` added an adversarial floor of `MAX_POLICY_SEQUENCE + 1`. Exact-head ORIGEN run `46118909794` failed because the verifier treated the impossible floor as an ordinary rollback; general CI `46118909687` reported 687 passed, 2 skipped, 134 subtests and the same one expected regression failure.
+- The V1 verifier now requires `minimum_policy_sequence` to be an exact integer in `1..MAX_POLICY_SEQUENCE`, matching V3 and the signed policy-sequence domain.
+- This is caller-configuration validation only. It does not authenticate the supplied root, sequence store, trusted clock, or deployment provider.
+
 ## Canonical raw signed policy envelope bytes (2026-11-27)
 - Initial test-only commit `daeb2394d4a32469dec063b42ed9b7bb96037c6c` contained an incorrectly escaped trailing newline; its isolated run failed at JSON decoding, so that run is not treated as defect reproduction.
 - Corrected test-only commit `8e436e753b4953bd88b568f56ccf59cda3477467` uses valid leading/trailing JSON whitespace. Its exact-head ORIGEN run `46114442203` failed because the verifier returned successfully and the expected `ValueError` was not raised. This reproduces acceptance of alternate raw encodings for the same valid signed policy.
