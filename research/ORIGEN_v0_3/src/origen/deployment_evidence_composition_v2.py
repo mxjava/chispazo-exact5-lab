@@ -173,6 +173,11 @@ def inspect_provider_bound_transparency_ledger_bundle_transition_v2(
             "accepted ledger/witness watermark identity differs from the provider-owned physical trust context"
         )
 
+    if watermark.registry_sequence < context.minimum_registry_sequence:
+        raise TrustStateRejected(
+            "accepted witness-registry watermark is below the provider trust-context floor"
+        )
+
     if (
         context.nested_signature_bundle_tsa_root_certificate_der is None
         or context.nested_signature_bundle_tsa_root_sha256 is None
