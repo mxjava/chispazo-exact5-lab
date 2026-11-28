@@ -34,7 +34,7 @@ from .physical_trust_context_v1 import (
 from .timestamp_nonce_challenge_v1 import (
     TimestampNonceChallengeV1,
     copy_timestamp_nonce_challenge,
-    timestamp_nonce_challenge_sha256,
+    timestamp_nonce_challenge_sha256 as compute_timestamp_nonce_challenge_sha256,
 )
 from .trust_policy_envelope_v1 import (
     MAX_POLICY_BYTES,
@@ -1224,7 +1224,7 @@ def _require_v2_external_evidence_nonce_binding(
     challenge = copy_timestamp_nonce_challenge(timestamp_nonce_challenge)
     if (
         challenge.challenge_id != timestamp_nonce_challenge_id
-        or timestamp_nonce_challenge_sha256(challenge) != timestamp_nonce_challenge_sha256
+        or compute_timestamp_nonce_challenge_sha256(challenge) != timestamp_nonce_challenge_sha256
     ):
         raise TrustStateRejected(
             "V2 nonce challenge object does not match the exact challenge ID and digest supplied to CAS"
