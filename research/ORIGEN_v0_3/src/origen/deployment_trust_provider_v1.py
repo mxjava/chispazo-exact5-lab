@@ -27,8 +27,15 @@ from .independent_trust_adapter import (
     ProvenanceStatus,
     _verify_independent_provenance_with_explicit_context,
 )
-from .physical_trust_context_v1 import PhysicalTrustContextV1
-from .timestamp_nonce_challenge_v1 import TimestampNonceChallengeV1
+from .physical_trust_context_v1 import (
+    PhysicalTrustContextV1,
+    physical_trust_context_sha256,
+)
+from .timestamp_nonce_challenge_v1 import (
+    TimestampNonceChallengeV1,
+    copy_timestamp_nonce_challenge,
+    timestamp_nonce_challenge_sha256 as compute_timestamp_nonce_challenge_sha256,
+)
 from .trust_policy_envelope_v1 import (
     MAX_POLICY_BYTES,
     MAX_POLICY_SEQUENCE,
@@ -255,8 +262,10 @@ class DeploymentTrustProvider(Protocol):
         challenges. The exact policy domain and state_backend_id are part of the
         challenge digest and must match the authoritative provider instance.
         This prevents accidental cross-domain or cross-backend challenge reuse.
-        The challenge is not trusted merely because this interface returns it;
-        the deployment implementation and its state remain external.
+        For V1, the policy and custody nonces are mandatory. A V2 evidence advance
+        also requires a third distinct nested-signature-bundle nonce. The challenge
+        is not trusted merely because this interface returns it; the deployment
+        implementation and its state remain external.
         """
         ...
 
@@ -283,9 +292,16 @@ class DeploymentTrustProvider(Protocol):
         When challenge fields are present, the backend must look up its own
         pending challenge, recompute the exact digest, verify the same policy
         domain, backend identity, state generation and trust configuration,
-        and consume both nonce values in this same linearizable transaction.
-        It must reject cross-backend/domain challenge use and challenge or
-        nonce reuse. It must compare expected_external_evidence_watermark_sha256
+        and consume the two V1 nonce values in this same linearizable transaction.
+        If external_evidence_advance is ExternalEvidenceAdvanceV2, the pending
+        challenge must also contain a third nonce exactly equal to the V2 envelope
+        nonce; the provider must consume all three distinct nonce values atomically.
+        A V1 advance must not consume a challenge that advertises the V2 nonce.
+        For V2, the provider must independently verify the exact timestamp sidecar
+        and RFC 3161 token against the separately provisioned nested-bundle TSA
+        root and policy OID, including certificate path and current revocation,
+        within this same transaction. It must reject cross-backend/domain challenge
+        use and challenge or nonce reuse. It must compare expected_external_evidence_watermark_sha256
         with authoritative state and, when an advance is supplied, atomically
         require the exact old checkpoint to equal the accepted checkpoint,
         the new checkpoint to advance monotonically, and the registry sequence /
@@ -1157,6 +1173,125 @@ def _time_window(snapshot: DeploymentTrustSnapshot) -> tuple[datetime, datetime]
     return earliest, latest
 
 
+def _require_v2_external_evidence_nonce_binding(
+    advance: ExternalEvidenceAdvanceV1 | ExternalEvidenceAdvanceV2 | None,
+    *,
+    provider_snapshot: DeploymentTrustSnapshot,
+    physical_trust_context: PhysicalTrustContextV1 | None,
+    timestamp_nonce_challenge: TimestampNonceChallengeV1 | None,
+    timestamp_nonce_challenge_id: str | None,
+    timestamp_nonce_challenge_sha256: str | None,
+) -> None:
+    """Bind a V2 envelope to the exact provider challenge and context before CAS.
+
+    This is an application-side downgrade/cross-binding guard only. The
+    provider must independently reload the pending challenge and trust context,
+    compare their authoritative digests/generations, consume all three nonces,
+    and cryptographically verify the V2 timestamp token inside its CAS.
+    """
+    if type(advance) is not ExternalEvidenceAdvanceV2:
+        return
+    if (
+        timestamp_nonce_challenge_id is None
+        or timestamp_nonce_challenge_sha256 is None
+        or type(timestamp_nonce_challenge) is not TimestampNonceChallengeV1
+    ):
+        raise TrustStateRejected(
+            "V2 external evidence advance requires the exact provider-issued three-nonce challenge"
+        )
+    if type(physical_trust_context) is not PhysicalTrustContextV1:
+        raise TrustStateRejected(
+            "V2 external evidence advance requires the provider-owned physical trust context"
+        )
+    supplied_context = physical_trust_context
+    context = PhysicalTrustContextV1(
+        policy_tsa_root_certificate_der=supplied_context.policy_tsa_root_certificate_der,
+        policy_tsa_root_sha256=supplied_context.policy_tsa_root_sha256,
+        policy_tsa_policy_oid=supplied_context.policy_tsa_policy_oid,
+        policy_root_public_key_bytes=supplied_context.policy_root_public_key_bytes,
+        policy_root_key_id=supplied_context.policy_root_key_id,
+        minimum_policy_sequence=supplied_context.minimum_policy_sequence,
+        custody_tsa_root_certificate_der=supplied_context.custody_tsa_root_certificate_der,
+        custody_tsa_root_sha256=supplied_context.custody_tsa_root_sha256,
+        log_public_key_bytes=supplied_context.log_public_key_bytes,
+        log_id=supplied_context.log_id,
+        log_key_id=supplied_context.log_key_id,
+        registry_root_public_key_bytes=supplied_context.registry_root_public_key_bytes,
+        registry_root_key_id=supplied_context.registry_root_key_id,
+        registry_id=supplied_context.registry_id,
+        minimum_registry_sequence=supplied_context.minimum_registry_sequence,
+        minimum_log_tree_size=supplied_context.minimum_log_tree_size,
+        context_generation=supplied_context.context_generation,
+        nested_signature_bundle_tsa_root_certificate_der=(
+            supplied_context.nested_signature_bundle_tsa_root_certificate_der
+        ),
+        nested_signature_bundle_tsa_root_sha256=(
+            supplied_context.nested_signature_bundle_tsa_root_sha256
+        ),
+        nested_signature_bundle_tsa_policy_oid=(
+            supplied_context.nested_signature_bundle_tsa_policy_oid
+        ),
+    )
+    if (
+        context.nested_signature_bundle_tsa_root_certificate_der is None
+        or context.nested_signature_bundle_tsa_root_sha256 is None
+        or context.nested_signature_bundle_tsa_policy_oid is None
+    ):
+        raise TrustStateRejected(
+            "V2 external evidence advance requires the provider-owned nested-signature bundle TSA pin"
+        )
+    if (
+        provider_snapshot.physical_trust_context_generation is None
+        or provider_snapshot.physical_trust_context_sha256 is None
+        or context.context_generation != provider_snapshot.physical_trust_context_generation
+        or physical_trust_context_sha256(context) != provider_snapshot.physical_trust_context_sha256
+    ):
+        raise TrustStateRejected(
+            "V2 physical trust context does not match the exact provider snapshot generation and digest"
+        )
+    if (
+        context.policy_root_public_key_bytes != provider_snapshot.root_public_key_bytes
+        or context.policy_root_key_id != provider_snapshot.root_key_id
+        or context.minimum_policy_sequence != provider_snapshot.minimum_policy_sequence
+    ):
+        raise TrustStateRejected(
+            "V2 physical trust context policy root/key ID/bootstrap floor differs from the deployment snapshot"
+        )
+    challenge = copy_timestamp_nonce_challenge(timestamp_nonce_challenge)
+    if (
+        challenge.challenge_id != timestamp_nonce_challenge_id
+        or compute_timestamp_nonce_challenge_sha256(challenge) != timestamp_nonce_challenge_sha256
+    ):
+        raise TrustStateRejected(
+            "V2 nonce challenge object does not match the exact challenge ID and digest supplied to CAS"
+        )
+    if (
+        advance.policy_domain != provider_snapshot.policy_domain
+        or advance.state_backend_id != provider_snapshot.state_backend_id
+        or challenge.policy_domain != provider_snapshot.policy_domain
+        or challenge.state_backend_id != provider_snapshot.state_backend_id
+        or challenge.state_generation != provider_snapshot.state_generation
+        or challenge.root_generation != provider_snapshot.root_generation
+        or challenge.physical_trust_context_generation != provider_snapshot.physical_trust_context_generation
+        or challenge.physical_trust_context_sha256 != provider_snapshot.physical_trust_context_sha256
+    ):
+        raise TrustStateRejected(
+            "V2 nonce challenge is not bound to the exact provider snapshot and physical trust context"
+        )
+    if challenge.nested_signature_bundle_timestamp_nonce != advance.nested_signature_bundle_timestamp_nonce:
+        raise TrustStateRejected(
+            "V2 third timestamp nonce does not match the provider-issued challenge"
+        )
+    earliest, latest = _time_window(provider_snapshot)
+    if (
+        challenge.issued_at_utc > earliest
+        or latest >= challenge.expires_at_utc
+        or challenge.expires_at_utc > provider_snapshot.clock_sample_valid_until_utc
+    ):
+        raise TrustStateRejected(
+            "V2 nonce challenge does not cover the complete provider time interval and clock lease"
+        )
+
 def _require_policy_and_receipt_inside_time_window(
     verified_policy: VerifiedTrustPolicyV3,
     verified_receipt: CryptographicallyVerifiedReceipt,
@@ -1212,6 +1347,8 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
     provider_snapshot: DeploymentTrustSnapshot,
     timestamp_nonce_challenge_id: str | None = None,
     timestamp_nonce_challenge_sha256: str | None = None,
+    timestamp_nonce_challenge: TimestampNonceChallengeV1 | None = None,
+    physical_trust_context: PhysicalTrustContextV1 | None = None,
     external_evidence_advance: ExternalEvidenceAdvanceV1 | ExternalEvidenceAdvanceV2 | None = None,
 ) -> DeploymentTrustInspection:
     """Internal composition helper bound to one provider snapshot.
@@ -1248,6 +1385,14 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         None
         if external_evidence_advance is None
         else _external_evidence_advance_copy(external_evidence_advance)
+    )
+    _require_v2_external_evidence_nonce_binding(
+        external_evidence_advance,
+        provider_snapshot=snapshot,
+        physical_trust_context=physical_trust_context,
+        timestamp_nonce_challenge=timestamp_nonce_challenge,
+        timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
+        timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
     )
     expected_external_evidence_watermark_sha256 = (
         _accepted_external_evidence_watermark_sha256(snapshot.accepted_external_evidence_watermark)
@@ -1438,6 +1583,8 @@ def _inspect_receipt_with_deployment_trust_provider_using_provider(
     provider: DeploymentTrustProvider,
     timestamp_nonce_challenge_id: str | None = None,
     timestamp_nonce_challenge_sha256: str | None = None,
+    timestamp_nonce_challenge: TimestampNonceChallengeV1 | None = None,
+    physical_trust_context: PhysicalTrustContextV1 | None = None,
     external_evidence_advance: ExternalEvidenceAdvanceV1 | ExternalEvidenceAdvanceV2 | None = None,
 ) -> DeploymentTrustInspection:
     """Private provider-backed implementation used only by deployment composition."""
@@ -1455,6 +1602,8 @@ def _inspect_receipt_with_deployment_trust_provider_using_provider(
         provider_snapshot=snapshot,
         timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
         timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
+        timestamp_nonce_challenge=timestamp_nonce_challenge,
+        physical_trust_context=physical_trust_context,
         external_evidence_advance=external_evidence_advance,
     )
 
