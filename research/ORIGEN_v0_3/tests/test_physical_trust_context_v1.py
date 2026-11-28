@@ -122,6 +122,7 @@ class PhysicalTrustContextTests(unittest.TestCase):
             nested_signature_bundle_tsa_root_certificate_der=root_der,
             nested_signature_bundle_tsa_root_sha256=hashlib.sha256(root_der).hexdigest(),
             nested_signature_bundle_tsa_policy_oid="1.2.3.4.5",
+            context_generation=1,
         )
 
         class Provider:
@@ -151,6 +152,15 @@ class PhysicalTrustContextTests(unittest.TestCase):
         )
         self.assertEqual(copied.nested_signature_bundle_tsa_policy_oid, "1.2.3.4.5")
         self.assertEqual(digest, physical_trust_context_sha256(context))
+
+    def test_nested_bundle_tsa_root_der_size_is_bounded(self):
+        root_der = b"x" * (1_048_576 + 1)
+        with self.assertRaisesRegex(ValueError, "within the size limit"):
+            valid_context(
+                nested_signature_bundle_tsa_root_certificate_der=root_der,
+                nested_signature_bundle_tsa_root_sha256=hashlib.sha256(root_der).hexdigest(),
+                nested_signature_bundle_tsa_policy_oid="1.2.3.4.5",
+            )
 
 
 if __name__ == "__main__":
