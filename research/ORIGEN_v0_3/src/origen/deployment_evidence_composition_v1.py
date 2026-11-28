@@ -203,6 +203,15 @@ def _read_physical_trust_context(
         minimum_registry_sequence=supplied.minimum_registry_sequence,
         minimum_log_tree_size=supplied.minimum_log_tree_size,
         context_generation=supplied.context_generation,
+        nested_signature_bundle_tsa_root_certificate_der=(
+            supplied.nested_signature_bundle_tsa_root_certificate_der
+        ),
+        nested_signature_bundle_tsa_root_sha256=(
+            supplied.nested_signature_bundle_tsa_root_sha256
+        ),
+        nested_signature_bundle_tsa_policy_oid=(
+            supplied.nested_signature_bundle_tsa_policy_oid
+        ),
     )
     context_digest = physical_trust_context_sha256(context)
     if (
