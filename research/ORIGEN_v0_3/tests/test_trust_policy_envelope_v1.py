@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from origen.trust_policy_envelope_v1 import (
+    MAX_POLICY_SEQUENCE,
     SCHEMA_VERSION,
     verify_signed_trust_policy,
 )
@@ -111,6 +112,14 @@ class TestSignedTrustPolicyEnvelopeV1(unittest.TestCase):
         raw, root_public, _ = fixture()
         with self.assertRaisesRegex(ValueError, "below the externally pinned minimum"):
             self.verify(raw, root_public, minimum_policy_sequence=8)
+
+    def test_minimum_policy_sequence_above_signed_64_bit_range_is_rejected(self):
+        raw, root_public, _ = fixture()
+        with self.assertRaisesRegex(
+            ValueError,
+            "minimum_policy_sequence must be an exact positive signed 64-bit integer",
+        ):
+            self.verify(raw, root_public, minimum_policy_sequence=MAX_POLICY_SEQUENCE + 1)
 
     def test_policy_not_yet_valid_is_rejected(self):
         raw, root_public, _ = fixture()

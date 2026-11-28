@@ -171,8 +171,10 @@ def verify_signed_trust_policy(
     if type(pinned_root_public_key_bytes) is not bytes or len(pinned_root_public_key_bytes) != 32:
         raise ValueError("pinned root public key must be exactly 32 immutable bytes")
     root_key_id = _identifier(expected_root_key_id, "expected_root_key_id")
-    if type(minimum_policy_sequence) is not int or minimum_policy_sequence < 1:
-        raise ValueError("minimum_policy_sequence must be an exact positive integer")
+    if type(minimum_policy_sequence) is not int or not 1 <= minimum_policy_sequence <= MAX_POLICY_SEQUENCE:
+        raise ValueError(
+            "minimum_policy_sequence must be an exact positive signed 64-bit integer"
+        )
     if type(verification_time) is not datetime or verification_time.tzinfo is None:
         raise ValueError("verification_time must be a timezone-aware exact datetime")
     try:
