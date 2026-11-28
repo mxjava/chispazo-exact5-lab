@@ -51,6 +51,8 @@ _CLOCK_SAMPLE_UTC = re.compile(
 )
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,127}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+MAX_EXTERNAL_EVIDENCE_ADVANCE_V1_BYTES = 8 * 1024 * 1024
+MAX_EXTERNAL_EVIDENCE_ADVANCE_V2_BYTES = 20 * 1024 * 1024
 
 
 class TrustStateOutcome(str, Enum):
@@ -126,6 +128,15 @@ class ExternalEvidenceAdvanceV1:
     raw_policy_timestamp_token_der: bytes
     raw_artifact_bytes_by_sha256: tuple[tuple[str, bytes], ...]
     raw_signature_bytes_by_sha256: tuple[tuple[str, bytes], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ExternalEvidenceAdvanceV2(ExternalEvidenceAdvanceV1):
+    """V2 exact-byte CAS envelope with a ledger-committed RFC 3161 sidecar."""
+
+    raw_timestamp_bundle_bytes: bytes
+    raw_nested_signature_bundle_timestamp_token_der: bytes
+    nested_signature_bundle_timestamp_nonce: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -263,7 +274,7 @@ class DeploymentTrustProvider(Protocol):
         accepted_at_utc: datetime,
         clock_uncertainty_ms: int,
         expected_external_evidence_watermark_sha256: str,
-        external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
+        external_evidence_advance: ExternalEvidenceAdvanceV1 | ExternalEvidenceAdvanceV2 | None = None,
         timestamp_nonce_challenge_id: str | None = None,
         timestamp_nonce_challenge_sha256: str | None = None,
     ) -> DeploymentTrustCommit:
@@ -409,47 +420,190 @@ def _external_evidence_watermark_copy(value: object) -> ExternalEvidenceWatermar
     return copied
 
 
-def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
-    if type(value) is not ExternalEvidenceAdvanceV1:
-        raise TypeError("external evidence advance must be an exact ExternalEvidenceAdvanceV1")
-    copied = ExternalEvidenceAdvanceV1(
-        policy_domain=value.policy_domain,
-        state_backend_id=value.state_backend_id,
-        log_id=value.log_id,
-        log_key_id=value.log_key_id,
-        log_public_key_sha256=value.log_public_key_sha256,
-        old_tree_size=value.old_tree_size,
-        old_root_sha256=value.old_root_sha256,
-        old_checkpoint_sha256=value.old_checkpoint_sha256,
-        new_tree_size=value.new_tree_size,
-        new_root_sha256=value.new_root_sha256,
-        new_checkpoint_sha256=value.new_checkpoint_sha256,
-        registry_id=value.registry_id,
-        registry_root_key_id=value.registry_root_key_id,
-        registry_root_public_key_sha256=value.registry_root_public_key_sha256,
-        registry_sequence=value.registry_sequence,
-        registry_sha256=value.registry_sha256,
-        raw_manifest_bytes=value.raw_manifest_bytes,
-        raw_ledger_entry_bytes=value.raw_ledger_entry_bytes,
-        raw_inclusion_proof_bytes=value.raw_inclusion_proof_bytes,
-        raw_old_checkpoint_bytes=value.raw_old_checkpoint_bytes,
-        raw_new_checkpoint_bytes=value.raw_new_checkpoint_bytes,
-        raw_consistency_proof_bytes=value.raw_consistency_proof_bytes,
-        raw_registry_bytes=value.raw_registry_bytes,
-        raw_witness_statement_bytes=value.raw_witness_statement_bytes,
-        receipt_sha256=value.receipt_sha256,
-        policy_envelope_sha256=value.policy_envelope_sha256,
-        raw_receipt_bytes=value.raw_receipt_bytes,
-        raw_policy_envelope_bytes=value.raw_policy_envelope_bytes,
-        raw_custody_record_bytes=value.raw_custody_record_bytes,
-        raw_portfolio_bytes=value.raw_portfolio_bytes,
-        raw_custody_signature_bytes=value.raw_custody_signature_bytes,
-        custodian_key_id=value.custodian_key_id,
-        raw_timestamp_token_der=value.raw_timestamp_token_der,
-        raw_policy_timestamp_token_der=value.raw_policy_timestamp_token_der,
-        raw_artifact_bytes_by_sha256=value.raw_artifact_bytes_by_sha256,
-        raw_signature_bytes_by_sha256=value.raw_signature_bytes_by_sha256,
+def _validate_external_evidence_advance_v2_bundle(
+    copied: ExternalEvidenceAdvanceV2,
+) -> None:
+    """Check exact V2 sidecar/leaf byte binding before a provider CAS.
+
+    This is structural preflight only. It does not verify Ed25519 signatures,
+    the RFC 3161 token, TSA identity, checkpoint signature, Merkle inclusion,
+    consistency, revocation, or institutional trust. The provider must repeat
+    all cryptographic verification with its own provisioned context.
+    """
+    from .nested_signature_bundle_timestamp_v1 import (
+        canonical_nested_signature_bundle_timestamp_payload_v1,
     )
+    from .physical_evidence_manifest_v1 import parse_unverified_physical_manifest
+    from .transparency_ledger_bundle_verifier_v2 import ENTRY_SCHEMA_V2
+    from .transparency_ledger_verifier_v1 import (
+        CHECKPOINT_SCHEMA,
+        _digest,
+        _exact_fields,
+        _load_canonical_object,
+        _manifest_commitment_sha256,
+        _parse_inclusion_proof,
+    )
+
+    manifest = parse_unverified_physical_manifest(copied.raw_manifest_bytes)
+    rebuilt_bundle = canonical_nested_signature_bundle_timestamp_payload_v1(
+        copied.raw_manifest_bytes,
+        copied.raw_policy_envelope_bytes,
+        dict(copied.raw_artifact_bytes_by_sha256),
+        dict(copied.raw_signature_bytes_by_sha256),
+    )
+    if rebuilt_bundle != copied.raw_timestamp_bundle_bytes:
+        raise ValueError(
+            "V2 timestamp bundle bytes do not equal the canonical exact-evidence sidecar"
+        )
+    bundle_sha256 = hashlib.sha256(copied.raw_timestamp_bundle_bytes).hexdigest()
+    token_sha256 = hashlib.sha256(
+        copied.raw_nested_signature_bundle_timestamp_token_der
+    ).hexdigest()
+
+    entry = _load_canonical_object(
+        copied.raw_ledger_entry_bytes,
+        maximum=65_536,
+        label="V2 ledger entry",
+    )
+    _exact_fields(
+        entry,
+        {
+            "schema_version",
+            "ledger_id",
+            "entry_id",
+            "manifest_commitment_sha256",
+            "artifact_sha256s",
+            "timestamp_bundle_sha256",
+            "timestamp_token_sha256",
+        },
+        "V2 ledger entry",
+    )
+    if entry["schema_version"] != ENTRY_SCHEMA_V2:
+        raise ValueError("ExternalEvidenceAdvanceV2 requires a V2 timestamp-committing ledger leaf")
+    if _require_identifier(entry["ledger_id"], "V2 ledger entry ledger_id") != manifest.ledger_anchor.ledger_id:
+        raise ValueError("V2 ledger entry ledger_id does not match exact manifest")
+    if _require_identifier(entry["entry_id"], "V2 ledger entry entry_id") != manifest.ledger_anchor.entry_id:
+        raise ValueError("V2 ledger entry entry_id does not match exact manifest")
+    if _digest(
+        entry["manifest_commitment_sha256"], "V2 manifest_commitment_sha256"
+    ) != _manifest_commitment_sha256(copied.raw_manifest_bytes):
+        raise ValueError("V2 ledger entry does not commit to the exact normalized manifest")
+    expected_artifacts = tuple(sorted(item.sha256 for item in manifest.artifacts))
+    values = entry["artifact_sha256s"]
+    if type(values) is not list:
+        raise ValueError("V2 ledger entry artifact_sha256s must be an array")
+    actual_artifacts = tuple(
+        _digest(value, f"V2 artifact_sha256s[{index}]")
+        for index, value in enumerate(values)
+    )
+    if actual_artifacts != expected_artifacts:
+        raise ValueError("V2 ledger entry artifact digests do not match exact manifest")
+    if _digest(
+        entry["timestamp_bundle_sha256"], "timestamp_bundle_sha256"
+    ) != bundle_sha256:
+        raise ValueError("V2 ledger entry does not commit to the exact timestamp bundle")
+    if _digest(
+        entry["timestamp_token_sha256"], "timestamp_token_sha256"
+    ) != token_sha256:
+        raise ValueError("V2 ledger entry does not commit to the exact RFC 3161 token")
+    proof_sha256 = hashlib.sha256(copied.raw_inclusion_proof_bytes).hexdigest()
+    if proof_sha256 != manifest.ledger_anchor.inclusion_proof_sha256:
+        raise ValueError("V2 manifest does not bind the exact inclusion-proof bytes")
+
+    checkpoint = _load_canonical_object(
+        copied.raw_new_checkpoint_bytes,
+        maximum=16_384,
+        label="V2 new signed checkpoint",
+    )
+    _exact_fields(
+        checkpoint,
+        {
+            "schema_version",
+            "log_id",
+            "key_id",
+            "tree_size",
+            "root_hash",
+            "issued_at_utc",
+            "signature_b64",
+        },
+        "V2 new signed checkpoint",
+    )
+    if checkpoint["schema_version"] != CHECKPOINT_SCHEMA:
+        raise ValueError("V2 new checkpoint schema is unsupported")
+    if _require_identifier(checkpoint["log_id"], "checkpoint log_id") != copied.log_id:
+        raise ValueError("V2 checkpoint log_id does not match provider CAS envelope")
+    if _require_identifier(checkpoint["key_id"], "checkpoint key_id") != copied.log_key_id:
+        raise ValueError("V2 checkpoint key_id does not match provider CAS envelope")
+    if type(checkpoint["tree_size"]) is not int or checkpoint["tree_size"] != copied.new_tree_size:
+        raise ValueError("V2 checkpoint tree_size does not match provider CAS envelope")
+    if _digest(checkpoint["root_hash"], "checkpoint root_hash") != copied.new_root_sha256:
+        raise ValueError("V2 checkpoint root_hash does not match provider CAS envelope")
+    _parse_inclusion_proof(
+        copied.raw_inclusion_proof_bytes,
+        expected_proof_sha256=manifest.ledger_anchor.inclusion_proof_sha256,
+        expected_ledger_id=manifest.ledger_anchor.ledger_id,
+        expected_entry_id=manifest.ledger_anchor.entry_id,
+        expected_log_id=copied.log_id,
+        expected_checkpoint_sha256=hashlib.sha256(
+            copied.raw_new_checkpoint_bytes
+        ).hexdigest(),
+    )
+
+
+def _external_evidence_advance_copy(
+    value: object,
+) -> ExternalEvidenceAdvanceV1 | ExternalEvidenceAdvanceV2:
+    if type(value) not in (ExternalEvidenceAdvanceV1, ExternalEvidenceAdvanceV2):
+        raise TypeError(
+            "external evidence advance must be an exact ExternalEvidenceAdvanceV1 or V2"
+        )
+    common = {
+        "policy_domain": value.policy_domain,
+        "state_backend_id": value.state_backend_id,
+        "log_id": value.log_id,
+        "log_key_id": value.log_key_id,
+        "log_public_key_sha256": value.log_public_key_sha256,
+        "old_tree_size": value.old_tree_size,
+        "old_root_sha256": value.old_root_sha256,
+        "old_checkpoint_sha256": value.old_checkpoint_sha256,
+        "new_tree_size": value.new_tree_size,
+        "new_root_sha256": value.new_root_sha256,
+        "new_checkpoint_sha256": value.new_checkpoint_sha256,
+        "registry_id": value.registry_id,
+        "registry_root_key_id": value.registry_root_key_id,
+        "registry_root_public_key_sha256": value.registry_root_public_key_sha256,
+        "registry_sequence": value.registry_sequence,
+        "registry_sha256": value.registry_sha256,
+        "raw_manifest_bytes": value.raw_manifest_bytes,
+        "raw_ledger_entry_bytes": value.raw_ledger_entry_bytes,
+        "raw_inclusion_proof_bytes": value.raw_inclusion_proof_bytes,
+        "raw_old_checkpoint_bytes": value.raw_old_checkpoint_bytes,
+        "raw_new_checkpoint_bytes": value.raw_new_checkpoint_bytes,
+        "raw_consistency_proof_bytes": value.raw_consistency_proof_bytes,
+        "raw_registry_bytes": value.raw_registry_bytes,
+        "raw_witness_statement_bytes": value.raw_witness_statement_bytes,
+        "receipt_sha256": value.receipt_sha256,
+        "policy_envelope_sha256": value.policy_envelope_sha256,
+        "raw_receipt_bytes": value.raw_receipt_bytes,
+        "raw_policy_envelope_bytes": value.raw_policy_envelope_bytes,
+        "raw_custody_record_bytes": value.raw_custody_record_bytes,
+        "raw_portfolio_bytes": value.raw_portfolio_bytes,
+        "raw_custody_signature_bytes": value.raw_custody_signature_bytes,
+        "custodian_key_id": value.custodian_key_id,
+        "raw_timestamp_token_der": value.raw_timestamp_token_der,
+        "raw_policy_timestamp_token_der": value.raw_policy_timestamp_token_der,
+        "raw_artifact_bytes_by_sha256": value.raw_artifact_bytes_by_sha256,
+        "raw_signature_bytes_by_sha256": value.raw_signature_bytes_by_sha256,
+    }
+    if type(value) is ExternalEvidenceAdvanceV2:
+        copied = ExternalEvidenceAdvanceV2(
+            **common,
+            raw_timestamp_bundle_bytes=value.raw_timestamp_bundle_bytes,
+            raw_nested_signature_bundle_timestamp_token_der=value.raw_nested_signature_bundle_timestamp_token_der,
+            nested_signature_bundle_timestamp_nonce=value.nested_signature_bundle_timestamp_nonce,
+        )
+    else:
+        copied = ExternalEvidenceAdvanceV1(**common)
     if copied.policy_domain != CLASSIC_POLICY_DOMAIN:
         raise ValueError("external evidence advance is not scoped to the fixed CLASSIC domain")
     for field, actual in (
@@ -534,8 +688,6 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
             previous_digest = digest
             total_bytes += len(raw)
 
-    if total_bytes > 8 * 1024 * 1024:
-        raise ValueError("external evidence advance exceeds the aggregate byte limit")
     exact_digests = (
         ("receipt_sha256", copied.receipt_sha256, copied.raw_receipt_bytes),
         ("policy_envelope_sha256", copied.policy_envelope_sha256, copied.raw_policy_envelope_bytes),
@@ -546,13 +698,45 @@ def _external_evidence_advance_copy(value: object) -> ExternalEvidenceAdvanceV1:
     for field, expected, raw in exact_digests:
         if hashlib.sha256(raw).hexdigest() != expected:
             raise ValueError(f"{field} does not bind the exact external evidence bytes")
-    return copied
 
+    if type(copied) is ExternalEvidenceAdvanceV2:
+        from .nested_signature_bundle_timestamp_v1 import MAX_BUNDLE_BYTES
+        from .rfc3161_tsa_verifier_v1 import MAX_TOKEN_BYTES
+
+        if (
+            type(copied.raw_timestamp_bundle_bytes) is not bytes
+            or not copied.raw_timestamp_bundle_bytes
+            or len(copied.raw_timestamp_bundle_bytes) > MAX_BUNDLE_BYTES
+        ):
+            raise ValueError("raw_timestamp_bundle_bytes must be exact bytes within the V2 sidecar limit")
+        if (
+            type(copied.raw_nested_signature_bundle_timestamp_token_der) is not bytes
+            or not copied.raw_nested_signature_bundle_timestamp_token_der
+            or len(copied.raw_nested_signature_bundle_timestamp_token_der) > MAX_TOKEN_BYTES
+        ):
+            raise ValueError("raw_nested_signature_bundle_timestamp_token_der must be exact bytes within the RFC 3161 token limit")
+        if (
+            type(copied.nested_signature_bundle_timestamp_nonce) is not int
+            or not 1 <= copied.nested_signature_bundle_timestamp_nonce <= 2**63 - 1
+        ):
+            raise ValueError("nested_signature_bundle_timestamp_nonce must be an exact positive signed-64-bit integer")
+        total_bytes += len(copied.raw_timestamp_bundle_bytes)
+        total_bytes += len(copied.raw_nested_signature_bundle_timestamp_token_der)
+        _validate_external_evidence_advance_v2_bundle(copied)
+
+    maximum_total = (
+        MAX_EXTERNAL_EVIDENCE_ADVANCE_V2_BYTES
+        if type(copied) is ExternalEvidenceAdvanceV2
+        else MAX_EXTERNAL_EVIDENCE_ADVANCE_V1_BYTES
+    )
+    if total_bytes > maximum_total:
+        raise ValueError("external evidence advance exceeds the aggregate byte limit")
+    return copied
 
 def _validated_external_evidence_watermark(
     snapshot: DeploymentTrustSnapshot,
     expected_sha256: str,
-    advance: ExternalEvidenceAdvanceV1 | None,
+    advance: ExternalEvidenceAdvanceV1 | ExternalEvidenceAdvanceV2 | None,
 ) -> ExternalEvidenceWatermarkV1 | None:
     """Validate one candidate against the exact accepted watermark in a snapshot.
 
@@ -1028,7 +1212,7 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
     provider_snapshot: DeploymentTrustSnapshot,
     timestamp_nonce_challenge_id: str | None = None,
     timestamp_nonce_challenge_sha256: str | None = None,
-    external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
+    external_evidence_advance: ExternalEvidenceAdvanceV1 | ExternalEvidenceAdvanceV2 | None = None,
 ) -> DeploymentTrustInspection:
     """Internal composition helper bound to one provider snapshot.
 
@@ -1254,7 +1438,7 @@ def _inspect_receipt_with_deployment_trust_provider_using_provider(
     provider: DeploymentTrustProvider,
     timestamp_nonce_challenge_id: str | None = None,
     timestamp_nonce_challenge_sha256: str | None = None,
-    external_evidence_advance: ExternalEvidenceAdvanceV1 | None = None,
+    external_evidence_advance: ExternalEvidenceAdvanceV1 | ExternalEvidenceAdvanceV2 | None = None,
 ) -> DeploymentTrustInspection:
     """Private provider-backed implementation used only by deployment composition."""
     read_snapshot = getattr(provider, "read_snapshot", None)
