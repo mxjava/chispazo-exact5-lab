@@ -223,7 +223,7 @@ class TransparencyLedgerBundleVerifierV2Tests(unittest.TestCase):
         checkpoint["issued_at_utc"] = "2026-11-23T02:59:50Z"
         unsigned = dict(checkpoint)
         unsigned.pop("signature_b64")
-        log_private = Ed25519PrivateKey.from_private_bytes(b"\\x19" * 32)
+        log_private = Ed25519PrivateKey.from_private_bytes(b"\x19" * 32)
         checkpoint["signature_b64"] = base64.b64encode(
             log_private.sign(CHECKPOINT_DOMAIN + canonical(unsigned))
         ).decode("ascii")
