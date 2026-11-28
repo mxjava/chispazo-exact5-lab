@@ -1,3 +1,15 @@
+## Signed policy/receipt chain clock snapshot (2026-11-28)
+- Reproduced a trust-boundary defect where the policy-envelope verifier and receipt-attestation verifier independently called a caller-controlled `tzinfo.utcoffset()`, allowing a stateful timezone to supply different UTC instants within one chain.
+- Added a composition-boundary normalization that samples the caller timezone exactly once and passes the same immutable UTC datetime to both verifiers.
+- Added a synthetic adversarial regression using a timezone that changes its offset on each call; the caller timezone must be sampled once and the verified receipt time must equal that single normalized instant.
+- Root pin, key ID, sequence floor and clock source remain caller/deployment inputs; this does not authenticate clock provisioning or enable independent provenance. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
+## Policy-bound independent provenance gate composition (2026-11-28)
+- Added a research-only composition that derives VerifiedTrustPolicy from original signed policy bytes, verifies the receipt root attestation, then calls the existing independent provenance gate with the exact same receipt bytes.
+- The independent gate is required to return exactly BLOCKED_PROVENANCE; unexpected status/type fails closed. Policy or receipt verification failures prevent the independent gate from being called.
+- Added synthetic adversarial tests for call ordering, exact-byte identity, policy/receipt/root tampering, unexpected gate output, backend exceptions and caller-supplied VerifiedTrustPolicy substitution.
+- This does not provision the root pin, sequence floor or clock; does not implement a durable anti-rollback store or independent evidence provider; and does not verify nested signatures, RFC 3161, ledger/witnesses or custody. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
 ## Acta role separation and official 13:10 status refresh (2026-11-24)
 - Physical manifest regression: all four required DRAW-ACTA roles could reuse one subject_id; parser now requires distinct declared subjects for the General Directorate, Sales Operations, IT and SEGOB roles.
 - Test commit: `3e1384b76db02319c44f9de88baf28ed04197726`; implementation commit: `d8c7b0e8e5ed433f25549aecddb374424d64d41a`.
