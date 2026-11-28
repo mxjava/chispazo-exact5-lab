@@ -24,7 +24,7 @@ from .rfc3161_tsa_verifier_v1 import RFC3161Inspection, verify_rfc3161_timestamp
 from .trust_policy_envelope_v3 import verify_signed_trust_policy_v3
 
 SCHEMA_VERSION = "origen.nested-signature-bundle-timestamp.v1"
-MAX_BUNDLE_BYTES = 2 * 1024 * 1024
+MAX_BUNDLE_BYTES = 8 * 1024 * 1024
 MAX_SIGNATURES = 256
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -75,6 +75,40 @@ REMAINING_BLOCKERS = (
     "PHYSICAL_ARTIFACT_ORIGIN_AND_INDEPENDENT_CUSTODY_NOT_AUTHENTICATED",
     "PROSPECTIVE_EDGE_CRITERIA_NOT_MET",
 )
+
+
+def _snapshot_artifact_bytes(value: object, manifest) -> dict[str, bytes]:
+    if type(value) is not dict:
+        raise TypeError("artifact_bytes_by_sha256 must be an exact dict")
+    try:
+        items = tuple(value.items())
+    except RuntimeError as exc:
+        raise ValueError("artifact byte map changed while being snapshotted") from exc
+    if len(items) != len(value):
+        raise ValueError("artifact byte map changed while being snapshotted")
+
+    copied: dict[str, bytes] = {}
+    for digest, raw in items:
+        if type(digest) is not str or not _SHA256.fullmatch(digest):
+            raise ValueError("artifact byte map keys must be lowercase SHA-256 digests")
+        if type(raw) is not bytes:
+            raise TypeError("artifact byte map values must be exact immutable bytes")
+        if hashlib.sha256(raw).hexdigest() != digest:
+            raise ValueError("artifact byte map digest does not bind exact bytes")
+        copied[digest] = raw
+
+    claims = {item.sha256: item for item in manifest.artifacts}
+    if set(copied) != set(claims):
+        missing = sorted(set(claims) - set(copied))
+        extra = sorted(set(copied) - set(claims))
+        raise ValueError(
+            "artifact byte map must exactly match manifest claims; "
+            f"missing={missing}, unexpected={extra}"
+        )
+    for digest, claim in claims.items():
+        if len(copied[digest]) != claim.byte_length:
+            raise ValueError(f"artifact byte length does not match manifest claim: {claim.artifact_type}")
+    return copied
 
 
 def _snapshot_signature_bytes(value: object, manifest) -> dict[str, bytes]:
@@ -130,6 +164,7 @@ def _validate_policy_oid(value: object) -> str:
 def canonical_nested_signature_bundle_timestamp_payload_v1(
     raw_manifest_bytes: bytes,
     signed_policy_envelope_bytes: bytes,
+    artifact_bytes_by_sha256: dict[str, bytes],
     signature_bytes_by_sha256: dict[str, bytes],
 ) -> bytes:
     """Canonical sidecar payload containing exact manifest, policy and signature bytes.
@@ -142,8 +177,10 @@ def canonical_nested_signature_bundle_timestamp_payload_v1(
     if type(signed_policy_envelope_bytes) is not bytes or not signed_policy_envelope_bytes:
         raise ValueError("signed_policy_envelope_bytes must be non-empty exact bytes")
     manifest = parse_unverified_physical_manifest(raw_manifest_bytes)
+    artifacts = _snapshot_artifact_bytes(artifact_bytes_by_sha256, manifest)
     signatures = _snapshot_signature_bytes(signature_bytes_by_sha256, manifest)
     claims_by_digest = {item.signature_sha256: item for item in manifest.signatures}
+    artifact_claims_by_digest = {item.sha256: item for item in manifest.artifacts}
     bundle = {
         "schema_version": SCHEMA_VERSION,
         "policy_domain": CLASSIC_PHYSICAL_POLICY_DOMAIN,
@@ -151,6 +188,15 @@ def canonical_nested_signature_bundle_timestamp_payload_v1(
         "manifest_bytes_b64": base64.b64encode(raw_manifest_bytes).decode("ascii"),
         "policy_envelope_sha256": hashlib.sha256(signed_policy_envelope_bytes).hexdigest(),
         "policy_envelope_bytes_b64": base64.b64encode(signed_policy_envelope_bytes).decode("ascii"),
+        "artifacts": [
+            {
+                "artifact_type": artifact_claims_by_digest[digest].artifact_type,
+                "sha256": digest,
+                "byte_length": artifact_claims_by_digest[digest].byte_length,
+                "bytes_b64": base64.b64encode(artifacts[digest]).decode("ascii"),
+            }
+            for digest in sorted(artifacts)
+        ],
         "signatures": [
             {
                 "artifact_sha256": claims_by_digest[digest].artifact_sha256,
@@ -214,10 +260,12 @@ def verify_nested_signature_bundle_timestamp_v1(
     )
     close_at = _utc_instant(close_at, "manifest CLASSIC draw close")
 
+    artifacts = _snapshot_artifact_bytes(artifact_bytes_by_sha256, manifest)
     signatures = _snapshot_signature_bytes(signature_bytes_by_sha256, manifest)
     payload = canonical_nested_signature_bundle_timestamp_payload_v1(
         raw_manifest_bytes,
         signed_policy_envelope_bytes,
+        artifacts,
         signatures,
     )
     bundle_sha256 = hashlib.sha256(payload).hexdigest()
@@ -226,7 +274,7 @@ def verify_nested_signature_bundle_timestamp_v1(
 
     physical = verify_physical_evidence_signatures_v3(
         raw_manifest_bytes,
-        artifact_bytes_by_sha256,
+        artifacts,
         signatures,
         signed_policy_envelope_bytes=signed_policy_envelope_bytes,
         pinned_root_public_key_bytes=pinned_root_public_key_bytes,
