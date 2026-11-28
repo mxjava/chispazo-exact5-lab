@@ -26,7 +26,7 @@ Fuentes oficiales:
 
 6. **CS-12 y accesos.** La política 19 restringe la sala y exige registrar participantes mediante CS-12. Limpieza y mantenimiento deben asentarse en bitácoras de acceso y realizarse bajo vigilancia institucional. Sirve para auditoría de custodia, no demuestra intervención sobre máquina o estuche.
 
-7. **Dos capas de video.** La política 30 contrata grabación desde el pesaje hasta el sorteo; sólo la versión editada del sorteo se incorpora al Acta. La actividad 12.1 también dice que cámaras de sala captan y graban los números expresados por el presentador al aparecer las esferas en exhibidores. No debe suponerse que el video editado es el máster continuo ni que ambas cámaras producen un único archivo. No se obtuvo máster, metadatos, hash ni cadena de custodia por concurso.
+7. **Dos obligaciones documentales de grabación.** La política 30 contrata grabación desde el pesaje hasta el sorteo; sólo la versión editada del sorteo se incorpora al Acta. La actividad 12.1 también exige que cámaras ubicadas en la sala capten y graben los números expresados por el presentador al aparecer las esferas en exhibidores. El procedimiento no especifica si ambas obligaciones comparten equipo, fuente técnica o archivo; no debe suponerse que el video editado es el máster continuo. No se obtuvo máster, metadatos, hash ni cadena de custodia por concurso.
 
 ## Cronología frente al cierre
 
