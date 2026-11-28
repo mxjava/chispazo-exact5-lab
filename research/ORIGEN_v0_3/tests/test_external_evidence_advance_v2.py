@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unittest
 from dataclasses import replace
-from datetime import datetime, timedelta, timezone
-
-import pytest
+from datetime import datetime, timezone
 
 from origen.deployment_trust_provider_v1 import (
     CLASSIC_POLICY_DOMAIN,
@@ -87,74 +86,6 @@ def valid_advance() -> ExternalEvidenceAdvanceV2:
     )
 
 
-def test_v2_advance_copies_and_binds_exact_sidecar_token_and_leaf():
-    advance = valid_advance()
-
-    copied = _external_evidence_advance_copy(advance)
-
-    assert type(copied) is ExternalEvidenceAdvanceV2
-    assert copied.raw_timestamp_bundle_bytes == advance.raw_timestamp_bundle_bytes
-    assert (
-        copied.raw_nested_signature_bundle_timestamp_token_der
-        == advance.raw_nested_signature_bundle_timestamp_token_der
-    )
-    assert copied.nested_signature_bundle_timestamp_nonce == 88091
-
-
-def test_v2_advance_rejects_token_substitution_against_ledger_leaf():
-    advance = valid_advance()
-    altered = replace(
-        advance,
-        raw_nested_signature_bundle_timestamp_token_der=(
-            advance.raw_nested_signature_bundle_timestamp_token_der + b"\x00"
-        ),
-    )
-
-    with pytest.raises(ValueError, match="does not commit to the exact RFC 3161 token"):
-        _external_evidence_advance_copy(altered)
-
-
-def test_v2_advance_rejects_noncanonical_or_substituted_sidecar_bytes():
-    advance = valid_advance()
-
-    with pytest.raises(ValueError, match="do not equal the canonical exact-evidence sidecar"):
-        _external_evidence_advance_copy(
-            replace(advance, raw_timestamp_bundle_bytes=advance.raw_timestamp_bundle_bytes + b" ")
-        )
-
-
-def test_v2_advance_rejects_v1_leaf_downgrade():
-    advance = valid_advance()
-    entry = json.loads(advance.raw_ledger_entry_bytes.decode("utf-8"))
-    entry["schema_version"] = "origen.transparency-ledger-entry.v1"
-    entry.pop("timestamp_bundle_sha256")
-    entry.pop("timestamp_token_sha256")
-
-    with pytest.raises(ValueError, match="fields mismatch"):
-        _external_evidence_advance_copy(
-            replace(advance, raw_ledger_entry_bytes=canonical(entry))
-        )
-
-
-def test_v2_advance_rejects_leaf_with_wrong_sidecar_digest():
-    advance = valid_advance()
-    entry = json.loads(advance.raw_ledger_entry_bytes.decode("utf-8"))
-    entry["timestamp_bundle_sha256"] = "0" * 64
-
-    with pytest.raises(ValueError, match="does not commit to the exact timestamp bundle"):
-        _external_evidence_advance_copy(
-            replace(advance, raw_ledger_entry_bytes=canonical(entry))
-        )
-
-
-@pytest.mark.parametrize("nonce", [True, 0, -1, (1 << 63)])
-def test_v2_advance_rejects_invalid_third_nonce(nonce):
-    with pytest.raises(ValueError, match="exact positive signed-64-bit integer"):
-        _external_evidence_advance_copy(
-            replace(valid_advance(), nested_signature_bundle_timestamp_nonce=nonce)
-        )
-
-
 def make_challenge(*, bundle_nonce=33):
     return TimestampNonceChallengeV1(
         challenge_id="research-challenge-1",
@@ -172,26 +103,114 @@ def make_challenge(*, bundle_nonce=33):
     )
 
 
-def test_optional_third_nonce_is_copied_and_bound_into_challenge_digest():
-    challenge = make_challenge()
+class ExternalEvidenceAdvanceV2Tests(unittest.TestCase):
+    def test_v2_advance_copies_and_binds_exact_sidecar_token_and_leaf(self):
+        advance = valid_advance()
 
-    copied = copy_timestamp_nonce_challenge(challenge)
+        copied = _external_evidence_advance_copy(advance)
 
-    assert copied.nested_signature_bundle_timestamp_nonce == 33
-    assert timestamp_nonce_challenge_sha256(copied) == timestamp_nonce_challenge_sha256(challenge)
-    assert timestamp_nonce_challenge_sha256(challenge) != timestamp_nonce_challenge_sha256(
-        replace(challenge, nested_signature_bundle_timestamp_nonce=34)
-    )
+        self.assertIs(type(copied), ExternalEvidenceAdvanceV2)
+        self.assertEqual(copied.raw_timestamp_bundle_bytes, advance.raw_timestamp_bundle_bytes)
+        self.assertEqual(
+            copied.raw_nested_signature_bundle_timestamp_token_der,
+            advance.raw_nested_signature_bundle_timestamp_token_der,
+        )
+        self.assertEqual(copied.nested_signature_bundle_timestamp_nonce, 88091)
+
+    def test_v2_advance_rejects_token_substitution_against_ledger_leaf(self):
+        advance = valid_advance()
+        altered = replace(
+            advance,
+            raw_nested_signature_bundle_timestamp_token_der=(
+                advance.raw_nested_signature_bundle_timestamp_token_der + b"\\x00"
+            ),
+        )
+
+        with self.assertRaisesRegex(
+            ValueError, "does not commit to the exact RFC 3161 token"
+        ):
+            _external_evidence_advance_copy(altered)
+
+    def test_v2_advance_rejects_noncanonical_or_substituted_sidecar_bytes(self):
+        advance = valid_advance()
+
+        with self.assertRaisesRegex(
+            ValueError, "do not equal the canonical exact-evidence sidecar"
+        ):
+            _external_evidence_advance_copy(
+                replace(
+                    advance,
+                    raw_timestamp_bundle_bytes=advance.raw_timestamp_bundle_bytes + b" ",
+                )
+            )
+
+    def test_v2_advance_rejects_v1_leaf_downgrade(self):
+        advance = valid_advance()
+        entry = json.loads(advance.raw_ledger_entry_bytes.decode("utf-8"))
+        entry["schema_version"] = "origen.transparency-ledger-entry.v1"
+        entry.pop("timestamp_bundle_sha256")
+        entry.pop("timestamp_token_sha256")
+
+        with self.assertRaisesRegex(ValueError, "fields mismatch"):
+            _external_evidence_advance_copy(
+                replace(advance, raw_ledger_entry_bytes=canonical(entry))
+            )
+
+    def test_v2_advance_rejects_leaf_with_wrong_sidecar_digest(self):
+        advance = valid_advance()
+        entry = json.loads(advance.raw_ledger_entry_bytes.decode("utf-8"))
+        entry["timestamp_bundle_sha256"] = "0" * 64
+
+        with self.assertRaisesRegex(
+            ValueError, "does not commit to the exact timestamp bundle"
+        ):
+            _external_evidence_advance_copy(
+                replace(advance, raw_ledger_entry_bytes=canonical(entry))
+            )
+
+    def test_v2_advance_rejects_invalid_third_nonce(self):
+        for nonce in (True, 0, -1, (1 << 63)):
+            with self.subTest(nonce=nonce):
+                with self.assertRaisesRegex(
+                    ValueError, "exact positive signed-64-bit integer"
+                ):
+                    _external_evidence_advance_copy(
+                        replace(
+                            valid_advance(),
+                            nested_signature_bundle_timestamp_nonce=nonce,
+                        )
+                    )
+
+    def test_optional_third_nonce_is_copied_and_bound_into_challenge_digest(self):
+        challenge = make_challenge()
+
+        copied = copy_timestamp_nonce_challenge(challenge)
+
+        self.assertEqual(copied.nested_signature_bundle_timestamp_nonce, 33)
+        self.assertEqual(
+            timestamp_nonce_challenge_sha256(copied),
+            timestamp_nonce_challenge_sha256(challenge),
+        )
+        self.assertNotEqual(
+            timestamp_nonce_challenge_sha256(challenge),
+            timestamp_nonce_challenge_sha256(
+                replace(challenge, nested_signature_bundle_timestamp_nonce=34)
+            ),
+        )
+
+    def test_optional_third_nonce_must_be_distinct_from_policy_and_custody_nonces(self):
+        with self.assertRaisesRegex(
+            ValueError, "all present timestamp challenge nonces must be distinct"
+        ):
+            make_challenge(bundle_nonce=11)
+
+    def test_v1_challenge_remains_valid_without_the_optional_third_nonce(self):
+        challenge = make_challenge(bundle_nonce=None)
+
+        copied = copy_timestamp_nonce_challenge(challenge)
+
+        self.assertIsNone(copied.nested_signature_bundle_timestamp_nonce)
 
 
-def test_optional_third_nonce_must_be_distinct_from_policy_and_custody_nonces():
-    with pytest.raises(ValueError, match="all present timestamp challenge nonces must be distinct"):
-        make_challenge(bundle_nonce=11)
-
-
-def test_v1_challenge_remains_valid_without_the_optional_third_nonce():
-    challenge = make_challenge(bundle_nonce=None)
-
-    copied = copy_timestamp_nonce_challenge(challenge)
-
-    assert copied.nested_signature_bundle_timestamp_nonce is None
+if __name__ == "__main__":
+    unittest.main()
