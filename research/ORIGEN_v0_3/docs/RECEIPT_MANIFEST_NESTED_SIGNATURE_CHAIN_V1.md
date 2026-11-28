@@ -32,7 +32,7 @@ The signed payload covers the complete manifest claim set. Only signature_sha256
 A successful result means only that the receipt/manifest/artifact byte chain is internally consistent and that every declared nested Ed25519 signature verifies relative to the supplied policy.
 
 - **Signer roles are not authorized.** Policy v1 binds issuer/key identities but contains no key-to-role-to-artifact authorization. The manifest role remains UNVERIFIED_CLAIM_ONLY, even though the role string is covered by the signature.
-- **Signature creation time is not proven.** The manifest has no per-signature RFC 3161 proof binding. Key validity at verification time does not prove that a signature existed before the 21:00 Classic sales close.
+- **Signature creation time is not proven.** The manifest has no per-signature RFC 3161 proof binding. Key validity at verification time does not prove that a signature existed before the 21:00 Classic sales close. Per-signature diagnostics therefore distinguish `VALID_AT_VERIFICATION_ONLY` from `UNPROVEN_NO_TRUSTED_SIGNING_TIME`; `signature_verified` means mathematical Ed25519 verification only and must not be interpreted as authorization at signature creation.
 - **Trusted time is not authenticated.** The verification instant is caller-supplied. No TSA root provisioning, revocation freshness, or trusted clock is established.
 - **Ledger is not verified.** This increment does not verify inclusion, signed checkpoint continuity, witness quorum, independent ledger operation, or monotonic head persistence.
 - **Custody is not verified.** It does not verify detached custodian signatures, custodian identity, transfer events, storage immutability, or independent retention.
@@ -45,7 +45,7 @@ Every successful inspection remains exactly BLOCKED_PROVENANCE. The result conta
 
 The tests generate ephemeral Ed25519 keys, receipts, physical manifests, artifact payloads, and detached signatures in memory. These are synthetic fixtures only. They are not Lotería Nacional, SEGOB, OIC, TSA, custodian, or other institutional identities and must never be reused outside tests. No real institutional key or draw-specific original evidence is included.
 
-Coverage includes valid low-level and raw-policy compositions, signed-envelope tampering, wrong root pin/key ID, anti-rollback floor rejection, caller-supplied verified-policy substitution, single-sample stateful-clock handling, signature digest mismatch, missing/extra signature bytes, re-hashed invalid signatures, role-claim tampering, unknown signer identity, revoked signer keys, unsupported algorithms, exact container types, and key validity at verification time.
+Coverage includes valid low-level and raw-policy compositions, signed-envelope tampering, wrong root pin/key ID, anti-rollback floor rejection, caller-supplied verified-policy substitution, single-sample stateful-clock handling, signature digest mismatch, missing/extra signature bytes, re-hashed invalid signatures, role-claim tampering, unknown signer identity, revoked signer keys, unsupported algorithms, exact container types, key validity at verification time, and an adversarial synthetic event ordering where a key's validity begins after a modeled signature event but before inspection. The latter test explicitly asserts cryptographic validity without asserting signing-time authorization; its modeled timestamps are not evidence.
 
 ## Next interfaces
 
