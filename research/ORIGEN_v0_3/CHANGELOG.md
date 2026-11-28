@@ -278,3 +278,9 @@
 - Home index shows a 23-Nov 15:00 card numbered 12391, but the rendered card does not explicitly name the product; it is not bound to the Chispazo target register. No 23-Nov 21:00 Classic contest ID or result was visible.
 - No new draw-specific primary physical evidence was obtained. The official 22-Nov PDF could be browser-rendered but not downloaded as original bytes; SHA-256 remains NOT_CAPTURED. SGVO-PRO-05 revision 39 remains procedural reference only.
 - No canonical append, V294 change, main write, merge, promotion, prospective score, or eligibility change.
+
+## Transparency ledger entry v2 for timestamped nested-signature bundles (2026-11-27)
+- Added a separate V2 ledger verifier whose exact leaf commits to both the canonical nested-signature timestamp-bundle SHA-256 and exact RFC 3161 token-DER SHA-256, in addition to normalized manifest commitment and exact artifact digest set.
+- Rebuilds the timestamp bundle from snapshotted exact policy/artifact/signature bytes, verifies the RFC 3161 token and strict Classic pre-close accuracy bound, then checks the canonical V2 leaf, signed checkpoint and inclusion proof over the exact leaf bytes.
+- Keeps V1 verifier/schema unchanged; V1 leaves are rejected at the V2 boundary. Added adversarial tests for bundle/token digest substitution, sidecar byte mutation, V1 downgrade, proof-digest mismatch and mutated Merkle path.
+- The V2 verifier is diagnostic only and still takes TSA/log roots, nonce, clock and tree floor from caller inputs. Provider CAS integration, independently provisioned trust, revocation, independent witnesses and physical custody remain blockers. All tests are synthetic; status remains BLOCKED_PROVENANCE.
