@@ -81,6 +81,12 @@ class TestSignedTrustPolicyEnvelopeV1(unittest.TestCase):
         self.assertFalse(result.policy.issuer_keys[0].revoked)
         self.assertEqual(len(result.envelope_sha256), 64)
 
+    def test_noncanonical_envelope_bytes_are_rejected_even_with_valid_signature(self):
+        raw, root_public, _ = fixture()
+        noncanonical = b" " + raw + b"\n"
+        with self.assertRaisesRegex(ValueError, "canonical JSON encoding"):
+            self.verify(noncanonical, root_public)
+
     def test_tampered_policy_claim_fails_signature(self):
         raw, root_public, document = fixture()
         document["issuer_keys"][0]["revoked"] = True

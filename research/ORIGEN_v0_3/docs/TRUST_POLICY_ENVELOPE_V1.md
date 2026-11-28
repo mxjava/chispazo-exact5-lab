@@ -27,12 +27,15 @@ verification provides no authenticity.
 
 Schema: `origen.trust-policy-envelope.v1`.
 
-The canonical signed payload is UTF-8 JSON serialized with sorted keys,
-compact separators, and ASCII escaping, with the top-level `signature` member
-removed. Duplicate object keys, unknown/missing fields, non-canonical
-identifiers, non-UTC timestamps, malformed/canonicality-violating base64,
-oversized envelopes, duplicate issuer/key identities, and public-key reuse
-are rejected.
+The complete received envelope MUST itself be byte-for-byte equal to UTF-8
+JSON serialization of the parsed object using sorted keys, compact separators,
+and ASCII escaping, including the `signature` member. The Ed25519 signed payload
+is the same canonical serialization with the top-level `signature` member
+removed. Noncanonical whitespace, key ordering, or alternate UTF-8 spellings
+are rejected even if the canonicalized claims carry a valid signature. Duplicate
+object keys, unknown/missing fields, non-canonical identifiers, non-UTC
+timestamps, malformed/canonicality-violating base64, oversized envelopes,
+duplicate issuer/key identities, and public-key reuse are also rejected.
 
 The envelope binds:
 - schema and policy version;
