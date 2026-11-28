@@ -68,6 +68,14 @@ Certificate locator from the provider document (not a verified certificate objec
 
 The provider's published practice statement discusses checking the certificate chain and revocation for each token, but that does not substitute for obtaining and verifying the actual certificates and fresh revocation evidence.
 
+A separate current PSC Codex terms page for its general digital certificates says its CA CRL is published every 24 hours and OCSP is available in real time, 24 hours a day. The current site exposes a CRL resource at `https://app.psccodex.com/crl`; the web reader identifies its response as `application/pkix-crl` but cannot decode the binary object. No exact CRL bytes or fingerprint were captured in this review. The terms page concerns PSC Codex's certificate authority generally; it does **not** establish that this CRL covers the TSA signer certificate or its issuing chain. Treat it as a retrieval lead only, not revocation evidence.
+
+Sources:
+- https://www.psccodex.com/tc-uso-certificados-digitales.html
+- https://app.psccodex.com/crl
+
+Next retrieval must preserve the exact DER CRL bytes, hash them, verify CRL issuer/signature and scope against the exact TSA certificate chain, check `thisUpdate/nextUpdate`, and reject revoked serials. If the TSA chain is issued by a different authority, obtain that authority's CRL/OCSP response instead.
+
 ## Comparison with INCODE PSC
 
 INCODE remains the more current public-document candidate in the existing provider screen: its Mexican PSC directory entry and DOF accreditation are verified, and its repository lists TSA policy/practice version 1.1 effective 03-Jun-2024. Its policy/practice PDF and certificate objects were not retrievable in the prior capture, and its public indexed request fields did not demonstrate nonce support.
