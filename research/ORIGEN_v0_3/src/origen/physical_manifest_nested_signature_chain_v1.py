@@ -24,12 +24,17 @@ from .trust_artifact_bytes_v1 import (
     PhysicalManifestBindingCheck,
     verify_independent_provenance_with_physical_manifest,
 )
-from .trust_policy_envelope_v1 import VerifiedTrustPolicy
+from .trust_policy_envelope_v1 import (
+    VerifiedTrustPolicy,
+    verify_signed_trust_policy,
+)
 from .trust_verifier_v1 import TrustedIssuerKey
 
 
 SIGNATURE_PAYLOAD_DOMAIN = "origen.physical-evidence-signature.v1"
 ROLE_AUTHORIZATION_UNVERIFIED = "UNVERIFIED_CLAIM_ONLY"
+KEY_VALIDITY_AT_VERIFICATION_ONLY = "VALID_AT_VERIFICATION_ONLY"
+KEY_AUTHORIZATION_AT_CREATION_UNPROVEN = "UNPROVEN_NO_TRUSTED_SIGNING_TIME"
 SIGNATURE_CHAIN_STATUS = (
     "RECEIPT_MANIFEST_AND_NESTED_SIGNATURES_VERIFIED_NOT_AUTHENTICATED"
 )
@@ -57,6 +62,8 @@ class NestedSignatureVerification:
     key_id: str
     signature_sha256: str
     signature_verified: bool
+    key_validity_at_verification_status: str
+    key_authorization_at_creation_status: str
     role_authorization_status: str
 
 
@@ -300,6 +307,8 @@ def verify_independent_provenance_with_nested_signatures(
             key_id=claim.key_id,
             signature_sha256=claim.signature_sha256,
             signature_verified=True,
+            key_validity_at_verification_status=KEY_VALIDITY_AT_VERIFICATION_ONLY,
+            key_authorization_at_creation_status=KEY_AUTHORIZATION_AT_CREATION_UNPROVEN,
             role_authorization_status=ROLE_AUTHORIZATION_UNVERIFIED,
         ))
 
@@ -322,4 +331,52 @@ def verify_independent_provenance_with_nested_signatures(
         provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
         status=SIGNATURE_CHAIN_STATUS,
         remaining_blockers=NESTED_SIGNATURE_REMAINING_BLOCKERS,
+    )
+
+
+def verify_independent_provenance_with_signed_policy_and_nested_signatures(
+    original_receipt_bytes: bytes,
+    *,
+    original_manifest_bytes: bytes,
+    signed_policy_envelope_bytes: bytes,
+    pinned_root_public_key_bytes: bytes,
+    expected_root_key_id: str,
+    minimum_policy_sequence: int,
+    verification_time: datetime,
+    artifact_bytes_by_sha256: dict[str, bytes],
+    signature_bytes_by_sha256: dict[str, bytes],
+) -> PhysicalEvidenceSignatureChainInspection:
+    """Verify raw signed policy bytes before composing the complete signature chain.
+
+    This is the deployment-facing composition entry point. It deliberately does
+    not accept a caller-constructed VerifiedTrustPolicy. The policy object is
+    created inside this call by verifying the exact signed envelope against the
+    supplied root pin, key ID, sequence floor, and one normalized verification
+    instant; only that verifier-created object is passed into the receipt,
+    manifest, original-byte, and nested-signature chain.
+
+    The root pin, expected key ID, sequence floor, and original clock remain
+    caller/deployment supplied and unauthenticated. A successful result remains
+    BLOCKED_PROVENANCE and does not authenticate institutional provenance.
+    """
+    if type(signed_policy_envelope_bytes) is not bytes:
+        raise TypeError("signed_policy_envelope_bytes must be exact bytes")
+
+    # Sample an untrusted tzinfo exactly once. Both policy verification and the
+    # downstream receipt/signature checks receive this same immutable UTC instant.
+    verified_at = _utc_instant(verification_time, "verification_time")
+    verified_policy = verify_signed_trust_policy(
+        signed_policy_envelope_bytes,
+        pinned_root_public_key_bytes=pinned_root_public_key_bytes,
+        expected_root_key_id=expected_root_key_id,
+        minimum_policy_sequence=minimum_policy_sequence,
+        verification_time=verified_at,
+    )
+    return verify_independent_provenance_with_nested_signatures(
+        original_receipt_bytes,
+        original_manifest_bytes=original_manifest_bytes,
+        verified_trust_policy=verified_policy,
+        verification_time=verified_at,
+        artifact_bytes_by_sha256=artifact_bytes_by_sha256,
+        signature_bytes_by_sha256=signature_bytes_by_sha256,
     )
