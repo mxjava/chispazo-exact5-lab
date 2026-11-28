@@ -25,7 +25,7 @@ from test_physical_evidence_manifest_v1 import encode
 from test_rfc3161_tsa_verifier_v1 import _token
 from test_transparency_checkpoint_consistency_v1 import NOW
 from test_transparency_ledger_verifier_v1 import (
-    LEDGER_LOG_ID,
+    LOG_ID as LEDGER_LOG_ID,
     LOG_KEY_ID,
     canonical,
     inclusion_path,
