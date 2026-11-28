@@ -1,0 +1,85 @@
+{
+  "schema": "origen.official-result-status-only.v1",
+  "observed_at_local": "2026-11-27 22:51 America/Mexico_City",
+  "status_only": true,
+  "sources": {
+    "results_page": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+    "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+    "mask_pdf": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-27.pdf?v=27112026220824",
+    "same_day_home_index_observation": "https://pronosticos.gob.mx/"
+  },
+  "draws": {
+    "de_las_tres_2026_11_27": {
+      "contest_id": 12399,
+      "scheduled_time": "15:00",
+      "numbers": [
+        10,
+        14,
+        15,
+        17,
+        24
+      ],
+      "result_published": true,
+      "modality_assessment": "DE_LAS_TRES_SCHEDULE_INFERRED_NOT_VISUALLY_MASK_CONFIRMED",
+      "basis": "The official product schedule assigns 15:00 to De las Tres. The official results page and 27-Nov mask PDF both display contest 12399 and this combination; the PDF screenshot could not be fetched to inspect its modality logo."
+    },
+    "classic_2026_11_27": {
+      "contest_id": 12400,
+      "scheduled_time": "21:00",
+      "numbers": [
+        3,
+        12,
+        15,
+        17,
+        18
+      ],
+      "result_published": true,
+      "modality_assessment": "CLASSIC_SAME_DAY_HOME_INDEXED_NOT_VISUALLY_MASK_CONFIRMED",
+      "basis": "The official home-index observation captured at 18:07 local listed 27-Nov-2026 at 21:00 as draw 12400. The official product schedule assigns 21:00 to Clásico. The official results page and 27-Nov mask PDF both display contest 12400 and this combination; the PDF screenshot could not be fetched to inspect its modality logo."
+    }
+  },
+  "classic_12400_prize_summary": {
+    "first_place_winners": 1,
+    "first_place_individual_mxn": 303479.54,
+    "second_place_winners": 285,
+    "second_place_individual_mxn": 1004.21,
+    "third_place_winners": 6741,
+    "third_place_individual_mxn": 46.71,
+    "fourth_place_winners": 45998,
+    "fourth_place_individual_mxn": 10,
+    "total_winners": 53025,
+    "total_to_distribute_mxn": 1364531.5
+  },
+  "mask_index": {
+    "latest_visible_date": "2026-11-27",
+    "november_27_entry_visible": true,
+    "pdf_link_opened": true,
+    "pdf_text_extracted": true,
+    "pdf_screenshot": "FAILED_TIMEOUT",
+    "original_pdf_bytes": "NOT_CAPTURED",
+    "sha256": "NOT_COMPUTED"
+  },
+  "source_bytes": {
+    "results_html_original_bytes": "NOT_CAPTURED",
+    "home_index_html_original_bytes": "NOT_CAPTURED",
+    "mask_pdf_original_bytes": "NOT_CAPTURED",
+    "sha256": "NOT_COMPUTED"
+  },
+  "primary_physical_evidence": {
+    "signed_acta": false,
+    "cs11": false,
+    "weighing_strip": false,
+    "sphere_measurements": false,
+    "cs02": false,
+    "calibration_certificate": false,
+    "signed_participation_file": false,
+    "original_video": false,
+    "independent_custody": false,
+    "rfc3161_token": false,
+    "independent_ledger_proof": false
+  },
+  "canonical_history_append": false,
+  "v294_frozen": true,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}

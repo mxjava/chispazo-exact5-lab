@@ -1,0 +1,58 @@
+{
+  "schema": "origen.official-result-status-only.v1",
+  "observed_at_local": "2026-11-27 16:30:34 America/Mexico_City",
+  "sources": {
+    "results_page": "https://lotenal.gob.mx/Chispazo/Resultados",
+    "home_index": "https://www.loterianacional.gob.mx/home/index/",
+    "product_schedule": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+    "mask_index": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas"
+  },
+  "de_las_tres_2026_11_27": {
+    "contest_id": 12399,
+    "result_published": true,
+    "numbers": [10, 14, 15, 17, 24],
+    "result_page_observed_at": "2026-11-27 16:30:34 America/Mexico_City",
+    "modality_assessment": "SCHEDULE_INFERRED_DE_LAS_TRES_NOT_MASK_CONFIRMED",
+    "reason": "The official results page displays contest 12399 dated 27-Nov-2026 with these numbers but does not label modality. The official home index lists 12399 at 15:00 and the product page maps 15:00 to De las Tres."
+  },
+  "classic_2026_11_27": {
+    "scheduled_contest_id": 12400,
+    "scheduled_time": "21:00",
+    "modality_assessment": "SCHEDULE_INFERRED_CLASSIC_NOT_MASK_CONFIRMED",
+    "result_published": false,
+    "numbers": null,
+    "reason": "The official home index lists 27-Nov-2026 at 21:00 as Chispazo draw 12400; the product schedule maps 21:00 to Chispazo Clásico. No Classic result or 27-Nov mask was visible at this observation."
+  },
+  "official_schedule": {
+    "de_las_tres": "15:00",
+    "clasico": "21:00"
+  },
+  "mask_index": {
+    "latest_visible_date": "2026-11-26",
+    "november_27_mask_visible": false
+  },
+  "separate_homepage_card": {
+    "number": 4297,
+    "attribution": "NOT_ATTRIBUTED_TO_CHISPAZO"
+  },
+  "source_bytes": {
+    "html_sha256": "NOT_CAPTURED",
+    "mask_pdf_sha256": "NOT_CAPTURED"
+  },
+  "primary_physical_evidence": {
+    "signed_acta": false,
+    "cs11": false,
+    "weighing_strip": false,
+    "sphere_measurements": false,
+    "cs02": false,
+    "calibration_certificate": false,
+    "signed_participation_file": false,
+    "original_video": false,
+    "independent_custody": false,
+    "rfc3161_token": false,
+    "independent_ledger_proof": false
+  },
+  "canonical_history_append": false,
+  "v294_frozen": true,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
