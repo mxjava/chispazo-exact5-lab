@@ -391,11 +391,20 @@ class SyntheticTrustProvider:
                 self.snapshot.trusted_time_latest_utc,
             )
 
-        next_watermark = _validated_external_evidence_watermark(
-            self.snapshot,
-            expected_external_evidence_watermark_sha256,
-            external_evidence_advance,
-        )
+        try:
+            next_watermark = _validated_external_evidence_watermark(
+                self.snapshot,
+                expected_external_evidence_watermark_sha256,
+                external_evidence_advance,
+            )
+        except TrustStateRejected:
+            return DeploymentTrustCommit(
+                TrustStateOutcome.CONFLICT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
         policy_advanced = policy_sequence > self.snapshot.accepted_policy_sequence
         time_advanced = (
             self.snapshot.trusted_time_latest_utc is None
@@ -1217,6 +1226,9 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             expected_state_generation=self.snapshot.state_generation,
             expected_trust_configuration_sha256=_trust_configuration_sha256(self.snapshot),
             expected_clock_sample_sha256=_clock_sample_sha256(self.snapshot),
+            operation_id_sha256=_deployment_trust_operation_id_sha256(
+                policy_bytes, receipt_bytes, None
+            ),
             policy_domain=CLASSIC_POLICY_DOMAIN,
             root_key_id=self.snapshot.root_key_id,
             root_generation=self.snapshot.root_generation,
