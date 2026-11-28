@@ -24,6 +24,7 @@ class NestedSignatureBundleTimestampV1Tests(unittest.TestCase):
         payload = canonical_nested_signature_bundle_timestamp_payload_v1(
             ledger["manifest_bytes"],
             data["signed_policy_envelope_bytes"],
+            data["artifact_bytes_by_sha256"],
             data["signature_bytes_by_sha256"],
         )
         token, tsa_root = _token(
@@ -83,10 +84,20 @@ class NestedSignatureBundleTimestampV1Tests(unittest.TestCase):
             )
 
         extra = dict(values["signature_bytes_by_sha256"])
-        extra["f" * 64] = b"x" * 64
+        extra[hashlib.sha256(b"x" * 64).hexdigest()] = b"x" * 64
         with self.assertRaisesRegex(ValueError, "must exactly match manifest claims"):
             verify_nested_signature_bundle_timestamp_v1(
                 **{**values, "signature_bytes_by_sha256": extra}
+            )
+
+    def test_artifact_substitution_is_rejected_before_timestamp_acceptance(self):
+        _, _, _, values = self._case()
+        changed = dict(values["artifact_bytes_by_sha256"])
+        digest = next(iter(changed))
+        changed[digest] = changed[digest] + b"tampered"
+        with self.assertRaisesRegex(ValueError, "digest does not bind exact bytes"):
+            verify_nested_signature_bundle_timestamp_v1(
+                **{**values, "artifact_bytes_by_sha256": changed}
             )
 
     def test_signature_substitution_is_rejected_before_timestamp_acceptance(self):
