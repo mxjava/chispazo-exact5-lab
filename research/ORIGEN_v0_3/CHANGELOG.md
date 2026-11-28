@@ -2,6 +2,7 @@
 - Added a provider-bound adapter that reads one deployment snapshot, physical trust context and three-nonce challenge, then derives log/policy/TSA pins, old checkpoint watermark, nonce and earliest verification time from those reads.
 - Rejects context generation/digest drift, watermark/log/registry identity mismatch, missing nested-bundle TSA pin, missing third nonce, expired challenge and missing independently provisioned genesis watermark before transition verification.
 - Enforces monotonic trusted-time against the provider's persisted time watermark and rejects a clock uncertainty interval that regresses.
+- Keeps synthetic policy, ledger and provider snapshots on one shared signing-key fixture so the test cannot accidentally combine independent ephemeral roots.
 - Adds synthetic tests for successful binding, adversarial substitutions, time rollback and provider outage; the adapter never calls CAS and all successful results remain BLOCKED_PROVENANCE.
 - This is not the full V2 custody/ledger/witness CAS composition. The provider must independently re-verify exact evidence and atomically consume all three nonces. Institutional provisioning, witness quorum, revocation and physical custody remain unauthenticated.
 
