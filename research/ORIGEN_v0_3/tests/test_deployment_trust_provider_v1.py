@@ -1869,5 +1869,55 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
 
 
 
+    def test_retired_operation_receipt_keyring_rejects_active_key_id_alias(self):
+        retired = OperationReceiptVerificationKeyV1(
+            key_id=self.provider.snapshot.operation_receipt_key_id,
+            public_key_bytes=bytes.fromhex("33" * 32),
+            valid_from_utc=NOW - timedelta(days=365),
+            valid_until_utc=NOW + timedelta(days=365),
+            revoked=False,
+        )
+        self.provider.snapshot = replace(
+            self.provider.snapshot,
+            operation_receipt_retired_keys=(retired,),
+        )
+        with self.assertRaisesRegex(ValueError, "key IDs must be unique"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_retired_operation_receipt_keyring_rejects_public_key_alias(self):
+        retired = OperationReceiptVerificationKeyV1(
+            key_id="synthetic-alias-key",
+            public_key_bytes=self.provider.snapshot.operation_receipt_public_key_bytes,
+            valid_from_utc=NOW - timedelta(days=365),
+            valid_until_utc=NOW + timedelta(days=365),
+            revoked=False,
+        )
+        self.provider.snapshot = replace(
+            self.provider.snapshot,
+            operation_receipt_retired_keys=(retired,),
+        )
+        with self.assertRaisesRegex(ValueError, "public keys must be unique"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+    def test_retired_operation_receipt_key_validity_requires_canonical_utc(self):
+        retired = OperationReceiptVerificationKeyV1(
+            key_id="synthetic-offset-key",
+            public_key_bytes=bytes.fromhex("44" * 32),
+            valid_from_utc=NOW.astimezone(timezone(timedelta(hours=0))),
+            valid_until_utc=NOW + timedelta(days=365),
+            revoked=False,
+        )
+        self.provider.snapshot = replace(
+            self.provider.snapshot,
+            operation_receipt_retired_keys=(retired,),
+        )
+        with self.assertRaisesRegex(ValueError, "exact UTC datetime"):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, 0)
+
+
+
 if __name__ == "__main__":
     unittest.main()
