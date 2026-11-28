@@ -1,17 +1,26 @@
-# Official Chispazo status-only refresh — 27-Nov-2026 17:53 (Mexico City)
+# Official Chispazo status-only refresh — 27-Nov-2026 18:02 (Mexico City)
 
 ## Official public observations
 
-The dedicated official Chispazo results page displays contest **12399**, dated **27-Nov-2026**, with winning combination **10 14 15 17 24**. The result page does not print the modality beside the result.
+The dedicated official Chispazo results page displays contest **12399**, dated **27-Nov-2026**, with winning combination **10 14 15 17 24**. The dedicated result page does not print the modality beside the result.
 
-The official home index lists Chispazo contest **12399 at 15:00**. A separate home-page card shows contest **4297 at 21:00**, but the available page does not establish that card as Chispazo. The official Chispazo product page independently confirms the daily schedule: **De las Tres at 15:00** and **Clásico at 21:00**.
+The directly opened official home index currently lists **27-Nov-2026 at 21:00, Sorteo 12400**, in the **“Ilumina tu suerte”** section. The same page separately lists a 21:00 card numbered **4297** under the **$258,500,000** prize section; that separate card is not attributed to Chispazo. The official Chispazo product page confirms the daily schedule: **De las Tres at 15:00** and **Clásico at 21:00**.
 
 Accordingly:
 
-- **12399** is classified as De las Tres by cross-source schedule inference, not by a 27-Nov mask.
-- The **27-Nov Classic draw is scheduled for 21:00**, but its contest ID is **not established** by the sources captured here.
-- The separate home-page card **4297** is not attributed to Chispazo.
-- The earlier **12400** attribution is withdrawn. The available home-index evidence does not support it; no Classic ID should be inferred from sequence alone.
+- **12399** is classified as De las Tres by schedule inference from the daily Chispazo sequence and the official 15:00/21:00 modality schedule; it is not mask-confirmed for 27-Nov.
+- **12400** is the scheduled **Chispazo Clásico 21:00** contest ID directly listed by the current official home index. No Classic result is asserted yet.
+- The separate home-page card **4297** is not Chispazo and is not used as the Classic ID.
+
+## Source-version discrepancy and correction history
+
+An earlier search-result representation of the home index did not show the 12400 card and showed a different set/order of 21:00 cards. On that basis, an intermediate overlay withdrew the 12400 attribution. A subsequent direct open of the current official home page shows the relevant section explicitly:
+
+- “Ilumina tu suerte”
+- 27-Nov-2026 | 21:00 h.
+- Sorteo | 12400
+
+The separate $258,500,000 section lists 4297. Therefore the earlier withdrawal is itself withdrawn. The current classification is based on the directly opened official page, not the inconsistent search-result snippet. The discrepancy is retained here rather than silently rewriting the audit trail.
 
 ## Mask and primary-evidence boundary
 
@@ -24,14 +33,10 @@ This refresh is public status/schedule evidence only. It does not authenticate t
 ## Official sources
 
 - Results: https://www.loterianacional.gob.mx/Chispazo/Resultados
-- Home index: https://www.loterianacional.gob.mx/
+- Home index: https://www.loterianacional.gob.mx/home/index/
 - Chispazo product schedule: https://www.loterianacional.gob.mx/Chispazo/Chispazo
 - Mascarillas index: https://www.loterianacional.gob.mx/Mascarillas/Mascarillas
 - Prior-day official mask: https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226
-
-## Correction record
-
-The previous overlay classified contest 12400 as the 27-Nov Classic ID based on the home index. That claim is withdrawn because the current official home-index capture shows a separate 21:00 card numbered 4297, which cannot be attributed to Chispazo. The product schedule establishes the Classic time but not its contest ID. The correction is recorded here rather than silently retaining the unsupported number.
 
 ## Safety
 
