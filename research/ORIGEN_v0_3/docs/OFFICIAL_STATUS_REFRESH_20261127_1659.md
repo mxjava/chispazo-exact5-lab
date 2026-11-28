@@ -1,14 +1,14 @@
-# Official Chispazo status-only refresh — 27-Nov-2026 18:02 (Mexico City)
+# Official Chispazo status-only refresh — 27-Nov-2026 18:07 (Mexico City)
 
 ## Official public observations
 
-The dedicated official Chispazo results page displays contest **12399**, dated **27-Nov-2026**, with winning combination **10 14 15 17 24**. The dedicated result page does not print the modality beside the result.
+The directly opened main official Chispazo results page displays contest **12399**, dated **27-Nov-2026**, winning combination **10 14 15 17 24**, one first-place winner and 33,696 total winners. The dedicated result page does not print the modality beside the result.
 
-The directly opened official home index currently lists **27-Nov-2026 at 21:00, Sorteo 12400**, in the **“Ilumina tu suerte”** section. The same page separately lists a 21:00 card numbered **4297** under the **$258,500,000** prize section; that separate card is not attributed to Chispazo. The official Chispazo product page confirms the daily schedule: **De las Tres at 15:00** and **Clásico at 21:00**.
+The directly opened official home index lists **27-Nov-2026 at 21:00, Sorteo 12400**, in the **“Ilumina tu suerte”** section. The same page separately lists a 21:00 card numbered **4297** under the **$258,500,000** prize section; that separate card is not attributed to Chispazo. The official Chispazo product page confirms the daily schedule: **De las Tres at 15:00** and **Clásico at 21:00**.
 
 Accordingly:
 
-- **12399** is classified as De las Tres by schedule inference from the daily Chispazo sequence and the official 15:00/21:00 modality schedule; it is not mask-confirmed for 27-Nov.
+- **12399** is classified as De las Tres by schedule inference from the daily Chispazo sequence and official 15:00/21:00 modality schedule; it is not mask-confirmed for 27-Nov.
 - **12400** is the scheduled **Chispazo Clásico 21:00** contest ID directly listed by the current official home index. No Classic result is asserted yet.
 - The separate home-page card **4297** is not Chispazo and is not used as the Classic ID.
 
@@ -22,6 +22,8 @@ An earlier search-result representation of the home index did not show the 12400
 
 The separate $258,500,000 section lists 4297. Therefore the earlier withdrawal is itself withdrawn. The current classification is based on the directly opened official page, not the inconsistent search-result snippet. The discrepancy is retained here rather than silently rewriting the audit trail.
 
+A second source-version discrepancy was observed: the main official results page at https://www.loterianacional.gob.mx/Chispazo/Resultados displays 12399 / 27-Nov-2026, while the directly opened https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados mirror still displays 12398 / 26-Nov-2026. The mirror is stale in this observation and is not used as the current result source. The main official page is the basis for the 12399 result record.
+
 ## Mask and primary-evidence boundary
 
 The official Mascarillas index still shows **26-Nov-2026** as its latest visible publication. No 27-Nov mask was listed at capture.
@@ -32,9 +34,10 @@ This refresh is public status/schedule evidence only. It does not authenticate t
 
 ## Official sources
 
-- Results: https://www.loterianacional.gob.mx/Chispazo/Resultados
-- Home index: https://www.loterianacional.gob.mx/home/index/
+- Main results: https://www.loterianacional.gob.mx/Chispazo/Resultados
+- Official home index: https://www.loterianacional.gob.mx/home/index/
 - Chispazo product schedule: https://www.loterianacional.gob.mx/Chispazo/Chispazo
+- Commercializadores mirror (stale at capture): https://comercializadores.loterianacional.gob.mx/Chispazo/Resultados
 - Mascarillas index: https://www.loterianacional.gob.mx/Mascarillas/Mascarillas
 - Prior-day official mask: https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-26.pdf?v=26112026215226
 
