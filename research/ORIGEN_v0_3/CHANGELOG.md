@@ -1,3 +1,9 @@
+## Policy-bound independent provenance gate composition (2026-11-28)
+- Added a research-only composition that derives VerifiedTrustPolicy from original signed policy bytes, verifies the receipt root attestation, then calls the existing independent provenance gate with the exact same receipt bytes.
+- The independent gate is required to return exactly BLOCKED_PROVENANCE; unexpected status/type fails closed. Policy or receipt verification failures prevent the independent gate from being called.
+- Added synthetic adversarial tests for call ordering, exact-byte identity, policy/receipt/root tampering, unexpected gate output, backend exceptions and caller-supplied VerifiedTrustPolicy substitution.
+- This does not provision the root pin, sequence floor or clock; does not implement a durable anti-rollback store or independent evidence provider; and does not verify nested signatures, RFC 3161, ledger/witnesses or custody. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
 ## Acta role separation and official 13:10 status refresh (2026-11-24)
 - Physical manifest regression: all four required DRAW-ACTA roles could reuse one subject_id; parser now requires distinct declared subjects for the General Directorate, Sales Operations, IT and SEGOB roles.
 - Test commit: `3e1384b76db02319c44f9de88baf28ed04197726`; implementation commit: `d8c7b0e8e5ed433f25549aecddb374424d64d41a`.
