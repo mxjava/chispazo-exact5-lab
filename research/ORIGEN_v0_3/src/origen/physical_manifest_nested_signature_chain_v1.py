@@ -33,6 +33,8 @@ from .trust_verifier_v1 import TrustedIssuerKey
 
 SIGNATURE_PAYLOAD_DOMAIN = "origen.physical-evidence-signature.v1"
 ROLE_AUTHORIZATION_UNVERIFIED = "UNVERIFIED_CLAIM_ONLY"
+KEY_VALIDITY_AT_VERIFICATION_ONLY = "VALID_AT_VERIFICATION_ONLY"
+KEY_AUTHORIZATION_AT_CREATION_UNPROVEN = "UNPROVEN_NO_TRUSTED_SIGNING_TIME"
 SIGNATURE_CHAIN_STATUS = (
     "RECEIPT_MANIFEST_AND_NESTED_SIGNATURES_VERIFIED_NOT_AUTHENTICATED"
 )
@@ -60,6 +62,8 @@ class NestedSignatureVerification:
     key_id: str
     signature_sha256: str
     signature_verified: bool
+    key_validity_at_verification_status: str
+    key_authorization_at_creation_status: str
     role_authorization_status: str
 
 
@@ -303,6 +307,8 @@ def verify_independent_provenance_with_nested_signatures(
             key_id=claim.key_id,
             signature_sha256=claim.signature_sha256,
             signature_verified=True,
+            key_validity_at_verification_status=KEY_VALIDITY_AT_VERIFICATION_ONLY,
+            key_authorization_at_creation_status=KEY_AUTHORIZATION_AT_CREATION_UNPROVEN,
             role_authorization_status=ROLE_AUTHORIZATION_UNVERIFIED,
         ))
 
