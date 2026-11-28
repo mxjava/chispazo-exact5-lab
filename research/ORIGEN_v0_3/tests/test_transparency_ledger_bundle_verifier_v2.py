@@ -40,8 +40,8 @@ PRE_CLOSE = __import__("datetime").datetime(
 )
 
 
-def build_v2_case():
-    data, old_ledger, _, _ = _build_case()
+def build_v2_case(base_case=None):
+    data, old_ledger, _, _ = _build_case() if base_case is None else base_case
     raw_manifest_before_proof = old_ledger["manifest_bytes"]
     bundle_bytes = canonical_nested_signature_bundle_timestamp_payload_v1(
         raw_manifest_before_proof,

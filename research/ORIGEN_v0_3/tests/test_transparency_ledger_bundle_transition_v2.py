@@ -19,9 +19,10 @@ from test_transparency_checkpoint_consistency_v1 import (
 from test_transparency_ledger_bundle_verifier_v2 import build_v2_case, canonical, sha
 
 
-def build_transition_case():
-    values, entry = build_v2_case()
-    _, previous_ledger, _, _ = _build_case()
+def build_transition_case_with_provider():
+    base_case = _build_case()
+    data, previous_ledger, _, _ = base_case
+    values, entry = build_v2_case(base_case=base_case)
     leaves = list(previous_ledger["leaves"])
     leaves[1] = canonical(entry)
     log_private = previous_ledger["log_private"]
@@ -65,8 +66,12 @@ def build_transition_case():
         "expected_old_root_sha256": tree_hash(leaves[:1]).hex(),
         "expected_old_checkpoint_sha256": sha(old_checkpoint_bytes),
     })
-    return values
+    return values, data, previous_ledger
 
+
+def build_transition_case():
+    values, _, _ = build_transition_case_with_provider()
+    return values
 
 class TransparencyLedgerBundleTransitionV2Tests(unittest.TestCase):
     def test_v2_inclusion_and_consistency_bind_same_new_checkpoint_and_old_watermark(self):
