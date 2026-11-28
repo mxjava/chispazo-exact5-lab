@@ -20,6 +20,7 @@ from origen.deployment_trust_provider_v1 import (
     DeploymentTrustSnapshot,
     ExternalEvidenceAdvanceV1,
     ExternalEvidenceWatermarkV1,
+    OperationReceiptVerificationKeyV1,
     TrustProviderUnavailable,
     TrustStateOutcome,
     TrustStateRejected,
@@ -1733,6 +1734,139 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
             self.inspect()
         self.assertIsNotNone(raised.exception.operation_id_sha256)
         self.assertEqual(self.provider.snapshot.state_generation, 8)
+
+
+    def test_authenticated_operation_receipt_replays_after_provider_key_rotation(self):
+        first = self.inspect()
+        operation_id = first.operation_id_sha256
+        original_record = self.provider.operation_receipt_records[operation_id]
+        generation_after_commit = self.provider.snapshot.state_generation
+        old_key_id = self.provider.snapshot.operation_receipt_key_id
+        old_public_key = self.provider.snapshot.operation_receipt_public_key_bytes
+
+        rotated_private = Ed25519PrivateKey.generate()
+        rotated_public = rotated_private.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        retired = OperationReceiptVerificationKeyV1(
+            key_id=old_key_id,
+            public_key_bytes=old_public_key,
+            valid_from_utc=NOW - timedelta(days=365),
+            valid_until_utc=NOW + timedelta(days=365),
+            revoked=False,
+        )
+        self.provider.snapshot = replace(
+            self.provider.snapshot,
+            state_generation=generation_after_commit + 1,
+            operation_receipt_key_id="synthetic-operation-receipt-key-2",
+            operation_receipt_public_key_bytes=rotated_public,
+            operation_receipt_retired_keys=(retired,),
+        )
+
+        commits_before_replay = self.provider.commit_count
+        result = self.inspect()
+
+        self.assertTrue(result.operation_replayed)
+        self.assertEqual(result.operation_id_sha256, operation_id)
+        self.assertEqual(
+            result.operation_receipt_sha256,
+            hashlib.sha256(original_record).hexdigest(),
+        )
+        self.assertEqual(result.state_generation_after, generation_after_commit)
+        self.assertEqual(self.provider.commit_count, commits_before_replay)
+        self.assertEqual(self.provider.snapshot.state_generation, generation_after_commit + 1)
+
+    def test_retired_operation_receipt_key_must_cover_original_time_window(self):
+        first = self.inspect()
+        old_key_id = self.provider.snapshot.operation_receipt_key_id
+        old_public_key = self.provider.snapshot.operation_receipt_public_key_bytes
+        rotated_private = Ed25519PrivateKey.generate()
+        rotated_public = rotated_private.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        retired = OperationReceiptVerificationKeyV1(
+            key_id=old_key_id,
+            public_key_bytes=old_public_key,
+            valid_from_utc=NOW - timedelta(days=365),
+            valid_until_utc=NOW - timedelta(days=1),
+            revoked=False,
+        )
+        self.provider.snapshot = replace(
+            self.provider.snapshot,
+            state_generation=self.provider.snapshot.state_generation + 1,
+            operation_receipt_key_id="synthetic-operation-receipt-key-2",
+            operation_receipt_public_key_bytes=rotated_public,
+            operation_receipt_retired_keys=(retired,),
+        )
+        commits_before_replay = self.provider.commit_count
+        with self.assertRaisesRegex(
+            TrustProviderUnavailable,
+            "invalid or nonmatching signed operation receipt",
+        ):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, commits_before_replay)
+
+    def test_revoked_retired_operation_receipt_key_is_not_used_for_replay(self):
+        first = self.inspect()
+        old_key_id = self.provider.snapshot.operation_receipt_key_id
+        old_public_key = self.provider.snapshot.operation_receipt_public_key_bytes
+        rotated_private = Ed25519PrivateKey.generate()
+        rotated_public = rotated_private.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        retired = OperationReceiptVerificationKeyV1(
+            key_id=old_key_id,
+            public_key_bytes=old_public_key,
+            valid_from_utc=NOW - timedelta(days=365),
+            valid_until_utc=NOW + timedelta(days=365),
+            revoked=True,
+        )
+        self.provider.snapshot = replace(
+            self.provider.snapshot,
+            state_generation=self.provider.snapshot.state_generation + 1,
+            operation_receipt_key_id="synthetic-operation-receipt-key-2",
+            operation_receipt_public_key_bytes=rotated_public,
+            operation_receipt_retired_keys=(retired,),
+        )
+        commits_before_replay = self.provider.commit_count
+        with self.assertRaisesRegex(
+            TrustProviderUnavailable,
+            "invalid or nonmatching signed operation receipt",
+        ):
+            self.inspect()
+        self.assertEqual(self.provider.commit_count, commits_before_replay)
+
+    def test_retired_operation_receipt_key_fingerprint_is_bound_to_trust_configuration(self):
+        old_key = OperationReceiptVerificationKeyV1(
+            key_id="synthetic-retired-key",
+            public_key_bytes=bytes.fromhex("11" * 32),
+            valid_from_utc=NOW - timedelta(days=365),
+            valid_until_utc=NOW + timedelta(days=365),
+            revoked=False,
+        )
+        first = replace(
+            self.snapshot,
+            operation_receipt_retired_keys=(old_key,),
+        )
+        replacement = OperationReceiptVerificationKeyV1(
+            key_id="synthetic-retired-key",
+            public_key_bytes=bytes.fromhex("22" * 32),
+            valid_from_utc=NOW - timedelta(days=365),
+            valid_until_utc=NOW + timedelta(days=365),
+            revoked=False,
+        )
+        second = replace(
+            self.snapshot,
+            operation_receipt_retired_keys=(replacement,),
+        )
+        self.assertNotEqual(
+            _trust_configuration_sha256(first),
+            _trust_configuration_sha256(second),
+        )
+
 
 
 if __name__ == "__main__":
