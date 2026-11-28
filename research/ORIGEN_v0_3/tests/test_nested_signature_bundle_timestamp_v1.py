@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import unittest
 from datetime import datetime, timezone
 
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.nested_signature_bundle_timestamp_v1 import (
+    canonical_manifest_content_bytes_v1,
     canonical_nested_signature_bundle_timestamp_payload_v1,
     verify_nested_signature_bundle_timestamp_v1,
 )
@@ -55,6 +57,10 @@ class NestedSignatureBundleTimestampV1Tests(unittest.TestCase):
         result = verify_nested_signature_bundle_timestamp_v1(**values)
 
         self.assertEqual(result.manifest_sha256, hashlib.sha256(ledger["manifest_bytes"]).hexdigest())
+        self.assertEqual(
+            result.manifest_commitment_sha256,
+            hashlib.sha256(canonical_manifest_content_bytes_v1(ledger["manifest_bytes"])).hexdigest(),
+        )
         self.assertEqual(result.policy_envelope_sha256, hashlib.sha256(data["signed_policy_envelope_bytes"]).hexdigest())
         self.assertEqual(result.bundle_sha256, hashlib.sha256(payload).hexdigest())
         self.assertEqual(result.timestamp.message_imprint_hex, hashlib.sha256(payload).hexdigest())
@@ -73,6 +79,29 @@ class NestedSignatureBundleTimestampV1Tests(unittest.TestCase):
         ))
         self.assertEqual(result.ledger_binding_status, "NOT_BOUND_TO_LEDGER_ENTRY")
         self.assertIs(result.provenance_status, ProvenanceStatus.BLOCKED_PROVENANCE)
+
+    def test_ledger_inclusion_proof_digest_is_excluded_to_prevent_sidecar_cycle(self):
+        data, ledger, payload, _ = self._case()
+        document = json.loads(ledger["manifest_bytes"].decode("utf-8"))
+        document["ledger_anchor"]["inclusion_proof_sha256"] = "f" * 64
+        alternate_manifest = json.dumps(
+            document,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        ).encode("ascii")
+        self.assertNotEqual(
+            hashlib.sha256(alternate_manifest).hexdigest(),
+            hashlib.sha256(ledger["manifest_bytes"]).hexdigest(),
+        )
+        alternate_payload = canonical_nested_signature_bundle_timestamp_payload_v1(
+            alternate_manifest,
+            data["signed_policy_envelope_bytes"],
+            data["artifact_bytes_by_sha256"],
+            data["signature_bytes_by_sha256"],
+        )
+        self.assertEqual(payload, alternate_payload)
 
     def test_missing_or_extra_signature_bytes_are_rejected(self):
         _, _, _, values = self._case()
