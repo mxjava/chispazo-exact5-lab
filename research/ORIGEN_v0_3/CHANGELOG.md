@@ -1,3 +1,9 @@
+## Signed policy/receipt chain clock snapshot (2026-11-28)
+- Reproduced a trust-boundary defect where the policy-envelope verifier and receipt-attestation verifier independently called a caller-controlled `tzinfo.utcoffset()`, allowing a stateful timezone to supply different UTC instants within one chain.
+- Added a composition-boundary normalization that samples the caller timezone exactly once and passes the same immutable UTC datetime to both verifiers.
+- Added a synthetic adversarial regression using a timezone that changes its offset on each call; the caller timezone must be sampled once and the verified receipt time must equal that single normalized instant.
+- Root pin, key ID, sequence floor and clock source remain caller/deployment inputs; this does not authenticate clock provisioning or enable independent provenance. Production remains BLOCKED / RESEARCH_ONLY_NO_EDGE.
+
 ## Policy-bound independent provenance gate composition (2026-11-28)
 - Added a research-only composition that derives VerifiedTrustPolicy from original signed policy bytes, verifies the receipt root attestation, then calls the existing independent provenance gate with the exact same receipt bytes.
 - The independent gate is required to return exactly BLOCKED_PROVENANCE; unexpected status/type fails closed. Policy or receipt verification failures prevent the independent gate from being called.
