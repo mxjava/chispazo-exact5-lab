@@ -1,0 +1,52 @@
+{
+  "schema": "origen.official-status-only.v1",
+  "captured_at_local": "2026-11-27T23:55:41-06:00",
+  "status_only": true,
+  "supersedes_observation": "2026-11-27_1807_official_status_only.json",
+  "observations": [
+    {
+      "source": "https://www.loterianacional.gob.mx/Chispazo/Resultados",
+      "observation": "The official results page directly displays contest 12400 dated 27/11/2026 with winning combination 03 12 15 17 18, one first-place winner, 285 second-place winners, 6,741 third-place winners and 45,998 fourth-place winners. It also displays contest 12399 with 10 14 15 17 24. The dedicated results page does not print modality labels beside the two results.",
+      "classification": "OFFICIAL_RESULT_PAGE_PUBLISHED_12399_AND_12400_MODALITY_NOT_PRINTED"
+    },
+    {
+      "source": "https://www.loterianacional.gob.mx/Mascarillas/Mascarillas",
+      "observation": "The official Mascarillas index now lists RESULTADOS 2026-11-27 as its latest visible daily mask.",
+      "classification": "MASK_INDEX_LATEST_VISIBLE_2026_11_27"
+    },
+    {
+      "source": "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/Mascarillas/resultados%202026-11-27.pdf?v=27112026220824",
+      "observation": "The one-page official 27-Nov-2026 mask PDF was opened and visually inspected. Its right-hand Chispazo panel explicitly labels contest 12399 'Chispazo de las Tres' with 10 14 15 17 24 and contest 12400 'Chispazo Clásico' with 03 12 15 17 18. This visually confirms both modality assignments for 27-Nov. The separate Melate/Revancha/Revancha card 4297 appears in a different panel and is not a Chispazo contest.",
+      "classification": "OFFICIAL_MASK_VISUALLY_CONFIRMS_12399_DE_LAS_TRES_AND_12400_CLASSIC"
+    },
+    {
+      "source": "https://www.loterianacional.gob.mx/Chispazo/Chispazo",
+      "observation": "The official product schedule continues to state De las Tres at 15:00 and Clásico at 21:00.",
+      "classification": "OFFICIAL_PRODUCT_MODALITY_SCHEDULE"
+    }
+  ],
+  "draw_classification": {
+    "12399": "DE_LAS_TRES_15_00_MASK_VISUALLY_CONFIRMED",
+    "12400": "CLASSIC_21_00_MASK_VISUALLY_CONFIRMED",
+    "4297": "MELATE_REvancha_PANEL_NOT_CHISPAZO"
+  },
+  "source_bytes": {
+    "main_official_html_original_bytes": "NOT_CAPTURED",
+    "official_mask_pdf_original_bytes": "NOT_CAPTURED",
+    "sha256": "NOT_COMPUTED",
+    "official_mask_pdf_browser_rendering": "VISUALLY_INSPECTED",
+    "mask_pdf_version_query": "v=27112026220824"
+  },
+  "physical_primary_evidence": {
+    "signed_acta": "NOT_ACQUIRED",
+    "CS_11": "NOT_ACQUIRED",
+    "weighing_strip": "NOT_ACQUIRED",
+    "CS_02": "NOT_ACQUIRED",
+    "calibration_certificate": "NOT_ACQUIRED",
+    "signed_participation_file": "NOT_ACQUIRED",
+    "original_video": "NOT_ACQUIRED",
+    "independent_custody": "NOT_ACQUIRED"
+  },
+  "canonical_history_append": false,
+  "production_status": "BLOCKED / RESEARCH_ONLY_NO_EDGE"
+}
