@@ -1203,7 +1203,35 @@ def _require_v2_external_evidence_nonce_binding(
         raise TrustStateRejected(
             "V2 external evidence advance requires the provider-owned physical trust context"
         )
-    context = physical_trust_context
+    supplied_context = physical_trust_context
+    context = PhysicalTrustContextV1(
+        policy_tsa_root_certificate_der=supplied_context.policy_tsa_root_certificate_der,
+        policy_tsa_root_sha256=supplied_context.policy_tsa_root_sha256,
+        policy_tsa_policy_oid=supplied_context.policy_tsa_policy_oid,
+        policy_root_public_key_bytes=supplied_context.policy_root_public_key_bytes,
+        policy_root_key_id=supplied_context.policy_root_key_id,
+        minimum_policy_sequence=supplied_context.minimum_policy_sequence,
+        custody_tsa_root_certificate_der=supplied_context.custody_tsa_root_certificate_der,
+        custody_tsa_root_sha256=supplied_context.custody_tsa_root_sha256,
+        log_public_key_bytes=supplied_context.log_public_key_bytes,
+        log_id=supplied_context.log_id,
+        log_key_id=supplied_context.log_key_id,
+        registry_root_public_key_bytes=supplied_context.registry_root_public_key_bytes,
+        registry_root_key_id=supplied_context.registry_root_key_id,
+        registry_id=supplied_context.registry_id,
+        minimum_registry_sequence=supplied_context.minimum_registry_sequence,
+        minimum_log_tree_size=supplied_context.minimum_log_tree_size,
+        context_generation=supplied_context.context_generation,
+        nested_signature_bundle_tsa_root_certificate_der=(
+            supplied_context.nested_signature_bundle_tsa_root_certificate_der
+        ),
+        nested_signature_bundle_tsa_root_sha256=(
+            supplied_context.nested_signature_bundle_tsa_root_sha256
+        ),
+        nested_signature_bundle_tsa_policy_oid=(
+            supplied_context.nested_signature_bundle_tsa_policy_oid
+        ),
+    )
     if (
         context.nested_signature_bundle_tsa_root_certificate_der is None
         or context.nested_signature_bundle_tsa_root_sha256 is None
@@ -1220,6 +1248,14 @@ def _require_v2_external_evidence_nonce_binding(
     ):
         raise TrustStateRejected(
             "V2 physical trust context does not match the exact provider snapshot generation and digest"
+        )
+    if (
+        context.policy_root_public_key_bytes != provider_snapshot.root_public_key_bytes
+        or context.policy_root_key_id != provider_snapshot.root_key_id
+        or context.minimum_policy_sequence != provider_snapshot.minimum_policy_sequence
+    ):
+        raise TrustStateRejected(
+            "V2 physical trust context policy root/key ID/bootstrap floor differs from the deployment snapshot"
         )
     challenge = copy_timestamp_nonce_challenge(timestamp_nonce_challenge)
     if (
