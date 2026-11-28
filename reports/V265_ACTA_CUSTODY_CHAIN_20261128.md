@@ -3,7 +3,7 @@
 
 ## Avance nuevo
 
-Se amplió el cruce de SGVO-PRO-05 rev. 39 hacia el expediente posterior al sorteo: contenido obligatorio del Acta, anexos específicos de Chispazo, entrega semanal en DVD, procedimiento de discrepancias SICAL/Selección de Ganadores, incidencias, firma diferida, escaneo al OIC, CS-18 opcional y CS-12.
+Se amplió el cruce de SGVO-PRO-05 rev. 39 hacia el expediente posterior al sorteo: contenido obligatorio del Acta, anexos específicos de Chispazo, entrega semanal en DVD, procedimiento de discrepancias SICAL/Selección de Ganadores, incidencias, firma diferida, escaneo al OIC, CS-18 opcional y CS-12. La tabla del DVD identifica cuatro códigos Chispazo: CLSBR140, CLIER195, CLSKR170 y CLSAR110; se añadieron a la solicitud de originales.
 
 La firma del Acta puede diferirse hasta cinco días hábiles bajo una excepción limitada; los anexos digitales se entregan semanalmente; CS-18 es potestativo. Por ello, timestamps de firma/entrega no son timestamps del sorteo ni datos pre-cierre.
 
