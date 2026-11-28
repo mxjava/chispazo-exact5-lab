@@ -174,7 +174,7 @@ class SyntheticTrustProvider:
             "time_window_end_utc": stamp(latest),
             "provider_key_id": self.snapshot.operation_receipt_key_id,
         }
-        message = b"ORIGEN_DEPLOYMENT_TRUST_OPERATION_RECEIPT_V1\\x00" + _canonical(document)
+        message = b"ORIGEN_DEPLOYMENT_TRUST_OPERATION_RECEIPT_V1\x00" + _canonical(document)
         document["signature_b64"] = base64.b64encode(
             self.operation_receipt_private_key.sign(message)
         ).decode("ascii")
@@ -1632,9 +1632,66 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         self.provider.compare_and_advance = original
         result = self.inspect()
         self.assertEqual(result.operation_id_sha256, operation_id)
-        self.assertIs(result.state_outcome, TrustStateOutcome.IDEMPOTENT)
+        self.assertTrue(result.operation_replayed)
+        self.assertEqual(
+            result.operation_receipt_sha256,
+            hashlib.sha256(self.provider.operation_receipt_records[operation_id]).hexdigest(),
+        )
+        self.assertIs(result.state_outcome, TrustStateOutcome.ADVANCED)
         self.assertEqual(self.provider.snapshot.state_generation, generation_after_first)
-        self.assertEqual(self.provider.commit_count, 2)
+        self.assertEqual(self.provider.commit_count, 1)
+
+    def test_authenticated_operation_receipt_recovers_after_policy_floor_rotation(self):
+        first = self.inspect()
+        operation_id = first.operation_id_sha256
+        generation_after_commit = self.provider.snapshot.state_generation
+        original_record = self.provider.operation_receipt_records[operation_id]
+        self.assertFalse(first.operation_replayed)
+
+        # Simulate a later authorized policy-floor transition. The old policy
+        # bytes are now below the live floor, but the provider retains its
+        # signed durable record for the exact original operation.
+        self.provider.snapshot = replace(
+            self.provider.snapshot,
+            state_generation=generation_after_commit + 1,
+            minimum_policy_sequence=POLICY_SEQUENCE + 1,
+            accepted_policy_sequence=POLICY_SEQUENCE + 1,
+            accepted_policy_envelope_sha256="d" * 64,
+        )
+        commits_before_replay = self.provider.commit_count
+        result = self.inspect()
+
+        self.assertTrue(result.operation_replayed)
+        self.assertEqual(result.operation_id_sha256, operation_id)
+        self.assertEqual(result.operation_receipt_sha256, hashlib.sha256(original_record).hexdigest())
+        self.assertEqual(result.policy_sequence, POLICY_SEQUENCE)
+        self.assertEqual(result.state_generation_after, generation_after_commit)
+        self.assertIs(result.state_outcome, TrustStateOutcome.ADVANCED)
+        self.assertEqual(self.provider.commit_count, commits_before_replay)
+        self.assertEqual(self.provider.snapshot.state_generation, generation_after_commit + 1)
+
+    def test_invalid_signed_operation_receipt_fails_closed_without_cas_fallback(self):
+        first = self.inspect()
+        operation_id = first.operation_id_sha256
+        record = self.provider.operation_receipt_records[operation_id]
+        self.provider.operation_receipt_records[operation_id] = record[:-1] + (
+            b" " if record[-1:] != b" " else b"!"
+        )
+        self.provider.snapshot = replace(
+            self.provider.snapshot,
+            state_generation=self.provider.snapshot.state_generation + 1,
+            minimum_policy_sequence=POLICY_SEQUENCE + 1,
+            accepted_policy_sequence=POLICY_SEQUENCE + 1,
+            accepted_policy_envelope_sha256="e" * 64,
+        )
+        commits_before = self.provider.commit_count
+        with self.assertRaisesRegex(
+            TrustProviderUnavailable,
+            "invalid or nonmatching signed operation receipt",
+        ) as raised:
+            self.inspect()
+        self.assertEqual(raised.exception.operation_id_sha256, operation_id)
+        self.assertEqual(self.provider.commit_count, commits_before)
 
     def test_provider_recomputes_operation_id_and_rejects_substituted_evidence(self):
         original = self.provider.compare_and_advance
