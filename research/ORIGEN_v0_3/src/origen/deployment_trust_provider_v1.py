@@ -15,7 +15,7 @@ import binascii
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Protocol
@@ -173,6 +173,7 @@ class DeploymentTrustCommit:
     trusted_time_latest_utc: datetime
     accepted_external_evidence_watermark_sha256: str | None = None
     receipt_sha256: str | None = None
+    operation_id_sha256: str | None = None
 
 
 class DeploymentTrustProvider(Protocol):
@@ -257,6 +258,7 @@ class DeploymentTrustProvider(Protocol):
         expected_state_generation: int,
         expected_trust_configuration_sha256: str,
         expected_clock_sample_sha256: str,
+        operation_id_sha256: str,
         policy_domain: str,
         root_key_id: str,
         root_generation: int,
@@ -280,6 +282,19 @@ class DeploymentTrustProvider(Protocol):
         advance is supplied, its embedded policy and receipt bytes must equal these
         exact arguments. The caller's digests and sequence are assertions only.
         A successful commit must return receipt_sha256 computed from raw_receipt_bytes.
+
+        operation_id_sha256 is a deterministic, domain-separated identity of the
+        exact stable evidence request: policy domain, original policy bytes,
+        original receipt bytes, and every field/byte of the complete external
+        evidence advance when present. It deliberately excludes transient snapshot
+        generation, clock sample and one-use nonce challenge so the same evidence
+        can be retried after an ambiguous acknowledgement. The provider must
+        recompute this identity from the exact bytes, persist its operation receipt
+        atomically with the trust-state transition, and check the operation ledger
+        before stale-snapshot rejection. A repeated ID with the same exact evidence
+        returns the prior result as IDEMPOTENT without applying policy, evidence or
+        nonce consumption twice. A repeated ID with different evidence is
+        EQUIVOCATION. The ID is not an authentication credential.
 
         The API intentionally has no accepted_at_utc or clock_uncertainty_ms inputs.
         The provider derives both from its own currently authenticated signed clock
@@ -325,10 +340,15 @@ class DeploymentTrustInspection:
     provenance_status: ProvenanceStatus
     timestamp_nonce_challenge_id: str | None = None
     timestamp_nonce_challenge_sha256: str | None = None
+    operation_id_sha256: str | None = None
 
 
 class TrustProviderUnavailable(RuntimeError):
     """The external provider could not supply or commit trusted state."""
+
+    def __init__(self, message: str, *, operation_id_sha256: str | None = None):
+        super().__init__(message)
+        self.operation_id_sha256 = operation_id_sha256
 
 
 class TrustStateRejected(RuntimeError):
@@ -605,6 +625,20 @@ def _validated_external_evidence_watermark(
     ):
         raise TrustStateRejected("external ledger or witness-registry identity changed without an authorized transition")
 
+    # A retry after a lost CAS acknowledgement may observe the exact new
+    # watermark already persisted. This local equality is only a replay
+    # candidate; the provider must confirm the matching durable operation ID
+    # before returning IDEMPOTENT. Without that operation record, its CAS must
+    # reject the stale old checkpoint.
+    if (
+        candidate.new_tree_size == current.ledger_tree_size
+        and candidate.new_root_sha256 == current.ledger_root_sha256
+        and candidate.new_checkpoint_sha256 == current.ledger_checkpoint_sha256
+        and candidate.registry_sequence == current.registry_sequence
+        and candidate.registry_sha256 == current.registry_sha256
+    ):
+        return current
+
     if candidate.new_tree_size < current.ledger_tree_size:
         raise TrustStateRejected("ledger checkpoint tree-size rollback detected")
     if candidate.new_tree_size == current.ledger_tree_size and (
@@ -646,6 +680,64 @@ def _validated_external_evidence_watermark(
         registry_sequence=candidate.registry_sequence,
         registry_sha256=candidate.registry_sha256,
     )
+
+
+def _hash_operation_component(digest, value: object) -> None:
+    """Hash one exact typed component with unambiguous length framing."""
+    if value is None:
+        digest.update(b"N")
+        return
+    if type(value) is bytes:
+        digest.update(b"B")
+        digest.update(len(value).to_bytes(8, "big"))
+        digest.update(value)
+        return
+    if type(value) is str:
+        raw = value.encode("utf-8")
+        digest.update(b"S")
+        digest.update(len(raw).to_bytes(8, "big"))
+        digest.update(raw)
+        return
+    if type(value) is int:
+        raw = str(value).encode("ascii")
+        digest.update(b"I")
+        digest.update(len(raw).to_bytes(8, "big"))
+        digest.update(raw)
+        return
+    if type(value) is tuple:
+        digest.update(b"T")
+        digest.update(len(value).to_bytes(8, "big"))
+        for item in value:
+            _hash_operation_component(digest, item)
+        return
+    raise TypeError("operation identity contains an unsupported component type")
+
+
+def _deployment_trust_operation_id_sha256(
+    raw_policy_envelope_bytes: bytes,
+    raw_receipt_bytes: bytes,
+    external_evidence_advance: ExternalEvidenceAdvanceV1 | None,
+) -> str:
+    """Stable identity for exact evidence, independent of transient provider state."""
+    if type(raw_policy_envelope_bytes) is not bytes or not raw_policy_envelope_bytes:
+        raise ValueError("operation identity requires exact non-empty policy bytes")
+    if type(raw_receipt_bytes) is not bytes or not raw_receipt_bytes:
+        raise ValueError("operation identity requires exact non-empty receipt bytes")
+    if external_evidence_advance is not None and type(external_evidence_advance) is not ExternalEvidenceAdvanceV1:
+        raise TypeError("operation identity requires an exact external evidence advance")
+    digest = hashlib.sha256()
+    digest.update(b"ORIGEN_DEPLOYMENT_TRUST_OPERATION_V1\x00")
+    _hash_operation_component(digest, CLASSIC_POLICY_DOMAIN)
+    _hash_operation_component(digest, raw_policy_envelope_bytes)
+    _hash_operation_component(digest, raw_receipt_bytes)
+    if external_evidence_advance is None:
+        _hash_operation_component(digest, None)
+    else:
+        digest.update(b"A")
+        for item in fields(ExternalEvidenceAdvanceV1):
+            _hash_operation_component(digest, item.name)
+            _hash_operation_component(digest, getattr(external_evidence_advance, item.name))
+    return digest.hexdigest()
 
 
 def _trust_configuration_sha256(snapshot: DeploymentTrustSnapshot) -> str:
@@ -973,6 +1065,9 @@ def _commit_copy(value: object) -> DeploymentTrustCommit:
     receipt_sha256 = value.receipt_sha256
     if receipt_sha256 is not None:
         _require_sha256(receipt_sha256, "provider commit receipt_sha256")
+    operation_id_sha256 = value.operation_id_sha256
+    if operation_id_sha256 is not None:
+        _require_sha256(operation_id_sha256, "provider commit operation_id_sha256")
     return DeploymentTrustCommit(
         outcome=value.outcome,
         state_generation=value.state_generation,
@@ -981,6 +1076,7 @@ def _commit_copy(value: object) -> DeploymentTrustCommit:
         trusted_time_latest_utc=value.trusted_time_latest_utc,
         accepted_external_evidence_watermark_sha256=accepted_watermark_sha256,
         receipt_sha256=receipt_sha256,
+        operation_id_sha256=operation_id_sha256,
     )
 
 
@@ -1086,6 +1182,11 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         if external_evidence_advance is None
         else _external_evidence_advance_copy(external_evidence_advance)
     )
+    operation_id_sha256 = _deployment_trust_operation_id_sha256(
+        signed_policy_envelope_bytes,
+        original_receipt_bytes,
+        external_evidence_advance,
+    )
     expected_external_evidence_watermark_sha256 = (
         _accepted_external_evidence_watermark_sha256(snapshot.accepted_external_evidence_watermark)
     )
@@ -1179,6 +1280,7 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
             expected_state_generation=snapshot.state_generation,
             expected_trust_configuration_sha256=trust_configuration_digest,
             expected_clock_sample_sha256=clock_sample_digest,
+            operation_id_sha256=operation_id_sha256,
             policy_domain=CLASSIC_POLICY_DOMAIN,
             root_key_id=snapshot.root_key_id,
             root_generation=snapshot.root_generation,
@@ -1198,7 +1300,8 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         # DeploymentTrustCommit outcome below can establish an explicit rejection.
         raise TrustProviderUnavailable(
             "deployment trust sequence transaction failed; transaction outcome is unknown; "
-            "reconcile durable provider state before retrying"
+            "retry only with the same exact evidence operation ID after provider reconciliation",
+            operation_id_sha256=operation_id_sha256,
         ) from exc
     try:
         commit = _commit_copy(supplied_commit)
@@ -1217,24 +1320,33 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         raise TrustStateRejected(
             "provider compare-and-advance rejected a stale, regressed, or equivocal state"
         )
+    if commit.operation_id_sha256 != operation_id_sha256:
+        raise TrustProviderUnavailable(
+            "provider commit acknowledgement does not bind the exact evidence operation ID; "
+            "transaction outcome is unknown; reconcile before retrying",
+            operation_id_sha256=operation_id_sha256,
+        )
     if (
         commit.policy_sequence != verified_policy.policy_sequence
         or commit.policy_envelope_sha256 != policy_digest
     ):
         raise TrustProviderUnavailable(
             "provider commit acknowledgement does not bind the exact verified policy; "
-            "transaction outcome is unknown; reconcile durable provider state before retrying"
+            "transaction outcome is unknown; reconcile before retrying",
+            operation_id_sha256=operation_id_sha256,
         )
     receipt_digest = hashlib.sha256(original_receipt_bytes).hexdigest()
     if commit.receipt_sha256 != receipt_digest:
         raise TrustProviderUnavailable(
             "provider commit acknowledgement does not bind the exact verified receipt; "
-            "transaction outcome is unknown; reconcile durable provider state before retrying"
+            "transaction outcome is unknown; reconcile before retrying",
+            operation_id_sha256=operation_id_sha256,
         )
     if commit.accepted_external_evidence_watermark_sha256 != next_external_evidence_watermark_sha256:
         raise TrustProviderUnavailable(
             "provider commit acknowledgement does not bind the resulting external ledger/witness watermark; "
-            "transaction outcome is unknown; reconcile durable provider state before retrying"
+            "transaction outcome is unknown; reconcile before retrying",
+            operation_id_sha256=operation_id_sha256,
         )
 
     policy_advanced = snapshot.accepted_policy_sequence < verified_policy.policy_sequence
@@ -1290,6 +1402,7 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         provenance_status=ProvenanceStatus.BLOCKED_PROVENANCE,
         timestamp_nonce_challenge_id=timestamp_nonce_challenge_id,
         timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256,
+        operation_id_sha256=operation_id_sha256,
     )
 
 def _inspect_receipt_with_deployment_trust_provider_using_provider(
