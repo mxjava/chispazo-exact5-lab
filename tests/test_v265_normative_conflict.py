@@ -32,6 +32,18 @@ def test_current_sequence_wins_over_unconfirmed_legacy_2115_sequence():
     assert c["legacy_timing_used_for_current_model"] is False
 
 
+def test_segob_regulation_makes_acta_the_official_result_record():
+    r = MODULE.build_report()
+    legal = r["segob_legal_basis"]
+    assert legal["chispazo_regulation_last_reform"] == "2012-03-07"
+    assert legal["article_9_close_then_signed_participation_file_pre_draw"] is True
+    assert legal["article_9_28_spheres_and_five_extractions"] is True
+    assert legal["article_15_acta_contains_background_results_incidents"] is True
+    assert legal["article_8_official_results_are_acta_only"] is True
+    assert legal["terminal_web_and_mask_are_informational"] is True
+    assert legal["cs11_is_acta"] is False
+
+
 def test_calibration_requirement_is_not_confused_with_actual_compliance():
     r = MODULE.build_report()
     c = r["calibration"]
