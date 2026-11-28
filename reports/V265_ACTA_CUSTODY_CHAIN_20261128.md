@@ -7,7 +7,7 @@ Se amplió el cruce de SGVO-PRO-05 rev. 39 hacia el expediente posterior al sort
 
 La firma del Acta puede diferirse hasta cinco días hábiles bajo una excepción limitada; los anexos digitales se entregan semanalmente; CS-18 es potestativo. Por ello, timestamps de firma/entrega no son timestamps del sorteo ni datos pre-cierre.
 
-Se separó la grabación continua contratada desde el pesaje hasta el sorteo de las cámaras de sala que registran los números en exhibidores. No se obtuvo el máster original ni cadena de custodia.
+Se distinguieron dos obligaciones documentales de grabación: la continua contratada desde el pesaje hasta el sorteo y la captación de números en exhibidores por cámaras de sala. El procedimiento no aclara si comparten equipo o archivo. No se obtuvo el máster original ni cadena de custodia.
 
 ## Reproducibilidad
 
@@ -29,6 +29,6 @@ Se separó la grabación continua contratada desde el pesaje hasta el sorteo de 
 
 DOCUMENTED_MECHANISM_ONLY. El Acta es el registro oficial; CS-11 es un documento separado/anexo. V265 sigue sin procedencia autenticada ni datos físicos primarios; no prueba sesgo y no autoriza apuestas. OOS, multiplicidad y anytime e-value siguen cerrados.
 
-No se descargaron los PDF oficiales, por lo que no se declara SHA-256 de esas fuentes. Los hashes SHA-256 locales de los cuatro artefactos nuevos se informan por separado; no son hashes de los PDF institucionales ni Git blob SHA-1.
+No se descargaron los PDF oficiales, por lo que no se declara SHA-256 de esas fuentes. Los hashes SHA-256 locales de los artefactos nuevos se informan por separado; no son hashes de los PDF institucionales ni Git blob SHA-1.
 
 V294 congelado; histórico canónico intacto; no se escribió en main, no hubo merge ni promoción.
