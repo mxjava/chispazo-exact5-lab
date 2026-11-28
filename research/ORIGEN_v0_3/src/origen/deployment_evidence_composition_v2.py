@@ -34,6 +34,9 @@ from .transparency_ledger_bundle_transition_v2 import (
 )
 
 
+CLASSIC_PHYSICAL_POLICY_DOMAIN = "origen.chispazo.classic.physical"
+
+
 @dataclass(frozen=True, slots=True)
 class ProviderBoundLedgerTransitionInspectionV2:
     transition: TransparencyLedgerBundleTransitionInspectionV2
@@ -130,7 +133,7 @@ def inspect_provider_bound_transparency_ledger_bundle_transition_v2(
             "deployment provider lacks read_physical_trust_context"
         )
     try:
-        supplied_context = read_context(policy_domain=CLASSIC_POLICY_DOMAIN)
+        supplied_context = read_context(policy_domain=CLASSIC_PHYSICAL_POLICY_DOMAIN)
     except Exception as exc:
         raise TrustProviderUnavailable(
             "provider physical trust context could not be read"
