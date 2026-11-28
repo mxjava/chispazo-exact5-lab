@@ -18,7 +18,7 @@ ANCHORS = {
     "optional_cs18": "CS-18 es opcional",
     "cs12_access": "registrar participantes mediante CS-12",
     "continuous_video_scope": "grabación desde el pesaje hasta el sorteo",
-    "room_camera_capture": "cámaras de sala captan y graban los números expresados por el presentador",
+    "room_camera_capture": "cámaras ubicadas en la sala capten y graben los números expresados por el presentador",
     "no_master_video": "No se obtuvo máster, metadatos, hash ni cadena de custodia por concurso",
     "no_preclose_prediction": "No; post-cierre/pre-sorteo",
 }
