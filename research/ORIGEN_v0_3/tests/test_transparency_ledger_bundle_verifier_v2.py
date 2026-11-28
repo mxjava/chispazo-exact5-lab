@@ -6,6 +6,8 @@ import hashlib
 import json
 import unittest
 
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.nested_signature_bundle_timestamp_v1 import (
     canonical_nested_signature_bundle_timestamp_payload_v1,
@@ -208,6 +210,40 @@ class TransparencyLedgerBundleVerifierV2Tests(unittest.TestCase):
         }
         with self.assertRaisesRegex(ValueError, "not included"):
             verify_transparency_ledger_bundle_inclusion_v2(**changed)
+
+
+    def test_checkpoint_must_postdate_timestamp_accuracy_upper_bound(self):
+        values, _ = build_v2_case()
+        checkpoint = json.loads(
+            values["raw_signed_checkpoint_bytes"].decode("utf-8")
+        )
+        # The synthetic RFC 3161 token has genTime 02:59:50Z and 250 ms
+        # accuracy. A checkpoint at 02:59:50Z cannot prove it included a
+        # token whose latest possible generation is 02:59:50.250Z.
+        checkpoint["issued_at_utc"] = "2026-11-23T02:59:50Z"
+        unsigned = dict(checkpoint)
+        unsigned.pop("signature_b64")
+        log_private = Ed25519PrivateKey.from_private_bytes(b"\\x19" * 32)
+        checkpoint["signature_b64"] = base64.b64encode(
+            log_private.sign(CHECKPOINT_DOMAIN + canonical(unsigned))
+        ).decode("ascii")
+        checkpoint_bytes = canonical(checkpoint)
+
+        proof = json.loads(values["raw_inclusion_proof_bytes"].decode("utf-8"))
+        proof["checkpoint_sha256"] = sha(checkpoint_bytes)
+        proof_bytes = canonical(proof)
+        manifest = json.loads(values["raw_manifest_bytes"].decode("utf-8"))
+        manifest["ledger_anchor"]["inclusion_proof_sha256"] = sha(proof_bytes)
+
+        values["raw_signed_checkpoint_bytes"] = checkpoint_bytes
+        values["raw_inclusion_proof_bytes"] = proof_bytes
+        values["raw_manifest_bytes"] = encode(manifest)
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "strictly later than the RFC 3161 timestamp accuracy upper bound",
+        ):
+            verify_transparency_ledger_bundle_inclusion_v2(**values)
 
 
 if __name__ == "__main__":
