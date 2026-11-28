@@ -8,7 +8,7 @@ from __future__ import annotations
 import base64
 import json
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone, tzinfo
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -188,6 +188,33 @@ class TestTrustPolicyReceiptChainV1(unittest.TestCase):
         )
         self.assertEqual(result.policy_sequence, 8)
         self.assertEqual(result.root_key_id, ROOT_KEY_ID)
+
+
+    def test_stateful_timezone_is_sampled_once_for_policy_and_receipt(self):
+        class StatefulTimezone(tzinfo):
+            def __init__(self):
+                self.calls = 0
+
+            def utcoffset(self, dt):
+                self.calls += 1
+                return timedelta(seconds=max(0, self.calls - 1))
+
+            def dst(self, dt):
+                return timedelta(0)
+
+            def tzname(self, dt):
+                return "synthetic-stateful"
+
+        clock = StatefulTimezone()
+        supplied = datetime(2026, 11, 23, 3, 6, tzinfo=clock)
+        result = self.verify(verification_time=supplied)
+
+        self.assertEqual(clock.calls, 1)
+        self.assertEqual(
+            result.receipt.verified_at_utc,
+            datetime(2026, 11, 23, 3, 6, tzinfo=timezone.utc),
+        )
+
 
 
 if __name__ == "__main__":
