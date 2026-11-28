@@ -9,6 +9,17 @@ Fuentes:
 - Normateca sustantivas: https://www.loterianacional.gob.mx/Normateca/Sustantivas?id=2 (secciones Electrónicos y Tradicionales; SGVO-PRO-05 listado con última actualización 20-03-2026).
 - Producto Chispazo: https://comercializadores.loterianacional.gob.mx/Chispazo/Chispazo (Chispazo electrónico; Clásico 21:00).
 
+## Cruce legal nuevo — SEGOB/SIDOF y jerarquía del Acta
+
+El Reglamento del Sorteo Chispazo publicado por Lotería Nacional indica última reforma DOF de 7 de marzo de 2012. Su artículo 9 describe 28 esferas numeradas, cierre de ventas, generación inmediata del archivo de participaciones con firma electrónica, depósito del dispositivo con el Inspector de SEGOB antes de la ceremonia y extracción al azar de cinco esferas. Esto coincide, en lo esencial, con el corte post-cierre/pre-sorteo del archivo firmado descrito en SGVO-PRO-05.
+
+El artículo 15 del Reglamento establece que el Acta debe recoger antecedentes, resultados e incidentes, y ser elaborada con participación del Inspector de SEGOB y de los funcionarios señalados, quienes deben suscribirla. La reforma publicada en SIDOF/SEGOB el 7 de marzo de 2012 al artículo 8 establece que los resultados oficiales son los asentados en esa Acta; terminal, teléfono, sitio web y mascarilla son sólo informativos. Por tanto, el formato CS-11 “Números Ganadores de los Sorteos” es un anexo/registro de resultados dentro del expediente, no sustituye al Acta. Para autenticar un concurso se requieren Acta, CS-11, tira y anexos, no sólo la mascarilla pública.
+
+Fuentes oficiales:
+- Reglamento Chispazo (Lotería Nacional): https://www.loterianacional.gob.mx/Documentos/Legal/ReglamentoJuegos/ChizpasoDOF18062003.pdf (arts. 8, 9 y 15; última reforma 07-03-2012).
+- Reforma del artículo 8 publicada en SIDOF/SEGOB: https://sidof.segob.gob.mx/notas/docFuente/5236917 (artículo SEXTO; 07-03-2012).
+- Marco Jurídico de Lotería Nacional: https://comercializadores.loterianacional.gob.mx/Home/MarcoJuridico (reglamento Chispazo y Reglamento de Sorteos Tradicionales listados por separado).
+
 ## Hallazgo nuevo 1 — dependencia normativa no localizada como vigente
 
 SGVO-PRO-05, revisión 39, es la norma sustantiva vigente que la Normateca lista para Sorteos Electrónicos. Su actividad 2.1 y el Plan de Calidad remiten al **Manual de Apoyo para la Operación de Sorteos y Equipos Electrónicos** y al **Instructivo para la Celebración de Sorteos Electrónicos** para los criterios técnicos de inspección CS-02. La política 27 también remite al Manual de Apoyo.
@@ -50,7 +61,7 @@ Fuente: SGVO-PRO-05, políticas 24–26, págs. 9–10.
 | Calibración de báscula | Calendario y certificado de calibración | Certificado podría ser conocido antes del cierre si está vigente | Covariable de calidad de medición; no predictor de números |
 | RFID máquina/esfera/estuche | Informe histórico de infraestructura; faltan catálogo y logs por concurso | Potencialmente pre-cierre sólo si existe lectura autenticada previa | No utilizable sin tag→activo/esfera/número, log, timestamp y cadena de custodia |
 | Orden y timestamp de extracción por esfera | No publicados en el esquema recuperado de CS-11 | Durante extracción | No disponible como dato pre-cierre; además no se obtuvo log por esfera |
-| CS-11 | Números ganadores, hora del sorteo, número de estuche, cotejo y firmas | Post-extracción | Retrospectivo |
+| CS-11 | Números ganadores, hora del sorteo, número de estuche, cotejo y firmas; anexo del Acta | Post-extracción | Retrospectivo; no sustituye el Acta oficial del art. 15 |
 | Firma electrónica de participaciones/cancelaciones | Archivo de participaciones/cancelaciones y firma electrónica | Después de verificar el cierre y antes del sorteo | Post-cierre; no es predictor pre-cierre |
 | Video original | Grabación desde pesaje hasta sorteo; edición del sorteo se anexa al Acta | Durante y después del cierre | Evidencia retrospectiva; requiere máster, metadatos, hash y custodia |
 | CS-09 / incidencias | Bitácora y Acta | El evento puede ocurrir durante el proceso; registro y firma de bitácora pueden ser posteriores | Sólo un aviso documentado y recibido antes del cierre podría ser covariable; no hay registros por concurso |
@@ -66,7 +77,7 @@ No consume pesos individuales por esfera, mapeo RFID esfera→número, orden de 
 
 Se ejecutó un cruce documental determinista de fuentes oficiales y un análisis estático del contrato del evaluador. No se descargaron ni inventaron registros por concurso, no se utilizaron resultados de sorteos, no se generaron observaciones sintéticas y no se ejecutaron pruebas estadísticas. El resultado es **DOCUMENTED_MECHANISM_ONLY**.
 
-Los gates OOS, multiplicidad y anytime e-value permanecen sin superar. La auditoría sólo verifica consistencia de la transcripción y del código inspeccionado; no autentica los PDF originales ni los expedientes físicos.
+La regla de jerarquía documental también impide tratar la mascarilla pública como sustituto del Acta: SEGOB/SIDOF identifica el Acta del artículo 15 como registro oficial. Los gates OOS, multiplicidad y anytime e-value permanecen sin superar. La auditoría sólo verifica consistencia de la transcripción y del código inspeccionado; no autentica los PDF originales ni los expedientes físicos.
 
 ## Bloqueos concretos
 
@@ -78,6 +89,7 @@ Los gates OOS, multiplicidad y anytime e-value permanecen sin superar. La audito
 6. CS-11 firmado y recibos de los cuatro ejemplares por concurso.
 7. Máster de video, metadatos, hash y cadena de custodia.
 8. CS-09, CS-12 y CS-18 originales con timestamps.
+9. Acta de cada concurso y anexos completos; la mascarilla pública no basta para acreditar el registro oficial.
 
 ## Integridad de fuentes
 
