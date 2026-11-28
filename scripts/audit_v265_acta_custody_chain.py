@@ -11,6 +11,7 @@ V265 = ROOT / "src/v265/CHISPAZO_V265_PHYSICAL_METADATA_EVALUATOR.py"
 ANCHORS = {
     "acta_official_hierarchy": "El artículo 15 del Reglamento exige Acta con antecedentes, resultados e incidentes",
     "weekly_annex_archive": "entregarlos semanalmente (lunes a domingo)",
+    "weekly_archive_codes": "CLSBR140 (Relación de Ganadores y su firma electrónica), CLIER195 (Información Básica), CLSKR170 (Resultados Obtenidos) y CLSAR110 (Máscara Ganadora)",
     "sical_discrepancy_route": "el Acta use la pantalla del sistema administrativo de Selección de Ganadores y agregue la pantalla SICAL",
     "incident_definition": "cualquier incidencia de una etapa que salga del procedimiento y afecte resultados",
     "deferred_acta_signature": "máximo cinco días hábiles, sólo si no fue posible imprimirla y los resultados no se comprometen",
@@ -63,6 +64,7 @@ def build_report() -> dict:
             "acta_is_official_result_record": True,
             "cs11_is_separate_record_not_acta": True,
             "weekly_annex_dvd_delivery": True,
+            "weekly_archive_chispazo_codes": ["CLSBR140", "CLIER195", "CLSKR170", "CLSAR110"],
             "sical_discrepancy_requires_both_screens_and_provider_clarification": True,
             "incidents_recorded_in_acta": True,
             "acta_signature_can_be_deferred_max_five_business_days_under_exception": True,
