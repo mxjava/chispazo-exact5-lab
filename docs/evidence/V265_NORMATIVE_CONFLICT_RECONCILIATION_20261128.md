@@ -28,7 +28,7 @@ En contraste, SGVO-PRO-05 revisión 39 figura en la lista vigente actualizada el
 2. Verificación en SICAL de `Estado de Apuestas: Cerrado`, fecha, hora, concurso y ventas.
 3. Después del cierre, pesaje de esferas una a una y en orden numérico; revisión de límites; firma de la tira; entrega para anexar al Acta; carga progresiva en alimentadores.
 
-La página oficial de Chispazo fija Clásico a las 21:00. En consecuencia, para la cronología actual se debe seguir SGVO-PRO-05 revisión 39 y no importar el 21:15/pre-cierre de SGM-PRO-06. La diferencia queda registrada como conflicto entre una copia no listada como vigente y la norma electrónica vigente; no se afirma que el documento antiguo haya sido formalmente derogado.
+SGVO-PRO-05 política 9 fija el cierre automático de venta de los sorteos nocturnos a las 21:00; la página oficial de Chispazo fija el Clásico a las 21:00. En consecuencia, para la cronología actual se debe seguir SGVO-PRO-05 revisión 39 y no importar el 21:15/pre-cierre de SGM-PRO-06. La diferencia queda registrada como conflicto entre una copia no listada como vigente y la norma electrónica vigente; no se afirma que el documento antiguo haya sido formalmente derogado.
 
 Fuente vigente: https://loterianacional.gob.mx/Documentos/NormatecaInterna/2014/SUSTANTIVAS/VIGENTES/sgvo_pro_05.pdf (págs. 11–14, revisión 39; Normateca actualizada 20-03-2026).
 
