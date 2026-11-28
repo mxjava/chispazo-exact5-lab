@@ -26,6 +26,7 @@ def test_acta_and_cs11_are_not_conflated():
 def test_weekly_archive_and_delayed_acta_signatures_are_retrospective():
     chain = MODULE.build_report()["acta_chain"]
     assert chain["weekly_annex_dvd_delivery"] is True
+    assert chain["weekly_archive_chispazo_codes"] == ["CLSBR140", "CLIER195", "CLSKR170", "CLSAR110"]
     assert chain["weekly_dvd_or_delivery_office_obtained"] is False
     assert chain["acta_signature_can_be_deferred_max_five_business_days_under_exception"] is True
     assert chain["signed_acta_scanned_to_oic"] is True
