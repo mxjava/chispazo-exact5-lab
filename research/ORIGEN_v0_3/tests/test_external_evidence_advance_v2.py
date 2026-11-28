@@ -117,8 +117,8 @@ def make_provider_context(*, nested_pin=True):
         policy_tsa_root_certificate_der=policy_root,
         policy_tsa_root_sha256=sha(policy_root),
         policy_tsa_policy_oid="1.2.3.4",
-        policy_root_public_key_bytes=b"p" * 32,
-        policy_root_key_id="synthetic-policy-root",
+        policy_root_public_key_bytes=b"k" * 32,
+        policy_root_key_id="synthetic-root-key",
         minimum_policy_sequence=1,
         custody_tsa_root_certificate_der=custody_root,
         custody_tsa_root_sha256=sha(custody_root),
@@ -260,6 +260,25 @@ class ExternalEvidenceAdvanceV2Tests(unittest.TestCase):
                 timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256(drifted_challenge),
             )
 
+    def test_v2_advance_rejects_physical_context_policy_root_mismatch(self):
+        advance = valid_advance()
+        context = make_provider_context()
+        mismatched_context = replace(context, policy_root_public_key_bytes=b"q" * 32)
+        snapshot = replace(
+            make_provider_snapshot(context),
+            physical_trust_context_sha256=physical_trust_context_sha256(mismatched_context),
+        )
+        challenge = make_provider_bound_challenge(advance, mismatched_context, snapshot)
+
+        with self.assertRaisesRegex(TrustStateRejected, "policy root/key ID/bootstrap floor differs"):
+            _require_v2_external_evidence_nonce_binding(
+                advance,
+                provider_snapshot=snapshot,
+                physical_trust_context=mismatched_context,
+                timestamp_nonce_challenge=challenge,
+                timestamp_nonce_challenge_id=challenge.challenge_id,
+                timestamp_nonce_challenge_sha256=timestamp_nonce_challenge_sha256(challenge),
+            )
     def test_v2_advance_rejects_challenge_id_digest_and_snapshot_substitution(self):
         advance = valid_advance()
         context = make_provider_context()
