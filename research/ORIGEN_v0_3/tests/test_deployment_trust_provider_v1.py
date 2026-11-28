@@ -19,6 +19,7 @@ from origen.deployment_trust_provider_v1 import (
     DeploymentTrustCommit,
     DeploymentTrustSnapshot,
     ExternalEvidenceAdvanceV1,
+    ExternalEvidenceAdvanceV2,
     ExternalEvidenceWatermarkV1,
     TrustProviderUnavailable,
     TrustStateOutcome,
@@ -32,7 +33,10 @@ from origen.deployment_trust_provider_v1 import (
     _inspect_receipt_with_deployment_trust_provider_using_provider,
 )
 from origen.independent_trust_adapter import ProvenanceStatus, _verify_independent_provenance_with_explicit_context
-from origen.timestamp_nonce_challenge_v1 import timestamp_nonce_challenge_sha256 as compute_timestamp_nonce_challenge_sha256
+from origen.timestamp_nonce_challenge_v1 import (
+    TimestampNonceChallengeV1,
+    timestamp_nonce_challenge_sha256 as compute_timestamp_nonce_challenge_sha256,
+)
 from test_receipt_policy_integration_v3 import (
     POLICY_SEQUENCE,
     ROOT_KEY_ID,
@@ -110,6 +114,10 @@ class SyntheticTrustProvider:
         self.consumed_timestamp_nonce_challenge_ids.add(challenge_id)
         self.consumed_timestamp_nonce_values.add(challenge.policy_timestamp_nonce)
         self.consumed_timestamp_nonce_values.add(challenge.custody_timestamp_nonce)
+        if challenge.nested_signature_bundle_timestamp_nonce is not None:
+            self.consumed_timestamp_nonce_values.add(
+                challenge.nested_signature_bundle_timestamp_nonce
+            )
 
     def compare_and_advance(
         self,
@@ -206,6 +214,7 @@ class SyntheticTrustProvider:
                 policy_envelope_sha256,
                 self.snapshot.trusted_time_latest_utc,
             )
+        challenge = None
         if timestamp_nonce_challenge_id is not None:
             challenge = self.pending_timestamp_nonce_challenge
             if (
@@ -232,6 +241,29 @@ class SyntheticTrustProvider:
                     policy_envelope_sha256,
                     self.snapshot.trusted_time_latest_utc,
                 )
+        if type(external_evidence_advance) is ExternalEvidenceAdvanceV2:
+            if (
+                challenge is None
+                or challenge.nested_signature_bundle_timestamp_nonce
+                != external_evidence_advance.nested_signature_bundle_timestamp_nonce
+                or external_evidence_advance.nested_signature_bundle_timestamp_nonce
+                in self.consumed_timestamp_nonce_values
+            ):
+                return DeploymentTrustCommit(
+                    TrustStateOutcome.CONFLICT,
+                    self.snapshot.state_generation,
+                    policy_sequence,
+                    policy_envelope_sha256,
+                    self.snapshot.trusted_time_latest_utc,
+                )
+        elif challenge is not None and challenge.nested_signature_bundle_timestamp_nonce is not None:
+            return DeploymentTrustCommit(
+                TrustStateOutcome.CONFLICT,
+                self.snapshot.state_generation,
+                policy_sequence,
+                policy_envelope_sha256,
+                self.snapshot.trusted_time_latest_utc,
+            )
         if policy_domain != self.snapshot.policy_domain:
             return DeploymentTrustCommit(
                 TrustStateOutcome.CONFLICT,
@@ -420,6 +452,27 @@ class TestDeploymentTrustProviderV1(unittest.TestCase):
         args.update(overrides)
         return _inspect_receipt_with_deployment_trust_provider_using_provider(**args)
 
+    def test_synthetic_provider_nonce_ledger_consumes_optional_third_nonce(self):
+        now = NOW
+        challenge = TimestampNonceChallengeV1(
+            challenge_id="synthetic-three-nonce-challenge",
+            policy_domain=CLASSIC_POLICY_DOMAIN,
+            state_backend_id=self.snapshot.state_backend_id,
+            policy_timestamp_nonce=101,
+            custody_timestamp_nonce=202,
+            state_generation=self.snapshot.state_generation,
+            root_generation=self.snapshot.root_generation,
+            physical_trust_context_generation=1,
+            physical_trust_context_sha256="c" * 64,
+            issued_at_utc=now - timedelta(seconds=1),
+            expires_at_utc=now + timedelta(seconds=30),
+            nested_signature_bundle_timestamp_nonce=303,
+        )
+        self.provider.pending_timestamp_nonce_challenge = challenge
+
+        self.provider._consume_timestamp_nonce_challenge(challenge.challenge_id)
+
+        self.assertEqual(self.provider.consumed_timestamp_nonce_values, {101, 202, 303})
     def test_persisted_watermark_backend_mismatch_is_rejected_by_watermark_validator(self):
         watermark = ExternalEvidenceWatermarkV1(
             policy_domain=CLASSIC_POLICY_DOMAIN,
