@@ -19,6 +19,12 @@ The frozen context binds:
 
 Request-specific nonces and evidence bytes remain request inputs; they are not trust anchors. The verification instant still comes from the deployment provider's single authenticated clock snapshot.
 
+## V2 nested-signature timestamp trust pin
+
+The V1 context now has an optional all-or-none triple for the nested-signature bundle TSA: exact root-certificate DER, its lowercase SHA-256 fingerprint, and the canonical numeric policy OID. When present, the fingerprint and policy OID are included in the provider-context digest, and the deployment composition copies the exact fields before hashing/using the context. Legacy V1 contexts may omit all three fields. A V2 bundle-timestamp composition must require the complete triple; it must not fall back to the policy or custody TSA root implicitly.
+
+This addition is only a provider-owned transport pin. It does not establish that the provider loaded it from an authenticated institutional source, that the TSA is authorized by Lotería Nacional, or that current revocation is checked.
+
 ## Important security boundary
 
 A Python Protocol, frozen dataclass, repository commit, environment variable or synthetic provider does not prove institutional provisioning. The provider must load this context from a separately administered trust store with authenticated provisioning records, two-person approval, key rotation/revocation controls and rollback-resistant state. The interface added here does not implement that infrastructure.
