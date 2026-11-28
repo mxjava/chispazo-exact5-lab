@@ -13,7 +13,7 @@ This increment therefore constructs a separate canonical bundle after the manife
 - every declared nested signature claim; and
 - every exact 64-byte Ed25519 signature, base64-encoded and keyed by its SHA-256.
 
-An RFC 3161 token's message imprint is verified over the canonical bundle bytes. This proves, relative to the caller-supplied TSA root and clock, that the exact manifest, policy and complete nested-signature set existed no later than the token's accuracy upper bound.
+An RFC 3161 token's message imprint is verified over the canonical bundle bytes. This proves, relative to the caller-supplied TSA root and clock, that the exact manifest, policy, original artifact bytes and complete nested-signature set existed no later than the token's accuracy upper bound.
 
 ## Verification contract
 
@@ -23,11 +23,11 @@ It:
 1. parses the exact CLASSIC manifest and snapshots the exact signature-byte map;
 2. rejects missing, extra, duplicate, substituted, mutable or non-Ed25519 signature bytes;
 3. invokes the V3 physical verifier to re-check artifact digests, signature digests, nested Ed25519 signatures and signed key/role/artifact authorization;
-4. verifies the exact V3 policy envelope against the supplied root pin, key ID, CLASSIC domain and minimum sequence;
-5. verifies the RFC 3161 token over the exact canonical bundle, including expected nonce, TSA root fingerprint and policy OID;
-6. requires explicit accuracy and requires its upper bound to be strictly before the manifest's CLASSIC 21:00 close;
-7. checks that the full timestamp accuracy interval is within policy validity and every signer's key validity interval; and
-8. returns per-signature existence-by-upper-bound and key/role-at-timestamp diagnostics.
+4. verifies the exact V3 policy envelope against the supplied root pin, key ID, CLASSIC domain and minimum sequence;\n5. snapshots every original artifact byte string, verifies its digest and declared length, and includes its exact bytes in the timestamped bundle;
+6. verifies the RFC 3161 token over the exact canonical bundle, including expected nonce, TSA root fingerprint and policy OID;
+7. requires explicit accuracy and requires its upper bound to be strictly before the manifest's CLASSIC 21:00 close;
+8. checks that the full timestamp accuracy interval is within policy validity and every signer's key validity interval; and
+9. returns per-signature existence-by-upper-bound and key/role-at-timestamp diagnostics.
 
 The sidecar is deliberately not injected into the manifest signature payload. The returned `ledger_binding_status` is therefore `NOT_BOUND_TO_LEDGER_ENTRY`. A subsequent increment must bind the exact bundle bytes and token digest into a separately verified transparency-ledger entry and carry them through the provider CAS envelope.
 
@@ -45,7 +45,7 @@ Every successful inspection remains `BLOCKED_PROVENANCE`; production remains `BL
 
 ## Adversarial test coverage
 
-The isolated tests cover exact bundle imprint, complete signature set, missing/extra signatures, signature-byte substitution, wrong imprint, nonce mismatch, wrong TSA policy OID, and the strict CLASSIC close boundary. The tests assert that key authorization at creation remains unproven and that the sidecar is not yet ledger-bound.
+The isolated tests cover exact bundle imprint, complete signature set, missing/extra signatures, artifact-byte substitution, signature-byte substitution, wrong imprint, nonce mismatch, wrong TSA policy OID, and the strict CLASSIC close boundary. The tests assert that key authorization at creation remains unproven and that the sidecar is not yet ledger-bound.
 
 ## Next required integration
 
