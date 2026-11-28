@@ -159,6 +159,10 @@ def make_case(
         identity = (signature["subject_id"], signature["key_id"])
         private_by_identity.setdefault(identity, Ed25519PrivateKey.generate())
 
+    # Synthetic fixture metadata only; no timestamp is embedded in Ed25519.
+    signature_created_at_utc = datetime(
+        2026, 11, 23, 3, 30, tzinfo=timezone.utc
+    )
     placeholder_manifest = encode_manifest(manifest_document)
     payload = canonical_physical_manifest_signature_payload(placeholder_manifest)
     signature_bytes_by_sha256: dict[str, bytes] = {}
@@ -218,6 +222,7 @@ def make_case(
         omit_identity=omit_identity,
     )
     return {
+        "signature_created_at_utc": signature_created_at_utc,
         "manifest_document": manifest_document,
         "manifest_bytes": manifest_bytes,
         "manifest_sha256": manifest_digest,
@@ -501,9 +506,7 @@ class PhysicalManifestNestedSignatureChainTests(unittest.TestCase):
         # created before this key's policy validity begins. Neither instant is
         # carried by the detached signature; this is deliberately not trusted
         # timestamp evidence.
-        modeled_signature_time = datetime(
-            2026, 11, 23, 3, 30, tzinfo=timezone.utc
-        )
+        modeled_signature_time = data["signature_created_at_utc"]
         key_valid_from = datetime(
             2026, 11, 23, 3, 59, tzinfo=timezone.utc
         )
