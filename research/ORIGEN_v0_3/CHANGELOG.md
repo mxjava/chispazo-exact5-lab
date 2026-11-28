@@ -3,6 +3,7 @@
 - Added an RFC 3161 verifier that checks exact bundle imprint, nonce, TSA root fingerprint, policy OID, accuracy interval, CLASSIC 21:00 close, exact artifact hashes/lengths, signed-policy validity, signer-key validity and signed key/role/artifact authorization at timestamp.
 - Explicitly distinguishes signature existence by the timestamp accuracy upper bound from the unknown exact signature-creation instant. Key authorization at creation remains unproven because no unpredictable pre-draw signer challenge is bound into the current signature payload.
 - The sidecar is not yet committed by the transparency-ledger entry or provider CAS. All fixtures are synthetic and all results remain BLOCKED_PROVENANCE.
+- The first exact-head CI exposed an adversarial-test fixture error: its extra signature key did not match the SHA-256 of the supplied bytes. The fixture now uses the matching digest so the test isolates exact-set rejection rather than failing earlier on digest mismatch.
 
 ## Full exact-byte provider CAS envelope (2026-11-27)
 - Extended `ExternalEvidenceAdvanceV1` so the independent provider CAS receives exact receipt and signed-policy bytes, custody record, portfolio, detached custody signature, custodian key ID, both RFC 3161 token DER blobs, and canonical artifact/signature byte maps in addition to manifest, ledger, checkpoints, registry and witness bytes.
