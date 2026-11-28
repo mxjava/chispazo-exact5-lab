@@ -895,7 +895,7 @@ def _verify_deployment_trust_operation_receipt(
     window_end = _clock_sample_timestamp(
         document["time_window_end_utc"], "operation receipt time_window_end_utc"
     )
-    if not window_start <= window_end <= clock_valid_until <= trusted_latest:
+    if not window_start <= window_end <= clock_valid_until or trusted_latest < window_end:
         raise ValueError("operation receipt time interval is inconsistent")
     signature_b64 = document["signature_b64"]
     if type(signature_b64) is not str:
@@ -908,7 +908,7 @@ def _verify_deployment_trust_operation_receipt(
         raise ValueError("operation receipt signature must be 64 canonical base64 bytes")
     unsigned = dict(document)
     unsigned.pop("signature_b64")
-    message = b"ORIGEN_DEPLOYMENT_TRUST_OPERATION_RECEIPT_V1\\x00" + json.dumps(
+    message = b"ORIGEN_DEPLOYMENT_TRUST_OPERATION_RECEIPT_V1\x00" + json.dumps(
         unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
         allow_nan=False,
     ).encode("ascii")
@@ -1480,6 +1480,15 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         original_receipt_bytes,
         external_evidence_advance,
     )
+    replay = _read_verified_operation_receipt(
+        provider,
+        snapshot,
+        operation_id_sha256=operation_id_sha256,
+        raw_policy_envelope_bytes=signed_policy_envelope_bytes,
+        raw_receipt_bytes=original_receipt_bytes,
+    )
+    if replay is not None:
+        return replay
     expected_external_evidence_watermark_sha256 = (
         _accepted_external_evidence_watermark_sha256(snapshot.accepted_external_evidence_watermark)
     )
@@ -1492,15 +1501,6 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
     next_external_evidence_watermark_sha256 = (
         _accepted_external_evidence_watermark_sha256(next_external_evidence_watermark)
     )
-    replay = _read_verified_operation_receipt(
-        provider,
-        snapshot,
-        operation_id_sha256=operation_id_sha256,
-        raw_policy_envelope_bytes=signed_policy_envelope_bytes,
-        raw_receipt_bytes=original_receipt_bytes,
-    )
-    if replay is not None:
-        return replay
     trust_configuration_digest = _trust_configuration_sha256(snapshot)
     clock_sample_digest = _clock_sample_sha256(snapshot)
     earliest, latest = _time_window(snapshot)
