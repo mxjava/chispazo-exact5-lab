@@ -23,7 +23,7 @@ No independent trust pin, old watermark, nonce or verification clock is accepted
 
 ## Adversarial tests
 
-Synthetic tests cover a valid provider-bound transition, context digest drift, log-key/watermark identity drift, missing third nonce, challenge expiry inside the clock uncertainty interval, missing independently provisioned genesis watermark, old-checkpoint substitution and provider snapshot outage. Every failure occurs before any CAS call; the adapter itself never calls CAS.
+Synthetic tests cover a valid provider-bound transition, context digest drift, log-key/watermark identity drift, missing third nonce, challenge expiry inside the clock uncertainty interval, trusted-time rollback, missing independently provisioned genesis watermark, old-checkpoint substitution and provider snapshot outage. The policy/ledger/provider fixture is built from one shared synthetic key set so it cannot accidentally combine unrelated ephemeral roots. Every failure occurs before any CAS call; the adapter itself never calls CAS.
 
 ## Security boundary
 
