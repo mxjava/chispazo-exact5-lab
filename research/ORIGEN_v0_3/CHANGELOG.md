@@ -1,6 +1,6 @@
 ## Detached nested-signature bundle timestamp sidecar (2026-11-27)
-- Added a bounded canonical sidecar containing exact CLASSIC manifest bytes, exact signed V3 policy bytes, every nested signature claim and every exact Ed25519 signature byte string.
-- Added an RFC 3161 verifier that checks exact bundle imprint, nonce, TSA root fingerprint, policy OID, accuracy interval, CLASSIC 21:00 close, signed-policy validity, signer-key validity and signed key/role/artifact authorization at timestamp.
+- Added a bounded canonical sidecar containing exact CLASSIC manifest bytes, exact signed V3 policy bytes, every original artifact byte string, every nested signature claim and every exact Ed25519 signature byte string.
+- Added an RFC 3161 verifier that checks exact bundle imprint, nonce, TSA root fingerprint, policy OID, accuracy interval, CLASSIC 21:00 close, exact artifact hashes/lengths, signed-policy validity, signer-key validity and signed key/role/artifact authorization at timestamp.
 - Explicitly distinguishes signature existence by the timestamp accuracy upper bound from the unknown exact signature-creation instant. Key authorization at creation remains unproven because no unpredictable pre-draw signer challenge is bound into the current signature payload.
 - The sidecar is not yet committed by the transparency-ledger entry or provider CAS. All fixtures are synthetic and all results remain BLOCKED_PROVENANCE.
 
