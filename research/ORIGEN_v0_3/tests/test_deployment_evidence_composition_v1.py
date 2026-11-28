@@ -7,7 +7,7 @@ import json
 import unittest
 from dataclasses import replace
 from unittest.mock import patch
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -26,6 +26,8 @@ from origen.deployment_trust_provider_v1 import (
     TrustProviderUnavailable,
     TrustStateRejected,
     _accepted_external_evidence_watermark_sha256,
+    _external_evidence_advance_copy,
+    _inspect_receipt_with_deployment_trust_provider_snapshot,
 )
 from origen.independent_trust_adapter import ProvenanceStatus
 from origen.physical_evidence_manifest_v1 import parse_unverified_physical_manifest
@@ -117,7 +119,7 @@ class SyntheticPhysicalTrustProvider(SyntheticTrustProvider):
         return super().compare_and_advance(**kwargs)
 
 
-def _provider_for(data, ledger):
+def _provider_for(data, ledger, *, uncertainty_ms=0, trusted_time_utc=NOW):
     context = PhysicalTrustContextV1(
         policy_tsa_root_certificate_der=data["pinned_policy_tsa_root_certificate_der"],
         policy_tsa_root_sha256=data["expected_policy_tsa_root_sha256"],
@@ -141,14 +143,14 @@ def _provider_for(data, ledger):
     clock_private = data["clock_private"]
     clock_public = data["clock_public_key_bytes"]
     clock_key_id = data["clock_key_id"]
-    sample_valid_until = NOW + timedelta(seconds=60)
+    sample_valid_until = trusted_time_utc + timedelta(seconds=60)
     sample_bytes = signed_clock_sample(
         clock_private,
         clock_source_id="synthetic-clock",
         clock_sample_id="synthetic-clock-sample-0001",
         key_id=clock_key_id,
-        trusted_time_utc=NOW,
-        uncertainty_ms=0,
+        trusted_time_utc=trusted_time_utc,
+        uncertainty_ms=uncertainty_ms,
         valid_until_utc=sample_valid_until,
     )
     snapshot = DeploymentTrustSnapshot(
@@ -160,9 +162,9 @@ def _provider_for(data, ledger):
         state_generation=7,
         accepted_policy_sequence=data["minimum_policy_sequence"] - 1,
         accepted_policy_envelope_sha256="a" * 64,
-        trusted_time_latest_utc=NOW - timedelta(seconds=1),
-        trusted_time_utc=NOW,
-        clock_uncertainty_ms=0,
+        trusted_time_latest_utc=trusted_time_utc - timedelta(seconds=1),
+        trusted_time_utc=trusted_time_utc,
+        clock_uncertainty_ms=uncertainty_ms,
         maximum_clock_uncertainty_ms=100,
         clock_source_id="synthetic-clock",
         clock_sample_key_id=clock_key_id,
@@ -201,8 +203,8 @@ def _provider_for(data, ledger):
         root_generation=snapshot.root_generation,
         physical_trust_context_generation=context.context_generation,
         physical_trust_context_sha256=context_digest,
-        issued_at_utc=NOW - timedelta(seconds=1),
-        expires_at_utc=NOW + timedelta(seconds=30),
+        issued_at_utc=trusted_time_utc - timedelta(seconds=1),
+        expires_at_utc=trusted_time_utc + timedelta(seconds=30),
     )
     return SyntheticPhysicalTrustProvider(snapshot, context, nonce_challenge)
 
@@ -270,6 +272,28 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             result.timestamp_nonce_challenge_sha256,
         )
         self.assertEqual(provider.commit_count, 1)
+        advance = provider.last_commit_arguments["external_evidence_advance"]
+        self.assertEqual(advance.raw_receipt_bytes, data["original_receipt_bytes"])
+        self.assertEqual(advance.raw_policy_envelope_bytes, data["signed_policy_envelope_bytes"])
+        self.assertEqual(advance.raw_custody_record_bytes, data["custody_record_bytes"])
+        self.assertEqual(advance.raw_portfolio_bytes, data["portfolio_bytes"])
+        self.assertEqual(advance.raw_custody_signature_bytes, data["custody_signature_bytes"])
+        self.assertEqual(advance.custodian_key_id, data["custodian_key_id"])
+        self.assertEqual(advance.raw_timestamp_token_der, data["timestamp_token_der"])
+        self.assertEqual(advance.raw_policy_timestamp_token_der, data["policy_timestamp_token_der"])
+        self.assertEqual(advance.raw_manifest_bytes, ledger["manifest_bytes"])
+        self.assertEqual(dict(advance.raw_artifact_bytes_by_sha256), data["artifact_bytes_by_sha256"])
+        self.assertEqual(dict(advance.raw_signature_bytes_by_sha256), data["signature_bytes_by_sha256"])
+        with self.assertRaisesRegex(ValueError, "receipt_sha256 does not bind the exact external evidence bytes"):
+            _external_evidence_advance_copy(replace(advance, raw_receipt_bytes=b"tampered-receipt"))
+        tampered_artifacts = tuple(
+            (digest, b"tampered-artifact" if index == 0 else raw)
+            for index, (digest, raw) in enumerate(advance.raw_artifact_bytes_by_sha256)
+        )
+        with self.assertRaisesRegex(ValueError, "raw_artifact_bytes_by_sha256 digest does not bind the exact bytes"):
+            _external_evidence_advance_copy(
+                replace(advance, raw_artifact_bytes_by_sha256=tampered_artifacts)
+            )
         self.assertEqual(provider.snapshot.accepted_policy_sequence, data["minimum_policy_sequence"])
         self.assertEqual(provider.snapshot.trusted_time_latest_utc, NOW)
         accepted_watermark = provider.snapshot.accepted_external_evidence_watermark
@@ -325,6 +349,68 @@ class DeploymentEvidenceCompositionV1Tests(unittest.TestCase):
             "RFC3161_NONCE_CHALLENGE_ISSUANCE_AND_SINGLE_USE_NOT_INDEPENDENTLY_AUTHENTICATED_OR_DEPLOYED",
             result.remaining_blockers,
         )
+
+    def test_full_evidence_rejects_accuracy_crossing_earliest_clock_bound(self):
+        trusted_time = datetime(
+            2026, 11, 23, 2, 59, 59, 550000, tzinfo=timezone.utc
+        )
+        timestamp_gen_time = datetime(
+            2026, 11, 23, 2, 59, 58, 600000, tzinfo=timezone.utc
+        )
+        data, ledger, batches, _ = _build_case(
+            custody_timestamp_gen_time=timestamp_gen_time,
+            custody_timestamp_accuracy={"millis": 900},
+            official_draw_close_at_utc="2026-11-23T03:00:00Z",
+            receipt_signed_at_utc="2026-11-23T02:55:00Z",
+        )
+        provider = _provider_for(
+            data,
+            ledger,
+            uncertainty_ms=100,
+            trusted_time_utc=trusted_time,
+        )
+
+        # genTime + 900 ms accuracy = 02:59:59.500Z. This is before the
+        # synthetic Classic close at 03:00Z and before the provider midpoint
+        # at 02:59:59.550Z, but 50 ms after the earliest possible provider
+        # time (02:59:59.450Z). The synthetic receipt was signed at 02:55Z,
+        # and the provider-issued nonce challenge at 02:59:58.550Z, both before
+        # the TSA genTime and the 03:00Z Classic close.
+        with self.assertRaisesRegex(
+            ValueError,
+            "accuracy upper bound is after caller-supplied verification time",
+        ):
+            _inspect(data, ledger, batches, provider)
+
+        self.assertEqual(provider.commit_count, 0)
+
+    def test_provider_cas_rejects_self_consistent_substituted_receipt_bytes(self):
+        data, ledger, batches, _ = _build_case()
+        source_provider = _provider_for(data, ledger)
+        _inspect(data, ledger, batches, source_provider)
+        valid_advance = source_provider.last_commit_arguments["external_evidence_advance"]
+
+        fresh_provider = _provider_for(data, ledger)
+        substituted_receipt = b"substituted-but-self-consistent-receipt-bytes"
+        mismatched_advance = replace(
+            valid_advance,
+            raw_receipt_bytes=substituted_receipt,
+            receipt_sha256=hashlib.sha256(substituted_receipt).hexdigest(),
+        )
+
+        with self.assertRaisesRegex(
+            TrustStateRejected,
+            "external evidence advance does not carry the exact receipt and policy bytes supplied to the verifier",
+        ):
+            _inspect_receipt_with_deployment_trust_provider_snapshot(
+                data["original_receipt_bytes"],
+                data["signed_policy_envelope_bytes"],
+                provider=fresh_provider,
+                provider_snapshot=fresh_provider.snapshot,
+                external_evidence_advance=mismatched_advance,
+            )
+
+        self.assertEqual(fresh_provider.commit_count, 0)
 
     def test_missing_external_evidence_genesis_is_rejected_before_evidence(self):
         data, ledger, batches, _ = _build_case()

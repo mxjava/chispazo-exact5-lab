@@ -1,3 +1,9 @@
+## Full exact-byte provider CAS envelope (2026-11-27)
+- Extended `ExternalEvidenceAdvanceV1` so the independent provider CAS receives exact receipt and signed-policy bytes, custody record, portfolio, detached custody signature, custodian key ID, both RFC 3161 token DER blobs, and canonical artifact/signature byte maps in addition to manifest, ledger, checkpoints, registry and witness bytes.
+- Enforced exact SHA-256-to-byte bindings, sorted unique digest maps, exact immutable byte types, bounded map counts and an aggregate 8 MiB envelope limit. The receipt and policy envelope inside the advance must equal the exact bytes verified in the same application call path.
+- Added adversarial tests for omitted envelope fields, receipt substitution with a self-consistent digest, and artifact-byte substitution. The independent provider must still independently re-verify every nested item under its own out-of-band pins and atomic transaction; no such production provider is installed.
+- All fixtures are synthetic; all outcomes remain `BLOCKED_PROVENANCE`. No production, V294 or canonical-history change.
+
 ## Receipt-only inspection cannot advance external ledger/witness state (2026-11-27)
 - Added a regression-first API-boundary check after auditing the provider contract: the public receipt-only deployment facade exposed `external_evidence_advance`, although it does not verify the full custody, RFC 3161, transparency-ledger and independent-witness evidence chain before forwarding that state transition.
 - The red test reproduced the exposed keyword at exact branch HEAD `0eb562842c80fd2f18ce7b8fc05c49b231165ceb`; ORIGEN isolated CI ran 857 tests with exactly one failure at `test_public_receipt_only_facade_cannot_advance_external_ledger_watermark`.

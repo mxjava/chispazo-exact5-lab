@@ -454,7 +454,10 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
         expected_registry_root_key_id=physical_context.registry_root_key_id,
         expected_registry_id=physical_context.registry_id,
         minimum_registry_sequence=physical_context.minimum_registry_sequence,
-        verification_time=snapshot.trusted_time_utc,
+        # Use the earliest possible provider time for timestamp-token checks.
+        # The midpoint alone could accept an accuracy interval extending into
+        # the provider's own clock uncertainty window.
+        verification_time=earliest,
     )
     if type(evidence) is not CustodyLedgerWitnessInspectionV1:
         raise TypeError("evidence composition returned an unexpected result type")
@@ -467,7 +470,7 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
     if (
         evidence.custody_timestamp.custody_chain.policy_envelope_sha256 != policy_digest
         or evidence.custody_timestamp.custody_chain.policy_sequence != verified_policy.policy_sequence
-        or evidence.custody_timestamp.custody_chain.verification_time_utc != snapshot.trusted_time_utc
+        or evidence.custody_timestamp.custody_chain.verification_time_utc != earliest
     ):
         raise RuntimeError("complete evidence composition did not consume the provider-verified policy and time")
 
@@ -509,6 +512,18 @@ def _inspect_custody_ledger_witness_with_deployment_provider_v1_using_provider(
             for batch in witness_observation_batches
             for statement in batch.raw_witness_statement_bytes
         ),
+        receipt_sha256=hashlib.sha256(original_receipt_bytes).hexdigest(),
+        policy_envelope_sha256=policy_digest,
+        raw_receipt_bytes=original_receipt_bytes,
+        raw_policy_envelope_bytes=signed_policy_envelope_bytes,
+        raw_custody_record_bytes=custody_record_bytes,
+        raw_portfolio_bytes=portfolio_bytes,
+        raw_custody_signature_bytes=custody_signature_bytes,
+        custodian_key_id=custodian_key_id,
+        raw_timestamp_token_der=timestamp_token_der,
+        raw_policy_timestamp_token_der=policy_timestamp_token_der,
+        raw_artifact_bytes_by_sha256=tuple(sorted(artifact_bytes_by_sha256.items())),
+        raw_signature_bytes_by_sha256=tuple(sorted(signature_bytes_by_sha256.items())),
     )
     _validated_external_evidence_watermark(
         snapshot,

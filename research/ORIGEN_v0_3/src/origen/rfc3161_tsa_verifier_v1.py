@@ -627,6 +627,21 @@ def verify_rfc3161_timestamp_token(
         millis = 0 if millis_value is None else millis_value
         micros = 0 if micros_value is None else micros_value
         accuracy_microseconds = seconds * 1_000_000 + millis * 1_000 + micros
+        # The complete uncertainty interval must not extend beyond the
+        # verifier's observation time. Checking genTime alone can accept a
+        # token whose claimed accuracy still permits a future timestamp.
+        try:
+            accuracy_upper_bound = gen_time + timedelta(
+                microseconds=accuracy_microseconds
+            )
+        except OverflowError as exc:
+            raise ValueError(
+                "RFC3161 accuracy interval exceeds the supported datetime range"
+            ) from exc
+        if accuracy_upper_bound > now:
+            raise ValueError(
+                "RFC3161 accuracy upper bound is after caller-supplied verification time"
+            )
     ordering = tst_info["ordering"].native
     if type(ordering) is not bool:
         raise ValueError("RFC3161 ordering must be an exact boolean")
