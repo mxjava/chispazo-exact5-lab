@@ -1495,6 +1495,19 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
         original_receipt_bytes,
         external_evidence_advance,
     )
+    # A durable replay must not bypass the current provider-time monotonicity
+    # and lease checks. The snapshot copy above has already verified the
+    # provider's signed clock-sample bytes; enforce its interval before lookup.
+    earliest, latest = _time_window(snapshot)
+    if latest > snapshot.clock_sample_valid_until_utc:
+        raise ValueError("trusted-time uncertainty interval exceeds the provider clock sample lease")
+    if (
+        snapshot.trusted_time_latest_utc is not None
+        and earliest < snapshot.trusted_time_latest_utc
+    ):
+        raise TrustStateRejected(
+            "trusted-time interval regressed behind the persisted time watermark"
+        )
     replay = _read_verified_operation_receipt(
         provider,
         snapshot,
@@ -1518,10 +1531,6 @@ def _inspect_receipt_with_deployment_trust_provider_snapshot(
     )
     trust_configuration_digest = _trust_configuration_sha256(snapshot)
     clock_sample_digest = _clock_sample_sha256(snapshot)
-    earliest, latest = _time_window(snapshot)
-    if latest > snapshot.clock_sample_valid_until_utc:
-        raise ValueError("trusted-time uncertainty interval exceeds the provider clock sample lease")
-
     effective_floor = max(
         snapshot.minimum_policy_sequence,
         snapshot.accepted_policy_sequence,
